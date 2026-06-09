@@ -7089,7 +7089,7 @@ function parseAIReplyUnified(raw, groupId){
   consume(/[\[【]状态更新[:：]\s*([^\]】]+?)[\]】]/g,(status)=>{
     status=String(status||"").trim();
     if(status){
-      Storage.set(Storage.roleKey("roleStatus"), status);
+      Storage.set("lastRoleStatus_"+Miao.state.currentRoleId, status);
       const el=document.getElementById("roleStatusText");
       if(el) el.textContent=status;
     }
