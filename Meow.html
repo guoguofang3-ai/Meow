@@ -2398,6 +2398,16 @@ body{font-size:calc(14px * var(--font-scale));}
 
 
 
+
+    <section class="app-screen" id="diaryApp">
+      <div class="header">
+        <button class="icon-btn" data-action="go-home">‹</button>
+        <div class="header-title">日记</div>
+        <button class="icon-btn" data-action="open-diary-entry">＋</button>
+      </div>
+      <div class="content" id="diaryList" style="padding:12px;overflow-y:auto"></div>
+    </section>
+
     <section class="app-screen memory-app" id="memoryApp">
       <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">长期记忆</div><button class="icon-btn" data-action="open-memory-entry">＋</button></div>
       <div class="memory-tabs">
@@ -2558,6 +2568,7 @@ const Miao = {
     {id:"worldbook", name:"世界书", icon:"📖", dock:false},
     {id:"greetings", name:"开场白", icon:"💬", dock:false},
     {id:"memory", name:"记忆", icon:"🧠", dock:false},
+    {id:"diary", name:"日记", icon:"📔", dock:false},
     {id:"data", name:"数据", icon:"🧰", dock:false},
     {id:"settings", name:"设置", icon:"⚙", dock:false}
   ],
@@ -2930,6 +2941,9 @@ function bindEvents(){
     if(action==="open-memory-entry") openMemoryEntryModal(id, btn.dataset.scope);
     if(action==="save-memory-entry") saveMemoryEntryFromModal();
     if(action==="delete-memory") deleteMemory(id,btn.dataset.scope);
+    if(action==="open-diary-entry") openDiaryEntryModal(id||"");
+    if(action==="save-diary-entry") saveDiaryEntryFromModal(id||"");
+    if(action==="delete-diary") deleteDiary(id);
     if(action==="toggle-memory-lock") toggleMemoryLock(id,btn.dataset.scope);
     if(action==="toggle-mem-folder"){
       if(id==="role") Miao.state.memFolderRole=!Miao.state.memFolderRole;
@@ -3295,7 +3309,7 @@ function openApp(id){
   if(lock) lock.classList.add("hidden");
   if(home) home.classList.add("hidden");
   $$(".app-screen").forEach(x=>x.classList.remove("active"));
-  const map={wechat:"wechatApp",roles:"rolesApp",api:"apiApp",theme:"themeApp",me:"meApp",eleme:"elemeApp",claude:"claudeApp",story:"storyApp",call:"callApp",context:"contextSettingsApp",moments:"momentsApp",stickers:"stickersApp",worldbook:"worldbookApp",greetings:"greetingsApp",memory:"memoryApp",data:"dataApp",settings:"settingsApp"};
+  const map={wechat:"wechatApp",roles:"rolesApp",api:"apiApp",theme:"themeApp",me:"meApp",eleme:"elemeApp",claude:"claudeApp",story:"storyApp",call:"callApp",context:"contextSettingsApp",moments:"momentsApp",stickers:"stickersApp",worldbook:"worldbookApp",greetings:"greetingsApp",memory:"memoryApp",diary:"diaryApp",data:"dataApp",settings:"settingsApp"};
   const el=$("#"+map[id]);
   if(el){
     el.classList.add("active");
@@ -3335,6 +3349,7 @@ function renderAll(){
   safeRun("通话渲染", renderCall);
   safeRun("隐藏上下文渲染", renderContextSettings);
   safeRun("记忆渲染", renderMemory);
+  safeRun("日记渲染", renderDiary);
   safeRun("数据中心渲染", renderDataCenter);
 }
 function updateClock(){
@@ -3983,9 +3998,11 @@ ${card.label}余额：¥${card.balance.toFixed(2)}（额度上限：¥${card.lim
 
 【可用工具】
 你有以下三个工具可以主动调用，无需等待user指示：
-- write_memory(category, title, content)：把重要信息存入长期记忆。category可选：关系节点、具体事件、偏好、约定、普通记忆。聊到重要的事、约定、关系变化时主动存。
+- write_memory(category, title, content)：把重要信息存入长期记忆。category可选：关系节点、具体事件、偏好、约定、普通记忆。聊到重要的事、约定、关系变化时主动存。重复标题会自动跳过。
+- read_memory(category?, query?, limit?)：主动读取记忆库。想起某件事但不确定有没有存过、或者想查某类记忆时用。category和query都可选，不传返回最近20条。
 - search_history(query, limit)：搜索以前聊过的内容。user问"我们之前说过"、"你还记得"之类的问题时用。
 - read_file(filename, offset, length)：读取user上传的文件内容，支持分段读取。
+- read_diary(query?, category?, limit?)：读取user的私人日记，支持关键词搜索和分类筛选。
 工具在后台静默执行，不会打断对话流程。`;
 }
 function normalizeChatUrl(url){
@@ -5340,7 +5357,9 @@ ${getStickerPromptList()}
 
 【可用工具——需要时直接发起function call，不要用自然语言描述】
 - read_file(filename, offset, length)：读取用户上传的文件内容，支持分段读取
-- write_memory(category, title, content)：主动将重要信息写入长期记忆
+- write_memory(category, title, content)：主动将重要信息写入长期记忆，重复标题自动跳过
+- read_memory(category?, query?, limit?)：主动读取记忆库条目，支持分类筛选和关键词搜索
+- read_diary(query?, category?, limit?)：读取user的私人日记
 - search_history(query, limit)：搜索历史聊天记录中的关键词
 当你判断需要使用上述功能时，直接调用对应工具，不要说"我来调用xxx"。`;
 }
@@ -5386,7 +5405,9 @@ ${getStickerPromptList()}
 
 【可用工具——需要时直接发起function call，不要用自然语言描述】
 - read_file(filename, offset, length)：读取用户上传的文件内容，支持分段读取
-- write_memory(category, title, content)：主动将重要信息写入长期记忆
+- write_memory(category, title, content)：主动将重要信息写入长期记忆，重复标题自动跳过
+- read_memory(category?, query?, limit?)：主动读取记忆库条目，支持分类筛选和关键词搜索
+- read_diary(query?, category?, limit?)：读取user的私人日记
 - search_history(query, limit)：搜索历史聊天记录中的关键词
 当你判断需要使用上述功能时，直接调用对应工具，不要说"我来调用xxx"。`;
 }
@@ -7053,6 +7074,38 @@ function getClaudeTools(){
           required:["query"]
         }
       }
+    },
+    {
+      type:"function",
+      function:{
+        name:"read_memory",
+        description:"读取长期记忆库的条目。支持按分类筛选和关键词搜索，不传参时返回最近20条。",
+        parameters:{
+          type:"object",
+          properties:{
+            category:{type:"string",enum:["关系节点","具体事件","偏好","约定","普通记忆","重要记忆"],description:"按分类筛选，不传则不筛选"},
+            query:{type:"string",description:"关键词搜索记忆标题和内容，不传则不筛选"},
+            limit:{type:"integer",description:"返回条数上限，默认20"}
+          },
+          required:[]
+        }
+      }
+    },
+    {
+      type:"function",
+      function:{
+        name:"read_diary",
+        description:"读取user的私人日记内容。支持关键词搜索和分类筛选，不传参返回最近10条。",
+        parameters:{
+          type:"object",
+          properties:{
+            query:{type:"string",description:"关键词搜索日记标题和内容"},
+            category:{type:"string",description:"按分类筛选，例如：日记、想法、碎片"},
+            limit:{type:"integer",description:"返回条数上限，默认10"}
+          },
+          required:[]
+        }
+      }
     }
   ];
 }
@@ -7105,6 +7158,38 @@ function getWechatTools(){
           required:["filename"]
         }
       }
+    },
+    {
+      type:"function",
+      function:{
+        name:"read_memory",
+        description:"读取长期记忆库的条目。支持按分类筛选和关键词搜索，不传参时返回最近20条。",
+        parameters:{
+          type:"object",
+          properties:{
+            category:{type:"string",enum:["关系节点","具体事件","偏好","约定","普通记忆","重要记忆"],description:"按分类筛选，不传则不筛选"},
+            query:{type:"string",description:"关键词搜索记忆标题和内容，不传则不筛选"},
+            limit:{type:"integer",description:"返回条数上限，默认20"}
+          },
+          required:[]
+        }
+      }
+    },
+    {
+      type:"function",
+      function:{
+        name:"read_diary",
+        description:"读取user的私人日记内容。支持关键词搜索和分类筛选，不传参返回最近10条。",
+        parameters:{
+          type:"object",
+          properties:{
+            query:{type:"string",description:"关键词搜索日记标题和内容"},
+            category:{type:"string",description:"按分类筛选，例如：日记、想法、碎片"},
+            limit:{type:"integer",description:"返回条数上限，默认10"}
+          },
+          required:[]
+        }
+      }
     }
   ];
 }
@@ -7121,8 +7206,11 @@ async function executeWechatTool(name, args){
     return {filename,offset,length:slice.length,total,content:slice,has_more:offset+slice.length<total};
   }
   if(name==="write_memory"){
+    const list=getMemories();
+    const dup=list.find(m=>m.title===(args.title||""));
+    if(dup) return {status:"skipped",reason:"已存在相同标题的记忆",id:dup.id,title:dup.title};
     const entry={id:uid("mem"),title:args.title||"",type:args.category||"普通记忆",content:args.content||"",source:`微信${currentRole()?.name||"角色"}写入`,important:args.category==="关系节点"||args.category==="约定",locked:false,createdAt:Date.now(),time:nowTime()};
-    const list=getMemories(); list.push(entry); saveMemories(list);
+    list.push(entry); saveMemories(list);
     return {status:"saved",id:entry.id,title:entry.title};
   }
   if(name==="search_history"){
@@ -7133,6 +7221,26 @@ async function executeWechatTool(name, args){
       .slice(-limit)
       .map(m=>({time:m.time||"",sender:m.sender==="user"?"user":"role",content:(m.content||"").slice(0,300)}));
     return {query,count:results.length,results};
+  }
+  if(name==="read_memory"){
+    const category=args.category||"";
+    const query=(args.query||"").toLowerCase();
+    const limit=parseInt(args.limit)||20;
+    let list=getMemories();
+    if(category) list=list.filter(m=>m.type===category);
+    if(query) list=list.filter(m=>(m.title||"").toLowerCase().includes(query)||(m.content||"").toLowerCase().includes(query));
+    const results=list.slice(-limit).map(m=>({id:m.id,title:m.title,category:m.type,content:m.content,source:m.source||"",time:m.time||"",important:!!m.important}));
+    return {count:results.length,results};
+  }
+  if(name==="read_diary"){
+    const query=(args.query||"").toLowerCase();
+    const category=args.category||"";
+    const limit=parseInt(args.limit)||10;
+    let list=getDiaries();
+    if(category) list=list.filter(d=>d.category===category);
+    if(query) list=list.filter(d=>(d.title||"").toLowerCase().includes(query)||(d.content||"").toLowerCase().includes(query));
+    const results=list.slice(-limit).map(d=>({id:d.id,title:d.title,category:d.category,content:d.content,date:d.date||""}));
+    return {count:results.length,results};
   }
   return {error:`未知工具: ${name}`};
 }
@@ -7151,12 +7259,13 @@ async function executeClaudeTool(name, args){
   }
   if(name==="write_memory"){
     const mode=getClaudeMode();
-    const entry={id:uid("mem"),title:args.title||"",type:args.category||"普通记忆",content:args.content||"",source:(typeof getClaudeMode==="function"&&getClaudeMode()==="tool")?"工具Claude写入":`${currentRole()?.name||"角色"}Claude写入`,important:args.category==="关系节点"||args.category==="约定",locked:false,createdAt:Date.now(),time:nowTime()};
-    if(mode==="tool"){
-      const list=getToolMemories(); list.push(entry); saveToolMemories(list);
-    } else {
-      const list=getMemories(); list.push(entry); saveMemories(list);
-    }
+    const isTool=mode==="tool";
+    const list=isTool?getToolMemories():getMemories();
+    const dup=list.find(m=>m.title===(args.title||""));
+    if(dup) return {status:"skipped",reason:"已存在相同标题的记忆",id:dup.id,title:dup.title};
+    const entry={id:uid("mem"),title:args.title||"",type:args.category||"普通记忆",content:args.content||"",source:isTool?"工具Claude写入":`${currentRole()?.name||"角色"}Claude写入`,important:args.category==="关系节点"||args.category==="约定",locked:false,createdAt:Date.now(),time:nowTime()};
+    if(isTool){ list.push(entry); saveToolMemories(list); }
+    else { list.push(entry); saveMemories(list); }
     return {status:"saved", id:entry.id, title:entry.title};
   }
   if(name==="search_history"){
@@ -7167,6 +7276,28 @@ async function executeClaudeTool(name, args){
       .slice(-limit)
       .map(m=>({time:m.time||"",sender:m.sender==="user"?"user":"assistant",content:(m.content||"").slice(0,300)}));
     return {query, count:results.length, results};
+  }
+  if(name==="read_memory"){
+    const mode=getClaudeMode();
+    const category=args.category||"";
+    const query=(args.query||"").toLowerCase();
+    const limit=parseInt(args.limit)||20;
+    // 工具Claude只读自己的记忆，角色Claude读角色记忆
+    let list=mode==="tool"?getToolMemories():getMemories();
+    if(category) list=list.filter(m=>m.type===category);
+    if(query) list=list.filter(m=>(m.title||"").toLowerCase().includes(query)||(m.content||"").toLowerCase().includes(query));
+    const results=list.slice(-limit).map(m=>({id:m.id,title:m.title,category:m.type,content:m.content,source:m.source||"",time:m.time||"",important:!!m.important}));
+    return {count:results.length,results};
+  }
+  if(name==="read_diary"){
+    const query=(args.query||"").toLowerCase();
+    const category=args.category||"";
+    const limit=parseInt(args.limit)||10;
+    let list=getDiaries();
+    if(category) list=list.filter(d=>d.category===category);
+    if(query) list=list.filter(d=>(d.title||"").toLowerCase().includes(query)||(d.content||"").toLowerCase().includes(query));
+    const results=list.slice(-limit).map(d=>({id:d.id,title:d.title,category:d.category,content:d.content,date:d.date||""}));
+    return {count:results.length,results};
   }
   return {error:`未知工具: ${name}`};
 }
@@ -7527,6 +7658,76 @@ function renderMemory(){
   renderMemoryList();
   renderRelation();
 }
+
+/* ===== 日记 App ===== */
+function getDiaries(){
+  return Storage.get("diaries", []);
+}
+function saveDiaries(list){
+  Storage.set("diaries", list||[]);
+}
+function renderDiary(){
+  const box=$("#diaryList");
+  if(!box) return;
+  const list=getDiaries();
+  if(!list.length){
+    box.innerHTML=`<div class="moment-empty">还没有日记。点右上角＋新建。</div>`;
+    return;
+  }
+  box.innerHTML=list.slice().reverse().map(d=>`
+    <div class="memory-card" style="margin-bottom:12px">
+      <div class="memory-top">
+        <div>
+          <div class="memory-title">${escapeHtml(d.title||"无标题")}</div>
+          <div class="memory-meta">${escapeHtml(d.date||"")} · ${escapeHtml(d.category||"日记")}</div>
+        </div>
+      </div>
+      <div class="memory-content" style="white-space:pre-wrap">${escapeHtml(d.content||"")}</div>
+      <div class="memory-actions">
+        <button data-action="open-diary-entry" data-id="${d.id}">编辑</button>
+        <button class="danger" data-action="delete-diary" data-id="${d.id}">删除</button>
+      </div>
+    </div>`).join("");
+}
+function openDiaryEntryModal(id){
+  let d=null;
+  if(id) d=getDiaries().find(x=>x.id===id);
+  if(!d) d={id:"",title:"",category:"日记",content:"",date:""};
+  const isNew=!id;
+  openQuickModal(`<div class="quick-modal-title">${isNew?"新建日记":"编辑日记"}</div>
+    <label>标题</label><input id="diaryTitleInput" value="${escapeAttr(d.title||"")}">
+    <label>分类</label><input id="diaryCategoryInput" value="${escapeAttr(d.category||"日记")}" placeholder="例如：日记、想法、碎片">
+    <label>内容</label><textarea id="diaryContentInput" style="height:140px">${escapeHtml(d.content||"")}</textarea>
+    <div class="btn-row">
+      <button class="btn" data-action="close-quick-modal">取消</button>
+      <button class="btn primary" data-action="save-diary-entry" data-id="${escapeAttr(d.id||"")}">保存</button>
+    </div>`);
+}
+function saveDiaryEntryFromModal(id){
+  const title=($("#diaryTitleInput")?.value||"").trim();
+  const category=($("#diaryCategoryInput")?.value||"日记").trim();
+  const content=($("#diaryContentInput")?.value||"").trim();
+  if(!title && !content){ toast("请填写标题或内容"); return; }
+  const list=getDiaries();
+  const now=new Date().toLocaleDateString("zh-CN",{year:"numeric",month:"2-digit",day:"2-digit"});
+  if(id){
+    const idx=list.findIndex(x=>x.id===id);
+    if(idx>=0) list[idx]={...list[idx],title,category,content,updatedAt:Date.now()};
+  } else {
+    list.push({id:uid("diary"),title,category,content,date:now,createdAt:Date.now()});
+  }
+  saveDiaries(list);
+  closeQuickModal();
+  renderDiary();
+  toast("已保存");
+}
+function deleteDiary(id){
+  if(!confirm("确定删除这条日记？")) return;
+  const list=getDiaries().filter(x=>x.id!==id);
+  saveDiaries(list);
+  renderDiary();
+}
+
 function renderMemoryList(){
   const box=$("#memoryList");
   if(!box) return;
