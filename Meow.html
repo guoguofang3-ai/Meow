@@ -5290,7 +5290,13 @@ user 可能请求你写代码、处理文件、生成 HTML/SVG/React。你是否
 
 【可用表情包】
 ${getStickerPromptList()}
-如需发送表情包，输出指令：[发送表情包: 名称]`;
+如需发送表情包，输出指令：[发送表情包: 名称]
+
+【可用工具——需要时直接发起function call，不要用自然语言描述】
+- read_file(filename, offset, length)：读取用户上传的文件内容，支持分段读取
+- write_memory(category, title, content)：主动将重要信息写入长期记忆
+- search_history(query, limit)：搜索历史聊天记录中的关键词
+当你判断需要使用上述功能时，直接调用对应工具，不要说"我来调用xxx"。`;
 }
 function buildToolClaudePrompt(){
   return `你是工具 Claude，住在一个叫喵喵机的小手机里。
@@ -5330,7 +5336,13 @@ function buildToolClaudePrompt(){
 ${buildMemoryPrompt(true)}
 
 【可用表情包】
-${getStickerPromptList()}`;
+${getStickerPromptList()}
+
+【可用工具——需要时直接发起function call，不要用自然语言描述】
+- read_file(filename, offset, length)：读取用户上传的文件内容，支持分段读取
+- write_memory(category, title, content)：主动将重要信息写入长期记忆
+- search_history(query, limit)：搜索历史聊天记录中的关键词
+当你判断需要使用上述功能时，直接调用对应工具，不要说"我来调用xxx"。`;
 }
 function claudeMsgToContext(m){
   if(m.type==="file"){
