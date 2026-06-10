@@ -4748,7 +4748,7 @@ async function callStoryReply(){
 【线下剧情 App】
 这是独立于微信聊天的线下剧情。你要根据角色人设接剧情，像小说/互动剧情一样自然回应。
 可以写动作、神态和台词，但不要替 user 决定行为。${presetBlock?"\n\n【线下剧情预设指导】\n"+presetBlock:""}`;
-    const messages=[{role:"system", content:system}, ...h.slice(-24).map(m=>({role:m.sender==="user"?"user":"assistant", content:m.content}))];
+    const messages=[{role:"system", content:system}, ...h.slice(-60).map(m=>({role:m.sender==="user"?"user":"assistant", content:m.content}))];
     const res=await fetch(normalizeChatUrl(api.apiUrl),{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+api.apiKey},body:JSON.stringify({model:api.model,messages,temperature:.85})});
     const text=await res.text();
     if(!res.ok) throw new Error(text.slice(0,180)||res.statusText);
@@ -4818,9 +4818,24 @@ function endCall(){
   $("#callStatus").textContent="已挂断";
   $("#callWave").style.display="none";
   const h=getCallHistory();
-  h.push({id:uid("callSession"), type:"session", duration, summary:makeCallSummaryText(), createdAt:Date.now(), time:nowTime()});
+  const rawSummary = makeCallSummaryText();
+  h.push({id:uid("callSession"), type:"session", duration, summary:rawSummary, createdAt:Date.now(), time:nowTime()});
   saveCallHistory(h);
   renderCall();
+  // 异步生成AI摘要替换原文
+  const api=Storage.get("api",{});
+  if(api.apiUrl && api.apiKey && api.model && rawSummary.trim()){
+    const sessionId = h[h.length-1].id;
+    callSimpleChatAPI(api,[
+      {role:"system", content:"你只输出一段简洁的中文摘要，不超过80字，不要任何格式。"},
+      {role:"user", content:`请用一两句话概括以下通话内容的要点：
+${rawSummary}`}
+    ],.3).then(summary=>{
+      const ch=getCallHistory();
+      const s=ch.find(x=>x.id===sessionId);
+      if(s){ s.summary=summary.trim(); saveCallHistory(ch); renderCall(); }
+    }).catch(()=>{});
+  }
 }
 function updateCallTimer(){
   const el=$("#callTimer");
@@ -4851,11 +4866,18 @@ async function callVoiceReply(){
   try{
     const h=getCallHistory();
     const role=currentRole();
+    // 注入最近微信聊天记录作为背景
+    const wechatCtx = (()=>{
+      const wh = getHistory().filter(m=>["text","voice"].includes(m.type)).slice(-10);
+      if(!wh.length) return "";
+      const lines = wh.map(m=>`${m.sender==="user"?(getUserProfile().name||"user"):role.name}：${m.content}`).join("\n");
+      return `\n【打电话前的微信聊天背景（最近10条）】\n${lines}\n`;
+    })();
     const system=`${buildSystemPrompt(role)}
 【语音通话 App】
 你正在和 user 通话。回复要像电话里说话，可以在文字开头用括号标注情绪/语气，例如（压低声音）（有点担心）（轻笑）。
-不要替 user 说话。`;
-    const messages=[{role:"system", content:system}, ...h.filter(x=>!x.type).slice(-20).map(m=>({role:m.sender==="user"?"user":"assistant", content:m.content}))];
+不要替 user 说话。${wechatCtx}`;
+    const messages=[{role:"system", content:system}, ...h.filter(x=>!x.type).slice(-60).map(m=>({role:m.sender==="user"?"user":"assistant", content:m.content}))];
     const res=await fetch(normalizeChatUrl(api.apiUrl),{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+api.apiKey},body:JSON.stringify({model:api.model,messages,temperature:.85})});
     const text=await res.text();
     if(!res.ok) throw new Error(text.slice(0,180)||res.statusText);
@@ -5717,6 +5739,10 @@ function addMomentPost({ownerType, ownerId, content, visibility, source}){
   renderCall();
   renderContextSettings();
   toast("朋友圈已发布");
+  // user发朋友圈后，角色随机点赞或评论
+  if(ownerType==="user" && visibility!=="private"){
+    setTimeout(()=>{ roleReactToUserMoment(list[0].id, "auto"); }, 1500);
+  }
 }
 async function aiCreateMoment(){
   // 保留内部能力：后续角色主动动态可复用，不在 UI 放按钮
