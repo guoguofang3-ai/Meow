@@ -5102,6 +5102,7 @@ async function addClaudeFileMessage(file){
     }
     const words=countWords(text);
     window.claudeFileContextMap[id]={kind:"document", name:file.name, type, size:file.size, text, words};
+    storeFile(file.name, text).catch(()=>{});
     h.push({id, sender:"user", type:"file", content:`[上传文件:${file.name}]`, data:{kind:"document", name:file.name, type, size:file.size, words}, createdAt:Date.now(), time:nowTime()});
   }
   saveClaudeHistory(h);
@@ -5147,10 +5148,13 @@ async function callClaudeReply(){
     const claudeParts=parseCodeBlocks(cleaned);
     let claudeBubbles=[];
     let textBuf2="";
+    // 如果整体回复很长且含多个段落，判断为文件/文档内容，不拆气泡
+    const totalText=claudeParts.filter(p=>p.kind==="text").map(p=>p.text).join("");
+    const shouldSplit = totalText.length < 800 && (totalText.match(/\n\n/g)||[]).length < 6;
     claudeParts.forEach(p=>{
       if(p.kind==="text"){
-        // 按双换行拆
-        const segs=p.text.split(/\n\n+/).map(s=>s.trim()).filter(Boolean);
+        // 只有短回复才按双换行拆
+        const segs=shouldSplit ? p.text.split(/\n\n+/).map(s=>s.trim()).filter(Boolean) : [p.text.trim()].filter(Boolean);
         if(segs.length>1){
           if(textBuf2.trim()) claudeBubbles.push({type:"text",content:textBuf2.trim()});
           textBuf2="";
@@ -5247,12 +5251,32 @@ async function callClaudeAI(api){
     })()
   ];
   const url=normalizeChatUrl(api.apiUrl);
-  const body={model:api.model,messages,temperature:.7};
-  const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+api.apiKey},body:JSON.stringify(body)});
-  const text=await res.text();
-  if(!res.ok) throw new Error(text.slice(0,180)||res.statusText);
-  const data=JSON.parse(text);
-  return data.choices?.[0]?.message?.content || data.content?.[0]?.text || data.output_text || "";
+  const tools=getClaudeTools();
+  const body={model:api.model,messages,temperature:.7,tools,tool_choice:"auto"};
+  // 多轮tool calling循环
+  let loopMessages=[...messages];
+  for(let i=0;i<5;i++){
+    const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+api.apiKey},body:JSON.stringify({...body,messages:loopMessages})});
+    const text=await res.text();
+    if(!res.ok) throw new Error(text.slice(0,180)||res.statusText);
+    const data=JSON.parse(text);
+    const choice=data.choices?.[0];
+    if(!choice) break;
+    const msg=choice.message;
+    // 没有tool_calls，返回普通文字
+    if(!msg.tool_calls || msg.tool_calls.length===0){
+      return msg.content || data.content?.[0]?.text || data.output_text || "";
+    }
+    // 有tool_calls，执行工具并把结果塞回去
+    if(msg.content===undefined) msg.content=null;
+    loopMessages.push(msg);
+    for(const tc of msg.tool_calls){
+      const args=JSON.parse(tc.function.arguments||"{}");
+      const result=await executeClaudeTool(tc.function.name, args);
+      loopMessages.push({role:"tool", tool_call_id:tc.id, content:JSON.stringify(result)});
+    }
+  }
+  return "[工具调用超过上限，未获得最终回复]";
 }
 function buildRoleClaudePrompt(){
   const base=buildSystemPrompt(currentRole());
@@ -6920,6 +6944,125 @@ function receiveTransferToWallet(amount){
   saveWallet(w);
 }
 
+
+// ===== Claude工具系统 =====
+
+function getClaudeTools(){
+  return [
+    {
+      type:"function",
+      function:{
+        name:"read_file",
+        description:"读取用户上传的文件内容。支持分段读取，避免大文件撑爆上下文。",
+        parameters:{
+          type:"object",
+          properties:{
+            filename:{type:"string",description:"要读取的文件名"},
+            offset:{type:"integer",description:"起始字符位置，默认0"},
+            length:{type:"integer",description:"读取字符数，不传则读全部"}
+          },
+          required:["filename"]
+        }
+      }
+    },
+    {
+      type:"function",
+      function:{
+        name:"write_memory",
+        description:"将一条重要信息写入角色的长期记忆系统。",
+        parameters:{
+          type:"object",
+          properties:{
+            category:{type:"string",enum:["关系节点","具体事件","偏好","约定","普通记忆"],description:"记忆分类"},
+            title:{type:"string",description:"记忆标题，不超过20字"},
+            content:{type:"string",description:"记忆正文"}
+          },
+          required:["category","title","content"]
+        }
+      }
+    },
+    {
+      type:"function",
+      function:{
+        name:"search_history",
+        description:"搜索历史聊天记录中的关键词。",
+        parameters:{
+          type:"object",
+          properties:{
+            query:{type:"string",description:"搜索关键词"},
+            limit:{type:"integer",description:"返回条数上限，默认5"}
+          },
+          required:["query"]
+        }
+      }
+    }
+  ];
+}
+
+async function executeClaudeTool(name, args){
+  if(name==="read_file"){
+    const filename=args.filename||"";
+    const offset=parseInt(args.offset)||0;
+    const length=parseInt(args.length)||0;
+    // 从IndexedDB读取文件
+    const fileData = await getStoredFile(filename);
+    if(!fileData) return {error:`文件 "${filename}" 不存在，请先上传`};
+    const text = fileData.text||"";
+    const total = text.length;
+    const slice = length>0 ? text.slice(offset, offset+length) : text.slice(offset);
+    return {filename, offset, length:slice.length, total, content:slice, has_more: offset+slice.length<total};
+  }
+  if(name==="write_memory"){
+    const mode=getClaudeMode();
+    const entry={id:uid("mem"),title:args.title||"",type:args.category||"普通记忆",content:args.content||"",source:"角色主动记录",important:args.category==="关系节点"||args.category==="约定",locked:false,createdAt:Date.now(),time:nowTime()};
+    if(mode==="tool"){
+      const list=getToolMemories(); list.push(entry); saveToolMemories(list);
+    } else {
+      const list=getMemories(); list.push(entry); saveMemories(list);
+    }
+    return {status:"saved", id:entry.id, title:entry.title};
+  }
+  if(name==="search_history"){
+    const query=(args.query||"").toLowerCase();
+    const limit=parseInt(args.limit)||5;
+    const h=getClaudeHistory().filter(m=>m.type!=="error"&&m.type!=="system");
+    const results=h.filter(m=>(m.content||"").toLowerCase().includes(query))
+      .slice(-limit)
+      .map(m=>({time:m.time||"",sender:m.sender==="user"?"user":"assistant",content:(m.content||"").slice(0,300)}));
+    return {query, count:results.length, results};
+  }
+  return {error:`未知工具: ${name}`};
+}
+
+// IndexedDB存储文件
+async function storeFile(filename, text){
+  return new Promise((resolve)=>{
+    const req=indexedDB.open("MiaoFiles",1);
+    req.onupgradeneeded=e=>e.target.result.createObjectStore("files",{keyPath:"name"});
+    req.onsuccess=e=>{
+      const db=e.target.result;
+      const tx=db.transaction("files","readwrite");
+      tx.objectStore("files").put({name:filename,text,savedAt:Date.now()});
+      tx.oncomplete=()=>resolve(true);
+    };
+    req.onerror=()=>resolve(false);
+  });
+}
+async function getStoredFile(filename){
+  return new Promise((resolve)=>{
+    const req=indexedDB.open("MiaoFiles",1);
+    req.onupgradeneeded=e=>e.target.result.createObjectStore("files",{keyPath:"name"});
+    req.onsuccess=e=>{
+      const db=e.target.result;
+      const tx=db.transaction("files","readonly");
+      const r=tx.objectStore("files").get(filename);
+      r.onsuccess=()=>resolve(r.result||null);
+      r.onerror=()=>resolve(null);
+    };
+    req.onerror=()=>resolve(null);
+  });
+}
+
 function openVoiceInput(){
   openQuickModal(`<div class="quick-modal-title">发送语音</div>
 <div style="font-size:12px;color:#999;margin-bottom:8px">格式：（声音描述）说的内容，括号可省略</div>
@@ -7627,5 +7770,4 @@ init();
 })();
 </script>
 </body>
-</html
-
+</html>
