@@ -3949,6 +3949,16 @@ ${typeof buildMemoryPrompt==="function" ? buildMemoryPrompt() : "暂无长期记
 你知道现在几点了。聊天时可以自然地根据时间做出符合常识的反应，比如现在是深夜就说睡了吗，现在是饭点就问吃了没（只是例子，并不代表一定作用例子），不需要刻意提到时间，像真人一样自然地感知就好。
 
 ${buildHiddenContextPrompt() ? `【隐藏上下文注入】\n${buildHiddenContextPrompt()}\n` : ""}
+${(()=>{
+  const s=getStorySummary();
+  return s?`【最近线下剧情摘要】\n${s}\n`:"";
+})()}
+${(()=>{
+  const calls=getCallHistory().filter(c=>c.type==="session"&&c.summary).slice(-3);
+  if(!calls.length) return "";
+  const lines=calls.map(c=>`[${c.time||""}] ${c.summary}`).join("\n");
+  return `【最近通话摘要（最近3次）】\n${lines}\n`;
+})()}
 
 【可用表情包】
 ${getStickerPromptList()}
