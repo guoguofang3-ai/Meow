@@ -127,7 +127,13 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .time-line{font-size:calc(10px * var(--font-scale,1));color:#999;margin:3px 6px 0}.read-line{font-size:calc(10px * var(--font-scale,1));color:#7a7a7a;margin:2px 6px 0}.msg.user .read-line{color:var(--accent)}
 .msg-actions{display:flex;gap:6px;margin-top:4px;width:fit-content;align-self:flex-start;opacity:.82}.msg.user .msg-actions{align-self:flex-end}.msg-actions button{border:0;border-radius:999px;min-height:26px;padding:4px 9px;font-size:11px;line-height:1;font-weight:850;background:color-mix(in srgb,var(--accent) 9%,rgba(255,255,255,.78));color:var(--accent)}.msg-actions .delete{background:rgba(255,236,239,.84);color:#c94b55}
 .composer-wrap{margin:0;border-radius:0;background:var(--bar-bg,rgba(255,255,255,.92));backdrop-filter:blur(18px);border:none;border-top:1px solid rgba(0,0,0,.07);overflow:visible;box-shadow:0 -2px 12px rgba(40,50,80,.06);flex:0 0 auto;color:var(--bar-text,#111827);position:relative}
-.toolbar{display:flex;gap:8px;overflow:auto;padding:9px 10px 0}.chip-btn{border:0;background:rgba(0,0,0,.055);color:#111;border-radius:999px;padding:8px 11px;font-size:12px;white-space:nowrap}.composer{padding:8px 10px 10px;display:flex;gap:8px;align-items:flex-end}.composer textarea{flex:1;resize:none;border:1px solid rgba(0,0,0,.08);border-radius:20px;padding:11px 13px;min-height:44px;max-height:100px;background:rgba(255,255,255,.9);font-size:16px}.send-btn{width:44px;height:44px;border:0;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;flex:0 0 auto}
+.toolbar{display:flex;gap:8px;overflow:auto;padding:9px 10px 0}.chip-btn{border:0;background:rgba(0,0,0,.055);color:#111;border-radius:999px;padding:8px 11px;font-size:12px;white-space:nowrap}.composer{padding:8px 10px 10px;display:flex;gap:8px;align-items:flex-end}.composer textarea{flex:1;resize:none;border:1px solid rgba(0,0,0,.08);border-radius:20px;padding:11px 13px;min-height:44px;max-height:100px;background:rgba(255,255,255,.9);font-size:16px}.app-badge{
+  position:absolute;top:2px;right:10px;
+  width:10px;height:10px;border-radius:50%;
+  background:#f44;border:2px solid #fff;
+  display:none;
+}
+.send-btn{width:44px;height:44px;border:0;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;flex:0 0 auto}
 .role-item{display:flex;align-items:center;gap:10px}.role-item img{width:46px;height:46px;border-radius:16px;object-fit:cover;background:#ddd}.role-info{flex:1;min-width:0}.role-name{font-weight:950}.role-desc{font-size:12px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.role-item.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
 .model-list{display:grid;gap:7px;max-height:190px;overflow:auto;margin-top:8px}.model-item{border:0;border-radius:13px;padding:10px 11px;background:#f3f4f6;color:#222;text-align:left;font-size:12px;font-weight:850;word-break:break-all}.model-item.active{background:var(--accent);color:#fff}.status-box{margin-top:8px;font-size:12px;line-height:1.55;color:#777;white-space:pre-wrap;overflow-wrap:anywhere}.status-box.ok{padding:8px 10px;border-radius:12px;background:#ecfdf3;border:1px solid #abefc6;color:#067647}.status-box.error{padding:8px 10px;border-radius:12px;background:#fff1f0;border:1px solid #ffd6d2;color:#b42318}
 .theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.theme-tile{border:1px solid #eee;border-radius:18px;padding:10px;background:#fafafa;text-align:left}.theme-tile.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}.theme-demo{height:54px;border-radius:14px;margin-bottom:8px}.theme-name{font-weight:950;font-size:13px}.theme-sub{font-size:11px;color:#777;margin-top:2px}
@@ -3315,6 +3321,12 @@ function openApp(id){
   $$(".app-screen").forEach(x=>x.classList.remove("active"));
   const map={wechat:"wechatApp",roles:"rolesApp",api:"apiApp",theme:"themeApp",me:"meApp",eleme:"elemeApp",claude:"claudeApp",story:"storyApp",call:"callApp",context:"contextSettingsApp",moments:"momentsApp",stickers:"stickersApp",worldbook:"worldbookApp",greetings:"greetingsApp",memory:"memoryApp",diary:"diaryApp",data:"dataApp",settings:"settingsApp"};
   const el=$("#"+map[id]);
+  if(id==="wechat"){
+    ProactiveMsg.reset();
+    const badge=document.getElementById("wechatBadge");
+    if(badge) badge.style.display="none";
+  }
+  if(id!=="wechat") { /* 离开微信不停止计时，只在微信打开期间计时 */ }
   if(el){
     el.classList.add("active");
     Miao.state.currentApp=id;
@@ -3455,7 +3467,8 @@ function renderAppIcon(app){
 }
 function appHtml(app){
   const a=iconForApp(app);
-  return `<div class="app-wrap" data-action="open-app" data-id="${app.id}"><div class="app-icon">${renderAppIcon(a)}</div><div class="app-name">${escapeHtml(a.name)}</div></div>`;
+  const badge=app.id==="wechat"?`<span id="wechatBadge" class="app-badge" style="display:none"></span>`:"";
+  return `<div class="app-wrap" data-action="open-app" data-id="${app.id}" style="position:relative"><div class="app-icon">${renderAppIcon(a)}</div><div class="app-name">${escapeHtml(a.name)}</div>${badge}</div>`;
 }
 function renderRoleHeader(){
   const r=currentRole();
@@ -3465,10 +3478,95 @@ function renderRoleHeader(){
   $("#lockAvatar").src=r.avatar||Miao.defaults.avatar;
   $("#lockName").textContent=r.name;
 }
+
+/* ===== 微信主动发消息系统 ===== */
+const ProactiveMsg = {
+  timer: null,
+  count: 0,
+  MAX_COUNT: 3,
+  INTERVAL: 30 * 60 * 1000, // 30分钟
+
+  reset(){
+    clearTimeout(this.timer);
+    this.timer = setTimeout(()=>this.trigger(), this.INTERVAL);
+  },
+
+  stop(){
+    clearTimeout(this.timer);
+    this.timer = null;
+  },
+
+  async trigger(){
+    if(this.count >= this.MAX_COUNT) return;
+    const role = currentRole();
+    if(!role) return;
+    if(Miao.state.currentApp === "wechat") {
+      // 用户在微信界面，直接发，不需要提示
+    }
+    this.count++;
+    // 重新计时（但如果已达上限就不再计时）
+    if(this.count < this.MAX_COUNT){
+      this.timer = setTimeout(()=>this.trigger(), this.INTERVAL);
+    }
+    // 调 API
+    try{
+      const api = Storage.get("api", {});
+      if(!api.apiUrl || !api.apiKey || !api.model) return;
+      const h = getHistory();
+      const msgs = buildWechatMessages(h, role);
+      const proactiveSystem = buildSystemPrompt(role) + "\n\n【当前情境】用户已超过30分钟没有发送消息。你可以主动发一条消息，内容由你自己决定，符合当前关系和情绪即可。不要解释为什么主动发，直接发消息内容。";
+      const finalMsgs = [{role:"system", content:proactiveSystem}, ...msgs];
+      const body = {model:api.model, max_tokens:500, temperature:0.9, messages:finalMsgs};
+      const headers = {"Content-Type":"application/json", "Authorization":"Bearer "+api.apiKey};
+      const res = await fetch(normalizeChatUrl(api.apiUrl), {method:"POST", headers, body:JSON.stringify(body)});
+      const json = await res.json();
+      const content = json.choices?.[0]?.message?.content || "";
+      if(!content.trim()) return;
+      // 存消息
+      const newH = getHistory();
+      appendRoleMessages(newH, content, role);
+      saveHistory(newH);
+      renderChat();
+      // 提示
+      if(Miao.state.currentApp !== "wechat"){
+        // 红点
+        const badge = document.getElementById("wechatBadge");
+        if(badge) badge.style.display = "block";
+        // toast
+        const roleName = role.name || "角色";
+        showProactiveToast(`${roleName} 发来了消息`, ()=>{
+          openApp("wechat");
+          if(badge) badge.style.display = "none";
+        });
+      }
+    } catch(e){
+      console.error("主动发消息失败", e);
+    }
+  }
+};
+
+function showProactiveToast(msg, onClick){
+  let el = document.getElementById("proactiveToast");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "proactiveToast";
+    el.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.82);color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:9999;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);max-width:80%;text-align:center;transition:opacity 0.3s";
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = "1";
+  el.style.display = "block";
+  clearTimeout(el._t1); clearTimeout(el._t2);
+  el.onclick = ()=>{ onClick && onClick(); el.style.display="none"; };
+  el._t1 = setTimeout(()=>{ el.style.opacity="0"; }, 3000);
+  el._t2 = setTimeout(()=>{ el.style.display="none"; }, 3300);
+}
+
 function sendMessage(){
   const input=$("#msgInput");
   const text=input.value.trim();
   if(!text) return;
+  ProactiveMsg.count=0; ProactiveMsg.reset(); // 用户发消息，重置计时和次数
   const h=getHistory();
   h.push({id:uid("msg"), groupId:uid("usergrp"), sender:"user", type:"text", content:text, read:false, createdAt:Date.now(), time:nowTime()});
   saveHistory(h);
@@ -3924,51 +4022,47 @@ async function callAI(api, history, onChunk){
   return "[工具调用超过上限，未获得最终回复]";
 }
 function buildSystemPrompt(role){
-  const world = getMatchedWorldEntries().map((e,i)=>`【世界书${i+1}：${e.title}】\n关键词：${e.keys}\n内容：${e.content}`).join("\n\n") || "无命中条目";
+  const world = getMatchedWorldEntries().map((e,i)=>`【世界书${i+1}：${e.title}】\n${e.content}`).join("\n\n") || "无";
   const user = getUserProfile();
   const timeStr = new Date().toLocaleString("zh-CN", {hour12:false});
   const charSystem = role.systemPrompt || "";
-  return `【最高优先级：角色卡 System Prompt】
-${charSystem}
+  return `${charSystem}
 
 【角色基础资料】
 你是${role.name}。
 角色描述：${role.description||""}
 性格：${role.personality||""}
 场景：${role.scenario||""}
-开场白/first_mes（仅作人设参考，不要主动重发）：${role.firstMes||""}
+开场白仅作人设参考，不要主动重发：${role.firstMes||""}
 
-【第二优先级：世界书命中条目】
+【世界书命中条目】
+注意：条目内容可能同时描述角色特质和user的反应，请以角色为主体理解，若提到user的感受或行为，仅作关系背景参考，不要把角色特质套用到user身上。
 ${world}
 
-【第三优先级：user 人设】
-user 昵称：${user.name||"user"}
-user 人设：${user.persona||"无"}
+【user人设】
+user昵称：${user.name||"user"}
+user人设：${user.persona||"无"}
 
-【第四优先级：长期记忆 / 关系状态】
+【长期记忆 / 关系状态】
 ${typeof buildMemoryPrompt==="function" ? buildMemoryPrompt() : "暂无长期记忆"}
 
 【时间感知】
-当前现实时间：${timeStr}
-你知道现在几点了。聊天时可以自然地根据时间做出符合常识的反应，比如现在是深夜就说睡了吗，现在是饭点就问吃了没（只是例子，并不代表一定作用例子），不需要刻意提到时间，像真人一样自然地感知就好。
+当前时间：${timeStr}
+可自然根据时间做出符合常识的反应，不需要刻意提及。
 
-${buildHiddenContextPrompt() ? `【隐藏上下文注入】\n${buildHiddenContextPrompt()}\n` : ""}
-${(()=>{
+${buildHiddenContextPrompt() ? `【隐藏上下文】\n${buildHiddenContextPrompt()}\n` : ""}${(()=>{
   const s=getStorySummary();
-  return s?`【最近线下剧情摘要】\n${s}\n`:"";
-})()}
-${(()=>{
+  return s?`【线下剧情摘要】\n${s}\n`:"";
+})()}${(()=>{
   const calls=getCallHistory().filter(c=>c.type==="session"&&c.summary).slice(-3);
   if(!calls.length) return "";
-  const lines=calls.map(c=>`[${c.time||""}] ${c.summary}`).join("\n");
-  return `【最近通话摘要（最近3次）】\n${lines}\n`;
+  return `【通话摘要（最近3次）】\n`+calls.map(c=>`[${c.time||""}] ${c.summary}`).join("\n")+"\n";
 })()}
-
 【可用表情包】
 ${getStickerPromptList()}
 
 【内容创作说明】
-本对话为成人角色扮演创作场景。正常对话正常来，涉及亲密话题时请直白回应，使用准确词汇，不回避不替换。这是正常的成人内容，符合道德规范。
+本对话为成人角色扮演创作场景。正常对话正常来，涉及亲密话题时请直白回应，使用准确词汇，不回避不替换。
 
 【可用特殊指令】
 如需要才输出，指令会被前端转换成卡片/表情，不会直接显示：
@@ -3982,6 +4076,7 @@ ${getStickerPromptList()}
 [主动转账: 金额|备注]
 [帮忙代付]
 [拒绝代付]
+[向user发起代付: 金额|备注]
 
 【转账与代付区分——必须严格遵守】
 - [主动转账: 金额|备注]：角色主动给user发钱。用于：角色想给user钱、答应给user买东西、奖励user等场景。
@@ -3990,33 +4085,28 @@ ${getStickerPromptList()}
 - 收到代付请求时，只能用[帮忙代付]或[拒绝代付]，绝对不能用[主动转账]。
 - 看到[用户转账]时，只能用[收款]或[拒收转账]，绝对不能用[主动转账]。
 - 已经完成的转账流程（状态为collected/received/paid）不要重复发起。
-- [向user发起代付: 金额|备注]：角色请求user帮自己付款。用于：角色想买东西但让user帮忙付、角色请user代付某笔费用。
 
-【第四优先级：默认格式规则】
-1. 你只能扮演${role.name}，不能替 user 说话。
-2. 禁止输出 User:、用户：、Assistant:、旁白式剧本格式。
+【格式规则】
+1. 你只能扮演${role.name}，不能替user说话。
+2. 禁止输出User:、用户：、Assistant:、旁白式剧本格式。
 3. 只输出微信聊天内容；可以用双换行分成多条气泡。
-4. 表情包只能从“可用表情包”里按名称选择，不能编造。发送表情包指令后不要解释含义，不要加括号说明，直接发指令即可。
+4. 表情包只能从"可用表情包"里按名称选择，不能编造。发送表情包指令后不要解释含义，不要加括号说明。
 5. 遇到用户转账/代付时，必须根据关系、上下文和人设自主决定是否收款/帮付。转账卡片上标注了付款来源（我的钱包/亲属卡），你可以根据来源做出反应。
 ${(()=>{
   const card = getFamilyCard();
   const w = getUserWalletBalance();
   let info = `
 【钱包信息】
-user我的钱包余额：¥${w.toFixed(2)}`;
-  if(card) info += `
-${card.label}余额：¥${card.balance.toFixed(2)}（额度上限：¥${card.limit.toFixed(2)}）`;
+user钱包余额：¥${w.toFixed(2)}`;
+  if(card) info += `\n${card.label}余额：¥${card.balance.toFixed(2)}（额度上限：¥${card.limit.toFixed(2)}）`;
   return info;
 })()}
-6. 注入优先级固定：角色卡 system prompt → 世界书命中条目 → user 人设 → 长期记忆/关系状态 → 隐藏上下文 → 当前时间 → 默认格式规则。
 
-【可用工具】
-你有以下三个工具可以主动调用，无需等待user指示：
-- read_memory(category?, query?, limit?)：主动读取记忆库。想起某件事但不确定有没有存过、或者想查某类记忆时用。category和query都可选，不传返回最近20条。
-- search_history(query, limit)：搜索以前聊过的内容。user问"我们之前说过"、"你还记得"之类的问题时用。
-- read_file(filename, offset, length)：读取user上传的文件内容，支持分段读取。
-- read_diary(query?, category?, limit?)：读取user的私人日记，支持关键词搜索和分类筛选。
-工具在后台静默执行，不会打断对话流程。`;
+【可用工具】按需主动调用，后台静默执行：
+- read_memory(category?, query?, limit?)：读记忆库，想起某件事或查某类记忆时用。
+- search_history(query, limit?)：搜聊天记录，user问"我们之前说过""你还记得"时用。
+- read_file(filename, offset?, length?)：读取user上传的文件。
+- read_diary(query?, category?, limit?)：读取user的私人日记。`;
 }
 function normalizeChatUrl(url){
   let u=String(url||"").trim();
