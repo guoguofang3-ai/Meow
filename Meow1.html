@@ -4934,7 +4934,7 @@ async function callStoryReply(){
   const system=`${buildSystemPrompt(role)}
 【线下剧情 App】
 这是独立于微信聊天的线下剧情。你要根据角色人设接剧情，像小说/互动剧情一样自然回应。
-可以写动作、神态和台词，但不要替 user 决定行为。${presetBlock?"\n\n【线下剧情预设指导】\n"+presetBlock:""}${wechatCtx}`;
+可以写动作、神态和台词。${presetBlock?"\n\n【线下剧情预设指导】\n"+presetBlock:""}${wechatCtx}`;
     const messages=[{role:"system", content:system}, ...h.slice(-60).map(m=>({role:m.sender==="user"?"user":"assistant", content:m.content}))];
     const res=await fetch(normalizeChatUrl(api.apiUrl),{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+api.apiKey},body:JSON.stringify({model:api.model,messages,temperature:.85})});
     const text=await res.text();
