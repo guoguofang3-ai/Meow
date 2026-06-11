@@ -2740,6 +2740,7 @@ function init(){
   renderAll();
   updateClock();
   setInterval(updateClock, 30000);
+  ProactiveMsg.reset(); // 打开喵喵机就开始计时
 }
 function normalizeRoleData(){
   let roles=Storage.get("roles", []);
@@ -3322,11 +3323,9 @@ function openApp(id){
   const map={wechat:"wechatApp",roles:"rolesApp",api:"apiApp",theme:"themeApp",me:"meApp",eleme:"elemeApp",claude:"claudeApp",story:"storyApp",call:"callApp",context:"contextSettingsApp",moments:"momentsApp",stickers:"stickersApp",worldbook:"worldbookApp",greetings:"greetingsApp",memory:"memoryApp",diary:"diaryApp",data:"dataApp",settings:"settingsApp"};
   const el=$("#"+map[id]);
   if(id==="wechat"){
-    ProactiveMsg.reset();
     const badge=document.getElementById("wechatBadge");
     if(badge) badge.style.display="none";
   }
-  if(id!=="wechat") { /* 离开微信不停止计时，只在微信打开期间计时 */ }
   if(el){
     el.classList.add("active");
     Miao.state.currentApp=id;
