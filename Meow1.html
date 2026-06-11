@@ -4806,10 +4806,28 @@ async function callStoryReply(){
     const presetPrompt=getActivePresetPrompt();
   const povPrompt=getActivePovPrompt();
   const presetBlock=[presetPrompt,povPrompt].filter(Boolean).join("\n\n");
+  // 注入最近微信聊天记录作为背景
+  const wechatCtx=(()=>{
+    const wh=getHistory().filter(m=>["text","voice"].includes(m.type));
+    const grouped=[];
+    for(const m of wh){
+      const apiRole=m.sender==="user"?"user":"role";
+      const last=grouped[grouped.length-1];
+      if(last&&last.role===apiRole&&apiRole==="role"&&m.groupId&&last._gid===m.groupId){
+        last.content+=" "+m.content;
+      }else{
+        grouped.push({role:apiRole,content:m.content,_gid:m.groupId||null});
+      }
+    }
+    const recent=grouped.slice(-8);
+    if(!recent.length) return "";
+    const lines=recent.map(m=>`${m.role==="user"?(getUserProfile().name||"user"):role.name}：${m.content}`).join("\n");
+    return `\n【进入线下剧情前的微信聊天背景（最近8轮）】\n${lines}\n`;
+  })();
   const system=`${buildSystemPrompt(role)}
 【线下剧情 App】
 这是独立于微信聊天的线下剧情。你要根据角色人设接剧情，像小说/互动剧情一样自然回应。
-可以写动作、神态和台词，但不要替 user 决定行为。${presetBlock?"\n\n【线下剧情预设指导】\n"+presetBlock:""}`;
+可以写动作、神态和台词，但不要替 user 决定行为。${presetBlock?"\n\n【线下剧情预设指导】\n"+presetBlock:""}${wechatCtx}`;
     const messages=[{role:"system", content:system}, ...h.slice(-60).map(m=>({role:m.sender==="user"?"user":"assistant", content:m.content}))];
     const res=await fetch(normalizeChatUrl(api.apiUrl),{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+api.apiKey},body:JSON.stringify({model:api.model,messages,temperature:.85})});
     const text=await res.text();
@@ -4929,12 +4947,24 @@ async function callVoiceReply(){
     const h=getCallHistory();
     const role=currentRole();
     // 注入最近微信聊天记录作为背景
-    const wechatCtx = (()=>{
-      const wh = getHistory().filter(m=>["text","voice"].includes(m.type)).slice(-10);
-      if(!wh.length) return "";
-      const lines = wh.map(m=>`${m.sender==="user"?(getUserProfile().name||"user"):role.name}：${m.content}`).join("\n");
-      return `\n【打电话前的微信聊天背景（最近10条）】\n${lines}\n`;
-    })();
+    const label="打电话前的微信聊天背景（最近8轮）";
+  const wechatCtx=(()=>{
+    const wh=getHistory().filter(m=>["text","voice"].includes(m.type));
+    const grouped=[];
+    for(const m of wh){
+      const apiRole=m.sender==="user"?"user":"role";
+      const last=grouped[grouped.length-1];
+      if(last&&last.role===apiRole&&apiRole==="role"&&m.groupId&&last._gid===m.groupId){
+        last.content+=" "+m.content;
+      }else{
+        grouped.push({role:apiRole,content:m.content,_gid:m.groupId||null});
+      }
+    }
+    const recent=grouped.slice(-8);
+    if(!recent.length) return "";
+    const lines=recent.map(m=>`${m.role==="user"?(getUserProfile().name||"user"):role.name}：${m.content}`).join("\n");
+    return `\n【${label}】\n${lines}\n`;
+  })();
     const system=`${buildSystemPrompt(role)}
 【语音通话 App】
 你正在和 user 通话。回复要像电话里说话，可以在文字开头用括号标注情绪/语气，例如（压低声音）（有点担心）（轻笑）。
