@@ -1433,8 +1433,12 @@ body{font-size:calc(14px * var(--font-scale));}
 .card,.moment-card,.eleme-store-card,.eleme-food-card,.eleme-cart,.eleme-order-card,.hidden-context-card,.world-entry,.greeting-entry,.sticker-card{
   border-radius:var(--miao-radius)!important;
 }
-.msg.user .bubble{background:var(--user-bubble-bg)!important}
-.msg.role .bubble{background:var(--role-bubble-bg)!important}
+.msg.user .bubble{background:var(--user-bubble-bg)!important;color:var(--user-text)}
+.msg.user .bubble *{color:var(--user-text)}
+.msg.role .bubble{background:var(--role-bubble-bg)!important;color:var(--role-text)}
+.msg.role .bubble *{color:var(--role-text)}
+.claude-msg.user .claude-bubble{color:var(--user-text)!important}
+.claude-msg.user .claude-bubble *{color:var(--user-text)!important}
 .app-icon{background:var(--app-icon-bg)!important}
 .moments-app{background:var(--moments-bg)!important}
 .claude-app{background:var(--claude-bg)!important}
@@ -4385,7 +4389,11 @@ function applyCustomThemeFromEditor(){
     customCSS:document.getElementById("themeCustomCSSInput")?.value||"",
     barBg:val("themeBarBgInput")||"#ffffff",
     barAlpha:Number(val("themeBarAlphaInput"))||85,
-    barText:val("themeBarTextInput")||"#111827"
+    barText:val("themeBarTextInput")||"#111827",
+    userText:val("themeUserTextInput")||"#6a5a61",
+    roleText:val("themeRoleTextInput")||"#4f4448",
+    timeText:val("themeTimeTextInput")||"#b9afb4",
+    nicknameText:val("themeNicknameTextInput")||"#5b4c52"
   };
   saveThemeConfig(t);
   applyVisuals();
