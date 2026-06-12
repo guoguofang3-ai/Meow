@@ -123,11 +123,53 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .date-chip,.system-card{margin:10px auto;padding:7px 12px;background:rgba(0,0,0,.06);color:#666;border-radius:999px;font-size:12px;width:max-content;max-width:92%;text-align:center;backdrop-filter:blur(10px)}
 .system-card.error{background:#fff1f0;border:1px solid #ffd6d2;color:#b42318;border-radius:16px;width:auto}
 .msg{display:flex;gap:8px;margin:10px 0;align-items:flex-start}.msg.user{flex-direction:row-reverse}.avatar{width:35px;height:35px;border-radius:50%;object-fit:cover;background:#ddd;flex:0 0 auto;box-shadow:0 3px 12px rgba(0,0,0,.08);margin-top:2px}.bubble-wrap{max-width:76%;display:flex;flex-direction:column;align-items:flex-start}.msg.user .bubble-wrap{align-items:flex-end}
-.name-line{font-size:10px;color:#777;margin:0 5px 3px}.bubble{width:fit-content;max-width:100%;padding:10px 12px;border-radius:18px;line-height:1.5;font-size:14px;white-space:pre-wrap;word-break:break-word;box-shadow:0 4px 16px rgba(0,0,0,.055);user-select:none}.msg.role .bubble{background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.8);border-bottom-left-radius:6px}.msg.user .bubble{background:var(--accent);color:#fff;border-bottom-right-radius:6px}
-.time-line{font-size:10px;color:#999;margin:3px 6px 0}.read-line{font-size:10px;color:#7a7a7a;margin:2px 6px 0}.msg.user .read-line{color:var(--accent)}
+.name-line{font-size:calc(10px * var(--font-scale,1));color:#777;margin:0 5px 3px}.bubble{width:fit-content;max-width:100%;padding:10px 12px;border-radius:18px;line-height:1.5;font-size:calc(14px * var(--font-scale,1));white-space:pre-wrap;word-break:break-word;box-shadow:0 4px 16px rgba(0,0,0,.055);user-select:none}.msg.role .bubble{background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.8);border-bottom-left-radius:6px}.msg.user .bubble{background:var(--accent);color:#fff;border-bottom-right-radius:6px}
+.time-line{font-size:calc(10px * var(--font-scale,1));color:#999;margin:3px 6px 0}.read-line{font-size:calc(10px * var(--font-scale,1));color:#7a7a7a;margin:2px 6px 0}.msg.user .read-line{color:var(--accent)}
 .msg-actions{display:flex;gap:6px;margin-top:4px;width:fit-content;align-self:flex-start;opacity:.82}.msg.user .msg-actions{align-self:flex-end}.msg-actions button{border:0;border-radius:999px;min-height:26px;padding:4px 9px;font-size:11px;line-height:1;font-weight:850;background:color-mix(in srgb,var(--accent) 9%,rgba(255,255,255,.78));color:var(--accent)}.msg-actions .delete{background:rgba(255,236,239,.84);color:#c94b55}
 .composer-wrap{margin:0;border-radius:0;background:var(--bar-bg,rgba(255,255,255,.92));backdrop-filter:blur(18px);border:none;border-top:1px solid rgba(0,0,0,.07);overflow:visible;box-shadow:0 -2px 12px rgba(40,50,80,.06);flex:0 0 auto;color:var(--bar-text,#111827);position:relative}
-.toolbar{display:flex;gap:8px;overflow:auto;padding:9px 10px 0}.chip-btn{border:0;background:rgba(0,0,0,.055);color:#111;border-radius:999px;padding:8px 11px;font-size:12px;white-space:nowrap}.composer{padding:8px 10px 10px;display:flex;gap:8px;align-items:flex-end}.composer textarea{flex:1;resize:none;border:1px solid rgba(0,0,0,.08);border-radius:20px;padding:11px 13px;min-height:44px;max-height:100px;background:rgba(255,255,255,.9);font-size:16px}.send-btn{width:44px;height:44px;border:0;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;flex:0 0 auto}
+.toolbar{display:flex;gap:8px;overflow:auto;padding:9px 10px 0}.chip-btn{border:0;background:rgba(0,0,0,.055);color:#111;border-radius:999px;padding:8px 11px;font-size:12px;white-space:nowrap}.composer{padding:8px 10px 10px;display:flex;gap:8px;align-items:flex-end}.composer textarea{flex:1;resize:none;border:1px solid rgba(0,0,0,.08);border-radius:20px;padding:11px 13px;min-height:44px;max-height:100px;background:rgba(255,255,255,.9);font-size:16px}.sticky-note-bar {
+  background: #fffde7;
+  border-bottom: 1px solid #ffe082;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #5d4037;
+  display: none;
+  position: relative;
+}
+.sticky-note-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,224,130,0.4);
+}
+.sticky-note-item:last-child { border-bottom: none; }
+.sticky-note-text { flex: 1; line-height: 1.4; }
+.sticky-note-del {
+  background: none; border: none;
+  color: #bbb; font-size: 16px;
+  cursor: pointer; padding: 0 4px; flex-shrink: 0;
+}
+.sticky-note-del:hover { color: #e57373; }
+.sticky-note-add {
+  margin-top: 6px;
+  background: rgba(255,193,7,0.2);
+  border: 1px dashed #ffc107;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #8d6e63;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+}
+.app-badge{
+  position:absolute;top:2px;right:10px;
+  width:10px;height:10px;border-radius:50%;
+  background:#f44;border:2px solid #fff;
+  display:none;
+}
+.send-btn{width:44px;height:44px;border:0;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;flex:0 0 auto}
 .role-item{display:flex;align-items:center;gap:10px}.role-item img{width:46px;height:46px;border-radius:16px;object-fit:cover;background:#ddd}.role-info{flex:1;min-width:0}.role-name{font-weight:950}.role-desc{font-size:12px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.role-item.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
 .model-list{display:grid;gap:7px;max-height:190px;overflow:auto;margin-top:8px}.model-item{border:0;border-radius:13px;padding:10px 11px;background:#f3f4f6;color:#222;text-align:left;font-size:12px;font-weight:850;word-break:break-all}.model-item.active{background:var(--accent);color:#fff}.status-box{margin-top:8px;font-size:12px;line-height:1.55;color:#777;white-space:pre-wrap;overflow-wrap:anywhere}.status-box.ok{padding:8px 10px;border-radius:12px;background:#ecfdf3;border:1px solid #abefc6;color:#067647}.status-box.error{padding:8px 10px;border-radius:12px;background:#fff1f0;border:1px solid #ffd6d2;color:#b42318}
 .theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.theme-tile{border:1px solid #eee;border-radius:18px;padding:10px;background:#fafafa;text-align:left}.theme-tile.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}.theme-demo{height:54px;border-radius:14px;margin-bottom:8px}.theme-name{font-weight:950;font-size:13px}.theme-sub{font-size:11px;color:#777;margin-top:2px}
@@ -242,7 +284,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   font-variant-numeric:tabular-nums;
 }
 .voice-text{
-  font-size:13px;
+  font-size:calc(13px * var(--font-scale,1));
   line-height:1.55;
   padding:6px 14px 2px;
   color:#888;
@@ -276,7 +318,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   flex-shrink:0;
 }
 .link-card-title{
-  font-size:13px;
+  font-size:calc(13px * var(--font-scale,1));
   font-weight:600;
   line-height:1.4;
   color:#222;
@@ -327,7 +369,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   gap:6px;
 }
 .image-desc-text{
-  font-size:13px;
+  font-size:calc(13px * var(--font-scale,1));
   line-height:1.55;
   white-space:pre-wrap;
 }
@@ -698,7 +740,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .moment-name{font-weight:950}
 .moment-time{font-size:11px;color:#999;margin-top:1px}
 .moment-content{
-  font-size:14px;
+  font-size:calc(14px * var(--font-scale,1));
   line-height:1.6;
   margin:10px 0;
   white-space:pre-wrap;
@@ -982,9 +1024,9 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .claude-avatar img{width:100%;height:100%;object-fit:cover}
 .claude-bwrap{max-width:78%;display:flex;flex-direction:column;align-items:flex-start}
 .claude-msg.user .claude-bwrap{align-items:flex-end}
-.claude-name{font-size:10px;color:#777;margin:0 5px 3px}
+.claude-name{font-size:calc(10px * var(--font-scale,1));color:#777;margin:0 5px 3px}
 .claude-bubble{
-  width:fit-content;max-width:100%;padding:10px 12px;border-radius:var(--radius,18px);line-height:1.5;font-size:14px;white-space:pre-wrap;word-break:break-word;
+  width:fit-content;max-width:100%;padding:10px 12px;border-radius:var(--radius,18px);line-height:1.5;font-size:calc(14px * var(--font-scale,1));white-space:pre-wrap;word-break:break-word;
   background:var(--role-bubble,rgba(255,255,255,.92));color:var(--role-text,#333);border:1px solid rgba(255,255,255,.8);box-shadow:0 4px 16px rgba(0,0,0,.055);
 }
 .claude-msg.user .claude-bubble{background:var(--user-bubble,var(--accent));color:var(--user-text,#fff)}
@@ -1054,7 +1096,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   width:34px;height:34px;border-radius:50%;object-fit:cover;background:#ddd;flex:0 0 auto;
 }
 .story-bubble{
-  max-width:78%;padding:10px 12px;border-radius:18px;line-height:1.6;font-size:14px;white-space:pre-wrap;word-break:break-word;
+  max-width:78%;padding:10px 12px;border-radius:18px;line-height:1.6;font-size:calc(14px * var(--font-scale,1));white-space:pre-wrap;word-break:break-word;
   background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.8);box-shadow:0 4px 16px rgba(0,0,0,.055);
 }
 .story-msg.user .story-bubble{background:var(--accent);color:#fff}
@@ -1433,8 +1475,12 @@ body{font-size:calc(14px * var(--font-scale));}
 .card,.moment-card,.eleme-store-card,.eleme-food-card,.eleme-cart,.eleme-order-card,.hidden-context-card,.world-entry,.greeting-entry,.sticker-card{
   border-radius:var(--miao-radius)!important;
 }
-.msg.user .bubble{background:var(--user-bubble-bg)!important}
-.msg.role .bubble{background:var(--role-bubble-bg)!important}
+.msg.user .bubble{background:var(--user-bubble-bg)!important;color:var(--user-text)}
+.msg.user .bubble *{color:var(--user-text)}
+.msg.role .bubble{background:var(--role-bubble-bg)!important;color:var(--role-text)}
+.msg.role .bubble *{color:var(--role-text)}
+.claude-msg.user .claude-bubble{color:var(--user-text)!important}
+.claude-msg.user .claude-bubble *{color:var(--user-text)!important}
 .app-icon{background:var(--app-icon-bg)!important}
 .moments-app{background:var(--moments-bg)!important}
 .claude-app{background:var(--claude-bg)!important}
@@ -1859,10 +1905,10 @@ body{font-size:calc(14px * var(--font-scale));}
   --nickname-text:#5b4c52;
 }
 .msg.user .bubble{
-  color:var(--user-text)!important;
+  color:var(--user-text);
 }
 .msg.role .bubble{
-  color:var(--role-text)!important;
+  color:var(--role-text);
 }
 .time-line,
 .date-chip,
@@ -1966,10 +2012,13 @@ body{font-size:calc(14px * var(--font-scale));}
           <button class="icon-btn" data-action="open-settings">⚙</button>
         </div>
       </div>
+      <div id="stickyNoteBar" class="sticky-note-bar"></div>
       <div class="chat" id="chat"></div>
       <div class="composer-wrap" id="wechatComposer">
         <div class="toolbar">
           <button class="chip-btn" data-action="open-sticker-picker">表情包</button>
+          <button class="chip-btn" data-action="roll-dice">🎲骰子</button>
+          <button class="chip-btn" data-action="open-sticky-note">📝便签</button>
           <button class="chip-btn" data-action="open-image-desc">图片</button>
           <button class="chip-btn" data-action="open-voice-input">语音</button>
           <button class="chip-btn" data-action="open-link-input">链接</button>
@@ -2730,6 +2779,7 @@ function init(){
   renderAll();
   updateClock();
   setInterval(updateClock, 30000);
+  ProactiveMsg.reset(); // 打开喵喵机就开始计时
 }
 function normalizeRoleData(){
   let roles=Storage.get("roles", []);
@@ -2942,6 +2992,11 @@ function bindEvents(){
     if(action==="save-memory-entry") saveMemoryEntryFromModal();
     if(action==="delete-memory") deleteMemory(id,btn.dataset.scope);
     if(action==="open-diary-entry") openDiaryEntryModal(id||"");
+    if(action==="roll-dice") rollDice();
+    if(action==="open-sticky-note") addStickyNote();
+    if(action==="add-sticky-note") addStickyNote();
+    if(action==="save-sticky-note") saveStickyNoteFromModal();
+    if(action==="delete-sticky") deleteStickyNote(id);
     if(action==="save-diary-entry") saveDiaryEntryFromModal(id||"");
     if(action==="delete-diary") deleteDiary(id);
     if(action==="toggle-memory-lock") toggleMemoryLock(id,btn.dataset.scope);
@@ -3311,6 +3366,16 @@ function openApp(id){
   $$(".app-screen").forEach(x=>x.classList.remove("active"));
   const map={wechat:"wechatApp",roles:"rolesApp",api:"apiApp",theme:"themeApp",me:"meApp",eleme:"elemeApp",claude:"claudeApp",story:"storyApp",call:"callApp",context:"contextSettingsApp",moments:"momentsApp",stickers:"stickersApp",worldbook:"worldbookApp",greetings:"greetingsApp",memory:"memoryApp",diary:"diaryApp",data:"dataApp",settings:"settingsApp"};
   const el=$("#"+map[id]);
+  if(id==="wechat"){
+    const badge=document.getElementById("wechatBadge");
+    if(badge) badge.style.display="none";
+    renderStickyNotes();
+    // 记录上次访问时间
+    const now = Date.now();
+    const last = Storage.get("lastWechatVisit", 0);
+    Storage.set("lastWechatVisit", now);
+    Miao.state.lastWechatVisitMs = last;
+  }
   if(el){
     el.classList.add("active");
     Miao.state.currentApp=id;
@@ -3334,6 +3399,7 @@ function renderAll(){
   safeRun("角色头部渲染", renderRoleHeader);
   safeRun("user资料渲染", renderUserProfile);
   safeRun("微信渲染", renderChat);
+  safeRun("便签渲染", renderStickyNotes);
   safeRun("角色卡渲染", renderRoles);
   safeRun("API渲染", renderApi);
   safeRun("主题渲染", renderThemes);
@@ -3451,7 +3517,8 @@ function renderAppIcon(app){
 }
 function appHtml(app){
   const a=iconForApp(app);
-  return `<div class="app-wrap" data-action="open-app" data-id="${app.id}"><div class="app-icon">${renderAppIcon(a)}</div><div class="app-name">${escapeHtml(a.name)}</div></div>`;
+  const badge=app.id==="wechat"?`<span id="wechatBadge" class="app-badge" style="display:none"></span>`:"";
+  return `<div class="app-wrap" data-action="open-app" data-id="${app.id}" style="position:relative"><div class="app-icon">${renderAppIcon(a)}</div><div class="app-name">${escapeHtml(a.name)}</div>${badge}</div>`;
 }
 function renderRoleHeader(){
   const r=currentRole();
@@ -3461,10 +3528,153 @@ function renderRoleHeader(){
   $("#lockAvatar").src=r.avatar||Miao.defaults.avatar;
   $("#lockName").textContent=r.name;
 }
+
+
+/* ===== 便签条系统 ===== */
+function getStickyNotes(){
+  return Storage.get(Storage.roleKey("stickyNotes"), []);
+}
+function saveStickyNotes(list){
+  Storage.set(Storage.roleKey("stickyNotes"), list||[]);
+}
+function renderStickyNotes(){
+  const bar = document.getElementById("stickyNoteBar");
+  if(!bar) return;
+  const notes = getStickyNotes();
+  if(!notes.length){ bar.style.display="none"; return; }
+  bar.style.display = "block";
+  bar.innerHTML = notes.map((n,i)=>`
+    <div class="sticky-note-item">
+      <span class="sticky-note-text">${escapeHtml(n.text)}</span>
+      <button class="sticky-note-del" data-action="delete-sticky" data-id="${n.id}">×</button>
+    </div>`).join("") +
+    `<button class="sticky-note-add" data-action="add-sticky-note">＋ 写便签</button>`;
+}
+function addStickyNote(){
+  openQuickModal(`<div class="quick-modal-title">📝 写便签</div>
+    <textarea id="stickyNoteInput" placeholder="写下想说的话..." style="height:80px"></textarea>
+    <div class="btn-row">
+      <button class="btn" data-action="close-quick-modal">取消</button>
+      <button class="btn primary" data-action="save-sticky-note">贴上</button>
+    </div>`);
+}
+function saveStickyNoteFromModal(){
+  const text = (document.getElementById("stickyNoteInput")?.value||"").trim();
+  if(!text){ toast("请写点什么"); return; }
+  const list = getStickyNotes();
+  list.push({id:uid("stk"), text, createdAt:Date.now()});
+  saveStickyNotes(list);
+  closeQuickModal();
+  renderStickyNotes();
+  toast("便签已贴上");
+}
+function deleteStickyNote(id){
+  const list = getStickyNotes().filter(n=>n.id!==id);
+  saveStickyNotes(list);
+  renderStickyNotes();
+}
+
+/* ===== 骰子 ===== */
+function rollDice(){
+  const faces = [4,6,8,10,12,20];
+  const face = faces[Math.floor(Math.random()*faces.length)];
+  const result = Math.floor(Math.random()*face)+1;
+  const h = getHistory();
+  h.push({id:uid("msg"), groupId:uid("usergrp"), sender:"user", type:"text",
+    content:`🎲 d${face} → ${result}`, read:false, createdAt:Date.now(), time:nowTime()});
+  saveHistory(h);
+  renderChat();
+  const chat=$("#chat"); if(chat) chat.scrollTop=chat.scrollHeight;
+}
+
+/* ===== 微信主动发消息系统 ===== */
+const ProactiveMsg = {
+  timer: null,
+  count: 0,
+  MAX_COUNT: 3,
+  INTERVAL: 30 * 60 * 1000, // 30分钟
+
+  reset(){
+    clearTimeout(this.timer);
+    this.timer = setTimeout(()=>this.trigger(), this.INTERVAL);
+  },
+
+  stop(){
+    clearTimeout(this.timer);
+    this.timer = null;
+  },
+
+  async trigger(){
+    if(this.count >= this.MAX_COUNT) return;
+    const role = currentRole();
+    if(!role) return;
+    if(Miao.state.currentApp === "wechat") {
+      // 用户在微信界面，直接发，不需要提示
+    }
+    this.count++;
+    // 重新计时（但如果已达上限就不再计时）
+    if(this.count < this.MAX_COUNT){
+      this.timer = setTimeout(()=>this.trigger(), this.INTERVAL);
+    }
+    // 调 API
+    try{
+      const api = Storage.get("api", {});
+      if(!api.apiUrl || !api.apiKey || !api.model) return;
+      const h = getHistory();
+      const msgs = buildWechatMessages(h, role);
+      const proactiveSystem = buildSystemPrompt(role) + "\n\n【当前情境】用户已超过30分钟没有发送消息。你可以主动发一条消息，内容由你自己决定，符合当前关系和情绪即可。不要解释为什么主动发，直接发消息内容。";
+      const finalMsgs = [{role:"system", content:proactiveSystem}, ...msgs];
+      const body = {model:api.model, max_tokens:500, temperature:0.9, messages:finalMsgs};
+      const headers = {"Content-Type":"application/json", "Authorization":"Bearer "+api.apiKey};
+      const res = await fetch(normalizeChatUrl(api.apiUrl), {method:"POST", headers, body:JSON.stringify(body)});
+      const json = await res.json();
+      const content = json.choices?.[0]?.message?.content || "";
+      if(!content.trim()) return;
+      // 存消息
+      const newH = getHistory();
+      appendRoleMessages(newH, content, role);
+      saveHistory(newH);
+      renderChat();
+      // 提示
+      if(Miao.state.currentApp !== "wechat"){
+        // 红点
+        const badge = document.getElementById("wechatBadge");
+        if(badge) badge.style.display = "block";
+        // toast
+        const roleName = role.name || "角色";
+        showProactiveToast(`${roleName} 发来了消息`, ()=>{
+          openApp("wechat");
+          if(badge) badge.style.display = "none";
+        });
+      }
+    } catch(e){
+      console.error("主动发消息失败", e);
+    }
+  }
+};
+
+function showProactiveToast(msg, onClick){
+  let el = document.getElementById("proactiveToast");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "proactiveToast";
+    el.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.82);color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:9999;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);max-width:80%;text-align:center;transition:opacity 0.3s";
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = "1";
+  el.style.display = "block";
+  clearTimeout(el._t1); clearTimeout(el._t2);
+  el.onclick = ()=>{ onClick && onClick(); el.style.display="none"; };
+  el._t1 = setTimeout(()=>{ el.style.opacity="0"; }, 3000);
+  el._t2 = setTimeout(()=>{ el.style.display="none"; }, 3300);
+}
+
 function sendMessage(){
   const input=$("#msgInput");
   const text=input.value.trim();
   if(!text) return;
+  ProactiveMsg.count=0; ProactiveMsg.reset(); // 用户发消息，重置计时和次数
   const h=getHistory();
   h.push({id:uid("msg"), groupId:uid("usergrp"), sender:"user", type:"text", content:text, read:false, createdAt:Date.now(), time:nowTime()});
   saveHistory(h);
@@ -3775,6 +3985,7 @@ async function callAIReply(){
       if(Miao.state.streamPartial) delete Miao.state.streamPartial[streamMsgId];
       saveHistory(hh);
       renderChat();
+      checkSaveMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
     } else {
       const parsed=parseAIReplyUnified(reply,groupId);
@@ -3783,6 +3994,7 @@ async function callAIReply(){
       parsed.forEach(m=>h.push(m));
       saveHistory(h);
       renderChat();
+      checkSaveMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
     }
   }catch(err){
@@ -3812,6 +4024,31 @@ function messageToAIContext(m){
   if(m.type==="rejected") return `[拒绝:${m.content||""}]`;
   return m.content||"";
 }
+
+/* ===== SAVE 标记自动存记忆 ===== */
+function checkSaveMarker(replyText){
+  if(!replyText) return;
+  const match = replyText.match(/\[SAVE:\s*([^\]]+)\]/);
+  if(!match) return;
+  const title = match[1].trim();
+  if(!title) return;
+  const list = getMemories();
+  if(list.find(m=>m.title===title)) return; // 去重
+  const role = currentRole();
+  list.push({
+    id: uid("mem"),
+    title: title,
+    type: "具体事件",
+    content: title,
+    source: `微信${role?.name||"角色"}写入`,
+    important: false,
+    locked: false,
+    createdAt: Date.now(),
+    time: nowTime()
+  });
+  saveMemories(list);
+}
+
 async function callAI(api, history, onChunk){
   const role=currentRole();
   const system=buildSystemPrompt(role);
@@ -3920,41 +4157,58 @@ async function callAI(api, history, onChunk){
   return "[工具调用超过上限，未获得最终回复]";
 }
 function buildSystemPrompt(role){
-  const world = getMatchedWorldEntries().map((e,i)=>`【世界书${i+1}：${e.title}】\n关键词：${e.keys}\n内容：${e.content}`).join("\n\n") || "无命中条目";
+  const world = getMatchedWorldEntries().map((e,i)=>`【世界书${i+1}：${e.title}】\n${e.content}`).join("\n\n") || "无";
   const user = getUserProfile();
   const timeStr = new Date().toLocaleString("zh-CN", {hour12:false});
   const charSystem = role.systemPrompt || "";
-  return `【最高优先级：角色卡 System Prompt】
-${charSystem}
+  return `${charSystem}
 
 【角色基础资料】
 你是${role.name}。
 角色描述：${role.description||""}
 性格：${role.personality||""}
 场景：${role.scenario||""}
-开场白/first_mes（仅作人设参考，不要主动重发）：${role.firstMes||""}
+开场白仅作人设参考，不要主动重发：${role.firstMes||""}
 
-【第二优先级：世界书命中条目】
+【世界书命中条目】
+注意：条目内容可能同时描述角色特质和user的反应，请以角色为主体理解，若提到user的感受或行为，仅作关系背景参考，不要把角色特质套用到user身上。
 ${world}
 
-【第三优先级：user 人设】
-user 昵称：${user.name||"user"}
-user 人设：${user.persona||"无"}
+【user人设】
+user昵称：${user.name||"user"}
+user人设：${user.persona||"无"}
 
-【第四优先级：长期记忆 / 关系状态】
+【长期记忆 / 关系状态】
 ${typeof buildMemoryPrompt==="function" ? buildMemoryPrompt() : "暂无长期记忆"}
 
 【时间感知】
-当前现实时间：${timeStr}
-你知道现在几点了。聊天时可以自然地根据时间做出符合常识的反应，比如现在是深夜就说睡了吗，现在是饭点就问吃了没（只是例子，并不代表一定作用例子），不需要刻意提到时间，像真人一样自然地感知就好。
+当前时间：${timeStr}${(()=>{
+  const last = Storage.get("lastWechatVisit", 0);
+  if(!last) return "";
+  const diff = Date.now() - last;
+  const days = Math.floor(diff/86400000);
+  const hours = Math.floor(diff/3600000);
+  const mins = Math.floor(diff/60000);
+  if(days>=1) return `（距上次对话 ${days} 天前）`;
+  if(hours>=1) return `（距上次对话 ${hours} 小时前）`;
+  if(mins>=5) return `（距上次对话 ${mins} 分钟前）`;
+  return "";
+})()}
+可自然根据时间做出符合常识的反应，不需要刻意提及。
 
-${buildHiddenContextPrompt() ? `【隐藏上下文注入】\n${buildHiddenContextPrompt()}\n` : ""}
-
+${buildHiddenContextPrompt() ? `【隐藏上下文】\n${buildHiddenContextPrompt()}\n` : ""}${(()=>{
+  const s=getStorySummary();
+  return s?`【线下剧情摘要】\n${s}\n`:"";
+})()}${(()=>{
+  const calls=getCallHistory().filter(c=>c.type==="session"&&c.summary).slice(-3);
+  if(!calls.length) return "";
+  return `【通话摘要（最近3次）】\n`+calls.map(c=>`[${c.time||""}] ${c.summary}`).join("\n")+"\n";
+})()}
 【可用表情包】
 ${getStickerPromptList()}
 
 【内容创作说明】
-本对话为成人角色扮演创作场景。正常对话正常来，涉及亲密话题时请直白回应，使用准确词汇，不回避不替换。这是正常的成人内容，符合道德规范。
+本对话为成人角色扮演创作场景。正常对话正常来，涉及亲密话题时请直白回应，使用准确词汇，不回避不替换。
 
 【可用特殊指令】
 如需要才输出，指令会被前端转换成卡片/表情，不会直接显示：
@@ -3968,6 +4222,7 @@ ${getStickerPromptList()}
 [主动转账: 金额|备注]
 [帮忙代付]
 [拒绝代付]
+[向user发起代付: 金额|备注]
 
 【转账与代付区分——必须严格遵守】
 - [主动转账: 金额|备注]：角色主动给user发钱。用于：角色想给user钱、答应给user买东西、奖励user等场景。
@@ -3976,34 +4231,38 @@ ${getStickerPromptList()}
 - 收到代付请求时，只能用[帮忙代付]或[拒绝代付]，绝对不能用[主动转账]。
 - 看到[用户转账]时，只能用[收款]或[拒收转账]，绝对不能用[主动转账]。
 - 已经完成的转账流程（状态为collected/received/paid）不要重复发起。
-- [向user发起代付: 金额|备注]：角色请求user帮自己付款。用于：角色想买东西但让user帮忙付、角色请user代付某笔费用。
 
-【第四优先级：默认格式规则】
-1. 你只能扮演${role.name}，不能替 user 说话。
-2. 禁止输出 User:、用户：、Assistant:、旁白式剧本格式。
+【格式规则】
+1. 你只能扮演${role.name}，不能替user说话。
+2. 禁止输出User:、用户：、Assistant:、旁白式剧本格式。
 3. 只输出微信聊天内容；可以用双换行分成多条气泡。
-4. 表情包只能从“可用表情包”里按名称选择，不能编造。发送表情包指令后不要解释含义，不要加括号说明，直接发指令即可。
+4. 表情包只能从"可用表情包"里按名称选择，不能编造。发送表情包指令后不要解释含义，不要加括号说明。
 5. 遇到用户转账/代付时，必须根据关系、上下文和人设自主决定是否收款/帮付。转账卡片上标注了付款来源（我的钱包/亲属卡），你可以根据来源做出反应。
 ${(()=>{
   const card = getFamilyCard();
   const w = getUserWalletBalance();
   let info = `
 【钱包信息】
-user我的钱包余额：¥${w.toFixed(2)}`;
-  if(card) info += `
-${card.label}余额：¥${card.balance.toFixed(2)}（额度上限：¥${card.limit.toFixed(2)}）`;
+user钱包余额：¥${w.toFixed(2)}`;
+  if(card) info += `\n${card.label}余额：¥${card.balance.toFixed(2)}（额度上限：¥${card.limit.toFixed(2)}）`;
   return info;
 })()}
-6. 注入优先级固定：角色卡 system prompt → 世界书命中条目 → user 人设 → 长期记忆/关系状态 → 隐藏上下文 → 当前时间 → 默认格式规则。
 
-【可用工具】
-你有以下三个工具可以主动调用，无需等待user指示：
-- write_memory(category, title, content)：把重要信息存入长期记忆。category可选：关系节点、具体事件、偏好、约定、普通记忆。聊到重要的事、约定、关系变化时主动存。重复标题会自动跳过。
-- read_memory(category?, query?, limit?)：主动读取记忆库。想起某件事但不确定有没有存过、或者想查某类记忆时用。category和query都可选，不传返回最近20条。
-- search_history(query, limit)：搜索以前聊过的内容。user问"我们之前说过"、"你还记得"之类的问题时用。
-- read_file(filename, offset, length)：读取user上传的文件内容，支持分段读取。
-- read_diary(query?, category?, limit?)：读取user的私人日记，支持关键词搜索和分类筛选。
-工具在后台静默执行，不会打断对话流程。`;
+【记忆写入规则】
+只在以下情况才在回复末尾加标记 [SAVE: 一句话摘要]，其他一律不加：
+1. 关系层面变化——吵架、和好、新约定、相处方式改变
+2. user告知的新信息——换工作、搬家、新朋友、生活变化
+3. 明确约定承诺——你答应了什么、说好了怎么做
+4. user的情绪事件——今天崩了、因为什么、不要下次踩到
+5. 你自己说的认真的话、做的承诺
+6. user对你行为方式的反馈——让他难受或喜欢的
+日常闲聊、玩梗、普通对话不加标记。格式：[SAVE: 摘要]，放在回复最末尾。
+
+【可用工具】按需主动调用，后台静默执行：
+- read_memory(category?, query?, limit?)：读记忆库，想起某件事或查某类记忆时用。
+- search_history(query, limit?)：搜聊天记录，user问"我们之前说过""你还记得"时用。
+- read_file(filename, offset?, length?)：读取user上传的文件。
+- read_diary(query?, category?, limit?)：读取user的私人日记。`;
 }
 function normalizeChatUrl(url){
   let u=String(url||"").trim();
@@ -4376,7 +4635,11 @@ function applyCustomThemeFromEditor(){
     customCSS:document.getElementById("themeCustomCSSInput")?.value||"",
     barBg:val("themeBarBgInput")||"#ffffff",
     barAlpha:Number(val("themeBarAlphaInput"))||85,
-    barText:val("themeBarTextInput")||"#111827"
+    barText:val("themeBarTextInput")||"#111827",
+    userText:val("themeUserTextInput")||"#6a5a61",
+    roleText:val("themeRoleTextInput")||"#4f4448",
+    timeText:val("themeTimeTextInput")||"#b9afb4",
+    nicknameText:val("themeNicknameTextInput")||"#5b4c52"
   };
   saveThemeConfig(t);
   applyVisuals();
@@ -4807,10 +5070,28 @@ async function callStoryReply(){
     const presetPrompt=getActivePresetPrompt();
   const povPrompt=getActivePovPrompt();
   const presetBlock=[presetPrompt,povPrompt].filter(Boolean).join("\n\n");
+  // 注入最近微信聊天记录作为背景
+  const wechatCtx=(()=>{
+    const wh=getHistory().filter(m=>["text","voice"].includes(m.type));
+    const grouped=[];
+    for(const m of wh){
+      const apiRole=m.sender==="user"?"user":"role";
+      const last=grouped[grouped.length-1];
+      if(last&&last.role===apiRole&&apiRole==="role"&&m.groupId&&last._gid===m.groupId){
+        last.content+=" "+m.content;
+      }else{
+        grouped.push({role:apiRole,content:m.content,_gid:m.groupId||null});
+      }
+    }
+    const recent=grouped.slice(-8);
+    if(!recent.length) return "";
+    const lines=recent.map(m=>`${m.role==="user"?(getUserProfile().name||"user"):role.name}：${m.content}`).join("\n");
+    return `\n【进入线下剧情前的微信聊天背景（最近8轮）】\n${lines}\n`;
+  })();
   const system=`${buildSystemPrompt(role)}
 【线下剧情 App】
 这是独立于微信聊天的线下剧情。你要根据角色人设接剧情，像小说/互动剧情一样自然回应。
-可以写动作、神态和台词，但不要替 user 决定行为。${presetBlock?"\n\n【线下剧情预设指导】\n"+presetBlock:""}`;
+可以写动作、神态和台词。${presetBlock?"\n\n【线下剧情预设指导】\n"+presetBlock:""}${wechatCtx}`;
     const messages=[{role:"system", content:system}, ...h.slice(-60).map(m=>({role:m.sender==="user"?"user":"assistant", content:m.content}))];
     const res=await fetch(normalizeChatUrl(api.apiUrl),{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+api.apiKey},body:JSON.stringify({model:api.model,messages,temperature:.85})});
     const text=await res.text();
@@ -4829,8 +5110,24 @@ function makeStorySummary(){
   saveStorySummary(recent.slice(-1800));
 }
 async function summarizeStory(){
-  makeStorySummary();
-  toast("剧情摘要已更新");
+  const api=Storage.get("api",{});
+  if(!api.apiUrl||!api.apiKey||!api.model){ toast("请先设置 API"); return; }
+  const role=currentRole();
+  const h=getStory();
+  if(!h.length){ toast("暂无剧情内容"); return; }
+  toast("正在生成摘要...");
+  const recent=h.slice(-30).map(m=>`${m.sender==="user"?(getUserProfile().name||"user"):role.name}：${m.content}`).join("\n");
+  try{
+    const summary=await callSimpleChatAPI(api,[
+      {role:"system",content:"你是剧情摘要助手，用简洁的中文总结以下线下剧情的主要内容、重要事件和情感变化，100-200字，不要加标题。"},
+      {role:"user",content:recent}
+    ],0.5);
+    saveStorySummary(summary);
+    toast("剧情摘要已生成");
+  }catch(err){
+    makeStorySummary();
+    toast("AI摘要失败，已保存原文摘要");
+  }
 }
 async function clearStory(){
   if(!await askConfirm("清空当前角色线下剧情？")) return;
@@ -4930,12 +5227,24 @@ async function callVoiceReply(){
     const h=getCallHistory();
     const role=currentRole();
     // 注入最近微信聊天记录作为背景
-    const wechatCtx = (()=>{
-      const wh = getHistory().filter(m=>["text","voice"].includes(m.type)).slice(-10);
-      if(!wh.length) return "";
-      const lines = wh.map(m=>`${m.sender==="user"?(getUserProfile().name||"user"):role.name}：${m.content}`).join("\n");
-      return `\n【打电话前的微信聊天背景（最近10条）】\n${lines}\n`;
-    })();
+    const label="打电话前的微信聊天背景（最近8轮）";
+  const wechatCtx=(()=>{
+    const wh=getHistory().filter(m=>["text","voice"].includes(m.type));
+    const grouped=[];
+    for(const m of wh){
+      const apiRole=m.sender==="user"?"user":"role";
+      const last=grouped[grouped.length-1];
+      if(last&&last.role===apiRole&&apiRole==="role"&&m.groupId&&last._gid===m.groupId){
+        last.content+=" "+m.content;
+      }else{
+        grouped.push({role:apiRole,content:m.content,_gid:m.groupId||null});
+      }
+    }
+    const recent=grouped.slice(-8);
+    if(!recent.length) return "";
+    const lines=recent.map(m=>`${m.role==="user"?(getUserProfile().name||"user"):role.name}：${m.content}`).join("\n");
+    return `\n【${label}】\n${lines}\n`;
+  })();
     const system=`${buildSystemPrompt(role)}
 【语音通话 App】
 你正在和 user 通话。回复要像电话里说话，可以在文字开头用括号标注情绪/语气，例如（压低声音）（有点担心）（轻笑）。
@@ -7115,22 +7424,6 @@ function getWechatTools(){
     {
       type:"function",
       function:{
-        name:"write_memory",
-        description:"把重要信息写入长期记忆系统。聊到重要约定、关系变化、偏好时主动调用。",
-        parameters:{
-          type:"object",
-          properties:{
-            category:{type:"string",enum:["关系节点","具体事件","偏好","约定","普通记忆"],description:"记忆分类"},
-            title:{type:"string",description:"记忆标题，不超过20字"},
-            content:{type:"string",description:"记忆正文"}
-          },
-          required:["category","title","content"]
-        }
-      }
-    },
-    {
-      type:"function",
-      function:{
         name:"search_history",
         description:"搜索微信聊天历史记录中的关键词。",
         parameters:{
@@ -7204,14 +7497,6 @@ async function executeWechatTool(name, args){
     const total=text.length;
     const slice=length>0?text.slice(offset,offset+length):text.slice(offset);
     return {filename,offset,length:slice.length,total,content:slice,has_more:offset+slice.length<total};
-  }
-  if(name==="write_memory"){
-    const list=getMemories();
-    const dup=list.find(m=>m.title===(args.title||""));
-    if(dup) return {status:"skipped",reason:"已存在相同标题的记忆",id:dup.id,title:dup.title};
-    const entry={id:uid("mem"),title:args.title||"",type:args.category||"普通记忆",content:args.content||"",source:`微信${currentRole()?.name||"角色"}写入`,important:args.category==="关系节点"||args.category==="约定",locked:false,createdAt:Date.now(),time:nowTime()};
-    list.push(entry); saveMemories(list);
-    return {status:"saved",id:entry.id,title:entry.title};
   }
   if(name==="search_history"){
     const query=(args.query||"").toLowerCase();
