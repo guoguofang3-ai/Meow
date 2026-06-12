@@ -3747,9 +3747,7 @@ function renderChat(){
     return;
   }
   chat.innerHTML=`<div class="date-chip">今天</div>` + h.map((m,idx)=>renderMessage(m,h,idx)).join("");
-  const lastMsg=chat.lastElementChild;
-  if(lastMsg) lastMsg.scrollIntoView({block:"end"});
-  else chat.scrollTop=chat.scrollHeight;
+    requestAnimationFrame(()=>{ chat.scrollTop=chat.scrollHeight; });
 }
 function renderMessage(m,h,idx){
   if(m.type==="error") return `<div class="system-card error">${escapeHtml(m.content)}</div>`;
