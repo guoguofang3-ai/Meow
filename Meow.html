@@ -7952,7 +7952,11 @@ function parseAIReplyUnified(raw, groupId){
       add({type:"rejected", content:"已拒绝代付", data:{amount:pendingDelivery.data.amount, item:pendingDelivery.data.item}});
     }
   });
-  splitReply(text).forEach(t=>add({type:"text", content:t}));
+  splitReply(text).forEach(t=>{
+    // 过滤掉只含指令标记的气泡
+    const stripped=t.replace(/\[SAVE:\s*[^\]]*\]/g,"").replace(/\[便签:\s*[^\]]*\]/g,"").replace(/\[骰子\]/g,"").replace(/\[roll\]/gi,"").trim();
+    if(stripped) add({type:"text", content:t});
+  });
   return out;
 }
 
