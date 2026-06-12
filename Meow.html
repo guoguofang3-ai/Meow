@@ -3311,13 +3311,29 @@ function bindEvents(){
     const cfg = document.getElementById("familyCardConfig");
     if(cfg) cfg.style.display = this.checked ? "flex" : "none";
   });
-  // 键盘收起时保持滚动位置
+  // 键盘弹出/收起时滚到底
   if(window.visualViewport){
     window.visualViewport.addEventListener("resize", ()=>{
       const chat=document.getElementById("claudeChat");
-      if(chat) setTimeout(()=>{ chat.scrollTop=chat.scrollHeight; }, 50);
+      if(chat){
+        setTimeout(()=>{ chat.scrollTop=chat.scrollHeight; }, 50);
+        setTimeout(()=>{ chat.scrollTop=chat.scrollHeight; }, 200);
+      }
       const wechat=document.getElementById("chat");
-      if(wechat) setTimeout(()=>{ wechat.scrollTop=wechat.scrollHeight; }, 50);
+      if(wechat){
+        setTimeout(()=>{ wechat.scrollTop=wechat.scrollHeight; }, 50);
+        setTimeout(()=>{ wechat.scrollTop=wechat.scrollHeight; }, 200);
+        setTimeout(()=>{ wechat.scrollTop=wechat.scrollHeight; }, 400);
+      }
+    });
+  }
+  // 输入框聚焦时也滚到底
+  const msgInput=document.getElementById("msgInput");
+  if(msgInput){
+    msgInput.addEventListener("focus", ()=>{
+      const wechat=document.getElementById("chat");
+      setTimeout(()=>{ if(wechat) wechat.scrollTop=wechat.scrollHeight; }, 300);
+      setTimeout(()=>{ if(wechat) wechat.scrollTop=wechat.scrollHeight; }, 600);
     });
   }
   // 预设导入
@@ -3747,7 +3763,17 @@ function renderChat(){
     return;
   }
   chat.innerHTML=`<div class="date-chip">今天</div>` + h.map((m,idx)=>renderMessage(m,h,idx)).join("");
-    requestAnimationFrame(()=>{ chat.scrollTop=chat.scrollHeight; });
+    requestAnimationFrame(()=>{
+    chat.scrollTop=chat.scrollHeight;
+    // 图片加载完后再滚一次，避免图片撑高后滚不到底
+    const imgs=chat.querySelectorAll("img");
+    let loaded=0;
+    if(!imgs.length) return;
+    imgs.forEach(img=>{
+      if(img.complete){ loaded++; if(loaded===imgs.length) chat.scrollTop=chat.scrollHeight; }
+      else img.addEventListener("load",()=>{ loaded++; if(loaded===imgs.length) chat.scrollTop=chat.scrollHeight; },{once:true});
+    });
+  });
 }
 function renderMessage(m,h,idx){
   if(m.type==="error") return `<div class="system-card error">${escapeHtml(m.content)}</div>`;
