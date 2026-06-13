@@ -3972,6 +3972,13 @@ function stripInstructions(t){
     .replace(/\[便签:\s*[^\]]*\]/g,"")
     .replace(/\[骰子\]/g,"")
     .replace(/\[roll\]/gi,"")
+    .replace(/\[(?:发送表情包|表情包)[:：]\s*[^\]]*\]/g,"")
+    .replace(/\[(?:发送语音|语音)[:：]\s*[^\]]*\]/g,"")
+    .replace(/\[(?:发送图片|图片描述)[:：]\s*[^\]]*\]/g,"")
+    .replace(/\[(?:发送链接|链接)[:：]\s*[^\]]*\]/g,"")
+    .replace(/\[(?:状态更新|主动转账|向user发起代付)[:：]\s*[^\]]*\]/g,"")
+    .replace(/\[(?:收款|拒收转账|帮忙代付|拒绝代付)\]/g,"")
+    .replace(/含义[:：]\s*\S+/g,"")
     .trim();
 }
 function splitReply(text){
@@ -3987,10 +3994,6 @@ function cleanAIText(text){
   s=s.replace(/<[^>]+>/g,"");
   s=s.split(/\n/).filter(line=>!/^\s*(User|用户|Assistant|系统)\s*[:：]/i.test(line)).join("\n");
   s=s.replace(/\[[A-Za-z\u4e00-\u9fa5]+?\|[^\]]*?\]/g,"");
-  s=s.replace(/\[(?:发送表情包|表情包)[:：]\s*[^\]]+?\]/g,"");
-  s=s.replace(/\[(?:发送语音|语音)[:：]\s*[^\]]+?\]/g,"");
-  s=s.replace(/\[(?:发送图片|图片描述)[:：]\s*[^\]]+?\]/g,"");
-  s=s.replace(/\[(?:发送链接|链接)[:：]\s*[^\]]+?\]/g,"");
   return s.trim();
 }
 function markUnreadAsRead(h){
