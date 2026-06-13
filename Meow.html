@@ -3978,7 +3978,7 @@ function stripInstructions(t){
     .replace(/\[(?:发送链接|链接)[:：]\s*[^\]]*\]/g,"")
     .replace(/\[(?:状态更新|主动转账|向user发起代付)[:：]\s*[^\]]*\]/g,"")
     .replace(/\[(?:收款|拒收转账|帮忙代付|拒绝代付)\]/g,"")
-    .replace(/含义[:：]\s*\S+/g,"")
+    .replace(/含义[:：]\s*.*/g,"")
     .trim();
 }
 function splitReply(text){
@@ -4084,7 +4084,7 @@ async function callAIReply(){
 }
 function messageToAIContext(m){
   const d=m.data||{};
-  if(m.type==="sticker") return `[表情包:${d.name||m.content}] 含义:${d.meaning||""}`;
+  if(m.type==="sticker") return `[表情包:${d.name||m.content}|含义:${d.meaning||""}]`;
   if(m.type==="voice") return `[语音:${d.text||m.content}]`;
   if(m.type==="link") return `[链接:${d.platform||"论坛"}|${d.title||""}]`;
   if(m.type==="image_desc") return `[图片描述:${d.description||m.content}]`;
