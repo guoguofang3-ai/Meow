@@ -3987,6 +3987,10 @@ function cleanAIText(text){
   s=s.replace(/<[^>]+>/g,"");
   s=s.split(/\n/).filter(line=>!/^\s*(User|用户|Assistant|系统)\s*[:：]/i.test(line)).join("\n");
   s=s.replace(/\[[A-Za-z\u4e00-\u9fa5]+?\|[^\]]*?\]/g,"");
+  s=s.replace(/\[(?:发送表情包|表情包)[:：]\s*[^\]]+?\]/g,"");
+  s=s.replace(/\[(?:发送语音|语音)[:：]\s*[^\]]+?\]/g,"");
+  s=s.replace(/\[(?:发送图片|图片描述)[:：]\s*[^\]]+?\]/g,"");
+  s=s.replace(/\[(?:发送链接|链接)[:：]\s*[^\]]+?\]/g,"");
   return s.trim();
 }
 function markUnreadAsRead(h){
@@ -7468,10 +7472,10 @@ function confirmTransferSource(source){
   Miao.state.pendingTransferSource = null;
 }
 
-// 收到转账时打入user钱包
+// 角色收款时，从user钱包扣除对应金额
 function receiveTransferToWallet(amount){
   const w = getWallet();
-  w.balance = Math.round((w.balance + amount)*100)/100;
+  w.balance = Math.max(0, Math.round((w.balance - amount)*100)/100);
   saveWallet(w);
 }
 
