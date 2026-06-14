@@ -2778,25 +2778,59 @@ const Miao = {
 
 const Storage = {
   prefix:"miao2.",
+  _cache: null, // 内存缓存，从IndexedDB预加载
+
   get(key, fallback){
+    const fullKey = this.prefix+key;
+    // 优先从内存缓存读
+    if(this._cache !== null){
+      const val = this._cache[fullKey];
+      return val === undefined ? fallback : val;
+    }
+    // 降级：缓存未就绪时从localStorage读（初始化期间）
     try{
-      const raw = localStorage.getItem(this.prefix+key);
+      const raw = localStorage.getItem(fullKey);
       return raw == null ? fallback : JSON.parse(raw);
     }catch(e){ return fallback; }
   },
+
   set(key, value){
-    localStorage.setItem(this.prefix+key, JSON.stringify(value));
-    // 双写IndexedDB，fire-and-forget，失败不影响主流程
+    const fullKey = this.prefix+key;
+    // 更新内存缓存
+    if(this._cache !== null) this._cache[fullKey] = value;
+    // 写IndexedDB（主存储）
     if(typeof MeowStorage !== "undefined"){
-      MeowStorage.set(this.prefix+key, value).catch(e=>console.warn("[IDB write]", key, e));
+      MeowStorage.set(fullKey, value).catch(e=>console.warn("[IDB set]", key, e));
+    }
+    // localStorage降级写（缓存未就绪期间保底）
+    if(this._cache === null){
+      try{ localStorage.setItem(fullKey, JSON.stringify(value)); }catch(e){}
     }
   },
+
   remove(key){
-    localStorage.removeItem(this.prefix+key);
+    const fullKey = this.prefix+key;
+    // 从内存缓存删
+    if(this._cache !== null) delete this._cache[fullKey];
+    // 从IndexedDB删
     if(typeof MeowStorage !== "undefined"){
-      MeowStorage.remove(this.prefix+key).catch(e=>console.warn("[IDB remove]", key, e));
+      MeowStorage.remove(fullKey).catch(e=>console.warn("[IDB remove]", key, e));
     }
   },
+
+  // 预加载IndexedDB数据到内存缓存，init时调用
+  async loadCache(){
+    if(typeof MeowStorage === "undefined") return;
+    try{
+      const allData = await MeowStorage.exportAll();
+      this._cache = allData || {};
+      console.log("[IDB] 缓存加载完成，共"+Object.keys(this._cache).length+"条");
+    }catch(e){
+      console.warn("[IDB] 缓存加载失败，降级用localStorage", e);
+      this._cache = {};
+    }
+  },
+
   roleKey(kind, roleId=Miao.state.currentRoleId){ return kind+"."+roleId; }
 };
 
@@ -2886,28 +2920,31 @@ function slimRoleForStorage(role){
 
 function fileToDataUrl(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
 
-function init(){
-  // 首次启动迁移localStorage数据到IndexedDB
+async function init(){
+  // 1. 先迁移（如果还没迁移过），再加载缓存
   if(typeof MeowStorage !== "undefined"){
-    (async()=>{
-      try{
-        const migrated = await MeowStorage.get("__migrated__");
-        if(!migrated){
-          const data = {};
-          for(let i=0;i<localStorage.length;i++){
-            const k = localStorage.key(i);
-            try{ data[k] = JSON.parse(localStorage.getItem(k)); }
-            catch{ data[k] = localStorage.getItem(k); }
-          }
-          if(Object.keys(data).length > 0){
-            await MeowStorage.setMany(data);
-            console.log("[IDB migrate] 迁移完成，共", Object.keys(data).length, "条");
-          }
-          await MeowStorage.set("__migrated__", Date.now());
-          await MeowStorage.set("__createdAt__", Date.now());
+    try{
+      const migrated = await MeowStorage.get("__migrated__");
+      if(!migrated){
+        const data = {};
+        for(let i=0;i<localStorage.length;i++){
+          const k = localStorage.key(i);
+          if(k) try{ data[k] = JSON.parse(localStorage.getItem(k)); }
+          catch{ data[k] = localStorage.getItem(k); }
         }
-      }catch(e){ console.warn("[IDB migrate] 迁移失败:", e); }
-    })();
+        if(Object.keys(data).length > 0){
+          await MeowStorage.setMany(data);
+          console.log("[IDB] 迁移完成，共", Object.keys(data).length, "条");
+        }
+        await MeowStorage.set("__migrated__", Date.now());
+        await MeowStorage.set("__createdAt__", Date.now());
+      }
+      // 2. 预加载所有数据到内存缓存
+      await Storage.loadCache();
+    }catch(e){
+      console.warn("[IDB] 初始化失败，降级localStorage:", e);
+      Storage._cache = {}; // 降级：空缓存，get会读localStorage
+    }
   }
   ensureDefaults();
   bindEvents();
@@ -2919,7 +2956,7 @@ function init(){
   renderAll();
   updateClock();
   setInterval(updateClock, 30000);
-  ProactiveMsg.reset(); // 打开喵喵机就开始计时
+  ProactiveMsg.reset();
   checkBackupReminder();
 }
 function normalizeRoleData(){
@@ -4275,8 +4312,7 @@ async function callAIReply(){
       const hh=getHistory();
       const idx=hh.findIndex(m=>m.id===streamMsgId);
       const parsed=parseAIReplyUnified(reply,groupId);
-      if(!parsed.length && !Miao.state.blockNotify) throw new Error("AI 没有返回可显示内容。原始返回："+(Miao.state.lastAIContent||"(空)").slice(0,120));
-      if(!parsed.length) { /* 纯副作用指令，继续走保存流程 */ }
+      if(!parsed.length){ saveHistory(hh); renderChat(); Miao.state.busy=false; return; } // 纯副作用指令（如拉黑），静默处理
       if(idx>=0) hh.splice(idx,1,...parsed);
       else parsed.forEach(m=>hh.push(m));
       // 清除流式缓存
@@ -4289,8 +4325,7 @@ async function callAIReply(){
       maybeUpdateRoleStatus();
     } else {
       const parsed=parseAIReplyUnified(reply,groupId);
-      if(!parsed.length && !Miao.state.blockNotify) throw new Error("AI 没有返回可显示内容。原始返回："+(Miao.state.lastAIContent||"(空)").slice(0,120));
-      if(!parsed.length) { /* 纯副作用指令，继续走保存流程 */ }
+      if(!parsed.length){ saveHistory(hh); renderChat(); Miao.state.busy=false; return; } // 纯副作用指令（如拉黑），静默处理
       markUnreadAsRead(h);
       parsed.forEach(m=>h.push(m));
       saveHistory(h);
@@ -8984,7 +9019,7 @@ window.dismissBackupReminder=async function(){
 };
 
 
-init();
+init().catch(e=>{ console.error("[init]", e); renderAll(); });
 })();
 </script>
 </body>
