@@ -4325,7 +4325,7 @@ async function callAIReply(){
       maybeUpdateRoleStatus();
     } else {
       const parsed=parseAIReplyUnified(reply,groupId);
-      if(!parsed.length){ saveHistory(hh); renderChat(); Miao.state.busy=false; return; } // 纯副作用指令（如拉黑），静默处理
+      if(!parsed.length){ saveHistory(h); renderChat(); Miao.state.busy=false; return; } // 纯副作用指令（如拉黑），静默处理
       markUnreadAsRead(h);
       parsed.forEach(m=>h.push(m));
       saveHistory(h);
