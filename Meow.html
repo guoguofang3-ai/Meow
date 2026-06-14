@@ -1841,6 +1841,94 @@ body{font-size:calc(14px * var(--font-scale));}
   background:#eef0f5;
 }
 .memory-actions button.danger{background:#ffe8e6;color:#c5221f}
+/* 拉黑提示条 */
+#blockBar{
+  display:none;
+  background:rgba(0,0,0,0.06);
+  color:#999;
+  font-size:12px;
+  text-align:center;
+  padding:6px;
+  flex-shrink:0;
+}
+#blockBar.show{
+  display:block;
+}
+/* user消息拉黑感叹号 */
+.msg.user.blocked-msg{
+  position:relative;
+}
+.msg.user.blocked-msg .bubble-wrap{
+  position:relative;
+}
+.msg.user.blocked-msg .bubble-wrap::before{
+  content:"!";
+  position:absolute;
+  left:-22px;
+  bottom:4px;
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  background:rgba(220,50,50,0.9);
+  color:#fff;
+  font-size:11px;
+  font-weight:700;
+  line-height:16px;
+  text-align:center;
+  flex-shrink:0;
+}
+/* 引用块样式 */
+.quote-block{
+  background:rgba(0,0,0,0.15);
+  border-left:3px solid rgba(255,255,255,0.6);
+  border-radius:6px;
+  padding:4px 8px;
+  margin-bottom:4px;
+  font-size:11px;
+  color:rgba(255,255,255,0.95);
+  cursor:pointer;
+  max-width:100%;
+  overflow:hidden;
+}
+.quote-sender{
+  font-weight:700;
+  margin-right:4px;
+  color:#fff;
+}
+.quote-preview{
+  color:rgba(255,255,255,0.85);
+}
+#quoteBar{
+  display:none;
+  background:rgba(0,0,0,0.04);
+  border-left:3px solid var(--accent);
+  padding:5px 12px;
+  font-size:12px;
+  color:#666;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  overflow:hidden;
+}
+#quoteBar.show{
+  display:flex;
+}
+#quoteBarText{
+  flex:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#quoteBar button{
+  border:none;
+  background:none;
+  font-size:16px;
+  color:#999;
+  cursor:pointer;
+  padding:0;
+  line-height:1;
+  flex-shrink:0;
+}
 .memory-relation-card{
   background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 12%,#fff),#fff);
   border:1px solid color-mix(in srgb,var(--accent) 22%,#fff);
@@ -2018,6 +2106,7 @@ body{font-size:calc(14px * var(--font-scale));}
         </div>
       </div>
       <div id="stickyNoteBar" class="sticky-note-bar"></div>
+      <div id="blockBar" style="display:none">对方已将你拉黑</div>
       <div class="chat" id="chat"></div>
       <div class="composer-wrap" id="wechatComposer">
         <div class="toolbar">
@@ -2035,6 +2124,10 @@ body{font-size:calc(14px * var(--font-scale));}
           <input type="file" accept=".md,.txt" id="importChatMdInput" style="display:none">
           
         </div>
+        <div id="quoteBar">
+            <span id="quoteBarText"></span>
+            <button onclick="clearQuote()">×</button>
+          </div>
         <div class="composer">
           <textarea id="msgInput" placeholder="输入消息..." rows="1"></textarea>
           <button class="call-btn" data-action="call-ai" title="召唤回复">✦</button>
@@ -2487,7 +2580,7 @@ body{font-size:calc(14px * var(--font-scale));}
           </div>
         </div>
       </div>
-      <div id="memoryRelationView" style="display:none;flex-direction:column;min-height:0;flex:1">
+      <div id="memoryRelationView" style="display:none;flex-direction:column;min-height:0;flex:1;overflow-y:auto">
         <div class="memory-relation-card">
           <div class="memory-relation-title">关系状态</div>
           <div class="memory-relation-text" id="relationText"></div>
@@ -2580,6 +2673,7 @@ body{font-size:calc(14px * var(--font-scale));}
     </div>
 
     <div class="msg-menu" id="msgMenu">
+      <button data-menu-action="quote">引用</button>
       <button data-menu-action="regen">↻ 重新生成</button>
       <button data-menu-action="delete" class="danger">删除</button>
     </div>
@@ -3711,9 +3805,16 @@ function sendMessage(){
   if(!text) return;
   ProactiveMsg.count=0; ProactiveMsg.reset(); // 用户发消息，重置计时和次数
   const h=getHistory();
-  h.push({id:uid("msg"), groupId:uid("usergrp"), sender:"user", type:"text", content:text, read:false, createdAt:Date.now(), time:nowTime()});
+  const msg={id:uid("msg"), groupId:uid("usergrp"), sender:"user", type:"text", content:text, read:false, createdAt:Date.now(), time:nowTime()};
+  if(Miao.state.quoteId){
+    msg.quoteId=Miao.state.quoteId;
+    msg.quoteContent=Miao.state.quoteContent;
+    msg.quoteSender=Miao.state.quoteSender;
+  }
+  h.push(msg);
   saveHistory(h);
   input.value="";
+  clearQuote();
   renderChat();
 }
 function getHistory(){
@@ -3776,6 +3877,7 @@ function renderChat(){
   const menu=$("#msgMenu"); if(menu) menu.classList.remove("show");
   const chat=$("#chat");
   restoreRoleStatus();
+  updateBlockBar();
   const h=getHistory();
   if(!h.length){
     chat.innerHTML=`<div class="date-chip">今天</div>`;
@@ -3800,20 +3902,98 @@ function renderMessage(m,h,idx){
   const role=currentRole();
   const userProfile=Storage.get("userProfile", {});
   const isUser=m.sender==="user";
+  const blockedData=Storage.get(Storage.roleKey("blocked"), false);
+  const blockedAt=blockedData&&blockedData.blockedAt ? blockedData.blockedAt : null;
+  const blockedNow=blockedData===true||(blockedData&&blockedData.blocked===true);
+  const isBlockedMsg=isUser && blockedNow && blockedAt && m.createdAt>=blockedAt;
   const cls=isUser?"user":"role";
   const avatar=isUser?(userProfile.avatar||Miao.defaults.avatar):(role.avatar||Miao.defaults.avatar);
   const next=h[idx+1];
   const isLastInAssistantGroup = !isUser && (!next || next.sender!=="role" || next.groupId!==m.groupId);
-  return `<div class="msg ${cls}" data-id="${m.id}" data-group-id="${m.groupId||""}" data-sender="${m.sender}" data-last-role-group="${isLastInAssistantGroup ? "1" : "0"}">
+  return `<div class="msg ${cls}${isBlockedMsg?" blocked-msg":""}" data-id="${m.id}" data-group-id="${m.groupId||""}" data-sender="${m.sender}" data-last-role-group="${isLastInAssistantGroup ? "1" : "0"}">
     <img class="avatar" src="${avatar}" alt="">
     <div class="bubble-wrap">
       ${!isUser?`<div class="name-line">${escapeHtml(role.name)}</div>`:""}
+      ${m.quoteId ? renderQuoteBlock(m) : ""}
       ${renderMessageBody(m)}
       <div class="time-line">${escapeHtml(m.time||"")}</div>
       ${isUser?`<div class="read-line">${m.read?"已读":"未读"}</div>`:""}
     </div>
   </div>`;
 }
+
+/* ===== 引用/回复功能 ===== */
+function getQuotePreview(m){
+  if(!m) return "";
+  if(m.type==="sticker") return "[表情包]";
+  if(m.type==="voice") return "[语音]";
+  if(m.type==="image_desc") return "[图片]";
+  if(m.type==="link") return "[链接]";
+  if(m.type==="transfer" || m.type==="role_transfer") return "[转账]";
+  const text=m.content||"";
+  return text.length>30 ? text.slice(0,30)+"…" : text;
+}
+
+function renderQuoteBlock(m){
+  const h=getHistory();
+  const quoted=h.find(x=>x.id===m.quoteId);
+  const senderName=m.quoteSender==="user" ? (Storage.get("userProfile",{}).name||"我") : currentRole().name;
+  const preview=quoted ? getQuotePreview(quoted) : (m.quoteContent||"原消息已删除");
+  return `<div class="quote-block" data-quote-id="${m.quoteId||""}">
+    <span class="quote-sender">${escapeHtml(senderName)}</span>
+    <span class="quote-preview">${escapeHtml(preview)}</span>
+  </div>`;
+}
+
+function setQuote(msgId){
+  const h=getHistory();
+  const m=h.find(x=>x.id===msgId);
+  if(!m) return;
+  Miao.state.quoteId=msgId;
+  Miao.state.quoteContent=getQuotePreview(m);
+  Miao.state.quoteSender=m.sender;
+  const bar=$("#quoteBar");
+  const barText=$("#quoteBarText");
+  if(bar && barText){
+    const senderName=m.sender==="user" ? (Storage.get("userProfile",{}).name||"我") : currentRole().name;
+    barText.textContent=senderName+": "+Miao.state.quoteContent;
+    bar.classList.add("show");
+  }
+  $("#msgInput")?.focus();
+}
+
+function clearQuote(){
+  Miao.state.quoteId=null;
+  Miao.state.quoteContent=null;
+  Miao.state.quoteSender=null;
+  const bar=$("#quoteBar");
+  if(bar) bar.classList.remove("show");
+}
+window.clearQuote=clearQuote;
+
+/* ===== 拉黑功能 ===== */
+function isBlocked(){
+  const v=Storage.get(Storage.roleKey("blocked"), false);
+  return v===true || (v && v.blocked===true);
+}
+function setBlocked(val){
+  if(val){
+    Storage.set(Storage.roleKey("blocked"), {blocked:true, blockedAt:Date.now()});
+  } else {
+    Storage.set(Storage.roleKey("blocked"), false);
+  }
+}
+function updateBlockBar(){
+  const bar=$("#blockBar");
+  if(!bar) return;
+  if(isBlocked()){
+    bar.classList.add("show");
+  } else {
+    bar.classList.remove("show");
+  }
+}
+
+
 
 function parseDeliveryLinkText(text){
   const raw=String(text||"").trim();
@@ -3942,6 +4122,7 @@ function bindMessageLongPressMenu(){
     close();
     if(action==="delete") deleteMessage(msgId);
     if(action==="regen") regenMessage(groupId);
+    if(action==="quote") setQuote(msgId);
   });
   chat.addEventListener("contextmenu",(e)=>{
     const msg=e.target.closest(".msg");
@@ -3979,6 +4160,7 @@ function stripInstructions(t){
     .replace(/\[(?:状态更新|主动转账|向user发起代付)[:：]\s*[^\]]*\]/g,"")
     .replace(/\[(?:收款|拒收转账|帮忙代付|拒绝代付)\]/g,"")
     .replace(/含义[:：]\s*.*/g,"")
+    .replace(/[\[【](?:拉黑|解除拉黑)[\]】]/g,"")
     .trim();
 }
 function splitReply(text){
@@ -4046,12 +4228,19 @@ async function callAIReply(){
       const hh=getHistory();
       const idx=hh.findIndex(m=>m.id===streamMsgId);
       const parsed=parseAIReplyUnified(reply,groupId);
-      if(!parsed.length) throw new Error("AI 没有返回可显示内容。原始返回："+(Miao.state.lastAIContent||"(空)").slice(0,120));
+      if(!parsed.length && !Miao.state.blockNotify) throw new Error("AI 没有返回可显示内容。原始返回："+(Miao.state.lastAIContent||"(空)").slice(0,120));
+      if(!parsed.length) { /* 纯副作用指令，继续走保存流程 */ }
       if(idx>=0) hh.splice(idx,1,...parsed);
       else parsed.forEach(m=>hh.push(m));
       // 清除流式缓存
       if(Miao.state.streamPartial) delete Miao.state.streamPartial[streamMsgId];
       saveHistory(hh);
+      if(Miao.state.blockNotify){
+        Miao.state.blockNotify=false;
+        const hNotify=getHistory();
+        hNotify.push({id:uid("msg"), groupId:uid("sysgrp"), sender:"system", type:"system", content:"消息已发出，但被对方拒收了。", createdAt:Date.now(), time:nowTime()});
+        saveHistory(hNotify);
+      }
       renderChat();
       checkSaveMarker(Miao.state.lastAIContent||"");
       checkStickyNoteMarker(Miao.state.lastAIContent||"");
@@ -4059,10 +4248,17 @@ async function callAIReply(){
       maybeUpdateRoleStatus();
     } else {
       const parsed=parseAIReplyUnified(reply,groupId);
-      if(!parsed.length) throw new Error("AI 没有返回可显示内容。原始返回："+(Miao.state.lastAIContent||"(空)").slice(0,120));
+      if(!parsed.length && !Miao.state.blockNotify) throw new Error("AI 没有返回可显示内容。原始返回："+(Miao.state.lastAIContent||"(空)").slice(0,120));
+      if(!parsed.length) { /* 纯副作用指令，继续走保存流程 */ }
       markUnreadAsRead(h);
       parsed.forEach(m=>h.push(m));
       saveHistory(h);
+      if(Miao.state.blockNotify){
+        Miao.state.blockNotify=false;
+        const hNotify=getHistory();
+        hNotify.push({id:uid("msg"), groupId:uid("sysgrp"), sender:"system", type:"system", content:"消息已发出，但被对方拒收了。", createdAt:Date.now(), time:nowTime()});
+        saveHistory(hNotify);
+      }
       renderChat();
       checkSaveMarker(Miao.state.lastAIContent||"");
       checkStickyNoteMarker(Miao.state.lastAIContent||"");
@@ -4084,6 +4280,7 @@ async function callAIReply(){
 }
 function messageToAIContext(m){
   const d=m.data||{};
+  const quotePrefix=m.quoteId||m.quoteContent ? `[引用:${m.quoteContent||""}] ` : "";
   if(m.type==="sticker") return `[表情包:${d.name||m.content}|含义:${d.meaning||""}]`;
   if(m.type==="voice") return `[语音:${d.text||m.content}]`;
   if(m.type==="link") return `[链接:${d.platform||"论坛"}|${d.title||""}]`;
@@ -4094,7 +4291,7 @@ function messageToAIContext(m){
   if(m.type==="received") return `[收款完成:${d.amount||""}|user已确认收款，本次转账流程已结束，不需要再发起任何转账]`;
   if(m.type==="paid") return `[代付完成:${d.amount||""}|${d.item||""}]`;
   if(m.type==="rejected") return `[拒绝:${m.content||""}]`;
-  return m.content||"";
+  return quotePrefix+(m.content||"");
 }
 
 /* ===== SAVE 标记自动存记忆 ===== */
@@ -4269,8 +4466,9 @@ function buildSystemPrompt(role){
   const world = getMatchedWorldEntries().map((e,i)=>`【世界书${i+1}：${e.title}】\n${e.content}`).join("\n\n") || "无";
   const user = getUserProfile();
   const timeStr = new Date().toLocaleString("zh-CN", {hour12:false});
+  const blockedStatus = `\n\n【拉黑状态】当前拉黑状态：${isBlocked()?"你已将user拉黑":"未拉黑"}\n可用指令：[拉黑] [解除拉黑]\n（何时使用请根据你的人设自行判断）`;
   const charSystem = role.systemPrompt || "";
-  return `${charSystem}
+  return `${charSystem}${blockedStatus}
 
 【角色基础资料】
 你是${role.name}。
@@ -4324,6 +4522,7 @@ ${getStickerPromptList()}
 [发送表情包: 名称]
 [发送图片: 描述]
 [语音: （声音描述）说的内容]（声音描述和说话内容必须在同一个指令内，不能分开发送）
+[引用: 被引用消息的原文片段]（想回复user某句特定的话时使用，输出格式必须严格用此指令，不能自己造格式）
 [链接: 平台|标题|正文内容|评论1//评论2//评论3]
 平台可选：小红书、微博、贴吧、论坛、新闻。评论字段可省略。
 [收款]
@@ -4342,6 +4541,11 @@ ${getStickerPromptList()}
 - 已经完成的转账流程（状态为collected/received/paid）不要重复发起。
 - 发出[收款]、[拒收转账]、[帮忙代付]、[拒绝代付]指令后，不需要输出任何说明文字，不需要描述转账流程，直接继续对话。
 - 指令格式必须严格遵守，只能用[收款]，不能用[收款完成:...]、[已收款:...]等任何变体。
+
+【拉黑规则】
+- [拉黑]：将user拉黑，拉黑期间user的消息仍会注入上下文
+- [解除拉黑]：解除拉黑状态
+- 何时拉黑、拉黑多久、期间是否回复、何时解除，均根据你的人设自行判断，代码不做限制
 
 【格式规则】
 1. 你只能扮演${role.name}，不能替user说话。
@@ -5861,6 +6065,7 @@ function buildToolClaudePrompt(){
 你擅长前端、HTML、CSS、JavaScript、SVG、React、文件解析和代码说明。
 如果输出可预览内容，请用 Markdown 代码块，例如 \`\`\`html、\`\`\`svg、\`\`\`jsx。
 回复时可以根据当前状态自由决定是否用双换行拆成多条气泡，但代码块必须保持完整不拆分。
+文档类输出（需求文档/方案说明/汇总/整理等）必须放在单个代码块内输出，禁止拆分成多个代码块。
 如果你决定发表情包，输出指令：[发送表情包: 名称]
 ${buildMemoryPrompt(true)}
 
@@ -7970,96 +8175,197 @@ function latestPendingDelivery(history){
   return history.slice().reverse().find(m=>m.type==="delivery" && m.data?.status==="pending");
 }
 function parseAIReplyUnified(raw, groupId){
-  let text=cleanAIText(raw);
   const out=[];
   const h=getHistory();
   const pendingTransfer=latestPendingTransfer(h);
   const pendingDelivery=latestPendingDelivery(h);
-  const add=(msg)=>out.push(Object.assign({id:uid("msg"), groupId, sender:"role", createdAt:Date.now(), time:nowTime()}, msg));
-  const consume=(pattern, handler)=>{
-    text=text.replace(pattern,(match,...args)=>{
-      handler(...args);
-      return "";
-    });
+  let pendingQuote=null;
+  const add=(msg)=>{
+    if(pendingQuote && msg.type==="text" && msg.content){
+      Object.assign(msg, pendingQuote);
+      pendingQuote=null;
+    }
+    out.push(Object.assign({id:uid("msg"), groupId, sender:"role", createdAt:Date.now(), time:nowTime()}, msg));
   };
-  consume(/\[(?:发送表情包|表情包)[:：]\s*([^\]]+?)\]/g,(name)=>{
-    name=String(name||"").trim().replace(/[「」"""'']/g,"");
-    const list=getStickers();
-    const s=list.find(x=>x.name===name)
-      ||list.find(x=>name.includes(x.name)||x.name.includes(name))
-      ||list.find(x=>(x.meaning||"").includes(name)||name.includes(x.meaning||""));
-    if(s) add({type:"sticker", content:`[表情包:${s.name}]`, data:{name:s.name, meaning:s.meaning, url:s.url}});
-    else add({type:"text", content:`（想发表情包「${name}」，但本地没有同名表情包）`});
-  });
-  consume(/\[(?:发送链接|链接)[:：]\s*([^\]]+?)\]/g,(raw)=>{
-    raw=String(raw||"").trim();
-    const parts=raw.split("|").map(s=>s.trim());
-    const platform=parts[0]||"论坛";
-    const title=parts[1]||"链接";
-    const body=parts[2]||"";
-    const commentRaw=parts[3]||"";
-    const comments=commentRaw?commentRaw.split("//").map(s=>s.trim()).filter(Boolean):[];
-    if(title) add({type:"link", content:`[链接:${title}]`, data:{platform,title,body,comments}});
-  });
-  consume(/[\[【]状态更新[:：]\s*([^\]】]+?)[\]】]/g,(status)=>{
+
+  // 最优先：拉黑/解除拉黑指令，在所有其他处理之前
+  let rawText=String(raw||"");
+  if(/[\[【]拉黑[\]】]/.test(rawText)){
+    rawText=rawText.replace(/[\[【]拉黑[\]】]/g,"");
+    setBlocked(true); updateBlockBar(); Miao.state.blockNotify=true;
+  }
+  if(/[\[【]解除拉黑[\]】]/.test(rawText)){
+    rawText=rawText.replace(/[\[【]解除拉黑[\]】]/g,"");
+    setBlocked(false); updateBlockBar();
+  }
+  // 如果清完之后原文为空，直接返回空out（不报错，拉黑是副作用，不需要气泡）
+  if(!rawText.trim()) return out;
+
+  // 预处理：去掉HTML标签和角色扮演格式前缀
+  let text=cleanAIText(rawText);
+
+  // 状态更新/SAVE/便签/骰子不入out，扫到即处理后从文本移除
+  text=text.replace(/[\[【]状态更新[:：]\s*([^\]】]+?)[\]】]/g,(m,status)=>{
     status=String(status||"").trim();
     if(status){
       Storage.set("lastRoleStatus_"+Miao.state.currentRoleId, status);
       const el=document.getElementById("roleStatusText");
       if(el) el.textContent=status;
     }
+    return "";
   });
-  consume(/[\[【](?:发送语音|语音)[:：]\s*([^\]】]+?)[\]】]/g,(text)=>{
-    text=String(text||"").trim();
-    if(text){
-      const dur=Math.max(1,Math.min(60,Math.ceil(text.length/5)));
-      add({type:"voice", content:`[语音:${text}]`, data:{text, duration:dur}});
+
+  // 所有需要按顺序处理的指令patterns
+  const patterns=[
+    {
+      regex:/\[(?:发送表情包|表情包)[:：]\s*([^\]]+?)\]/g,
+      parse(m){
+        const rawName=String(m[1]||"").trim().replace(/[\u300c\u300d\u201c\u201d\u2018\u2019]/g,"");
+        const list=getStickers();
+        const s=list.find(x=>x.name===rawName)
+          ||list.find(x=>rawName.includes(x.name)||x.name.includes(rawName))
+          ||list.find(x=>(x.meaning||"").includes(rawName)||rawName.includes(x.meaning||""));
+        if(s) return {type:"sticker", content:"[表情包:"+s.name+"]", data:{name:s.name, meaning:s.meaning, url:s.url}};
+        return {type:"text", content:"（想发表情包「"+rawName+"」，但本地没有同名表情包）"};
+      }
+    },
+    {
+      regex:/\[(?:发送链接|链接)[:：]\s*([^\]]+?)\]/g,
+      parse(m){
+        const raw2=String(m[1]||"").trim();
+        const parts=raw2.split("|").map(function(s){return s.trim();});
+        const platform=parts[0]||"论坛";
+        const title=parts[1]||"链接";
+        const body=parts[2]||"";
+        const commentRaw=parts[3]||"";
+        const comments=commentRaw?commentRaw.split("//").map(function(s){return s.trim();}).filter(Boolean):[];
+        if(title) return {type:"link", content:"[链接:"+title+"]", data:{platform:platform,title:title,body:body,comments:comments}};
+        return null;
+      }
+    },
+    {
+      regex:/[\[【](?:发送语音|语音)[:：]\s*([^\]】]+?)[\]】]/g,
+      parse(m){
+        const t=String(m[1]||"").trim();
+        if(t){
+          const dur=Math.max(1,Math.min(60,Math.ceil(t.length/5)));
+          return {type:"voice", content:"[语音:"+t+"]", data:{text:t, duration:dur}};
+        }
+        return null;
+      }
+    },
+    {
+      regex:/\[(?:发送图片|图片描述)[:：]\s*([^\]]+?)\]/g,
+      parse(m){
+        const desc=String(m[1]||"").trim();
+        if(desc) return {type:"image_desc", content:"[图片描述:"+desc+"]", data:{description:desc}};
+        return null;
+      }
+    },
+    {
+      regex:/\[引用[:：]\s*([^\]]+?)\]/g,
+      parse(m){
+        const h=getHistory();
+        const fragment=String(m[1]||"").trim();
+        const quoted=h.slice().reverse().find(x=>
+          x.sender==="user" && (x.content||"").includes(fragment)
+        );
+        // 不入out，把引用信息存到pendingQuote，让下一段文字带上
+        pendingQuote={
+          quoteId:quoted?quoted.id:null,
+          quoteContent:fragment,
+          quoteSender:quoted?quoted.sender:"user"
+        };
+        return null;
+      }
+    },
+    {
+      regex:/\[主动转账[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)\s*\|\s*([^\]]*?)\]/g,
+      parse(m){
+        return {type:"role_transfer", content:"[主动转账:"+m[1]+"|"+(m[2]||"")+"]", data:{amount:Number(m[1]).toFixed(2), note:String(m[2]||"").trim(), status:"pending"}};
+      }
+    },
+    {
+      regex:/\[向user发起代付[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)\s*\|\s*([^\]]*?)\]/g,
+      parse(m){
+        return {type:"role_request_delivery", content:"[向user发起代付:"+m[1]+"|"+(m[2]||"")+"]", data:{amount:Number(m[1]).toFixed(2), note:String(m[2]||"").trim(), status:"pending"}};
+      }
+    },
+    {
+      regex:/[\[【]收款[^\]】]*[\]】]/g,
+      parse(m){
+        if(pendingTransfer && pendingTransfer.data.status==="pending"){
+          pendingTransfer.data.status="received";
+          receiveTransferToWallet(parseFloat(pendingTransfer.data.amount)||0);
+          return {type:"received", content:"已收款", data:{amount:pendingTransfer.data.amount, note:pendingTransfer.data.note}};
+        }
+        return null;
+      }
+    },
+    {
+      regex:/[\[【]拒收转账[^\]】]*[\]】]/g,
+      parse(m){
+        if(pendingTransfer && pendingTransfer.data.status==="pending"){
+          pendingTransfer.data.status="rejected";
+          return {type:"rejected", content:"已拒收这笔转账", data:{amount:pendingTransfer.data.amount, note:pendingTransfer.data.note}};
+        }
+        return null;
+      }
+    },
+    {
+      regex:/[\[【]帮忙代付[^\]】]*[\]】]/g,
+      parse(m){
+        if(pendingDelivery && pendingDelivery.data.status==="pending"){
+          pendingDelivery.data.status="paid";
+          if(pendingDelivery.data.orderId) updateElemeOrderStatus(pendingDelivery.data.orderId,"paid");
+          return {type:"paid", content:"我已帮忙代付", data:{amount:pendingDelivery.data.amount, item:pendingDelivery.data.item}};
+        }
+        return null;
+      }
+    },
+    {
+      regex:/[\[【]拒绝代付[^\]】]*[\]】]/g,
+      parse(m){
+        if(pendingDelivery && pendingDelivery.data.status==="pending"){
+          pendingDelivery.data.status="rejected";
+          if(pendingDelivery.data.orderId) updateElemeOrderStatus(pendingDelivery.data.orderId,"rejected");
+          return {type:"rejected", content:"已拒绝代付", data:{amount:pendingDelivery.data.amount, item:pendingDelivery.data.item}};
+        }
+        return null;
+      }
+    },
+  ];
+
+  // 线性扫描：按原文顺序逐段产出
+  var cursor=0;
+  while(cursor<text.length){
+    var earliest=null;
+    for(var i=0;i<patterns.length;i++){
+      var p=patterns[i];
+      p.regex.lastIndex=cursor;
+      var match=p.regex.exec(text);
+      if(match && (!earliest || match.index<earliest.index)){
+        earliest={match:match, pattern:p};
+      }
     }
-  });
-  consume(/\[(?:发送图片|图片描述)[:：]\s*([^\]]+?)\]/g,(desc)=>{
-    desc=String(desc||"").trim();
-    if(desc) add({type:"image_desc", content:`[图片描述:${desc}]`, data:{description:desc}});
-  });
-  consume(/\[主动转账[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)\s*\|\s*([^\]]*?)\]/g,(amount,note)=>{
-    add({type:"role_transfer", content:`[主动转账:${amount}|${note||""}]`, data:{amount:Number(amount).toFixed(2), note:String(note||"").trim(), status:"pending"}});
-  });
-  consume(/\[向user发起代付[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)\s*\|\s*([^\]]*?)\]/g,(amount,note)=>{
-    add({type:"role_request_delivery", content:`[向user发起代付:${amount}|${note||""}]`, data:{amount:Number(amount).toFixed(2), note:String(note||"").trim(), status:"pending"}});
-  });
-  consume(/[\[【]收款[^】\]]*[\]】]/g,()=>{
-    if(pendingTransfer && pendingTransfer.data.status==="pending"){
-      pendingTransfer.data.status="received";
-      add({type:"received", content:"已收款", data:{amount:pendingTransfer.data.amount, note:pendingTransfer.data.note}});
-      receiveTransferToWallet(parseFloat(pendingTransfer.data.amount)||0);
+    if(!earliest){
+      var before=text.slice(cursor).trim();
+      if(before){
+        splitReply(before).forEach(function(t){ if(stripInstructions(t)) add({type:"text", content:t}); });
+      }
+      break;
     }
-  });
-  consume(/[\[【]拒收转账[^】\]]*[\]】]/g,()=>{
-    if(pendingTransfer && pendingTransfer.data.status==="pending"){
-      pendingTransfer.data.status="rejected";
-      add({type:"rejected", content:"已拒收这笔转账", data:{amount:pendingTransfer.data.amount, note:pendingTransfer.data.note}});
+    var beforeText=text.slice(cursor, earliest.match.index).trim();
+    if(beforeText){
+      splitReply(beforeText).forEach(function(t){ if(stripInstructions(t)) add({type:"text", content:t}); });
     }
-  });
-  consume(/[\[【]帮忙代付[^】\]]*[\]】]/g,()=>{
-    if(pendingDelivery && pendingDelivery.data.status==="pending"){
-      pendingDelivery.data.status="paid";
-      if(pendingDelivery.data.orderId) updateElemeOrderStatus(pendingDelivery.data.orderId,"paid");
-      add({type:"paid", content:"我已帮忙代付", data:{amount:pendingDelivery.data.amount, item:pendingDelivery.data.item}});
-    }
-  });
-  consume(/[\[【]拒绝代付[^】\]]*[\]】]/g,()=>{
-    if(pendingDelivery && pendingDelivery.data.status==="pending"){
-      pendingDelivery.data.status="rejected";
-      if(pendingDelivery.data.orderId) updateElemeOrderStatus(pendingDelivery.data.orderId,"rejected");
-      add({type:"rejected", content:"已拒绝代付", data:{amount:pendingDelivery.data.amount, item:pendingDelivery.data.item}});
-    }
-  });
-  splitReply(text).forEach(t=>{
-    // 过滤掉只含指令标记的气泡
-    if(stripInstructions(t)) add({type:"text", content:t});
-  });
+    var msg=earliest.pattern.parse(earliest.match);
+    if(msg) add(msg);
+    cursor=earliest.match.index+earliest.match[0].length;
+  }
+
   return out;
 }
-
 
 
 function memoryKey(roleId){
