@@ -1841,6 +1841,36 @@ body{font-size:calc(14px * var(--font-scale));}
   background:#eef0f5;
 }
 .memory-actions button.danger{background:#ffe8e6;color:#c5221f}
+/* 拉黑提示条 */
+#blockBar{
+  display:none;
+  background:rgba(0,0,0,0.06);
+  color:#999;
+  font-size:12px;
+  text-align:center;
+  padding:6px;
+  flex-shrink:0;
+}
+#blockBar.show{
+  display:block;
+}
+/* user消息拉黑感叹号 */
+.msg.user.blocked-msg .bubble::before{
+  content:"!";
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  background:rgba(255,160,0,0.85);
+  color:#fff;
+  font-size:10px;
+  font-weight:700;
+  margin-right:5px;
+  vertical-align:middle;
+  flex-shrink:0;
+}
 /* 引用块样式 */
 .quote-block{
   background:rgba(0,0,0,0.15);
@@ -2070,6 +2100,7 @@ body{font-size:calc(14px * var(--font-scale));}
         </div>
       </div>
       <div id="stickyNoteBar" class="sticky-note-bar"></div>
+      <div id="blockBar" style="display:none">对方已将你拉黑</div>
       <div class="chat" id="chat"></div>
       <div class="composer-wrap" id="wechatComposer">
         <div class="toolbar">
@@ -3840,6 +3871,7 @@ function renderChat(){
   const menu=$("#msgMenu"); if(menu) menu.classList.remove("show");
   const chat=$("#chat");
   restoreRoleStatus();
+  updateBlockBar();
   const h=getHistory();
   if(!h.length){
     chat.innerHTML=`<div class="date-chip">今天</div>`;
@@ -3864,11 +3896,12 @@ function renderMessage(m,h,idx){
   const role=currentRole();
   const userProfile=Storage.get("userProfile", {});
   const isUser=m.sender==="user";
+  const blocked=isBlocked();
   const cls=isUser?"user":"role";
   const avatar=isUser?(userProfile.avatar||Miao.defaults.avatar):(role.avatar||Miao.defaults.avatar);
   const next=h[idx+1];
   const isLastInAssistantGroup = !isUser && (!next || next.sender!=="role" || next.groupId!==m.groupId);
-  return `<div class="msg ${cls}" data-id="${m.id}" data-group-id="${m.groupId||""}" data-sender="${m.sender}" data-last-role-group="${isLastInAssistantGroup ? "1" : "0"}">
+  return `<div class="msg ${cls}${isUser&&blocked?" blocked-msg":""}" data-id="${m.id}" data-group-id="${m.groupId||""}" data-sender="${m.sender}" data-last-role-group="${isLastInAssistantGroup ? "1" : "0"}">
     <img class="avatar" src="${avatar}" alt="">
     <div class="bubble-wrap">
       ${!isUser?`<div class="name-line">${escapeHtml(role.name)}</div>`:""}
@@ -3928,6 +3961,29 @@ function clearQuote(){
   if(bar) bar.classList.remove("show");
 }
 window.clearQuote=clearQuote;
+
+/* ===== 拉黑功能 ===== */
+function isBlocked(){
+  const v=Storage.get(Storage.roleKey("blocked"), false);
+  return v===true || (v && v.blocked===true);
+}
+function setBlocked(val){
+  if(val){
+    Storage.set(Storage.roleKey("blocked"), {blocked:true, blockedAt:Date.now()});
+  } else {
+    Storage.set(Storage.roleKey("blocked"), false);
+  }
+}
+function updateBlockBar(){
+  const bar=$("#blockBar");
+  if(!bar) return;
+  if(isBlocked()){
+    bar.classList.add("show");
+  } else {
+    bar.classList.remove("show");
+  }
+}
+
 
 
 function parseDeliveryLinkText(text){
@@ -4200,7 +4256,7 @@ async function callAIReply(){
 }
 function messageToAIContext(m){
   const d=m.data||{};
-  const quotePrefix=m.quoteId||m.quoteContent ? `[回复:${m.quoteContent||""}] ` : "";
+  const quotePrefix=m.quoteId||m.quoteContent ? `[引用:${m.quoteContent||""}] ` : "";
   if(m.type==="sticker") return `[表情包:${d.name||m.content}|含义:${d.meaning||""}]`;
   if(m.type==="voice") return `[语音:${d.text||m.content}]`;
   if(m.type==="link") return `[链接:${d.platform||"论坛"}|${d.title||""}]`;
@@ -4386,8 +4442,9 @@ function buildSystemPrompt(role){
   const world = getMatchedWorldEntries().map((e,i)=>`【世界书${i+1}：${e.title}】\n${e.content}`).join("\n\n") || "无";
   const user = getUserProfile();
   const timeStr = new Date().toLocaleString("zh-CN", {hour12:false});
+  const blockedStatus = `\n\n【拉黑状态】当前拉黑状态：${isBlocked()?"你已将user拉黑":"未拉黑"}\n可用指令：[拉黑] [解除拉黑]\n（何时使用请根据你的人设自行判断）`;
   const charSystem = role.systemPrompt || "";
-  return `${charSystem}
+  return `${charSystem}${blockedStatus}
 
 【角色基础资料】
 你是${role.name}。
@@ -4441,7 +4498,7 @@ ${getStickerPromptList()}
 [发送表情包: 名称]
 [发送图片: 描述]
 [语音: （声音描述）说的内容]（声音描述和说话内容必须在同一个指令内，不能分开发送）
-[引用: 被引用消息的原文片段]（引用user的某句话时使用，片段尽量精准）
+[引用: 被引用消息的原文片段]（想回复user某句特定的话时使用，输出格式必须严格用此指令，不能自己造格式）
 [链接: 平台|标题|正文内容|评论1//评论2//评论3]
 平台可选：小红书、微博、贴吧、论坛、新闻。评论字段可省略。
 [收款]
@@ -4460,6 +4517,11 @@ ${getStickerPromptList()}
 - 已经完成的转账流程（状态为collected/received/paid）不要重复发起。
 - 发出[收款]、[拒收转账]、[帮忙代付]、[拒绝代付]指令后，不需要输出任何说明文字，不需要描述转账流程，直接继续对话。
 - 指令格式必须严格遵守，只能用[收款]，不能用[收款完成:...]、[已收款:...]等任何变体。
+
+【拉黑规则】
+- [拉黑]：将user拉黑，拉黑期间user的消息仍会注入上下文
+- [解除拉黑]：解除拉黑状态
+- 何时拉黑、拉黑多久、期间是否回复、何时解除，均根据你的人设自行判断，代码不做限制
 
 【格式规则】
 1. 你只能扮演${role.name}，不能替user说话。
@@ -8093,10 +8155,21 @@ function parseAIReplyUnified(raw, groupId){
   const h=getHistory();
   const pendingTransfer=latestPendingTransfer(h);
   const pendingDelivery=latestPendingDelivery(h);
-  const add=(msg)=>out.push(Object.assign({id:uid("msg"), groupId, sender:"role", createdAt:Date.now(), time:nowTime()}, msg));
+  let pendingQuote=null;
+  const add=(msg)=>{
+    if(pendingQuote && msg.type==="text" && msg.content){
+      Object.assign(msg, pendingQuote);
+      pendingQuote=null;
+    }
+    out.push(Object.assign({id:uid("msg"), groupId, sender:"role", createdAt:Date.now(), time:nowTime()}, msg));
+  };
 
   // 预处理：去掉HTML标签和角色扮演格式前缀
   let text=cleanAIText(raw);
+
+  // 拉黑/解除拉黑
+  text=text.replace(/[\[【]拉黑[\]】]/g,()=>{ setBlocked(true); updateBlockBar(); return ""; });
+  text=text.replace(/[\[【]解除拉黑[\]】]/g,()=>{ setBlocked(false); updateBlockBar(); return ""; });
 
   // 状态更新/SAVE/便签/骰子不入out，扫到即处理后从文本移除
   text=text.replace(/[\[【]状态更新[:：]\s*([^\]】]+?)[\]】]/g,(m,status)=>{
@@ -8161,18 +8234,16 @@ function parseAIReplyUnified(raw, groupId){
       parse(m){
         const h=getHistory();
         const fragment=String(m[1]||"").trim();
-        // 尝试按内容片段匹配历史消息
         const quoted=h.slice().reverse().find(x=>
           x.sender==="user" && (x.content||"").includes(fragment)
         );
-        return {
-          type:"text",
-          content:"",
+        // 不入out，把引用信息存到pendingQuote，让下一段文字带上
+        pendingQuote={
           quoteId:quoted?quoted.id:null,
           quoteContent:fragment,
-          quoteSender:quoted?quoted.sender:"user",
-          _isQuoteOnly:true
+          quoteSender:quoted?quoted.sender:"user"
         };
+        return null;
       }
     },
     {
