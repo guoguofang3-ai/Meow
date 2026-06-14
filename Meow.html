@@ -2784,8 +2784,19 @@ const Storage = {
       return raw == null ? fallback : JSON.parse(raw);
     }catch(e){ return fallback; }
   },
-  set(key, value){ localStorage.setItem(this.prefix+key, JSON.stringify(value)); },
-  remove(key){ localStorage.removeItem(this.prefix+key); },
+  set(key, value){
+    localStorage.setItem(this.prefix+key, JSON.stringify(value));
+    // 双写IndexedDB，fire-and-forget，失败不影响主流程
+    if(typeof MeowStorage !== "undefined"){
+      MeowStorage.set(this.prefix+key, value).catch(e=>console.warn("[IDB write]", key, e));
+    }
+  },
+  remove(key){
+    localStorage.removeItem(this.prefix+key);
+    if(typeof MeowStorage !== "undefined"){
+      MeowStorage.remove(this.prefix+key).catch(e=>console.warn("[IDB remove]", key, e));
+    }
+  },
   roleKey(kind, roleId=Miao.state.currentRoleId){ return kind+"."+roleId; }
 };
 
@@ -2876,6 +2887,28 @@ function slimRoleForStorage(role){
 function fileToDataUrl(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
 
 function init(){
+  // 首次启动迁移localStorage数据到IndexedDB
+  if(typeof MeowStorage !== "undefined"){
+    (async()=>{
+      try{
+        const migrated = await MeowStorage.get("__migrated__");
+        if(!migrated){
+          const data = {};
+          for(let i=0;i<localStorage.length;i++){
+            const k = localStorage.key(i);
+            try{ data[k] = JSON.parse(localStorage.getItem(k)); }
+            catch{ data[k] = localStorage.getItem(k); }
+          }
+          if(Object.keys(data).length > 0){
+            await MeowStorage.setMany(data);
+            console.log("[IDB migrate] 迁移完成，共", Object.keys(data).length, "条");
+          }
+          await MeowStorage.set("__migrated__", Date.now());
+          await MeowStorage.set("__createdAt__", Date.now());
+        }
+      }catch(e){ console.warn("[IDB migrate] 迁移失败:", e); }
+    })();
+  }
   ensureDefaults();
   bindEvents();
   // 初次打开固定停在锁屏，所有 App 都必须取消 active
@@ -8874,6 +8907,28 @@ window.MiaoConfirmFullImport=function(){
 };
 
 function exportData(){
+  // 优先从IndexedDB导出（不受5MB限制），降级用localStorage
+  if(typeof MeowStorage !== "undefined"){
+    MeowStorage.exportAll().then(allData=>{
+      const data={miao2:{}};
+      Object.keys(allData).filter(k=>k.startsWith(Storage.prefix)).forEach(k=>{
+        data.miao2[k.slice(Storage.prefix.length)] = allData[k];
+      });
+      const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      a.download="喵喵机2备份_"+new Date().toISOString().slice(0,10)+".json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }).catch(e=>{
+      console.warn("[IDB export] 失败，降级用localStorage:", e);
+      _exportFromLocalStorage();
+    });
+  } else {
+    _exportFromLocalStorage();
+  }
+}
+function _exportFromLocalStorage(){
   const data={miao2:{}};
   Object.keys(localStorage).filter(k=>k.startsWith(Storage.prefix)).forEach(k=>{
     data.miao2[k.slice(Storage.prefix.length)] = Storage.get(k.slice(Storage.prefix.length), null);
