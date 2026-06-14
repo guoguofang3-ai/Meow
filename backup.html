@@ -1,0 +1,339 @@
+<!-- backup.html — 备份与恢复页面 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>喵喵机 · 备份与恢复</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+  background: #0f0f1a;
+  color: #e0e0ea;
+  min-height: 100vh;
+  padding: 20px;
+  padding-top: env(safe-area-inset-top, 20px);
+}
+.page-header { text-align: center; padding: 20px 0 24px; }
+.page-header h1 { font-size: 20px; font-weight: 600; color: #f0e0ff; }
+.page-header p { font-size: 12px; color: #888; margin-top: 6px; }
+.card {
+  background: #1a1a2e;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 14px;
+  border: 1px solid #2a2a3e;
+}
+.card-title { font-size: 14px; font-weight: 600; color: #e8e8f0; margin-bottom: 6px; }
+.card-desc { font-size: 12px; color: #888; line-height: 1.6; }
+.btn {
+  width: 100%; padding: 14px; border: none; border-radius: 12px;
+  font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 14px;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; }
+.btn-danger { background: #2a1a1a; color: #f87171; border: 1px solid #3d1a1a; }
+.btn-secondary { background: #1e1e2e; color: #c084fc; border: 1px solid #7c3aed44; }
+.status-bar {
+  background: #1a2a1a; border: 1px solid #2a3d2a;
+  border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.status-bar.warning { background: #2a2a1a; border-color: #3d3d1a; }
+.status-bar.danger { background: #2a1a1a; border-color: #3d1a1a; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; flex-shrink: 0; }
+.status-bar.warning .status-dot { background: #facc15; }
+.status-bar.danger .status-dot { background: #f87171; }
+.status-text { font-size: 12px; color: #ccc; line-height: 1.5; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.stat-item { background: #16161e; border-radius: 10px; padding: 12px; text-align: center; }
+.stat-value { font-size: 18px; font-weight: 600; color: #c084fc; }
+.stat-label { font-size: 10px; color: #666; margin-top: 4px; }
+.progress-wrap { display: none; margin-top: 14px; }
+.progress-wrap.active { display: block; }
+.progress-bar { width: 100%; height: 6px; background: #16161e; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #7c3aed, #a855f7); border-radius: 3px; transition: width 0.3s; width: 0%; }
+.progress-text { font-size: 11px; color: #888; margin-top: 6px; text-align: center; }
+.file-input-wrap { position: relative; margin-top: 14px; }
+.file-input-wrap input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.file-input-display { border: 2px dashed #2a2a3e; border-radius: 12px; padding: 24px; text-align: center; }
+.file-input-display:hover { border-color: #7c3aed; background: #1a1a2e; }
+.file-input-display .icon { font-size: 28px; margin-bottom: 8px; }
+.file-input-display .text { font-size: 12px; color: #888; }
+.file-input-display .filename { font-size: 13px; color: #c084fc; margin-top: 6px; display: none; }
+.toast {
+  position: fixed; bottom: 40px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #2d1f3d; color: #e0d0ff; padding: 12px 24px;
+  border-radius: 24px; font-size: 13px; opacity: 0;
+  transition: all 0.3s; pointer-events: none; z-index: 999;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  display: none; align-items: center; justify-content: center;
+  z-index: 1000; padding: 20px; backdrop-filter: blur(4px);
+}
+.modal-overlay.show { display: flex; }
+.modal { background: #1a1a2e; border-radius: 20px; padding: 24px; width: 100%; max-width: 320px; text-align: center; border: 1px solid #2a2a3e; }
+.modal h3 { font-size: 16px; color: #f0e0ff; margin-bottom: 8px; }
+.modal p { font-size: 12px; color: #888; line-height: 1.6; margin-bottom: 18px; }
+.modal-btns { display: flex; gap: 10px; }
+.modal-btns .btn { flex: 1; margin-top: 0; padding: 12px; }
+.reminder-banner { background: linear-gradient(135deg, #2a1a3d, #1a1a2e); border: 1px solid #7c3aed44; border-radius: 14px; padding: 16px; margin-bottom: 14px; display: none; }
+.reminder-banner.show { display: block; }
+.reminder-banner .title { font-size: 13px; color: #f0e0ff; font-weight: 500; margin-bottom: 4px; }
+.reminder-banner .desc { font-size: 11px; color: #999; line-height: 1.5; }
+.reminder-banner .btn { margin-top: 10px; padding: 10px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page-header">
+  <h1>📦 备份与恢复</h1>
+  <p>你的聊天记录、设置、壁纸都在这里</p>
+</div>
+
+<div class="reminder-banner" id="reminderBanner">
+  <div class="title">⏰ 该备份了</div>
+  <div class="desc" id="reminderText">距离上次备份已超过7天，建议现在导出一份存着</div>
+  <button class="btn btn-primary" onclick="doBackup()">立即备份</button>
+</div>
+
+<div id="statusBar" class="status-bar">
+  <div class="status-dot"></div>
+  <div class="status-text" id="statusText">存储状态正常</div>
+</div>
+
+<div class="card">
+  <div class="card-title">📊 数据概览</div>
+  <div class="stats">
+    <div class="stat-item"><div class="stat-value" id="statKeys">-</div><div class="stat-label">数据条目</div></div>
+    <div class="stat-item"><div class="stat-value" id="statSize">-</div><div class="stat-label">占用空间</div></div>
+    <div class="stat-item"><div class="stat-value" id="statLastBackup">-</div><div class="stat-label">上次备份</div></div>
+    <div class="stat-item"><div class="stat-value" id="statDays">-</div><div class="stat-label">数据天数</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">💾 导出备份</div>
+  <div class="card-desc">将所有数据打包成JSON文件保存到本地，包括聊天记录、设置、主题、壁纸、记忆库等全部内容。</div>
+  <div class="progress-wrap" id="exportProgress">
+    <div class="progress-bar"><div class="progress-fill" id="exportFill"></div></div>
+    <div class="progress-text" id="exportText">准备中...</div>
+  </div>
+  <button class="btn btn-primary" id="exportBtn" onclick="doBackup()">导出全部数据</button>
+</div>
+
+<div class="card">
+  <div class="card-title">📥 导入恢复</div>
+  <div class="card-desc">从之前导出的JSON文件恢复数据。注意：导入会覆盖当前所有数据。</div>
+  <div class="file-input-wrap" id="fileWrap">
+    <input type="file" accept=".json" id="fileInput" onchange="handleFile(event)">
+    <div class="file-input-display">
+      <div class="icon">📁</div>
+      <div class="text">点击选择备份文件</div>
+      <div class="filename" id="fileName"></div>
+    </div>
+  </div>
+  <div class="progress-wrap" id="importProgress">
+    <div class="progress-bar"><div class="progress-fill" id="importFill"></div></div>
+    <div class="progress-text" id="importText">准备中...</div>
+  </div>
+  <button class="btn btn-secondary" id="importBtn" onclick="confirmImport()" style="display:none;">确认导入</button>
+</div>
+
+<div class="card" id="migrateCard" style="display:none;">
+  <div class="card-title">🔄 数据迁移</div>
+  <div class="card-desc">检测到localStorage中有旧数据，点击下方按钮一键迁移到新存储引擎。</div>
+  <button class="btn btn-secondary" onclick="doMigrate()">开始迁移</button>
+</div>
+
+<div class="card" style="border-color:#3d1a1a;">
+  <div class="card-title" style="color:#f87171;">⚠️ 危险操作</div>
+  <div class="card-desc">清除IndexedDB中的所有数据。此操作不可恢复，请确保已导出备份。</div>
+  <button class="btn btn-danger" onclick="confirmClear()">清除全部数据</button>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">确认操作</h3>
+    <p id="modalDesc">确认描述</p>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn btn-danger" id="modalConfirmBtn" onclick="modalConfirmAction()">确认</button>
+    </div>
+  </div>
+</div>
+
+<script src="storage.js"></script>
+<script>
+function showToast(msg, duration=2500){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), duration);
+}
+function formatBytes(bytes){
+  if(bytes<1024) return bytes+' B';
+  if(bytes<1024*1024) return (bytes/1024).toFixed(1)+' KB';
+  return (bytes/(1024*1024)).toFixed(2)+' MB';
+}
+function formatDate(ts){
+  if(!ts) return '从未';
+  const d=new Date(ts), now=new Date(), diff=now-d;
+  if(diff<60000) return '刚刚';
+  if(diff<3600000) return Math.floor(diff/60000)+'分钟前';
+  if(diff<86400000) return Math.floor(diff/3600000)+'小时前';
+  if(diff<604800000) return Math.floor(diff/86400000)+'天前';
+  return `${d.getMonth()+1}/${d.getDate()}`;
+}
+function daysSince(ts){ if(!ts) return '-'; return Math.floor((Date.now()-ts)/86400000); }
+
+async function init(){
+  await refreshStats();
+  await checkReminder();
+  await checkMigration();
+}
+
+async function refreshStats(){
+  try{
+    const keys=await MeowStorage.keys();
+    const allData=await MeowStorage.exportAll();
+    const sizeBytes=new Blob([JSON.stringify(allData)]).size;
+    const lastBackup=await MeowStorage.get('__lastBackupTime__');
+    const createdAt=await MeowStorage.get('__createdAt__');
+    document.getElementById('statKeys').textContent=keys.length;
+    document.getElementById('statSize').textContent=formatBytes(sizeBytes);
+    document.getElementById('statLastBackup').textContent=formatDate(lastBackup);
+    document.getElementById('statDays').textContent=createdAt?daysSince(createdAt)+'天':'-';
+    const statusBar=document.getElementById('statusBar');
+    const statusText=document.getElementById('statusText');
+    const sizeMB=sizeBytes/(1024*1024);
+    if(sizeMB>40){ statusBar.className='status-bar danger'; statusText.textContent=`存储空间紧张 (${formatBytes(sizeBytes)} / ~50MB)`; }
+    else if(sizeMB>25){ statusBar.className='status-bar warning'; statusText.textContent=`已使用 ${formatBytes(sizeBytes)}`; }
+    else{ statusBar.className='status-bar'; statusText.textContent=`存储正常 · 已使用 ${formatBytes(sizeBytes)}`; }
+  }catch(err){ console.error(err); }
+}
+
+async function checkReminder(){
+  const lastBackup=await MeowStorage.get('__lastBackupTime__');
+  const banner=document.getElementById('reminderBanner');
+  const text=document.getElementById('reminderText');
+  if(!lastBackup){ banner.classList.add('show'); text.textContent='还没有任何备份记录，建议立即导出一份'; }
+  else{
+    const daysPassed=Math.floor((Date.now()-lastBackup)/86400000);
+    if(daysPassed>=7){ banner.classList.add('show'); text.textContent=`距离上次备份已经 ${daysPassed} 天了`; }
+  }
+}
+
+async function checkMigration(){
+  if(localStorage.length>0){
+    const migrated=await MeowStorage.get('__migrated__');
+    if(!migrated) document.getElementById('migrateCard').style.display='block';
+  }
+}
+
+async function doBackup(){
+  const btn=document.getElementById('exportBtn');
+  const progress=document.getElementById('exportProgress');
+  const fill=document.getElementById('exportFill');
+  const text=document.getElementById('exportText');
+  btn.disabled=true; btn.textContent='导出中...'; progress.classList.add('active');
+  try{
+    fill.style.width='20%'; text.textContent='读取数据...';
+    await new Promise(r=>setTimeout(r,200));
+    const allData=await MeowStorage.exportAll();
+    fill.style.width='60%'; text.textContent='打包中...';
+    await new Promise(r=>setTimeout(r,200));
+    const backup={__meta__:{version:1,exportTime:Date.now(),exportDate:new Date().toISOString(),itemCount:Object.keys(allData).length,app:'喵喵机'},data:allData};
+    const jsonStr=JSON.stringify(backup,null,2);
+    const blob=new Blob([jsonStr],{type:'application/json'});
+    fill.style.width='90%'; text.textContent='生成文件...';
+    await new Promise(r=>setTimeout(r,150));
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`喵喵机备份_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    await MeowStorage.set('__lastBackupTime__', Date.now());
+    fill.style.width='100%'; text.textContent='导出完成 ✓';
+    showToast('备份成功，文件已保存');
+    document.getElementById('reminderBanner').classList.remove('show');
+    await refreshStats();
+  }catch(err){ text.textContent='导出失败: '+err.message; showToast('导出失败，请重试'); }
+  finally{ btn.disabled=false; btn.textContent='导出全部数据'; setTimeout(()=>progress.classList.remove('active'),2000); }
+}
+
+let pendingImportData=null;
+function handleFile(event){
+  const file=event.target.files[0]; if(!file) return;
+  const nameEl=document.getElementById('fileName');
+  nameEl.style.display='block'; nameEl.textContent=`已选择: ${file.name} (${formatBytes(file.size)})`;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    try{
+      const parsed=JSON.parse(e.target.result);
+      if(parsed.__meta__&&parsed.data){ pendingImportData=parsed.data; nameEl.textContent+=` · ${parsed.__meta__.itemCount}条数据`; }
+      else{ pendingImportData=parsed; nameEl.textContent+=` · ${Object.keys(parsed).length}条数据`; }
+      document.getElementById('importBtn').style.display='block';
+      showToast('文件解析成功，确认后导入');
+    }catch(err){ nameEl.textContent='❌ 文件格式错误'; pendingImportData=null; document.getElementById('importBtn').style.display='none'; }
+  };
+  reader.readAsText(file);
+}
+
+function confirmImport(){
+  if(!pendingImportData) return;
+  showModal('确认导入','导入会覆盖当前所有数据，此操作不可撤销。建议先导出备份。',doImport);
+}
+
+async function doImport(){
+  closeModal();
+  const progress=document.getElementById('importProgress');
+  const fill=document.getElementById('importFill');
+  const text=document.getElementById('importText');
+  const btn=document.getElementById('importBtn');
+  btn.disabled=true; progress.classList.add('active');
+  try{
+    fill.style.width='30%'; text.textContent='清除旧数据...'; await new Promise(r=>setTimeout(r,200));
+    fill.style.width='60%'; text.textContent='写入新数据...';
+    await MeowStorage.importAll(pendingImportData);
+    const created=await MeowStorage.get('__createdAt__');
+    if(!created) await MeowStorage.set('__createdAt__', Date.now());
+    fill.style.width='100%'; text.textContent='导入完成 ✓';
+    showToast('数据恢复成功');
+    pendingImportData=null; document.getElementById('importBtn').style.display='none';
+    await refreshStats();
+  }catch(err){ text.textContent='导入失败: '+err.message; showToast('导入失败，请重试'); }
+  finally{ btn.disabled=false; setTimeout(()=>progress.classList.remove('active'),2000); }
+}
+
+async function doMigrate(){
+  try{
+    const data={};
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i);
+      try{ data[key]=JSON.parse(localStorage.getItem(key)); }
+      catch{ data[key]=localStorage.getItem(key); }
+    }
+    await MeowStorage.setMany(data);
+    await MeowStorage.set('__migrated__', Date.now());
+    await MeowStorage.set('__createdAt__', Date.now());
+    document.getElementById('migrateCard').style.display='none';
+    showToast(`迁移完成，共 ${Object.keys(data).length} 条数据`);
+    await refreshStats();
+  }catch(err){ showToast('迁移失败: '+err.message); }
+}
+
+function confirmClear(){ showModal('⚠️ 确认清除所有数据','这会删除全部数据，此操作不可恢复。',doClear); }
+async function doClear(){ closeModal(); try{ await MeowStorage.clear(); showToast('所有数据已清除'); await refreshStats(); }catch(err){ showToast('清除失败: '+err.message); } }
+
+let modalAction=null;
+function showModal(title,desc,action){ document.getElementById('modalTitle').textContent=title; document.getElementById('modalDesc').textContent=desc; document.getElementById('modalOverlay').classList.add('show'); modalAction=action; }
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('show'); modalAction=null; }
+function modalConfirmAction(){ if(modalAction) modalAction(); }
+
+init();
+</script>
+</body>
+</html>

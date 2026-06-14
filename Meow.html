@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>o MiaoYUTwT o</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="喵喵机">
+<link rel="apple-touch-icon" href="icon-192.png">
+<!-- IndexedDB 封装 -->
+<script src="storage.js"></script>
 <style>
 :root{
   --phone-w:min(430px,100vw);
@@ -2879,6 +2887,7 @@ function init(){
   updateClock();
   setInterval(updateClock, 30000);
   ProactiveMsg.reset(); // 打开喵喵机就开始计时
+  checkBackupReminder();
 }
 function normalizeRoleData(){
   let roles=Storage.get("roles", []);
@@ -3375,7 +3384,8 @@ function bindEvents(){
   $("#wallpaperInput").addEventListener("change", async (e)=>{
     const f=e.target.files[0]; if(!f) return;
     try{
-      const data=(typeof compressImageFile==="function") ? await compressImageFile(f,900,.82) : await fileToDataUrl(f);
+      const data=(typeof compressImageFile==="function") ? await compressImageFile(f,600,.72) : await fileToDataUrl(f);
+      if(data.length > 400000){ toast("图片太大，请换一张较小的图片（建议1MB以内）"); return; }
       Storage.set(Storage.roleKey("wallpaper"), {type:"image", value:`url("${data}")`});
       applyVisuals();
       renderWallGrid();
@@ -3387,7 +3397,8 @@ function bindEvents(){
   $("#chatWallpaperInput")?.addEventListener("change", async (e)=>{
     const f=e.target.files[0]; if(!f) return;
     try{
-      const data=(typeof compressImageFile==="function") ? await compressImageFile(f,900,.82) : await fileToDataUrl(f);
+      const data=(typeof compressImageFile==="function") ? await compressImageFile(f,600,.72) : await fileToDataUrl(f);
+      if(data.length > 400000){ toast("图片太大，请换一张较小的图片（建议1MB以内）"); return; }
       saveRoleChatWallpaper(data);
       applyVisuals();
       renderChatWallpaperPreview();
@@ -8883,6 +8894,40 @@ async function clearAll(){
   Miao.state.busy = false;
   location.reload();
 }
+
+/* ===== 备份提醒 ===== */
+async function checkBackupReminder(){
+  try{
+    const lastBackup=localStorage.getItem("miao2.__lastBackupTime__");
+    const dismissed=localStorage.getItem("miao2.__backupReminderDismissed__");
+    const shouldRemind=!lastBackup||(Date.now()-Number(lastBackup)>7*86400000);
+    const todayDismissed=dismissed&&(Date.now()-Number(dismissed)<86400000);
+    if(shouldRemind&&!todayDismissed) showBackupReminder();
+  }catch(e){}
+}
+function showBackupReminder(){
+  if(document.getElementById("backup-reminder")) return;
+  const banner=document.createElement("div");
+  banner.id="backup-reminder";
+  banner.style.cssText="position:fixed;top:60px;left:0;right:0;z-index:999;padding:0 12px;pointer-events:auto;";
+  banner.innerHTML=`<div style="background:linear-gradient(135deg,#2d1f3d,#1a1a2e);border:1px solid #7c3aed44;border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+    <div>
+      <div style="font-size:12px;color:#f0e0ff;font-weight:500;">📦 该备份了</div>
+      <div style="font-size:11px;color:#888;margin-top:2px;">超过7天没有备份数据</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button onclick="window.dismissBackupReminder()" style="background:none;border:none;color:#666;font-size:11px;cursor:pointer;padding:4px;">稍后</button>
+      <button onclick="window.open('backup.html')" style="background:#7c3aed;border:none;color:#fff;font-size:11px;padding:6px 12px;border-radius:8px;cursor:pointer;">去备份</button>
+    </div>
+  </div>`;
+  document.body.appendChild(banner);
+}
+window.dismissBackupReminder=async function(){
+  localStorage.setItem("miao2.__backupReminderDismissed__", Date.now());
+  const el=document.getElementById("backup-reminder");
+  if(el) el.remove();
+};
+
 
 init();
 })();
