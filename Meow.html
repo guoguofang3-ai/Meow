@@ -9113,7 +9113,7 @@ function parseAIReplyUnified(raw, groupId){
       }
     },
     {
-      regex:/[\[【](?:发送语音|语音)[:：]\s*([^\]】]+?)[\]】]/g,
+      regex:/[\[【](?:发送语音|语音)[:：]\s*([\s\S]+?)[\]】]/g,
       parse(m){
         const t=String(m[1]||"").trim();
         if(t){
@@ -9124,7 +9124,7 @@ function parseAIReplyUnified(raw, groupId){
       }
     },
     {
-      regex:/\[(?:发送图片|图片描述)[:：]\s*([^\]]+?)\]/g,
+      regex:/\[(?:发送图片|图片描述)[:：]\s*([\s\S]+?)\]/g,
       parse(m){
         const desc=String(m[1]||"").trim();
         if(desc) return {type:"image_desc", content:"[图片描述:"+desc+"]", data:{description:desc}};
