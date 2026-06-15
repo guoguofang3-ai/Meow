@@ -4686,33 +4686,52 @@ function clearQuote(){
 window.clearQuote=clearQuote;
 
 /* ===== 自定义字体 ===== */
-async function applyCustomFont(url){
+function getFontFormat(url){
+  const ext=(url||"").split(".").pop().toLowerCase().split("?")[0];
+  return {ttf:"truetype",otf:"opentype",woff:"woff",woff2:"woff2"}[ext]||"truetype";
+}
+
+function applyCustomFont(url){
   url=(url||"").trim();
   if(!url){
-    // 恢复默认字体
-    document.documentElement.style.fontFamily="";
+    // 移除自定义字体style标签
+    const old=document.getElementById("customFontStyle");
+    if(old) old.remove();
+    document.documentElement.style.removeProperty("--custom-font-family");
+    // 移除全局font-family
+    const root=document.getElementById("customFontGlobal");
+    if(root) root.remove();
     Storage.set("customFontUrl","");
     toast("已恢复默认字体");
     return;
   }
   const btn=document.getElementById("applyFontBtn");
   if(btn){ btn.disabled=true; btn.textContent="加载中..."; }
-  try{
-    const font=new FontFace("MeowCustomFont","url("+url+")");
-    const loaded=await font.load();
-    document.fonts.add(loaded);
-    document.documentElement.style.fontFamily='"MeowCustomFont", -apple-system, sans-serif';
+  const format=getFontFormat(url);
+  const fontName="MeowCustomFont";
+  // 移除旧的
+  const oldStyle=document.getElementById("customFontStyle");
+  if(oldStyle) oldStyle.remove();
+  const oldGlobal=document.getElementById("customFontGlobal");
+  if(oldGlobal) oldGlobal.remove();
+  // 插入@font-face
+  const style=document.createElement("style");
+  style.id="customFontStyle";
+  style.textContent=`@font-face { font-family: '${fontName}'; src: url('${url}') format('${format}'); }`;
+  document.head.appendChild(style);
+  // 插入全局应用
+  const globalStyle=document.createElement("style");
+  globalStyle.id="customFontGlobal";
+  globalStyle.textContent=`* { font-family: '${fontName}', -apple-system, sans-serif !important; }`;
+  document.head.appendChild(globalStyle);
+  // 等字体加载完再提示
+  document.fonts.ready.then(()=>{
     Storage.set("customFontUrl", url);
-    // 更新输入框
     const input=document.getElementById("customFontUrlInput");
     if(input) input.value=url;
     toast("字体已应用");
-  }catch(e){
-    toast("字体加载失败，检查一下链接");
-    console.warn("[Font]", e);
-  }finally{
     if(btn){ btn.disabled=false; btn.textContent="应用字体"; }
-  }
+  });
 }
 window.applyCustomFont=applyCustomFont;
 
