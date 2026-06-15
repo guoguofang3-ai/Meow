@@ -2397,6 +2397,14 @@ body.multiselect-mode .msg{ cursor:pointer; }
             <div class="theme-field"><label>顶栏文字颜色</label><input id="themeBarTextInput" type="color"></div>
           </div>
           <label>锁屏 / 主屏背景 CSS</label><textarea id="themeHomeBgInput"></textarea>
+          <label>自定义字体</label>
+          <div style="display:flex;gap:8px;margin-bottom:4px">
+            <input type="text" id="customFontUrlInput" placeholder="粘贴 .ttf / .woff2 链接" style="flex:1">
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <button class="btn primary" id="applyFontBtn" onclick="window.applyCustomFont(document.getElementById('customFontUrlInput').value)" style="flex:1">应用字体</button>
+            <button class="btn" onclick="window.applyCustomFont('')" style="flex:1">恢复默认</button>
+          </div>
           <label>自定义 CSS（高级）</label><textarea id="themeCustomCSSInput" style="min-height:80px;font-family:monospace;font-size:11px" placeholder="/* 在此输入自定义CSS */"></textarea>
           <label>微信背景 CSS</label><textarea id="themeWechatBgInput"></textarea>
           <label>朋友圈背景 CSS</label><textarea id="themeMomentsBgInput"></textarea>
@@ -3115,6 +3123,12 @@ async function init(){
   setInterval(updateClock, 30000);
   ProactiveMsg.reset();
   checkBackupReminder();
+  // 恢复自定义字体
+  const savedFontUrl=Storage.get("customFontUrl","");
+  if(savedFontUrl) applyCustomFont(savedFontUrl);
+  // 回填输入框
+  const fontInput=document.getElementById("customFontUrlInput");
+  if(fontInput && savedFontUrl) fontInput.value=savedFontUrl;
 }
 function normalizeRoleData(){
   let roles=Storage.get("roles", []);
@@ -4670,6 +4684,37 @@ function clearQuote(){
   if(bar) bar.classList.remove("show");
 }
 window.clearQuote=clearQuote;
+
+/* ===== 自定义字体 ===== */
+async function applyCustomFont(url){
+  url=(url||"").trim();
+  if(!url){
+    // 恢复默认字体
+    document.documentElement.style.fontFamily="";
+    Storage.set("customFontUrl","");
+    toast("已恢复默认字体");
+    return;
+  }
+  const btn=document.getElementById("applyFontBtn");
+  if(btn){ btn.disabled=true; btn.textContent="加载中..."; }
+  try{
+    const font=new FontFace("MeowCustomFont","url("+url+")");
+    const loaded=await font.load();
+    document.fonts.add(loaded);
+    document.documentElement.style.fontFamily='"MeowCustomFont", -apple-system, sans-serif';
+    Storage.set("customFontUrl", url);
+    // 更新输入框
+    const input=document.getElementById("customFontUrlInput");
+    if(input) input.value=url;
+    toast("字体已应用");
+  }catch(e){
+    toast("字体加载失败，检查一下链接");
+    console.warn("[Font]", e);
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent="应用字体"; }
+  }
+}
+window.applyCustomFont=applyCustomFont;
 
 /* ===== 组件长按/右键菜单 ===== */
 let widgetLongPressTimer=null;
