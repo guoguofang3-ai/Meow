@@ -7,6 +7,7 @@
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="喵喵机">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -5026,6 +5027,28 @@ function consumeImageLeftovers(text, add){
   }).trim();
 }
 
+// 统一清理模型泄露的思维链：兼容 <think>...</think> 和 <thinking>...</thinking>
+function stripThinkingBlocks(text){
+  return String(text||"")
+    .replace(/<think(?:ing)?\b[^>]*>[\s\S]*?<\/think(?:ing)?>/gi,"")
+    .replace(/<think(?:ing)?\b[^>]*>[\s\S]*$/gi,"")
+    .replace(/<\/think(?:ing)?>/gi,"")
+    .trim();
+}
+// Claude 文件助手要保护代码块，避免误删代码块里的 <think>/<thinking> 示例
+function stripThinkingBlocksKeepCode(text){
+  const s=String(text||"");
+  const re=/```[\s\S]*?```/g;
+  let out="", last=0, m;
+  while((m=re.exec(s))){
+    out += stripThinkingBlocks(s.slice(last, m.index));
+    out += m[0];
+    last = re.lastIndex;
+  }
+  out += stripThinkingBlocks(s.slice(last));
+  return out.trim();
+}
+
 function stripInstructions(t){
   return t
     .replace(/\[SAVE:\s*[^\]]*\]/g,"")
@@ -5052,8 +5075,7 @@ function splitReply(text){
   return s ? [s] : [];
 }
 function cleanAIText(text){
-  let s=String(text||"").trim();
-  s=s.replace(/<think>[\s\S]*?<\/think>/gi,""); // 过滤thinking block
+  let s=stripThinkingBlocks(String(text||"").trim()); // 过滤 think/thinking block
   // 把指令方括号内的换行替换成空格，防止跨行指令被切断
   s=s.replace(/\[([^\]]{0,8000})\]/g,(m,inner)=>"["+inner.replace(/\n/g," ")+"]");
   s=s.replace(/<[^>]+>/g,"");
@@ -6963,7 +6985,9 @@ function claudeMsgToContext(m){
   return m.content||"";
 }
 function cleanAITextKeepCode(text){
-  return String(text||"").trim().replace(/^\s*(Assistant|Claude)\s*[:：]/i,"").trim();
+  return stripThinkingBlocksKeepCode(String(text||"").trim())
+    .replace(/^\s*(Assistant|Claude)\s*[:：]/i,"")
+    .trim();
 }
 function parseCodeBlocks(text){
   const s=String(text||"");
@@ -9841,36 +9865,6 @@ window.dismissBackupReminder=async function(){
   localStorage.setItem("miao2.__backupReminderDismissed__", Date.now());
   const el=document.getElementById("backup-reminder");
   if(el) el.remove();
-};
-
-
-// ===== 调试入口：因为主脚本包在 IIFE 里，控制台不能直接访问内部函数 =====
-window.MeowDebug = {
-  parseImageTest(raw){
-    const parsed=parseAIReplyUnified(String(raw||""), "debug_group_"+Date.now());
-    const simple=parsed.map(m=>({
-      type:m.type,
-      content:m.content,
-      desc:m.data?.description || "",
-      groupId:m.groupId
-    }));
-    console.table(simple);
-    return parsed;
-  },
-  lastAI(){
-    console.log(Miao.state.lastAIContent || "");
-    return Miao.state.lastAIContent || "";
-  },
-  history(){
-    const h=getHistory();
-    console.table(h.slice(-20).map(m=>({type:m.type, sender:m.sender, content:m.content, desc:m.data?.description || "", groupId:m.groupId})));
-    return h;
-  },
-  imageMessages(){
-    const imgs=getHistory().filter(m=>m.type==="image_desc");
-    console.table(imgs.slice(-20).map(m=>({sender:m.sender, content:m.content, desc:m.data?.description || "", groupId:m.groupId})));
-    return imgs;
-  }
 };
 
 
