@@ -5004,6 +5004,28 @@ function bindMessageLongPressMenu(){
   ["mouseup","mouseleave","mousemove"].forEach(ev=>chat.addEventListener(ev,()=>clearTimeout(timer)));
 }
 
+// 图片指令统一正则：外层指令只允许英文 []，但内容里允许出现 [按钮] / 【截图】 等括号文本
+// 注意：每次使用都创建新的 RegExp，避免全局 g 正则的 lastIndex 串状态。
+function imageInstructionRegex(){
+  return /\[(?:发送图片|图片描述)[:：]\s*((?:[^\[\]]|\[[^\[\]]*\]|【[^】]*】)*)\]/g;
+}
+function normalizeImageDesc(desc){
+  return String(desc||"").trim().replace(/\s*\n\s*/g," ");
+}
+function imageMsgFromDesc(desc){
+  desc=normalizeImageDesc(desc);
+  if(!desc) return null;
+  return {type:"image_desc", content:"[图片描述:"+desc+"]", data:{description:desc}};
+}
+function consumeImageLeftovers(text, add){
+  const re=imageInstructionRegex();
+  return String(text||"").replace(re,function(match, desc){
+    const msg=imageMsgFromDesc(desc);
+    if(msg) add(msg);
+    return "";
+  }).trim();
+}
+
 function stripInstructions(t){
   return t
     .replace(/\[SAVE:\s*[^\]]*\]/g,"")
@@ -5012,7 +5034,7 @@ function stripInstructions(t){
     .replace(/\[roll\]/gi,"")
     .replace(/\[(?:发送表情包|表情包)[:：]\s*[^\]]*\]/g,"")
     .replace(/\[(?:发送语音|语音)[:：]\s*[^\]]*\]/g,"")
-    .replace(/\[(?:发送图片|图片描述)[:：]\s*[^\]]*\]/g,"")
+    .replace(imageInstructionRegex(),"")
     .replace(/\[(?:发送链接|链接)[:：]\s*[^\]]*\]/g,"")
     .replace(/\[(?:状态更新|主动转账|向user发起代付)[:：]\s*[^\]]*\]/g,"")
     .replace(/\[(?:收款|拒收转账|帮忙代付|拒绝代付)\]/g,"")
@@ -5033,7 +5055,7 @@ function cleanAIText(text){
   let s=String(text||"").trim();
   s=s.replace(/<think>[\s\S]*?<\/think>/gi,""); // 过滤thinking block
   // 把指令方括号内的换行替换成空格，防止跨行指令被切断
-  s=s.replace(/\[([^\]]{0,3000})\]/g,(m,inner)=>"["+inner.replace(/\n/g," ")+"]");
+  s=s.replace(/\[([^\]]{0,8000})\]/g,(m,inner)=>"["+inner.replace(/\n/g," ")+"]");
   s=s.replace(/<[^>]+>/g,"");
   s=s.split(/\n/).filter(line=>!/^\s*(User|用户|Assistant|系统)\s*:/i.test(line)).join("\n"); // 只过滤英文冒号格式，不过滤中文冒号（截图内容常用）
   s=s.replace(/\[[A-Za-z\u4e00-\u9fa5]+?\|[^\]]*?\]/g,"");
@@ -9126,11 +9148,9 @@ function parseAIReplyUnified(raw, groupId){
       }
     },
     {
-      regex:/\[(?:发送图片|图片描述)[:：]\s*([^\]]+?)\]/g,
+      regex:imageInstructionRegex(),
       parse(m){
-        const desc=String(m[1]||"").trim();
-        if(desc) return {type:"image_desc", content:"[图片描述:"+desc+"]", data:{description:desc}};
-        return null;
+        return imageMsgFromDesc(m[1]);
       }
     },
     {
@@ -9222,13 +9242,19 @@ function parseAIReplyUnified(raw, groupId){
     if(!earliest){
       var before=text.slice(cursor).trim();
       if(before){
-        splitReply(before).forEach(function(t){ if(stripInstructions(t)) add({type:"text", content:t}); });
+        var safeBefore=consumeImageLeftovers(before, add);
+        if(safeBefore){
+          splitReply(safeBefore).forEach(function(t){ if(stripInstructions(t)) add({type:"text", content:t}); });
+        }
       }
       break;
     }
     var beforeText=text.slice(cursor, earliest.match.index).trim();
     if(beforeText){
-      splitReply(beforeText).forEach(function(t){ if(stripInstructions(t)) add({type:"text", content:t}); });
+      var safeText=consumeImageLeftovers(beforeText, add);
+      if(safeText){
+        splitReply(safeText).forEach(function(t){ if(stripInstructions(t)) add({type:"text", content:t}); });
+      }
     }
     var msg=earliest.pattern.parse(earliest.match);
     if(msg) add(msg);
