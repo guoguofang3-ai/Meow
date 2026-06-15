@@ -97,7 +97,121 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .home-screen .statusbar{color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.35)}
 .home-top{padding:8px 22px 4px}
 .home-date{font-size:15px;font-weight:800;color:rgba(255,255,255,.88);text-shadow:0 2px 8px rgba(0,0,0,.35)}
-.app-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px 14px;padding:22px 24px 10px;flex:1;align-content:start}
+.app-grid{
+  display:flex;
+  flex-direction:row;
+  overflow-x:scroll;
+  scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;
+  flex:1;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+.app-grid::-webkit-scrollbar{display:none;}
+.home-page{
+  min-width:100%;
+  height:100%;
+  scroll-snap-align:start;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  grid-auto-rows:90px;
+  gap:14px;
+  padding:22px 24px 10px;
+  align-content:start;
+  flex-shrink:0;
+  overflow:hidden;
+}
+/* 组件样式 */
+.app-placeholder{
+  visibility:hidden;
+}
+.widget-cell-2x2{
+  grid-column: span 2;
+  grid-row: span 2;
+}
+.widget-2x2{
+  width:100%;
+  height:100%;
+  border-radius:22px;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  backdrop-filter:blur(12px);
+  box-shadow:0 4px 20px rgba(0,0,0,0.12);
+}
+.widget-clock{
+  font-size:32px;
+  font-weight:600;
+  letter-spacing:-1px;
+  line-height:1.1;
+}
+.widget-date{
+  font-size:12px;
+  opacity:0.7;
+  margin-top:4px;
+}
+.widget-title{
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:6px;
+}
+.widget-content{
+  font-size:12px;
+  opacity:0.85;
+  line-height:1.5;
+}
+.widget-text-card{
+  width:100%; height:100%;
+  border-radius:22px; padding:16px;
+  display:flex; flex-direction:column; justify-content:center;
+  backdrop-filter:blur(12px);
+}
+.widget-text-title{ font-size:15px; font-weight:700; margin-bottom:6px; }
+.widget-text-content{ font-size:12px; line-height:1.5; opacity:0.85; }
+.widget-image-text{ width:100%; height:100%; border-radius:22px; overflow:hidden; display:flex; flex-direction:column; }
+.widget-image-caption{ padding:6px 10px; font-size:12px; font-weight:500; }
+.widget-countdown{
+  width:100%; height:100%; border-radius:22px;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  backdrop-filter:blur(12px);
+}
+.widget-countdown-days{ font-size:48px; font-weight:700; line-height:1; }
+.widget-countdown-label{ font-size:14px; opacity:0.7; margin-top:2px; }
+.widget-countdown-event{ font-size:12px; opacity:0.6; margin-top:8px; }
+.widget-clock-wrap{ display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; }
+/* 组件内图片填满格子 允许横向滑动穿透 */
+.widget-2x2 img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  touch-action:pan-x;
+  -webkit-user-drag:none;
+  user-select:none;
+  pointer-events:none;
+}
+.widget-clock-time{ font-size:36px; font-weight:700; letter-spacing:-1px; }
+.widget-clock-date{ font-size:12px; opacity:0.7; margin-top:4px; }
+.page-dots{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:6px;
+  padding:6px 0 8px;
+  flex-shrink:0;
+}
+.page-dots .dot{
+  width:6px;height:6px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.4);
+  transition:all 0.2s;
+}
+.page-dots .dot.active{
+  background:rgba(255,255,255,0.9);
+  width:18px;
+  border-radius:3px;
+}
 .app-wrap{text-align:center;position:relative}
 .app-icon{
   width:60px;height:60px;border-radius:18px;margin:0 auto 7px;display:flex;align-items:center;justify-content:center;
@@ -1849,6 +1963,38 @@ body{font-size:calc(14px * var(--font-scale));}
   background:#eef0f5;
 }
 .memory-actions button.danger{background:#ffe8e6;color:#c5221f}
+/* 多选操作栏 */
+#multiSelectBar.show{ display:flex !important; }
+/* 多选勾选框 */
+.multi-check{
+  width:20px; height:20px; border-radius:50%;
+  border:2px solid #ccc; background:#fff;
+  flex-shrink:0; margin-right:8px;
+  display:none; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+.multi-check.checked{
+  background:var(--accent,#7c3aed);
+  border-color:var(--accent,#7c3aed);
+}
+.multi-check.checked::after{
+  content:"✓"; color:#fff; font-size:12px;
+}
+body.multiselect-mode .multi-check{ display:flex; }
+body.multiselect-mode .msg{ cursor:pointer; }
+/* 撤回消息样式 */
+.recalled-msg{
+  display:flex; justify-content:center;
+  margin:8px 0;
+}
+.recalled-msg-inner{
+  background:rgba(0,0,0,0.05);
+  padding:5px 14px;
+  border-radius:12px;
+  font-size:12px;
+  color:#999;
+  text-align:center;
+}
 /* 拉黑提示条 */
 #blockBar{
   display:none;
@@ -2087,8 +2233,11 @@ body{font-size:calc(14px * var(--font-scale));}
 
     <section class="home-screen" id="homeScreen">
       <div class="statusbar"><span id="homeStatusTime">9:41</span><span class="status-icons"><span class="signal"><i></i><i></i><i></i></span><span class="battery"></span></span></div>
-      <div class="home-top"><div class="home-date" id="homeDate">喵喵机</div><div id="miaoVersionLabel" style="font-size:11px;color:rgba(255,255,255,.78);font-weight:700;margin-top:4px;text-shadow:0 2px 6px rgba(0,0,0,.45)">喵喵机</div></div>
+      <div class="home-top" style="position:relative"><div class="home-date" id="homeDate">喵喵机</div><div id="miaoVersionLabel" style="font-size:11px;color:rgba(255,255,255,.78);font-weight:700;margin-top:4px;text-shadow:0 2px 6px rgba(0,0,0,.45)">喵喵机</div>
+      <button id="addWidgetBtn" onclick="showWidgetPicker()" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);">+</button>
+      </div>
       <div class="app-grid" id="appGrid"></div>
+      <div class="page-dots" id="pageDots"></div>
       <div class="dock" id="dockGrid"></div>
       <div class="home-indicator"></div>
     </section>
@@ -2682,9 +2831,17 @@ body{font-size:calc(14px * var(--font-scale));}
 
     <div class="msg-menu" id="msgMenu">
       <button data-menu-action="quote">引用</button>
-      <button data-menu-action="regen">↻ 重新生成</button>
+      <button data-menu-action="recall" id="menuRecallBtn">撤回</button>
+      <button data-menu-action="multiselect">多选</button>
       <button data-menu-action="delete" class="danger">删除</button>
     </div>
+
+  <!-- 多选操作栏 -->
+  <div id="multiSelectBar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bar-bg,rgba(255,255,255,.95));backdrop-filter:blur(18px);border-top:1px solid rgba(0,0,0,.07);padding:12px 20px;z-index:200;align-items:center;justify-content:space-between;">
+    <button onclick="window.cancelMultiSelect()" style="background:none;border:none;color:#666;font-size:14px;cursor:pointer;padding:8px 16px;">取消</button>
+    <span id="multiSelectCount" style="font-size:13px;color:#888;">已选0条</span>
+    <button onclick="window.deleteMultiSelected()" style="background:#ff3b30;border:none;color:#fff;font-size:14px;padding:8px 16px;border-radius:8px;cursor:pointer;">删除</button>
+  </div>
 
   </div>
 </div>
@@ -3711,11 +3868,468 @@ function hexToRgba(hex,a){
   const n=parseInt(h.length===3?h.split("").map(x=>x+x).join(""):h,16);
   return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
 }
-function renderHome(){
+// ===== 组件模板系统 =====
+const widgetTemplates={
+  clock:{
+    name:"时钟",
+    icon:"🕐",
+    defaultConfig:{showDate:true},
+    render(cfg){
+      return `<div class="widget-clock-wrap">
+        <div class="widget-clock-time" id="wclk_${Date.now()}">00:00</div>
+        ${cfg.showDate!==false?'<div class="widget-clock-date"></div>':""}
+      </div>`;
+    },
+    editFields:[]
+  },
+  textCard:{
+    name:"文字卡片",
+    icon:"📝",
+    defaultConfig:{title:"标题",content:"在这里写点什么",bgColor:"rgba(255,255,255,0.18)",titleColor:"#ffffff",contentColor:"rgba(255,255,255,0.85)"},
+    render(cfg){
+      return `<div class="widget-text-card" style="background:${cfg.bgColor||"rgba(255,255,255,0.18)"}">
+        <div class="widget-text-title" style="color:${cfg.titleColor||"#fff"}">${escapeHtml(cfg.title||"")}</div>
+        <div class="widget-text-content" style="color:${cfg.contentColor||"rgba(255,255,255,0.85)"}">${escapeHtml(cfg.content||"")}</div>
+      </div>`;
+    },
+    editFields:[
+      {type:"text",key:"title",label:"标题"},
+      {type:"textarea",key:"content",label:"内容"},
+      {type:"color",key:"bgColor",label:"背景色"},
+      {type:"color",key:"titleColor",label:"标题颜色"},
+      {type:"color",key:"contentColor",label:"正文颜色"}
+    ]
+  },
+  imageText:{
+    name:"图片+文字",
+    icon:"🖼️",
+    defaultConfig:{imageUrl:"",text:"一句话",textColor:"#ffffff",layout:"bottom"},
+    render(cfg){
+      const img=cfg.imageUrl
+        ? '<img src="'+escapeAttr(cfg.imageUrl)+'" style="width:100%;height:65%;object-fit:cover;border-radius:14px 14px 0 0;">'
+        : '<div style="height:65%;background:rgba(255,255,255,0.1);border-radius:14px 14px 0 0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:24px;">🖼️</div>';
+      return '<div class="widget-image-text">'+img+'<div class="widget-image-caption" style="color:'+(cfg.textColor||"#fff")+'">'+escapeHtml(cfg.text||"")+'</div></div>';
+    },
+    editFields:[
+      {type:"image",key:"imageUrl",label:"图片"},
+      {type:"text",key:"text",label:"文字"},
+      {type:"color",key:"textColor",label:"文字颜色"}
+    ]
+  },
+  imageFull:{
+    name:"纯图片",
+    icon:"📸",
+    defaultConfig:{imageUrl:"",bgColor:"transparent"},
+    render(cfg){
+      return cfg.imageUrl
+        ? '<img src="'+escapeAttr(cfg.imageUrl)+'" style="width:100%;height:100%;object-fit:cover;border-radius:22px;">'
+        : '<div style="width:100%;height:100%;background:rgba(255,255,255,0.1);border-radius:22px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:36px;">📸</div>';
+    },
+    editFields:[
+      {type:"image",key:"imageUrl",label:"图片"}
+    ]
+  },
+  countdown:{
+    name:"倒计时",
+    icon:"📅",
+    defaultConfig:{eventName:"重要日子",targetDate:"",bgColor:"rgba(255,255,255,0.18)",textColor:"#ffffff"},
+    render(cfg){
+      let days="?";
+      if(cfg.targetDate){
+        const diff=new Date(cfg.targetDate)-new Date();
+        days=Math.ceil(diff/86400000);
+        if(days<0) days=0;
+      }
+      return `<div class="widget-countdown" style="background:${cfg.bgColor||"rgba(255,255,255,0.18)"};color:${cfg.textColor||"#fff"}">
+        <div class="widget-countdown-days">${days}</div>
+        <div class="widget-countdown-label">天</div>
+        <div class="widget-countdown-event">${escapeHtml(cfg.eventName||"")}</div>
+      </div>`;
+    },
+    editFields:[
+      {type:"text",key:"eventName",label:"事件名"},
+      {type:"date",key:"targetDate",label:"目标日期"},
+      {type:"color",key:"bgColor",label:"背景色"},
+      {type:"color",key:"textColor",label:"文字颜色"}
+    ]
+  }
+};
+
+// ===== 找空位 =====
+function findEmptySlot(layout){
+  const COLS=4, ROWS=2;
+  const occupied=getOccupied(layout);
+  const pages=Math.max(1,...layout.map(x=>x.page))+1;
+  for(let p=0;p<pages+1;p++){
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS-1;c++){
+        const k1=`${p},${r},${c}`, k2=`${p},${r},${c+1}`;
+        const k3=`${p},${r+1},${c}`, k4=`${p},${r+1},${c+1}`;
+        if(!occupied.has(k1)&&!occupied.has(k2)&&!occupied.has(k3)&&!occupied.has(k4)){
+          return {page:p,row:r,col:c};
+        }
+      }
+    }
+  }
+  return null;
+}
+
+// ===== 显示模板选择器 =====
+function showWidgetPicker(){
+  const items=Object.entries(widgetTemplates).map(([id,t])=>`
+    <div onclick="addWidget('${id}')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background=''">
+      <span style="font-size:28px">${t.icon}</span>
+      <span style="font-size:14px;font-weight:500">${t.name}</span>
+    </div>
+  `).join("");
+  openQuickModal(`<div class="quick-modal-title">添加组件</div>${items}`);
+}
+
+// ===== 添加组件 - 先选位置再编辑 =====
+function addWidget(templateId){
+  closeQuickModal();
+  const tmpl=widgetTemplates[templateId];
+  if(!tmpl) return;
+  showSlotPicker(templateId);
+}
+
+function showSlotPicker(templateId){
+  const COLS=4, ROWS=2; // 每页2行，2x2组件最多放在row0或row1
+  const layout=getHomeLayout();
+  const occupied=getOccupied(layout);
+  // 计算最大页数
+  const maxPage=Math.max(0,...layout.map(x=>x.page));
+
+  let currentPage=0;
+  const totalPages=maxPage+2; // 已有页+1个新页
+
+  function renderPickerGrid(page){
+    let cells="";
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        const k=`${page},${r},${c}`;
+        const k2=`${page},${r},${c+1}`;
+        const k3=`${page},${r+1},${c}`;
+        const k4=`${page},${r+1},${c+1}`;
+        const isOccupied=occupied.has(k)||occupied.has(k2)||occupied.has(k3)||occupied.has(k4);
+        const canPlace=c<=COLS-2 && r<=ROWS-2 && !isOccupied;
+        const isSingleOccupied=occupied.has(k);
+        cells+=`<div onclick="${canPlace?`window._pickSlot(${page},${r},${c})`:'void 0'}"
+          style="width:100%;aspect-ratio:1;border-radius:8px;cursor:${canPlace?'pointer':'default'};
+          background:${isSingleOccupied?'rgba(0,0,0,0.2)':canPlace?'rgba(124,58,237,0.15)':'rgba(0,0,0,0.05)'};
+          border:2px solid ${canPlace?'rgba(124,58,237,0.4)':'transparent'};
+          transition:all 0.15s;"
+          onmouseover="${canPlace?"this.style.background='rgba(124,58,237,0.3)'":'void 0'}"
+          onmouseout="${canPlace?`this.style.background='rgba(124,58,237,0.15)'`:'void 0'}">
+        </div>`;
+      }
+    }
+    return cells;
+  }
+
+  function buildPickerHTML(){
+    return `<div class="quick-modal-title">选择放置位置</div>
+    <div style="font-size:12px;color:#999;text-align:center;margin-bottom:12px">点击紫色格子放置 2×2 组件</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <button onclick="window._pickerPage(-1)" style="background:none;border:none;font-size:18px;cursor:pointer;color:#888;">‹</button>
+      <span style="font-size:12px;color:#888">第 ${currentPage+1} 页 / 共 ${totalPages} 页</span>
+      <button onclick="window._pickerPage(1)" style="background:none;border:none;font-size:18px;cursor:pointer;color:#888;">›</button>
+    </div>
+    <div id="slotPickerGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:4px;">
+      ${renderPickerGrid(currentPage)}
+    </div>
+    <button class="btn" onclick="closeQuickModal()" style="width:100%;margin-top:14px">取消</button>`;
+  }
+
+  window._pickerPage=(dir)=>{
+    currentPage=Math.max(0,Math.min(totalPages-1,currentPage+dir));
+    const grid=document.getElementById("slotPickerGrid");
+    if(grid) grid.innerHTML=renderPickerGrid(currentPage);
+    const label=document.querySelector("#slotPickerGrid")?.previousElementSibling?.previousElementSibling?.querySelector("span");
+    if(label) label.textContent=`第 ${currentPage+1} 页 / 共 ${totalPages} 页`;
+    // 重建整个弹窗内容更可靠
+    const modal=document.querySelector(".quick-modal-inner")||document.querySelector(".quick-modal");
+    if(modal) modal.innerHTML=buildPickerHTML();
+  };
+
+  window._pickSlot=(page,row,col)=>{
+    closeQuickModal();
+    const newWidget={
+      page, row, col,
+      type:"widget", size:"2x2",
+      id:"widget_"+Date.now(),
+      template:templateId,
+      config:{...(widgetTemplates[templateId]?.defaultConfig||{})}
+    };
+    const layout=getHomeLayout();
+    layout.push(newWidget);
+    saveHomeLayout(layout);
+    renderHome();
+    setTimeout(()=>editWidget(newWidget.id), 100);
+  };
+
+  openQuickModal(buildPickerHTML());
+}
+
+// ===== 编辑组件 =====
+function editWidget(widgetId){
+  const layout=getHomeLayout();
+  const item=layout.find(x=>x.id===widgetId);
+  if(!item) return;
+  const tmpl=widgetTemplates[item.template];
+  if(!tmpl) return;
+  const cfg=item.config||{};
+
+  const fields=tmpl.editFields.map(f=>{
+    const val=cfg[f.key]!==undefined?cfg[f.key]:(tmpl.defaultConfig[f.key]||"");
+    if(f.type==="color"){
+      return `<label style="font-size:12px;color:#888;display:block;margin-bottom:4px">${f.label}</label>
+        <input type="color" id="wef_${f.key}" value="${escapeAttr(val||"#ffffff")}" style="width:100%;height:36px;border:none;border-radius:8px;cursor:pointer;margin-bottom:12px">`;
+    }
+    if(f.type==="textarea"){
+      return `<label style="font-size:12px;color:#888;display:block;margin-bottom:4px">${f.label}</label>
+        <textarea id="wef_${f.key}" style="width:100%;border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px;font-size:14px;resize:none;height:80px;margin-bottom:12px">${escapeHtml(val)}</textarea>`;
+    }
+    if(f.type==="date"){
+      return `<label style="font-size:12px;color:#888;display:block;margin-bottom:4px">${f.label}</label>
+        <input type="date" id="wef_${f.key}" value="${escapeAttr(val)}" style="width:100%;border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px;font-size:14px;margin-bottom:12px">`;
+    }
+    if(f.type==="image"){
+      return `<label style="font-size:12px;color:#888;display:block;margin-bottom:4px">${f.label}</label>
+        <div style="margin-bottom:12px">
+          ${val?`<img src="${escapeAttr(val)}" style="width:100%;height:80px;object-fit:cover;border-radius:8px;margin-bottom:6px">`:""} 
+          <input type="file" accept="image/*" id="wef_${f.key}_file" onchange="widgetImageUpload('${f.key}')" style="font-size:12px">
+          <input type="hidden" id="wef_${f.key}" value="${escapeAttr(val)}">
+        </div>`;
+    }
+    return `<label style="font-size:12px;color:#888;display:block;margin-bottom:4px">${f.label}</label>
+      <input type="text" id="wef_${f.key}" value="${escapeAttr(val)}" style="width:100%;border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px;font-size:14px;margin-bottom:12px">`;
+  }).join("");
+
+  openQuickModal(`
+    <div class="quick-modal-title">编辑 ${tmpl.name}</div>
+    <div style="max-height:60vh;overflow-y:auto;padding:4px 0">${fields||"<p style='color:#aaa;font-size:13px;text-align:center'>此组件无需配置</p>"}</div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" onclick="closeQuickModal()" style="flex:1">取消</button>
+      <button class="btn primary" onclick="saveWidgetEdit('${widgetId}')" style="flex:1">保存</button>
+    </div>
+  `);
+}
+
+// ===== 保存编辑 =====
+function saveWidgetEdit(widgetId){
+  const layout=getHomeLayout();
+  const item=layout.find(x=>x.id===widgetId);
+  if(!item) return;
+  const tmpl=widgetTemplates[item.template];
+  if(!tmpl) return;
+  const newCfg={...item.config};
+  tmpl.editFields.forEach(f=>{
+    const el=document.getElementById("wef_"+f.key);
+    if(el) newCfg[f.key]=el.value;
+  });
+  item.config=newCfg;
+  saveHomeLayout(layout);
+  closeQuickModal();
+  renderHome();
+}
+
+// ===== 图片上传 =====
+function widgetImageUpload(key){
+  const fileEl=document.getElementById("wef_"+key+"_file");
+  const hiddenEl=document.getElementById("wef_"+key);
+  if(!fileEl||!hiddenEl||!fileEl.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    // 压缩
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement("canvas");
+      const scale=Math.min(1,400/img.width,400/img.height);
+      canvas.width=Math.round(img.width*scale);
+      canvas.height=Math.round(img.height*scale);
+      canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
+      hiddenEl.value=canvas.toDataURL("image/jpeg",0.75);
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(fileEl.files[0]);
+}
+
+// ===== 删除组件 =====
+function deleteWidget(widgetId){
+  const layout=getHomeLayout().filter(x=>x.id!==widgetId);
+  saveHomeLayout(layout);
+  renderHome();
+}
+
+// ===== homeLayout 存取 =====
+function getHomeLayout(){
+  const saved=Storage.get("homeLayout", null);
+  if(saved && Array.isArray(saved)) return saved;
+  // 默认布局：把mainApps按4列网格自动排好
+  const COLS=4;
   const mainApps=Miao.apps.filter(a=>!a.dock);
+  return mainApps.map((app,i)=>({
+    page: Math.floor(i/8),
+    row: Math.floor((i%8)/COLS),
+    col: i%COLS,
+    type:"app",
+    id:app.id
+  }));
+}
+function saveHomeLayout(layout){
+  Storage.set("homeLayout", layout);
+}
+
+// ===== 格位占用检测 =====
+function getOccupied(layout){
+  const occupied=new Set();
+  layout.forEach(item=>{
+    const key=`${item.page},${item.row},${item.col}`;
+    occupied.add(key);
+    if(item.type==="widget" && item.size==="2x2"){
+      occupied.add(`${item.page},${item.row},${item.col+1}`);
+      occupied.add(`${item.page},${item.row+1},${item.col}`);
+      occupied.add(`${item.page},${item.row+1},${item.col+1}`);
+    }
+  });
+  return occupied;
+}
+
+// ===== 渲染单个格子 =====
+function renderLayoutItem(item){
+  if(item.type==="app"){
+    const app=Miao.apps.find(a=>a.id===item.id);
+    if(!app) return "";
+    return appHtml(app);
+  }
+  if(item.type==="widget" && item.size==="2x2"){
+    const cfg=item.config||{};
+    return renderWidget2x2(item.id, cfg);
+  }
+  return "";
+}
+
+function renderWidget2x2(widgetId, item){
+  const tmpl=widgetTemplates[item.template||"textCard"];
+  const inner=tmpl?tmpl.render(item.config||{}):"";
+  return `<div class="widget-2x2" data-widget-id="${widgetId}">${inner}</div>`;
+}
+
+function renderHome(){
+  const COLS=4;
   const dockApps=Miao.apps.filter(a=>a.dock);
-  $("#appGrid").innerHTML=mainApps.map(app=>appHtml(app)).join("");
+  const layout=getHomeLayout();
+
+  // 按page分组
+  const pageMap={};
+  layout.forEach(item=>{
+    if(!pageMap[item.page]) pageMap[item.page]=[];
+    pageMap[item.page].push(item);
+  });
+  const pageCount=Math.max(1, ...Object.keys(pageMap).map(Number))+1;
+  const occupied=getOccupied(layout);
+
+  // 渲染每页
+  const grid=$("#appGrid");
+  grid.innerHTML=Array.from({length:pageCount},(_,p)=>{
+    const pageItems=pageMap[p]||[];
+    // 建坐标索引
+    const posMap={};
+    pageItems.forEach(item=>{ posMap[`${item.row},${item.col}`]=item; });
+    // 计算这页需要几行
+    const maxRow=pageItems.reduce((max,item)=>{
+      const itemRows=item.size==="2x2"?item.row+2:item.row+1;
+      return Math.max(max,itemRows);
+    },2);
+    // 逐格渲染
+    let cells="";
+    for(let r=0;r<maxRow;r++){
+      for(let c=0;c<COLS;c++){
+        const key=`${r},${c}`;
+        const item=posMap[key];
+        if(!item){
+          // 空格
+          cells+=`<div class="app-placeholder"></div>`;
+        } else if(item.type==="widget" && item.size==="2x2"){
+          // 2x2组件：用grid-column/row span，绑定长按/右键编辑菜单
+          cells+=`<div class="widget-cell-2x2" data-widget-id="${item.id}">${renderWidget2x2(item.id, item)}</div>`;
+        } else {
+          cells+=renderLayoutItem(item);
+        }
+      }
+    }
+    return `<div class="home-page" data-page="${p}">${cells}</div>`;
+  }).join("");
+
+  // 圆点
+  const dots=$("#pageDots");
+  if(dots){
+    dots.innerHTML=Array.from({length:pageCount},(_,i)=>
+      `<span class="dot${i===0?" active":""}" data-page="${i}"></span>`
+    ).join("");
+    dots.onclick=(e)=>{
+      const dot=e.target.closest(".dot");
+      if(!dot||!grid) return;
+      grid.scrollTo({left:parseInt(dot.dataset.page||0)*grid.offsetWidth, behavior:"smooth"});
+    };
+  }
+
+  // 滚动更新圆点
+  grid.onscroll=()=>{
+    const cur=Math.round(grid.scrollLeft/grid.offsetWidth);
+    $$(".dot").forEach((d,i)=>d.classList.toggle("active",i===cur));
+    // 更新时钟组件
+    updateWidgetClocks();
+  };
+
+  // widget长按/右键事件代理（统一在grid上监听）
+  if(grid){
+    let wpTimer=null;
+    grid.addEventListener("contextmenu",(e)=>{
+      const cell=e.target.closest(".widget-cell-2x2");
+      if(!cell) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const wid=cell.dataset.widgetId;
+      if(wid) try{ showWidgetMenu(e,wid); }catch(err){ console.warn(err); }
+    });
+    grid.addEventListener("touchstart",(e)=>{
+      const cell=e.target.closest(".widget-cell-2x2");
+      if(!cell) return;
+      const wid=cell.dataset.widgetId;
+      if(!wid) return;
+      wpTimer=setTimeout(()=>{
+        try{ showWidgetMenu(e,wid); }catch(err){ console.warn(err); }
+      },520);
+    },{passive:true});
+    grid.addEventListener("touchend",()=>{ clearTimeout(wpTimer); },{passive:true});
+    grid.addEventListener("touchmove",()=>{ clearTimeout(wpTimer); },{passive:true});
+  }
+
+  // dock
   $("#dockGrid").innerHTML=dockApps.map(app=>`<div class="app-wrap" data-action="open-app" data-id="${app.id}"><div class="app-icon">${renderAppIcon(iconForApp(app))}</div></div>`).join("");
+
+  // 启动时钟实时更新
+  startClockUpdater();
+}
+
+let _clockTimer=null;
+function updateWidgetClocks(){
+  const now=new Date();
+  const timeStr=now.toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",hour12:false});
+  const dateStr=now.toLocaleDateString("zh-CN",{month:"long",day:"numeric",weekday:"short"});
+  document.querySelectorAll(".widget-clock-time").forEach(el=>el.textContent=timeStr);
+  document.querySelectorAll(".widget-clock-date").forEach(el=>el.textContent=dateStr);
+  // 兼容旧id格式
+  document.querySelectorAll("[id^=widgetClock_]").forEach(el=>el.textContent=timeStr);
+  document.querySelectorAll("[id^=widgetDate_]").forEach(el=>el.textContent=dateStr);
+}
+function startClockUpdater(){
+  if(_clockTimer) clearInterval(_clockTimer);
+  updateWidgetClocks();
+  _clockTimer=setInterval(updateWidgetClocks, 1000);
 }
 function iconForApp(app){
   const icons=Storage.get("iconSettings", {});
@@ -3982,6 +4596,7 @@ function renderChat(){
 }
 function renderMessage(m,h,idx){
   if(m.type==="error") return `<div class="system-card error">${escapeHtml(m.content)}</div>`;
+  if(m.type==="recalled") return `<div class="recalled-msg"><div class="recalled-msg-inner">${escapeHtml(m.content||"你撤回了一条消息")}</div></div>`;
   if(m.type==="system") return `<div class="system-card">${escapeHtml(m.content)}</div>`;
   const role=currentRole();
   const userProfile=Storage.get("userProfile", {});
@@ -3995,6 +4610,7 @@ function renderMessage(m,h,idx){
   const next=h[idx+1];
   const isLastInAssistantGroup = !isUser && (!next || next.sender!=="role" || next.groupId!==m.groupId);
   return `<div class="msg ${cls}${isBlockedMsg?" blocked-msg":""}" data-id="${m.id}" data-group-id="${m.groupId||""}" data-sender="${m.sender}" data-last-role-group="${isLastInAssistantGroup ? "1" : "0"}">
+    ${multiSelectMode?`<div class="multi-check${multiSelectedIds.has(m.id)?" checked":""}" onclick="toggleMultiSelect('${m.id}')"></div>`:""}
     <img class="avatar" src="${avatar}" alt="">
     <div class="bubble-wrap">
       ${!isUser?`<div class="name-line">${escapeHtml(role.name)}</div>`:""}
@@ -4054,6 +4670,91 @@ function clearQuote(){
   if(bar) bar.classList.remove("show");
 }
 window.clearQuote=clearQuote;
+
+/* ===== 组件长按/右键菜单 ===== */
+let widgetLongPressTimer=null;
+function widgetLongPress(e, widgetId){
+  e.stopPropagation();
+  widgetLongPressTimer=setTimeout(()=>showWidgetMenu(e, widgetId), 520);
+  const cancel=()=>{ clearTimeout(widgetLongPressTimer); document.removeEventListener("touchend",cancel); document.removeEventListener("touchmove",cancel); };
+  document.addEventListener("touchend",cancel,{once:true});
+  document.addEventListener("touchmove",cancel,{once:true});
+}
+function showWidgetMenu(e, widgetId){
+  e.preventDefault();
+  openQuickModal(`
+    <div class="quick-modal-title">组件操作</div>
+    <button class="btn" onclick="closeQuickModal();editWidget('${widgetId}')" style="width:100%;margin-bottom:8px">✏️ 编辑</button>
+    <button class="btn danger" onclick="closeQuickModal();deleteWidget('${widgetId}')">🗑️ 删除</button>
+  `);
+}
+window.showWidgetMenu=showWidgetMenu;
+window.showWidgetPicker=showWidgetPicker;
+window.showSlotPicker=showSlotPicker;
+window.addWidget=addWidget;
+window.editWidget=editWidget;
+window.saveWidgetEdit=saveWidgetEdit;
+window.deleteWidget=deleteWidget;
+window.widgetImageUpload=widgetImageUpload;
+
+/* ===== 撤回消息 ===== */
+function recallMessage(msgId){
+  const h=getHistory();
+  const m=h.find(x=>x.id===msgId);
+  if(!m || m.sender!=="user") return;
+  m.type="recalled";
+  m.content="你撤回了一条消息";
+  m.data=m.data||{};
+  saveHistory(h);
+  renderChat();
+}
+
+/* ===== 多选删除 ===== */
+let multiSelectMode=false;
+let multiSelectedIds=new Set();
+
+function enterMultiSelect(){
+  multiSelectMode=true;
+  multiSelectedIds=new Set();
+  document.body.classList.add("multiselect-mode");
+  renderChat();
+  const bar=document.getElementById("multiSelectBar");
+  if(bar) bar.classList.add("show");
+}
+
+function exitMultiSelect(){
+  multiSelectMode=false;
+  multiSelectedIds=new Set();
+  document.body.classList.remove("multiselect-mode");
+  renderChat();
+  const bar=document.getElementById("multiSelectBar");
+  if(bar) bar.classList.remove("show");
+}
+
+function toggleMultiSelect(msgId){
+  if(multiSelectedIds.has(msgId)){
+    multiSelectedIds.delete(msgId);
+  } else {
+    multiSelectedIds.add(msgId);
+  }
+  // 更新勾选状态
+  const el=document.querySelector(`.msg[data-id="${msgId}"] .multi-check`);
+  if(el) el.classList.toggle("checked", multiSelectedIds.has(msgId));
+  const countEl=document.getElementById("multiSelectCount");
+  if(countEl) countEl.textContent="已选"+multiSelectedIds.size+"条";
+}
+
+window.deleteMultiSelected=function(){
+  if(multiSelectedIds.size===0) return;
+  const h=getHistory().filter(m=>!multiSelectedIds.has(m.id));
+  saveHistory(h);
+  exitMultiSelect();
+};
+
+window.cancelMultiSelect=function(){
+  exitMultiSelect();
+};
+
 
 /* ===== 拉黑功能 ===== */
 function isBlocked(){
@@ -4184,8 +4885,9 @@ function bindMessageLongPressMenu(){
     target=msg;
     menu.dataset.msgId=msg.dataset.id||"";
     menu.dataset.groupId=msg.dataset.groupId||"";
-    const regenBtn=menu.querySelector('[data-menu-action="regen"]');
-    regenBtn.hidden = !(msg.dataset.sender==="role" && msg.dataset.lastRoleGroup==="1");
+    // 撤回只对user消息显示
+    const recallBtn=menu.querySelector('[data-menu-action="recall"]');
+    if(recallBtn) recallBtn.hidden = msg.dataset.sender!=="user";
     menu.classList.add("show");
     const rect=$("#screen").getBoundingClientRect();
     const mw=150, mh=96;
@@ -4205,8 +4907,15 @@ function bindMessageLongPressMenu(){
     const groupId=menu.dataset.groupId;
     close();
     if(action==="delete") deleteMessage(msgId);
-    if(action==="regen") regenMessage(groupId);
+    if(action==="recall") recallMessage(msgId);
+    if(action==="multiselect") enterMultiSelect();
     if(action==="quote") setQuote(msgId);
+  });
+  // 多选模式下点击消息触发选中
+  chat.addEventListener("click",(e)=>{
+    if(!multiSelectMode) return;
+    const msg=e.target.closest(".msg");
+    if(msg) toggleMultiSelect(msg.dataset.id);
   });
   chat.addEventListener("contextmenu",(e)=>{
     const msg=e.target.closest(".msg");
@@ -4245,6 +4954,7 @@ function stripInstructions(t){
     .replace(/\[(?:收款|拒收转账|帮忙代付|拒绝代付)\]/g,"")
     .replace(/含义[:：]\s*.*/g,"")
     .replace(/[\[【](?:拉黑|解除拉黑)[\]】]/g,"")
+    .replace(/[\[【]撤回[^\]】]*[\]】]/g,"")
     .trim();
 }
 function splitReply(text){
@@ -4594,6 +5304,7 @@ ${getStickerPromptList()}
 [发送图片: 描述]
 [语音: （声音描述）说的内容]（声音描述和说话内容必须在同一个指令内，不能分开发送）
 [引用: 被引用消息的原文片段]（想回复user某句特定的话时使用，输出格式必须严格用此指令，不能自己造格式）
+[撤回: 消息内容片段]（撤回你之前发的某条消息，片段用于匹配目标消息；不加片段则撤回最近一条。何时撤回根据你的人设自行判断）
 [链接: 平台|标题|正文内容|评论1//评论2//评论3]
 平台可选：小红书、微博、贴吧、论坛、新闻。评论字段可省略。
 [收款]
@@ -8261,8 +8972,29 @@ function parseAIReplyUnified(raw, groupId){
     out.push(Object.assign({id:uid("msg"), groupId, sender:"role", createdAt:Date.now(), time:nowTime()}, msg));
   };
 
-  // 最优先：拉黑/解除拉黑指令，在所有其他处理之前
+  // 最优先：特殊副作用指令，在所有其他处理之前
   let rawText=String(raw||"");
+  // 角色撤回：[撤回: 消息片段] 或 [撤回]（后者撤回最近一条）
+  if(/[\[【]撤回[^\]】]*[\]】]/.test(rawText)){
+    rawText=rawText.replace(/[\[【]撤回[:：]?\s*([^\]】]*)[\]】]/g,(m,fragment)=>{
+      const hist=getHistory();
+      fragment=fragment.trim();
+      let target;
+      if(fragment){
+        // 按内容片段匹配，找最近一条包含该片段的角色消息
+        target=hist.slice().reverse().find(x=>
+          x.sender==="role" && x.type!=="recalled" && x.type!=="system" &&
+          (x.content||"").includes(fragment)
+        );
+      }
+      // 没有片段或匹配不到，降级撤回最近一条角色消息
+      if(!target){
+        target=hist.slice().reverse().find(x=>x.sender==="role" && x.type!=="recalled" && x.type!=="system");
+      }
+      if(target){ target.type="recalled"; target.content="对方撤回了一条消息"; saveHistory(hist); }
+      return "";
+    });
+  }
   if(/[\[【]拉黑[\]】]/.test(rawText)){
     rawText=rawText.replace(/[\[【]拉黑[\]】]/g,"");
     setBlocked(true); updateBlockBar();
