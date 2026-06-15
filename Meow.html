@@ -9844,6 +9844,36 @@ window.dismissBackupReminder=async function(){
 };
 
 
+// ===== 调试入口：因为主脚本包在 IIFE 里，控制台不能直接访问内部函数 =====
+window.MeowDebug = {
+  parseImageTest(raw){
+    const parsed=parseAIReplyUnified(String(raw||""), "debug_group_"+Date.now());
+    const simple=parsed.map(m=>({
+      type:m.type,
+      content:m.content,
+      desc:m.data?.description || "",
+      groupId:m.groupId
+    }));
+    console.table(simple);
+    return parsed;
+  },
+  lastAI(){
+    console.log(Miao.state.lastAIContent || "");
+    return Miao.state.lastAIContent || "";
+  },
+  history(){
+    const h=getHistory();
+    console.table(h.slice(-20).map(m=>({type:m.type, sender:m.sender, content:m.content, desc:m.data?.description || "", groupId:m.groupId})));
+    return h;
+  },
+  imageMessages(){
+    const imgs=getHistory().filter(m=>m.type==="image_desc");
+    console.table(imgs.slice(-20).map(m=>({sender:m.sender, content:m.content, desc:m.data?.description || "", groupId:m.groupId})));
+    return imgs;
+  }
+};
+
+
 init().catch(e=>{ console.error("[init]", e); renderAll(); });
 })();
 </script>
