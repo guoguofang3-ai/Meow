@@ -5033,7 +5033,7 @@ function cleanAIText(text){
   let s=String(text||"").trim();
   s=s.replace(/<think>[\s\S]*?<\/think>/gi,""); // 过滤thinking block
   s=s.replace(/<[^>]+>/g,"");
-  s=s.split(/\n/).filter(line=>!/^\s*(User|用户|Assistant|系统)\s*[:：]/i.test(line)).join("\n");
+  s=s.split(/\n/).filter(line=>!/^\s*(User|用户|Assistant|系统)\s*:/i.test(line)).join("\n"); // 只过滤英文冒号格式，不过滤中文冒号（截图内容常用）
   s=s.replace(/\[[A-Za-z\u4e00-\u9fa5]+?\|[^\]]*?\]/g,"");
   return s.trim();
 }
