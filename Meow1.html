@@ -95,6 +95,8 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   position:absolute;inset:0;display:flex;flex-direction:column;background:var(--home-bg);z-index:10;border-radius:38px;overflow:hidden;color:#fff;
 }
 .home-screen.hidden{display:none}
+.app-screen.wechat .statusbar{background:var(--bar-bg,rgba(255,255,255,.92));color:var(--bar-text,#111827)}
+.app-screen.wechat .wechat-head{margin-top:-1px}
 .home-screen .statusbar{color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.35)}
 .home-top{padding:8px 22px 4px}
 .home-date{font-size:15px;font-weight:800;color:rgba(255,255,255,.88);text-shadow:0 2px 8px rgba(0,0,0,.35)}
@@ -111,6 +113,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .app-grid::-webkit-scrollbar{display:none;}
 .home-page{
   min-width:100%;
+  max-width:100%;
   height:100%;
   scroll-snap-align:start;
   display:grid;
@@ -120,6 +123,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   padding:22px 24px 10px;
   align-content:start;
   flex-shrink:0;
+  box-sizing:border-box;
   overflow:hidden;
 }
 /* 组件样式 */
@@ -183,6 +187,9 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .widget-countdown-event{ font-size:12px; opacity:0.6; margin-top:8px; }
 .widget-clock-wrap{ display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; }
 /* 组件内图片填满格子 允许横向滑动穿透 */
+.widget-image-text{width:100%;height:100%;overflow:hidden;display:flex;flex-direction:column;border-radius:22px}
+.widget-image-text img{flex-shrink:0;display:block}
+.widget-image-caption{flex:1;min-height:0;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:4px 8px;font-size:13px}
 .widget-2x2 img{
   width:100%;
   height:100%;
@@ -250,7 +257,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .time-line{font-size:calc(10px * var(--font-scale,1));color:#999;margin:3px 6px 0}.read-line{font-size:calc(10px * var(--font-scale,1));color:#7a7a7a;margin:2px 6px 0}.msg.user .read-line{color:var(--accent)}
 .msg-actions{display:flex;gap:6px;margin-top:4px;width:fit-content;align-self:flex-start;opacity:.82}.msg.user .msg-actions{align-self:flex-end}.msg-actions button{border:0;border-radius:999px;min-height:26px;padding:4px 9px;font-size:11px;line-height:1;font-weight:850;background:color-mix(in srgb,var(--accent) 9%,rgba(255,255,255,.78));color:var(--accent)}.msg-actions .delete{background:rgba(255,236,239,.84);color:#c94b55}
 .composer-wrap{margin:0;border-radius:0;background:var(--bar-bg,rgba(255,255,255,.92));backdrop-filter:blur(18px);border:none;border-top:1px solid rgba(0,0,0,.07);overflow:visible;box-shadow:0 -2px 12px rgba(40,50,80,.06);flex:0 0 auto;color:var(--bar-text,#111827);position:relative}
-.toolbar{display:flex;gap:8px;overflow:auto;padding:9px 10px 0}.chip-btn{border:0;background:rgba(0,0,0,.055);color:#111;border-radius:999px;padding:8px 11px;font-size:12px;white-space:nowrap}.composer{padding:8px 10px 10px;display:flex;gap:8px;align-items:flex-end}.composer textarea{flex:1;resize:none;border:1px solid rgba(0,0,0,.08);border-radius:20px;padding:11px 13px;min-height:44px;max-height:120px;background:rgba(255,255,255,.9);font-size:max(16px, calc(15px * var(--font-scale,1)));line-height:1.4;box-sizing:border-box;color:var(--bar-text,#111827)}.composer textarea::placeholder{color:var(--bar-text,#999);opacity:.5}.sticky-note-bar {
+.toolbar{display:flex;gap:8px;overflow:auto;padding:9px 10px 0}.chip-btn{border:0;background:var(--chip-bg,color-mix(in srgb, var(--accent,#888) 14%, transparent));color:var(--chip-text,var(--accent,#111));border-radius:999px;padding:8px 13px;font-size:12px;font-weight:600;white-space:nowrap;transition:transform .1s}.chip-btn:active{transform:scale(.93)}.composer{padding:8px 10px 10px;display:flex;gap:8px;align-items:flex-end}.composer textarea{flex:1;resize:none;border:1px solid rgba(0,0,0,.08);border-radius:20px;padding:11px 13px;min-height:44px;max-height:120px;background:rgba(255,255,255,.9);font-size:max(16px, calc(15px * var(--font-scale,1)));line-height:1.4;box-sizing:border-box;color:var(--bar-text,#111827)}.composer textarea::placeholder{color:var(--bar-text,#999);opacity:.5}.sticky-note-bar {
   background: #fffde7;
   border-bottom: 1px solid #ffe082;
   padding: 8px 12px;
@@ -2285,8 +2292,8 @@ body.multiselect-mode .msg{ cursor:pointer; }
       <div class="composer-wrap" id="wechatComposer">
         <div class="toolbar">
           <button class="chip-btn" data-action="open-sticker-picker">表情包</button>
-          <button class="chip-btn" data-action="roll-dice">🎲骰子</button>
-          <button class="chip-btn" data-action="open-sticky-note">📝便签</button>
+          <button class="chip-btn" data-action="roll-dice">骰子</button>
+          <button class="chip-btn" data-action="open-sticky-note">便签</button>
           <button class="chip-btn" data-action="open-image-desc">图片</button>
           <button class="chip-btn" data-action="open-voice-input">语音</button>
           <button class="chip-btn" data-action="open-link-input">链接</button>
@@ -2817,6 +2824,19 @@ body.multiselect-mode .msg{ cursor:pointer; }
       </div>
     </section>
 
+    <section class="app-screen" id="petApp">
+      <div class="header">
+        <button class="icon-btn" data-action="go-home">‹</button>
+        <div class="header-title">桌宠</div>
+        <span style="width:32px"></span>
+      </div>
+      <div class="content" id="petContent" style="padding:20px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center">
+        <div style="font-size:72px">🐾</div>
+        <div style="font-size:17px;font-weight:700;color:var(--accent,#888)">桌宠</div>
+        <div style="font-size:13px;color:#999;line-height:1.7;max-width:260px">这里以后会住进一只小桌宠～<br>具体功能还在和哥哥商量中，先占个窝。</div>
+      </div>
+    </section>
+
     <section class="app-screen" id="settingsApp">
       <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">设置</div><button class="icon-btn" data-action="export-data">⇩</button></div>
       <div class="content">
@@ -2913,6 +2933,7 @@ const Miao = {
     {id:"greetings", name:"开场白", icon:"💬", dock:false},
     {id:"memory", name:"记忆", icon:"🧠", dock:false},
     {id:"diary", name:"日记", icon:"📔", dock:false},
+    {id:"pet", name:"桌宠", icon:"🐾", dock:false},
     {id:"data", name:"数据", icon:"🧰", dock:false},
     {id:"settings", name:"设置", icon:"⚙", dock:false}
   ],
@@ -3770,7 +3791,7 @@ function openApp(id){
   if(lock) lock.classList.add("hidden");
   if(home) home.classList.add("hidden");
   $$(".app-screen").forEach(x=>x.classList.remove("active"));
-  const map={wechat:"wechatApp",roles:"rolesApp",api:"apiApp",theme:"themeApp",me:"meApp",eleme:"elemeApp",claude:"claudeApp",story:"storyApp",call:"callApp",context:"contextSettingsApp",moments:"momentsApp",stickers:"stickersApp",worldbook:"worldbookApp",greetings:"greetingsApp",memory:"memoryApp",diary:"diaryApp",data:"dataApp",settings:"settingsApp"};
+  const map={wechat:"wechatApp",roles:"rolesApp",api:"apiApp",theme:"themeApp",me:"meApp",eleme:"elemeApp",claude:"claudeApp",story:"storyApp",call:"callApp",context:"contextSettingsApp",moments:"momentsApp",stickers:"stickersApp",worldbook:"worldbookApp",greetings:"greetingsApp",memory:"memoryApp",diary:"diaryApp",data:"dataApp",settings:"settingsApp",pet:"petApp"};
   const el=$("#"+map[id]);
   if(id==="wechat"){
     const badge=document.getElementById("wechatBadge");
@@ -4212,10 +4233,35 @@ function deleteWidget(widgetId){
 
 // ===== homeLayout 存取 =====
 function getHomeLayout(){
-  const saved=Storage.get("homeLayout", null);
-  if(saved && Array.isArray(saved)) return saved;
-  // 默认布局：把mainApps按4列网格自动排好
   const COLS=4;
+  const saved=Storage.get("homeLayout", null);
+  if(saved && Array.isArray(saved)){
+    // 自动补齐：已存布局里缺少的新app（如新增的桌宠），追加到末尾空位
+    const inLayout=new Set(saved.filter(it=>it.type==="app").map(it=>it.id));
+    const missing=Miao.apps.filter(a=>!a.dock && !inLayout.has(a.id));
+    if(missing.length){
+      const occupied=getOccupied(saved);
+      const layout=saved.slice();
+      // 从头找空格位放新app
+      let placed=0;
+      for(let page=0; page<20 && placed<missing.length; page++){
+        for(let row=0; row<2 && placed<missing.length; row++){
+          for(let col=0; col<COLS && placed<missing.length; col++){
+            const key=`${page},${row},${col}`;
+            if(!occupied.has(key)){
+              layout.push({page,row,col,type:"app",id:missing[placed].id});
+              occupied.add(key);
+              placed++;
+            }
+          }
+        }
+      }
+      saveHomeLayout(layout);
+      return layout;
+    }
+    return saved;
+  }
+  // 默认布局：把mainApps按4列网格自动排好
   const mainApps=Miao.apps.filter(a=>!a.dock);
   return mainApps.map((app,i)=>({
     page: Math.floor(i/8),
@@ -4489,7 +4535,7 @@ const ProactiveMsg = {
       if(!api.apiUrl || !api.apiKey || !api.model) return;
       const h = getHistory();
       // 用正常发消息的同一套：callAI 构建上下文，附加"主动发消息"情境
-      const extraSystem = "\n\n【当前情境】用户已超过10分钟没有发送消息。你可以主动发一条消息，内容由你自己决定，符合当前关系和情绪即可。不要解释为什么主动发，直接发消息内容。";
+      const extraSystem = "\n\n【系统提示：主动发消息】用户已超过10分钟没回你了。请你以角色身份，主动给用户发一条符合当前关系、情绪和最近聊天内容的微信消息（比如关心、撒娇、找话题、发个日常）。直接输出消息正文即可，就像真的在发微信。不要输出任何解释、占位符、continue、英文指令或元信息，不要询问要做什么。";
       const reply = await callAI(api, h, undefined, extraSystem);
       if(!reply || !reply.trim()) return;
       const groupId = uid("aigrp");
@@ -4968,12 +5014,7 @@ function renderMessageBody(m){
   const streamContent=Miao.state.streamPartial?.[m.id];
   const rawContent=streamContent!==undefined ? streamContent : (m.content||"");
   // 隐藏指令标记，不显示给用户
-  const displayContent=rawContent
-    .replace(/\[SAVE:\s*[^\]]*\]/g, "")
-    .replace(/\[便签:\s*[^\]]*\]/g, "")
-    .replace(/\[骰子\]/g, "")
-    .replace(/\[roll\]/gi, "")
-    .trim();
+  const displayContent=stripInstructions(rawContent).trim();
   if(!displayContent) return "";
   return `<div class="bubble">${escapeHtml(displayContent)}</div>`;
 }
@@ -5042,6 +5083,15 @@ function bindMessageLongPressMenu(){
   ["mouseup","mouseleave","mousemove"].forEach(ev=>chat.addEventListener(ev,()=>clearTimeout(timer)));
 }
 
+// 功能指令预规范化：只做轻量容错，避免模型偶发输出全角方括号/零宽字符/指令内多余空格
+function normalizeDirectiveText(text){
+  return String(text||"")
+    .replace(/[\u200B-\u200D\uFEFF]/g,"")
+    .replace(/［/g,"[").replace(/］/g,"]")
+    .replace(/\[\s+(?=(?:发送图片|图片描述|发送语音|语音|发送链接|链接|主动转账|向user发起代付|状态更新|收款|拒收转账|帮忙代付|同意代付|拒绝代付|引用)[:：\]\s])/g,"[")
+    .replace(/\s+\]/g,"]");
+}
+
 // 图片指令统一正则：外层指令只允许英文 []，但内容里允许出现 [按钮] / 【截图】 等括号文本
 // 注意：每次使用都创建新的 RegExp，避免全局 g 正则的 lastIndex 串状态。
 function imageInstructionRegex(){
@@ -5087,17 +5137,18 @@ function stripThinkingBlocksKeepCode(text){
 }
 
 function stripInstructions(t){
+  t=normalizeDirectiveText(t);
   return t
     .replace(/\[SAVE:\s*[^\]]*\]/g,"")
     .replace(/\[便签:\s*[^\]]*\]/g,"")
     .replace(/\[骰子\]/g,"")
     .replace(/\[roll\]/gi,"")
     .replace(/\[(?:发送表情包|表情包)[:：]\s*[^\]]*\]/g,"")
-    .replace(/\[(?:发送语音|语音)[:：]\s*[^\]]*\]/g,"")
+    .replace(/[\[【]\s*(?:发送语音|语音)[:：]\s*[^\]】]*[\]】]/g,"")
     .replace(imageInstructionRegex(),"")
-    .replace(/\[(?:发送链接|链接)[:：]\s*[^\]]*\]/g,"")
-    .replace(/\[(?:状态更新|主动转账|向user发起代付)[:：]\s*[^\]]*\]/g,"")
-    .replace(/[\[【](?:收款|拒收转账|帮忙代付|拒绝代付)[^\]】]*[\]】]/g,"")
+    .replace(/[\[【]\s*(?:发送链接|链接)[:：]\s*[^\]】]*[\]】]/g,"")
+    .replace(/[\[【]\s*(?:状态更新|主动转账|向user发起代付)[:：]\s*[^\]】]*[\]】]/g,"")
+    .replace(/[\[【]\s*(?:收款|拒收转账|帮忙代付|同意代付|拒绝代付)[^\]】]*[\]】]/g,"")
     .replace(/含义[:：]\s*.*/g,"")
     .replace(/[\[【](?:拉黑|解除拉黑)[\]】]/g,"")
     .replace(/[\[【]撤回[^\]】]*[\]】]/g,"")
@@ -5112,7 +5163,7 @@ function splitReply(text){
   return s ? [s] : [];
 }
 function cleanAIText(text){
-  let s=stripThinkingBlocks(String(text||"").trim()); // 过滤 think/thinking block
+  let s=stripThinkingBlocks(normalizeDirectiveText(String(text||"").trim())); // 过滤 think/thinking block + 规范化功能指令
   // 把指令方括号内的换行替换成空格，防止跨行指令被切断
   s=s.replace(/\[([^\]]{0,8000})\]/g,(m,inner)=>"["+inner.replace(/\n/g," ")+"]");
   s=s.replace(/<[^>]+>/g,"");
@@ -5512,6 +5563,7 @@ ${world}
 【user人设】
 user昵称：${user.name||"user"}
 user人设：${user.persona||"无"}
+（注意：user人设是供你理解user是谁的背景设定，不是台词。请把这些信息内化为你对user的认知，绝不要在对话里原文复述、念出或引用这些设定文字，只在行为和态度上自然体现出"你了解user"即可。）
 
 【长期记忆 / 关系状态】
 ${typeof buildMemoryPrompt==="function" ? buildMemoryPrompt() : "暂无长期记忆"}
@@ -6943,12 +6995,17 @@ async function runImageGen(msgId, prompt){
     if(t){ t.data=Object.assign({},t.data,patch); saveClaudeHistory(h); renderClaude(); }
   }
   if(!url || !key){ finish({status:"error", err:"未配置生图地址或密钥"}); return; }
+  // 60秒超时保护，避免中转站卡死时一直转圈
+  const ctrl=new AbortController();
+  const timeout=setTimeout(()=>ctrl.abort(), 60000);
   try{
     const res=await fetch(url,{
       method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
-      body:JSON.stringify({ model, messages:[{role:"user", content:prompt}] })
+      body:JSON.stringify({ model, messages:[{role:"user", content:prompt}] }),
+      signal:ctrl.signal
     });
+    clearTimeout(timeout);
     const json=await res.json();
     const content=json.choices?.[0]?.message?.content;
     let txt="";
@@ -6958,8 +7015,9 @@ async function runImageGen(msgId, prompt){
     if(imgUrl) finish({status:"done", url:imgUrl});
     else { console.warn("生图返回：", json); finish({status:"error", err:"未解析到图片"}); }
   }catch(e){
+    clearTimeout(timeout);
     console.error("生图失败", e);
-    finish({status:"error", err:e.message});
+    finish({status:"error", err: e.name==="AbortError" ? "生成超时（60秒）" : e.message});
   }
 }
 // 手动重试
@@ -9349,7 +9407,7 @@ function parseAIReplyUnified(raw, groupId){
   };
 
   // 最优先：特殊副作用指令，在所有其他处理之前
-  let rawText=String(raw||"");
+  let rawText=normalizeDirectiveText(String(raw||""));
   // 角色撤回：[撤回: 消息片段] 或 [撤回]（后者撤回最近一条）
   if(/[\[【]撤回[^\]】]*[\]】]/.test(rawText)){
     rawText=rawText.replace(/[\[【]撤回[:：]?\s*([^\]】]*)[\]】]/g,(m,fragment)=>{
@@ -9384,6 +9442,42 @@ function parseAIReplyUnified(raw, groupId){
 
   // 预处理：去掉HTML标签和角色扮演格式前缀
   let text=cleanAIText(rawText);
+
+  // 非图片功能指令兜底：如果某条功能指令漏进普通文本，在 splitReply/stripInstructions 前抢救
+  const consumeFunctionalLeftovers=(chunk)=>{
+    let safe=consumeImageLeftovers(normalizeDirectiveText(chunk), add);
+    const sideRe=/[\[【]\s*(收款|拒收转账|帮忙代付|同意代付|拒绝代付)[^\]】]*[\]】]/g;
+    safe=safe.replace(sideRe,(match,cmd)=>{
+      let msg=null;
+      if(cmd==="收款"){
+        if(pendingTransfer && pendingTransfer.data.status==="pending"){
+          pendingTransfer.data.status="received";
+          receiveTransferToWallet(parseFloat(pendingTransfer.data.amount)||0);
+          msg={type:"received", content:"已收款", data:{amount:pendingTransfer.data.amount, note:pendingTransfer.data.note}};
+        }
+      }else if(cmd==="拒收转账"){
+        if(pendingTransfer && pendingTransfer.data.status==="pending"){
+          pendingTransfer.data.status="rejected";
+          msg={type:"rejected", content:"已拒收这笔转账", data:{amount:pendingTransfer.data.amount, note:pendingTransfer.data.note}};
+        }
+      }else if(cmd==="帮忙代付" || cmd==="同意代付"){
+        if(pendingDelivery && pendingDelivery.data.status==="pending"){
+          pendingDelivery.data.status="paid";
+          if(pendingDelivery.data.orderId) updateElemeOrderStatus(pendingDelivery.data.orderId,"paid");
+          msg={type:"paid", content:"我已帮忙代付", data:{amount:pendingDelivery.data.amount, item:pendingDelivery.data.item}};
+        }
+      }else if(cmd==="拒绝代付"){
+        if(pendingDelivery && pendingDelivery.data.status==="pending"){
+          pendingDelivery.data.status="rejected";
+          if(pendingDelivery.data.orderId) updateElemeOrderStatus(pendingDelivery.data.orderId,"rejected");
+          msg={type:"rejected", content:"已拒绝代付", data:{amount:pendingDelivery.data.amount, item:pendingDelivery.data.item}};
+        }
+      }
+      if(msg) add(msg);
+      return "";
+    }).trim();
+    return safe;
+  };
 
   // 状态更新/SAVE/便签/骰子不入out，扫到即处理后从文本移除
   text=text.replace(/[\[【]状态更新[:：]\s*([^\]】]+?)[\]】]/g,(m,status)=>{
@@ -9425,7 +9519,7 @@ function parseAIReplyUnified(raw, groupId){
       }
     },
     {
-      regex:/[\[【](?:发送语音|语音)[:：]\s*([^\]】]+?)[\]】]/g,
+      regex:/[\[【]\s*(?:发送语音|语音)[:：]\s*([^\]】]+?)[\]】]/g,
       parse(m){
         const t=String(m[1]||"").trim();
         if(t){
@@ -9459,19 +9553,19 @@ function parseAIReplyUnified(raw, groupId){
       }
     },
     {
-      regex:/\[主动转账[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)\s*\|\s*([^\]]*?)\]/g,
+      regex:/[\[【]\s*主动转账[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)\s*\|\s*([^\]】]*?)[\]】]/g,
       parse(m){
         return {type:"role_transfer", content:"[主动转账:"+m[1]+"|"+(m[2]||"")+"]", data:{amount:Number(m[1]).toFixed(2), note:String(m[2]||"").trim(), status:"pending"}};
       }
     },
     {
-      regex:/\[向user发起代付[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)\s*\|\s*([^\]]*?)\]/g,
+      regex:/[\[【]\s*向user发起代付[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)\s*\|\s*([^\]】]*?)[\]】]/g,
       parse(m){
         return {type:"role_request_delivery", content:"[向user发起代付:"+m[1]+"|"+(m[2]||"")+"]", data:{amount:Number(m[1]).toFixed(2), note:String(m[2]||"").trim(), status:"pending"}};
       }
     },
     {
-      regex:/[\[【]收款[^\]】]*[\]】]/g,
+      regex:/[\[【]\s*收款[^\]】]*[\]】]/g,
       parse(m){
         if(pendingTransfer && pendingTransfer.data.status==="pending"){
           pendingTransfer.data.status="received";
@@ -9482,7 +9576,7 @@ function parseAIReplyUnified(raw, groupId){
       }
     },
     {
-      regex:/[\[【]拒收转账[^\]】]*[\]】]/g,
+      regex:/[\[【]\s*拒收转账[^\]】]*[\]】]/g,
       parse(m){
         if(pendingTransfer && pendingTransfer.data.status==="pending"){
           pendingTransfer.data.status="rejected";
@@ -9492,7 +9586,7 @@ function parseAIReplyUnified(raw, groupId){
       }
     },
     {
-      regex:/[\[【]帮忙代付[^\]】]*[\]】]/g,
+      regex:/[\[【]\s*(?:帮忙代付|同意代付)[^\]】]*[\]】]/g,
       parse(m){
         if(pendingDelivery && pendingDelivery.data.status==="pending"){
           pendingDelivery.data.status="paid";
@@ -9503,7 +9597,7 @@ function parseAIReplyUnified(raw, groupId){
       }
     },
     {
-      regex:/[\[【]拒绝代付[^\]】]*[\]】]/g,
+      regex:/[\[【]\s*拒绝代付[^\]】]*[\]】]/g,
       parse(m){
         if(pendingDelivery && pendingDelivery.data.status==="pending"){
           pendingDelivery.data.status="rejected";
@@ -9530,7 +9624,7 @@ function parseAIReplyUnified(raw, groupId){
     if(!earliest){
       var before=text.slice(cursor).trim();
       if(before){
-        var safeBefore=consumeImageLeftovers(before, add);
+        var safeBefore=consumeFunctionalLeftovers(before);
         if(safeBefore){
           splitReply(safeBefore).forEach(function(t){ if(stripInstructions(t)) add({type:"text", content:t}); });
         }
@@ -9539,7 +9633,7 @@ function parseAIReplyUnified(raw, groupId){
     }
     var beforeText=text.slice(cursor, earliest.match.index).trim();
     if(beforeText){
-      var safeText=consumeImageLeftovers(beforeText, add);
+      var safeText=consumeFunctionalLeftovers(beforeText);
       if(safeText){
         splitReply(safeText).forEach(function(t){ if(stripInstructions(t)) add({type:"text", content:t}); });
       }
