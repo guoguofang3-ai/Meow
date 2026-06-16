@@ -5089,7 +5089,7 @@ function stripInstructions(t){
     .replace(imageInstructionRegex(),"")
     .replace(/\[(?:发送链接|链接)[:：]\s*[^\]]*\]/g,"")
     .replace(/\[(?:状态更新|主动转账|向user发起代付)[:：]\s*[^\]]*\]/g,"")
-    .replace(/\[(?:收款|拒收转账|帮忙代付|拒绝代付)\]/g,"")
+    .replace(/[\[【](?:收款|拒收转账|帮忙代付|拒绝代付)[^\]】]*[\]】]/g,"")
     .replace(/含义[:：]\s*.*/g,"")
     .replace(/[\[【](?:拉黑|解除拉黑)[\]】]/g,"")
     .replace(/[\[【]撤回[^\]】]*[\]】]/g,"")
@@ -5109,7 +5109,11 @@ function cleanAIText(text){
   s=s.replace(/\[([^\]]{0,8000})\]/g,(m,inner)=>"["+inner.replace(/\n/g," ")+"]");
   s=s.replace(/<[^>]+>/g,"");
   s=s.split(/\n/).filter(line=>!/^\s*(User|用户|Assistant|系统)\s*:/i.test(line)).join("\n"); // 只过滤英文冒号格式，不过滤中文冒号（截图内容常用）
-  s=s.replace(/\[[A-Za-z\u4e00-\u9fa5]+?\|[^\]]*?\]/g,"");
+  // 删表情包的 [名字|含义] 残留，但排除带竖线的功能指令（主动转账/代付/链接等），避免误删导致卡片不渲染
+  s=s.replace(/\[([A-Za-z\u4e00-\u9fa5]+?)\|[^\]]*?\]/g, (mm, name)=>{
+    if(/转账|代付|链接|发送|主动|向user|收款|拒收|帮忙|拒绝/.test(name)) return mm; // 是功能指令，保留给解析器处理
+    return ""; // 真表情包残留，删掉
+  });
   return s.trim();
 }
 function markUnreadAsRead(h){
