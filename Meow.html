@@ -250,7 +250,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .time-line{font-size:calc(10px * var(--font-scale,1));color:#999;margin:3px 6px 0}.read-line{font-size:calc(10px * var(--font-scale,1));color:#7a7a7a;margin:2px 6px 0}.msg.user .read-line{color:var(--accent)}
 .msg-actions{display:flex;gap:6px;margin-top:4px;width:fit-content;align-self:flex-start;opacity:.82}.msg.user .msg-actions{align-self:flex-end}.msg-actions button{border:0;border-radius:999px;min-height:26px;padding:4px 9px;font-size:11px;line-height:1;font-weight:850;background:color-mix(in srgb,var(--accent) 9%,rgba(255,255,255,.78));color:var(--accent)}.msg-actions .delete{background:rgba(255,236,239,.84);color:#c94b55}
 .composer-wrap{margin:0;border-radius:0;background:var(--bar-bg,rgba(255,255,255,.92));backdrop-filter:blur(18px);border:none;border-top:1px solid rgba(0,0,0,.07);overflow:visible;box-shadow:0 -2px 12px rgba(40,50,80,.06);flex:0 0 auto;color:var(--bar-text,#111827);position:relative}
-.toolbar{display:flex;gap:8px;overflow:auto;padding:9px 10px 0}.chip-btn{border:0;background:rgba(0,0,0,.055);color:#111;border-radius:999px;padding:8px 11px;font-size:12px;white-space:nowrap}.composer{padding:8px 10px 10px;display:flex;gap:8px;align-items:flex-end}.composer textarea{flex:1;resize:none;border:1px solid rgba(0,0,0,.08);border-radius:20px;padding:11px 13px;min-height:44px;max-height:100px;background:rgba(255,255,255,.9);font-size:16px}.sticky-note-bar {
+.toolbar{display:flex;gap:8px;overflow:auto;padding:9px 10px 0}.chip-btn{border:0;background:rgba(0,0,0,.055);color:#111;border-radius:999px;padding:8px 11px;font-size:12px;white-space:nowrap}.composer{padding:8px 10px 10px;display:flex;gap:8px;align-items:flex-end}.composer textarea{flex:1;resize:none;border:1px solid rgba(0,0,0,.08);border-radius:20px;padding:11px 13px;min-height:44px;max-height:120px;background:rgba(255,255,255,.9);font-size:max(16px, calc(15px * var(--font-scale,1)));line-height:1.4;box-sizing:border-box;color:var(--bar-text,#111827)}.composer textarea::placeholder{color:var(--bar-text,#999);opacity:.5}.sticky-note-bar {
   background: #fffde7;
   border-bottom: 1px solid #ffe082;
   padding: 8px 12px;
@@ -1988,6 +1988,15 @@ body.multiselect-mode .msg{ cursor:pointer; }
   display:flex; justify-content:center;
   margin:8px 0;
 }
+/* 正在输入指示器 */
+.typing-bubble{display:inline-flex;align-items:center;gap:4px;padding:12px 14px;background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.8);border-radius:18px;border-bottom-left-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.055)}
+.typing-bubble span{width:7px;height:7px;border-radius:50%;background:#bbb;display:inline-block;animation:typingDot 1.2s infinite ease-in-out}
+.typing-bubble span:nth-child(2){animation-delay:.18s}
+.typing-bubble span:nth-child(3){animation-delay:.36s}
+@keyframes typingDot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+/* 气泡逐条弹出入场 */
+@keyframes bubblePop{0%{opacity:0;transform:translateY(8px) scale(.96)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.msg.bubble-pop{animation:bubblePop .26s cubic-bezier(.22,1,.36,1)}
 .recalled-msg-inner{
   background:rgba(0,0,0,0.05);
   padding:5px 14px;
@@ -2361,6 +2370,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
           <label>模型名称</label><input id="modelInput" placeholder="gpt-4o-mini">
           <label>API 格式</label><select id="apiFormatInput"><option value="openai">OpenAI 兼容</option><option value="bedrock">Bedrock</option></select>
           <div class="rowline" style="margin-top:8px"><div><b>流式传输</b><div class="v3-sub">逐字输出，需要中转站支持 stream:true</div></div><button class="toggle" id="streamToggle" data-action="toggle-stream"></button></div>
+          <div class="rowline" style="margin-top:8px"><div><b>消息提示音</b><div class="v3-sub">角色逐条发消息时播放提示音</div></div><button class="toggle" id="msgSoundToggle" data-action="toggle-msg-sound"></button></div>
           <div class="btn-row"><button class="btn primary" data-action="save-api">保存设置</button><button class="btn" data-action="test-api">测试连接</button><button class="btn" data-action="fetch-models">拉取模型</button></div>
           <div class="status-box" id="apiStatus"></div>
           <div class="model-list" id="modelList"></div>
@@ -3526,6 +3536,7 @@ function bindEvents(){
     if(action==="delete-role") deleteCurrentRole();
     if(action==="save-api") saveApiFromForm();
     if(action==="toggle-stream"){ Storage.set("streamEnabled",!Storage.get("streamEnabled",false)); renderApi(); }
+    if(action==="toggle-msg-sound"){ Storage.set("msgSoundEnabled",!Storage.get("msgSoundEnabled",true)); renderApi(); playMessageSound(); }
     if(action==="test-api") testApi();
     if(action==="fetch-models") fetchModels();
     if(action==="select-model") selectModel(id);
@@ -3763,6 +3774,14 @@ function openApp(id){
     Miao.state.currentApp=id;
     if(id==="moments") checkAutoMomentsOnOpen();
     renderAll();
+    // 打开微信会话：强制滚到底，确保默认看到最新消息
+    if(id==="wechat"){
+      const chat=$("#chat");
+      if(chat){
+        requestAnimationFrame(()=>{ chat.scrollTop=chat.scrollHeight; });
+        setTimeout(()=>{ chat.scrollTop=chat.scrollHeight; }, 120);
+      }
+    }
   }else{
     forceGoHome();
   }
@@ -4529,6 +4548,8 @@ function sendMessage(){
   input.value="";
   clearQuote();
   renderChat();
+  // 自己发消息：无条件滚到底，不受翻历史状态影响
+  const chat=$("#chat"); if(chat){ requestAnimationFrame(()=>{ chat.scrollTop=chat.scrollHeight; }); }
 }
 function getHistory(){
   return Storage.get(Storage.roleKey("wechatHistory"), []);
@@ -4586,9 +4607,16 @@ function restoreRoleStatus(){
 }
 /* ===== 动态状态文字 END ===== */
 
+// 判断聊天是否已滚到底部附近（留120px容差）
+function chatIsNearBottom(){
+  const chat=$("#chat"); if(!chat) return true;
+  return chat.scrollHeight - chat.scrollTop - chat.clientHeight < 120;
+}
 function renderChat(){
   const menu=$("#msgMenu"); if(menu) menu.classList.remove("show");
   const chat=$("#chat");
+  // 渲染前记录：用户当前是否贴在底部（决定渲染后是否自动跟随滚动）
+  const stick = chatIsNearBottom();
   restoreRoleStatus();
   updateBlockBar();
   const h=getHistory();
@@ -4597,6 +4625,7 @@ function renderChat(){
     return;
   }
   chat.innerHTML=`<div class="date-chip">今天</div>` + h.map((m,idx)=>renderMessage(m,h,idx)).join("");
+  if(!stick) return; // 用户正在往上翻历史，不强行拽回底部
     requestAnimationFrame(()=>{
     chat.scrollTop=chat.scrollHeight;
     // 图片加载完后再滚一次，避免图片撑高后滚不到底
@@ -5089,6 +5118,103 @@ function markUnreadAsRead(h){
     if(h[i].sender==="user") h[i].read=true;
   }
 }
+// ===== 消息提示音（Web Audio 合成，仿微信"叮咚"，无需音频文件）=====
+let _miaoAudioCtx=null;
+function playMessageSound(){
+  // 设置里关了就不响
+  if(Storage.get("msgSoundEnabled", true)===false) return;
+  try{
+    if(!_miaoAudioCtx){
+      const AC=window.AudioContext||window.webkitAudioContext;
+      if(!AC) return;
+      _miaoAudioCtx=new AC();
+    }
+    const ctx=_miaoAudioCtx;
+    if(ctx.state==="suspended") ctx.resume();
+    const now=ctx.currentTime;
+    // 两个音符：高→低，模拟"叮咚"
+    const notes=[{f:880,t:0},{f:660,t:0.09}];
+    notes.forEach(n=>{
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.type="sine";
+      osc.frequency.value=n.f;
+      const start=now+n.t;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.18, start+0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0008, start+0.16);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start+0.18);
+    });
+  }catch(e){ /* 静默失败，不影响消息 */ }
+}
+// ===== 角色消息逐条弹出（拟真人连发）=====
+function showTypingIndicator(){
+  const chat=$("#chat"); if(!chat) return;
+  if(document.getElementById("typingRow")) return;
+  const role=currentRole();
+  const avatar=(role&&role.avatar)||Miao.defaults.avatar;
+  const row=document.createElement("div");
+  row.id="typingRow";
+  row.className="msg role";
+  row.innerHTML=`<img class="avatar" src="${escapeAttr(avatar)}" alt=""><div class="bubble-wrap"><div class="typing-bubble"><span></span><span></span><span></span></div></div>`;
+  chat.appendChild(row);
+  chat.scrollTop=chat.scrollHeight;
+}
+function hideTypingIndicator(){
+  const row=document.getElementById("typingRow");
+  if(row) row.remove();
+}
+// 根据气泡内容估算"打字"时长（毫秒），短句快、长句稍慢，带上下限
+function typingDelayFor(msg){
+  if(!msg) return 350;
+  if(msg.type==="text"){
+    const len=(msg.content||"").length;
+    return Math.max(280, Math.min(1000, 220+len*28));
+  }
+  // 表情包/图片/语音等非文字气泡，固定较短停顿
+  return 400;
+}
+async function revealMessagesSequentially(baseHistory, parsed, groupId){
+  // 锁定本次回复的目标角色，防止弹出途中用户切换角色导致消息写错历史
+  const targetRoleId = Miao.state.currentRoleId;
+  const histKey = Storage.roleKey("wechatHistory", targetRoleId);
+  // 当前是否仍停留在该角色的微信会话（决定是否渲染动画/声音）
+  const stillHere = ()=> Miao.state.currentRoleId===targetRoleId && Miao.state.currentApp==="wechat";
+  // baseHistory：已标记已读、尚未含本次回复的历史
+  markUnreadAsRead(baseHistory);
+  Storage.set(histKey, baseHistory);
+  if(stillHere()) renderChat();
+  for(let i=0;i<parsed.length;i++){
+    const msg=parsed[i];
+    // 先显示"正在输入"，停顿后再落气泡（仅当仍在该会话）
+    if(stillHere()){
+      showTypingIndicator();
+      const chat=$("#chat"); if(chat) chat.scrollTop=chat.scrollHeight;
+    }
+    await new Promise(r=>setTimeout(r, typingDelayFor(msg)));
+    hideTypingIndicator();
+    // 入历史（始终写目标角色的固定key，不受当前角色影响）
+    const h=Storage.get(histKey, []);
+    h.push(msg);
+    Storage.set(histKey, h);
+    // 仅当仍停留在该会话时渲染、播音、动画
+    if(stillHere()){
+      renderChat();
+      playMessageSound();
+      const chat2=$("#chat");
+      if(chat2){
+        const rows=chat2.querySelectorAll(".msg.role");
+        const lastRow=rows[rows.length-1];
+        if(lastRow){ lastRow.classList.add("bubble-pop"); }
+        chat2.scrollTop=chat2.scrollHeight;
+      }
+    }
+    // 条间小间隔，避免连发太挤
+    if(i<parsed.length-1) await new Promise(r=>setTimeout(r, 150));
+  }
+}
 async function callAIReply(){
   if(Miao.state.busy) return;
   const h=getHistory();
@@ -5147,10 +5273,8 @@ async function callAIReply(){
     } else {
       const parsed=parseAIReplyUnified(reply,groupId);
       if(!parsed.length){ saveHistory(h); renderChat(); Miao.state.busy=false; return; } // 纯副作用指令（如拉黑），静默处理
-      markUnreadAsRead(h);
-      parsed.forEach(m=>h.push(m));
-      saveHistory(h);
-      renderChat();
+      // 逐条弹出，拟真人连发
+      await revealMessagesSequentially(h, parsed, groupId);
       checkSaveMarker(Miao.state.lastAIContent||"");
       checkStickyNoteMarker(Miao.state.lastAIContent||"");
       checkDiceMarker(Miao.state.lastAIContent||"");
@@ -5166,6 +5290,7 @@ async function callAIReply(){
     }
     addError("请求失败："+err.message);
   }finally{
+    hideTypingIndicator();
     Miao.state.busy=false;
   }
 }
@@ -5709,6 +5834,8 @@ function renderApi(){
   $("#apiKeyInput").value=api.apiKey||"";
   const streamBtn=document.getElementById("streamToggle");
   if(streamBtn) streamBtn.className="toggle"+(Storage.get("streamEnabled",false)?" on":"");
+  const soundBtn=document.getElementById("msgSoundToggle");
+  if(soundBtn) soundBtn.className="toggle"+(Storage.get("msgSoundEnabled",true)?" on":"");
   $("#modelInput").value=api.model||"";
   $("#apiFormatInput").value=api.format||"openai";
 }
@@ -6999,7 +7126,33 @@ function parseCodeBlocks(text){
     last=re.lastIndex;
   }
   if(last<s.length) out.push({kind:"text", text:s.slice(last)});
-  return out.length?out:[{kind:"text", text:s}];
+  if(!out.length) return [{kind:"text", text:s}];
+  return mergeAdjacentCodeBlocks(out);
+}
+// 合并相邻同语言代码块：两个code段之间若只隔着空白text段，就合成一个气泡
+function mergeAdjacentCodeBlocks(parts){
+  const merged=[];
+  for(let i=0;i<parts.length;i++){
+    const cur=parts[i];
+    if(cur.kind==="code" && merged.length){
+      // 回看：上一个有效段是不是同语言code，中间text是否全空白
+      let j=merged.length-1;
+      let gapBlank=true, gapIdx=-1;
+      if(merged[j].kind==="text"){
+        if(merged[j].text.trim()===""){ gapBlank=true; gapIdx=j; j--; }
+        else gapBlank=false;
+      }
+      if(gapBlank && j>=0 && merged[j].kind==="code" && merged[j].lang===cur.lang){
+        // 合并：去掉空白text段，把代码接到上一个code后
+        if(gapIdx>=0) merged.splice(gapIdx,1);
+        const prev=merged[merged.length-1];
+        prev.code = prev.code.replace(/\s*$/,"") + "\n\n" + cur.code.replace(/^\s*/,"");
+        continue;
+      }
+    }
+    merged.push(cur);
+  }
+  return merged;
 }
 function storeClaudeCode(lang,code){
   const id=uid("code");
@@ -8889,7 +9042,6 @@ function submitVoiceInput(){
   saveHistory(h);
   closeQuickModal();
   renderChat();
-  callAIReply();
 }
 function openImageDescModalOriginal(){
   openQuickModal(`<div class="quick-modal-title">发送图片</div>
@@ -8917,25 +9069,18 @@ function openImageDescModalOriginal(){
 }
 
 function afterUserSpecialMessageSent(){
-  // 先把用户发出的转账/代付/图片卡片立刻渲染到微信界面，
-  // 再异步触发 AI 回复，避免用户感觉“点发送没反应”。
+  // 只把用户发出的转账/代付/图片卡片渲染到界面，
+  // 不自动触发 AI 回复——统一由 ✦（召唤回复）手动触发。
   try{ closeQuickModal(); }catch(e){}
   try{
     if(Miao.state.currentApp!=="wechat") openApp("wechat");
     renderChat();
-    const chat=$("#chatList");
+    const chat=$("#chat");
     if(chat) chat.scrollTop=chat.scrollHeight;
   }catch(err){
     console.error("immediate special message render failed", err);
     try{ toast("消息已保存，但界面即时渲染失败："+err.message); }catch(e){}
   }
-  setTimeout(()=>{
-    try{ callAIReply(); }
-    catch(err){
-      console.error("special message async AI failed", err);
-      try{ addError("请求失败："+err.message); }catch(e){}
-    }
-  }, 80);
 }
 
 function submitImageDesc(){
@@ -9050,7 +9195,6 @@ function payRoleDelivery(id){
   h.push({id:uid("msg"), groupId:uid("usergrp"), sender:"user", type:"paid", content:"已帮付", data:{amount:m.data.amount}, createdAt:Date.now(), time:nowTime()});
   saveHistory(h);
   renderChat();
-  callAIReply(`user已帮忙付款，金额¥${m.data.amount}，本次代付流程已结束。`);
 }
 function rejectRoleDelivery(id){
   const h=getHistory();
@@ -9062,7 +9206,6 @@ function rejectRoleDelivery(id){
   h.push({id:uid("msg"), groupId:uid("usergrp"), sender:"user", type:"rejected", content:"已拒绝代付", data:{amount:m.data.amount}, createdAt:Date.now(), time:nowTime()});
   saveHistory(h);
   renderChat();
-  callAIReply(`user拒绝了代付请求，本次代付流程已结束。`);
 }
 function latestPendingTransfer(history){
   return history.slice().reverse().find(m=>m.type==="transfer" && m.data?.status==="pending");
@@ -9648,15 +9791,24 @@ const DATA_MODULES=[
   {id:"greetings", name:"开场白", pattern:/^greetings\./}
 ];
 function allMiaoKeys(){
-  return Object.keys(localStorage).filter(k=>k.startsWith(Storage.prefix)).map(k=>k.slice(Storage.prefix.length));
+  // 优先从内存缓存（IndexedDB全量）取键，降级localStorage
+  const src = (Storage._cache !== null && Storage._cache !== undefined)
+    ? Object.keys(Storage._cache)
+    : Object.keys(localStorage);
+  return src.filter(k=>k.startsWith(Storage.prefix)).map(k=>k.slice(Storage.prefix.length));
 }
 function moduleKeys(mod){
   const keys=new Set(mod.keys||[]);
   if(mod.pattern) allMiaoKeys().forEach(k=>{ if(mod.pattern.test(k)) keys.add(k); });
-  return Array.from(keys).filter(k=>localStorage.getItem(Storage.prefix+k)!=null);
+  // 用Storage.get判断键是否真实存在（优先内存缓存，降级localStorage）
+  return Array.from(keys).filter(k=>Storage.get(k,undefined)!==undefined);
 }
 function moduleSize(keys){
-  return keys.reduce((s,k)=>s+(localStorage.getItem(Storage.prefix+k)||"").length,0);
+  return keys.reduce((s,k)=>{
+    const v=Storage.get(k,null);
+    if(v==null) return s;
+    return s+(typeof v==="string"?v:JSON.stringify(v)).length;
+  },0);
 }
 function formatSizeChars(n){
   if(n<1024) return n+" 字符";
@@ -9781,11 +9933,19 @@ function previewFullDataImport(data){
   Miao.state.pendingFullImport=data;
   openQuickModal(`<div class="quick-modal-title">导入完整数据预览</div><div class="migration-result" style="display:block">检测到 ${count} 个数据键。确认后将覆盖当前喵喵机 2.0 数据。</div><div class="btn-row"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" onclick="MiaoConfirmFullImport()">确认导入</button></div>`);
 }
-window.MiaoConfirmFullImport=function(){
+window.MiaoConfirmFullImport=async function(){
   const data=Miao.state.pendingFullImport;
   if(!data?.miao2) return;
+  // 清旧数据：localStorage + IndexedDB内存缓存 + IndexedDB
+  const oldKeys = allMiaoKeys();
+  for(const k of oldKeys){ Storage.remove(k); }
   Object.keys(localStorage).filter(k=>k.startsWith(Storage.prefix)).forEach(k=>localStorage.removeItem(k));
+  // 写入新数据
   Object.entries(data.miao2).forEach(([k,v])=>Storage.set(k,v));
+  // 等IndexedDB写盘完成再reload，避免reload早于异步写入导致丢数据
+  if(typeof MeowStorage !== "undefined" && Storage._cache){
+    try{ await MeowStorage.setMany(Storage._cache); }catch(e){ console.warn("[import flush]", e); }
+  }
   Miao.state.pendingFullImport=null;
   location.reload();
 };
@@ -9826,7 +9986,18 @@ function _exportFromLocalStorage(){
 }
 async function clearAll(){
   if(!await askConfirm("确定清空喵喵机2.0全部数据？")) return;
-  Object.keys(localStorage).filter(k=>k.startsWith(Storage.prefix)).forEach(k=>localStorage.removeItem(k));
+  const keys = allMiaoKeys();
+  // 显式收集IndexedDB删除promise并await，确保reload前真正删完
+  const idbDeletes=[];
+  for(const k of keys){
+    const fullKey = Storage.prefix + k;
+    if(Storage._cache !== null && Storage._cache !== undefined) delete Storage._cache[fullKey];
+    if(typeof MeowStorage !== "undefined"){
+      idbDeletes.push(MeowStorage.remove(fullKey).catch(e=>console.warn("[clear idb]", k, e)));
+    }
+    try{ localStorage.removeItem(fullKey); }catch(e){}
+  }
+  try{ await Promise.all(idbDeletes); }catch(e){ console.warn("[clear flush]", e); }
   // 同步重置运行时状态，避免 reload 前后仍带旧上下文
   Miao.state.currentRoleId = null;
   Miao.state.currentApp = "home";
