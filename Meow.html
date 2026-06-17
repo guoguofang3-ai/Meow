@@ -5167,12 +5167,26 @@ const DeskPet = {
 /* ===== 微信主动发消息系统 ===== */
 const ProactiveMsg = {
   timer: null,
-  count: 0,
-  MAX_COUNT: 3,
-  INTERVAL: 10 * 60 * 1000, // 10分钟
+  INTERVAL: 2 * 60 * 60 * 1000, // 2小时没动静才触发
+  MAX_PER_DAY: 2, // 一天最多2次
+
+  todayKey(){ const d=new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; },
+  getTodayCount(){
+    const rec=Storage.get("proactiveDaily", {date:"", count:0});
+    if(rec.date!==this.todayKey()) return 0;
+    return rec.count||0;
+  },
+  bumpTodayCount(){
+    const today=this.todayKey();
+    const rec=Storage.get("proactiveDaily", {date:"", count:0});
+    const count=(rec.date===today?(rec.count||0):0)+1;
+    Storage.set("proactiveDaily", {date:today, count});
+  },
 
   reset(){
     clearTimeout(this.timer);
+    // 今天次数用完就不再排定时器
+    if(this.getTodayCount() >= this.MAX_PER_DAY) return;
     this.timer = setTimeout(()=>this.trigger(), this.INTERVAL);
   },
 
@@ -5182,34 +5196,34 @@ const ProactiveMsg = {
   },
 
   async trigger(){
-    if(this.count >= this.MAX_COUNT) return;
+    // 当天次数用完，停
+    if(this.getTodayCount() >= this.MAX_PER_DAY){ return; }
     const role = currentRole();
     if(!role) return;
-    if(Miao.state.busy) { this.reset(); return; } // 正在请求中，稍后再试
-    this.count++;
-    if(this.count < this.MAX_COUNT){
-      this.timer = setTimeout(()=>this.trigger(), this.INTERVAL);
-    }
+    if(Miao.state.busy) { this.reset(); return; }
     try{
       const api = Storage.get("api", {});
       if(!api.apiUrl || !api.apiKey || !api.model) return;
       const h = getHistory();
-      // 用正常发消息的同一套：callAI 构建上下文，附加"主动发消息"情境
-      const extraSystem = "\n\n【系统提示：主动发消息】用户已超过10分钟没回你了。请你以角色身份，主动给用户发一条全新的、符合当前关系和情绪的微信消息（比如关心、催一下、撒娇、找新话题、说点日常）。重要：绝对不要重复或复述你之前已经发过的任何消息，要说新的内容。直接输出消息正文，不要输出解释、占位符、continue、英文指令或元信息。";
+      if(!h.length) return; // 没聊过就不主动发
+      const extraSystem = "\n\n【系统提示：主动发消息】以上是你和user之前的微信聊天记录（消息已按发送者区分：role=user 是user发的，role=assistant 是你这个角色发的）。现在的情况是：user已经超过2小时没有回复你了。请你以角色身份，根据你们的关系和之前聊的内容，主动给user发一条全新的微信消息——可以是关心、想念、催一下、撒娇、问问他在干嘛、或开启一个新话题。要求：1) 绝对不要重复或复述你之前已经发过的话；2) 直接输出消息正文，不要解释、不要占位符、不要英文指令；3) 像真人发微信那样自然。";
       const reply = await callAI(api, h, undefined, extraSystem);
       if(!reply || !reply.trim()) return;
       const groupId = uid("aigrp");
       const parsed = parseAIReplyUnified(reply, groupId);
       if(!parsed.length) return;
-      // 防重复：若生成内容与历史最近一条AI文字消息完全相同，丢弃（模型复读）
+      // 防重复：与历史最近一条AI文字消息完全相同则丢弃
       const newH = getHistory();
       const lastAiText = [...newH].reverse().find(m=>m.sender==="assistant" && m.type==="text");
       const firstNewText = parsed.find(m=>m.type==="text");
       if(lastAiText && firstNewText && lastAiText.content.trim()===firstNewText.content.trim()){
-        return; // 跟上一条一样，不存不推
+        this.reset(); return;
       }
       parsed.forEach(m=>newH.push(m));
       saveHistory(newH);
+      this.bumpTodayCount(); // 成功发了一次，计数+1
+      // 发完后，如果今天还没用完次数，再排下一次（间隔2小时）
+      this.reset();
       // 在微信页就逐条弹，不在就直接存+提示
       if(Miao.state.currentApp === "wechat"){
         renderChat();
@@ -5222,7 +5236,7 @@ const ProactiveMsg = {
         const roleName = role.name || "角色";
         // 取第一条文字消息当通知预览
         const preview = (parsed.find(m=>m.type==="text")||{}).content || "发来一条消息";
-        sendSystemNotification(roleName, preview, role.avatar);
+        sendSystemNotification("有人想你了", preview, role.avatar);
         showProactiveToast(`${roleName} 发来了消息`, ()=>{
           openApp("wechat");
           if(badge) badge.style.display = "none";
@@ -5276,7 +5290,7 @@ function sendMessage(){
   const input=$("#msgInput");
   const text=input.value.trim();
   if(!text) return;
-  ProactiveMsg.count=0; ProactiveMsg.reset(); // 用户发消息，重置计时和次数
+  ProactiveMsg.reset(); // 用户发消息，重置2小时计时
   const h=getHistory();
   const msg={id:uid("msg"), groupId:uid("usergrp"), sender:"user", type:"text", content:text, read:false, createdAt:Date.now(), time:nowTime()};
   if(Miao.state.quoteId){
