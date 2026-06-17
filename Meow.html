@@ -98,6 +98,22 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .app-screen.wechat .statusbar{background:var(--bar-bg,rgba(255,255,255,.92));color:var(--bar-text,#111827)}
 .app-screen.wechat .wechat-head{margin-top:-1px}
 .home-screen .statusbar{color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.35)}
+/* 桌宠兔子 */
+.desk-pet{position:absolute;width:72px;height:86px;z-index:50;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.desk-pet:active{cursor:grabbing}
+.pet-body{width:100%;height:100%;transition:transform .15s;animation:petIdle 3.5s ease-in-out infinite;transform-origin:bottom center}
+.pet-body svg{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,.2))}
+.desk-pet.dragging .pet-body{animation:none;transform:scale(1.12)}
+.desk-pet.poked .pet-body{animation:petPoke .5s ease}
+@keyframes petIdle{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
+@keyframes petPoke{0%{transform:scale(1)}30%{transform:scale(.85) translateY(4px)}60%{transform:scale(1.1) translateY(-6px)}100%{transform:scale(1)}}
+.pet-eyes-blink{animation:petBlink .25s ease}
+@keyframes petBlink{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.1)}}
+#petTears ellipse{animation:petTearDrop 1s ease-in-out infinite}
+@keyframes petTearDrop{0%{transform:translateY(0);opacity:.85}70%{opacity:.85}100%{transform:translateY(8px);opacity:0}}
+.pet-bubble{position:absolute;bottom:90px;left:50%;transform:translateX(-50%) scale(0);transform-origin:bottom center;background:#fff;color:#9a6b7e;font-size:12px;font-weight:600;padding:7px 12px;border-radius:14px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.18);opacity:0;transition:transform .2s,opacity .2s;pointer-events:none;max-width:140px;white-space:normal;text-align:center;line-height:1.4}
+.pet-bubble.show{transform:translateX(-50%) scale(1);opacity:1}
+.pet-bubble::after{content:"";position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#fff;border-bottom:0}
 .home-top{padding:8px 22px 4px}
 .home-date{font-size:15px;font-weight:800;color:rgba(255,255,255,.88);text-shadow:0 2px 8px rgba(0,0,0,.35)}
 .app-grid{
@@ -130,6 +146,23 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .app-placeholder{
   visibility:hidden;
 }
+.home-page.edit-mode .app-placeholder{
+  visibility:visible;
+  border:2px dashed rgba(255,255,255,.18);
+  border-radius:18px;
+  margin:0 auto;
+  width:62px;height:62px;
+}
+/* 拖拽排序 */
+.app-wrap.dragging{opacity:.35}
+.home-page.edit-mode .app-wrap{animation:appjiggle .35s infinite}
+.home-page.edit-mode .app-wrap:nth-child(2n){animation-delay:-.18s}
+@keyframes appjiggle{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
+.drag-ghost{position:fixed;z-index:9999;pointer-events:none;width:64px;text-align:center;transform:translate(-50%,-50%) scale(1.15);transition:none;opacity:.92}
+.drag-ghost .app-icon{width:60px;height:60px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.drag-ghost .app-icon img{width:100%;height:100%;object-fit:cover}
+.drag-ghost.ghost-widget{width:150px}
+.ghost-widget-inner{width:150px;height:150px;border-radius:22px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.28);transform:scale(1)}
 .widget-cell-2x2{
   grid-column: span 2;
   grid-row: span 2;
@@ -2258,11 +2291,51 @@ body.multiselect-mode .msg{ cursor:pointer; }
     <section class="home-screen" id="homeScreen">
       <div class="statusbar"><span id="homeStatusTime">9:41</span><span class="status-icons"><span class="signal"><i></i><i></i><i></i></span><span class="battery"></span></span></div>
       <div class="home-top" style="position:relative"><div class="home-date" id="homeDate">喵喵机</div><div id="miaoVersionLabel" style="font-size:11px;color:rgba(255,255,255,.78);font-weight:700;margin-top:4px;text-shadow:0 2px 6px rgba(0,0,0,.45)">喵喵机</div>
+      <button id="resetLayoutBtn" onclick="resetHomeLayout()" style="position:absolute;right:52px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);" title="整理图标">↺</button>
       <button id="addWidgetBtn" onclick="showWidgetPicker()" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);">+</button>
       </div>
       <div class="app-grid" id="appGrid"></div>
       <div class="page-dots" id="pageDots"></div>
       <div class="dock" id="dockGrid"></div>
+      <!-- 桌宠兔子 -->
+      <div id="deskPet" class="desk-pet" style="display:none">
+        <div class="pet-bubble" id="petBubble"></div>
+        <div class="pet-body" id="petBody">
+          <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="36" cy="106" rx="11" ry="7" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="64" cy="106" rx="11" ry="7" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="36" cy="106" rx="5" ry="3" fill="#ffd5e0"/>
+            <ellipse cx="64" cy="106" rx="5" ry="3" fill="#ffd5e0"/>
+            <ellipse cx="50" cy="86" rx="26" ry="24" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="50" cy="90" rx="15" ry="15" fill="#fff6f8"/>
+            <ellipse cx="26" cy="84" rx="7" ry="9" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="74" cy="84" rx="7" ry="9" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="38" cy="22" rx="8" ry="20" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="62" cy="22" rx="8" ry="20" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="38" cy="24" rx="4" ry="13" fill="#ffd5e0"/>
+            <ellipse cx="62" cy="24" rx="4" ry="13" fill="#ffd5e0"/>
+            <ellipse cx="50" cy="52" rx="30" ry="28" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="33" cy="56" rx="6" ry="4" fill="#ffc2d4" opacity=".7"/>
+            <ellipse cx="67" cy="56" rx="6" ry="4" fill="#ffc2d4" opacity=".7"/>
+            <g id="petEyes">
+              <circle cx="40" cy="48" r="3.5" fill="#5a4a52"/>
+              <circle cx="60" cy="48" r="3.5" fill="#5a4a52"/>
+              <circle cx="41" cy="47" r="1.2" fill="#fff"/>
+              <circle cx="61" cy="47" r="1.2" fill="#fff"/>
+            </g>
+            <g id="petCryEyes" style="display:none">
+              <path d="M36 45 l8 5 M44 45 l-8 5" stroke="#5a4a52" stroke-width="2" stroke-linecap="round"/>
+              <path d="M56 45 l8 5 M64 45 l-8 5" stroke="#5a4a52" stroke-width="2" stroke-linecap="round"/>
+            </g>
+            <g id="petTears" style="display:none">
+              <ellipse cx="36" cy="58" rx="2.5" ry="4" fill="#7ec8f0" opacity=".85"/>
+              <ellipse cx="64" cy="58" rx="2.5" ry="4" fill="#7ec8f0" opacity=".85"/>
+            </g>
+            <path d="M50 54 l-2.5 2.5 h5 z" fill="#ff9db5"/>
+            <path d="M50 57 q-4 4 -8 1 M50 57 q4 4 8 1" stroke="#d8a0b0" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
       <div class="home-indicator"></div>
     </section>
 
@@ -2830,10 +2903,12 @@ body.multiselect-mode .msg{ cursor:pointer; }
         <div class="header-title">桌宠</div>
         <span style="width:32px"></span>
       </div>
-      <div class="content" id="petContent" style="padding:20px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center">
-        <div style="font-size:72px">🐾</div>
-        <div style="font-size:17px;font-weight:700;color:var(--accent,#888)">桌宠</div>
-        <div style="font-size:13px;color:#999;line-height:1.7;max-width:260px">这里以后会住进一只小桌宠～<br>具体功能还在和哥哥商量中，先占个窝。</div>
+      <div class="content" id="petContent" style="padding:20px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center">
+        <div style="font-size:72px;margin-top:10px">🐰</div>
+        <div style="font-size:17px;font-weight:700;color:var(--accent,#888)">桌宠小兔</div>
+        <div style="font-size:13px;color:#999;line-height:1.7;max-width:280px">开启后，小兔子会待在主屏上。<br>可以拖动它换位置，戳一戳它会有反应～</div>
+        <button id="petToggleBtn" onclick="togglePet()" style="border:none;border-radius:14px;padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent,#888)">开启桌宠</button>
+        <div style="font-size:12px;color:#bbb;margin-top:4px">提示：戳一戳、拖一拖，它会陪着你</div>
       </div>
     </section>
 
@@ -2901,6 +2976,22 @@ body.multiselect-mode .msg{ cursor:pointer; }
 <script>
 (function(){
 "use strict";
+// 全局错误捕获：手机看不了控制台时，把真实错误弹出来
+window.addEventListener("error", function(ev){
+  try{
+    var msg = ev.message || "未知错误";
+    var loc = ev.lineno ? (" @"+ev.lineno+":"+ev.colno) : "";
+    var el = document.getElementById("__errbar");
+    if(!el){
+      el = document.createElement("div");
+      el.id = "__errbar";
+      el.style.cssText = "position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;background:rgba(200,40,40,.95);color:#fff;font-size:12px;padding:10px 12px;border-radius:10px;line-height:1.5;word-break:break-all;box-shadow:0 4px 16px rgba(0,0,0,.3)";
+      el.onclick=function(){ el.remove(); };
+      document.body.appendChild(el);
+    }
+    el.textContent = "⚠ "+msg+loc+"（点我关闭）";
+  }catch(e){}
+});
 
 const $ = (sel, root=document)=>root.querySelector(sel);
 const $$ = (sel, root=document)=>Array.from(root.querySelectorAll(sel));
@@ -3166,6 +3257,8 @@ async function init(){
   updateClock();
   setInterval(updateClock, 30000);
   ProactiveMsg.reset();
+  DeskPet.initDrag();
+  DeskPet.render();
   checkBackupReminder();
   // 恢复自定义字体
   const savedFontUrl=Storage.get("customFontUrl","");
@@ -3796,6 +3889,7 @@ function openApp(id){
   if(id==="wechat"){
     const badge=document.getElementById("wechatBadge");
     if(badge) badge.style.display="none";
+    ensureNotifyPermission();
     renderStickyNotes();
     // 记录上次访问时间
     const now = Date.now();
@@ -3807,6 +3901,7 @@ function openApp(id){
     el.classList.add("active");
     Miao.state.currentApp=id;
     if(id==="moments") checkAutoMomentsOnOpen();
+    if(id==="pet") updatePetToggleBtn();
     renderAll();
     // 打开微信会话：强制滚到底，确保默认看到最新消息
     if(id==="wechat"){
@@ -4061,6 +4156,53 @@ function addWidget(templateId){
   showSlotPicker(templateId);
 }
 
+// ===== 全局装箱：把某页items按顺序重排进网格（app占1格，组件占2x2）=====
+// orderedIds: 可选，指定该页元素的目标顺序（id数组）；不传则按现有row/col顺序
+function packPageLayout(layout, page, orderedIds){
+  const COLS=4;
+  let pageItems=layout.filter(it=>it.page===page);
+  const others=layout.filter(it=>it.page!==page);
+  if(orderedIds && orderedIds.length){
+    const idMap={};
+    pageItems.forEach(it=>{ idMap[it.id]=it; });
+    pageItems=orderedIds.map(id=>idMap[id]).filter(Boolean);
+  } else {
+    pageItems.sort((a,b)=>(a.row*COLS+a.col)-(b.row*COLS+b.col));
+  }
+  const isWidget=(it)=> it.type==="widget" && it.size==="2x2";
+  const occ={};
+  const free=(r,c)=> r>=0 && c>=0 && c<COLS && !occ[r+","+c];
+  const free2x2=(r,c)=> c<=COLS-2 && free(r,c)&&free(r,c+1)&&free(r+1,c)&&free(r+1,c+1);
+  const mark=(r,c)=>{ occ[r+","+c]=true; };
+  const mark2x2=(r,c)=>{ mark(r,c);mark(r,c+1);mark(r+1,c);mark(r+1,c+1); };
+  // 逐格游标推进；放置后游标停在“放置位置的下一格”，但下次放置会跳过已占用格
+  // 关键：app和组件都从游标位置开始、逐格向后扫第一个可用位，保证顺序且填满空隙
+  let pos=0; // 一维格位 = row*COLS+col
+  const MAXP=COLS*400;
+  pageItems.forEach(it=>{
+    if(isWidget(it)){
+      // 从游标起找第一个能放下2x2的位置；组件只允许靠边（col0或col2），不卡中间col1
+      let p=pos;
+      while(p<MAXP){
+        const r=Math.floor(p/COLS), c=p%COLS;
+        if((c===0||c===2) && free2x2(r,c)){ it.row=r; it.col=c; mark2x2(r,c); break; }
+        p++;
+      }
+      if(p>=MAXP){ it.row=Math.floor(pos/COLS); it.col=0; }
+      pos = it.row*COLS + it.col + 1;
+    } else {
+      let p=pos;
+      while(p<MAXP){
+        const r=Math.floor(p/COLS), c=p%COLS;
+        if(free(r,c)){ it.row=r; it.col=c; mark(r,c); break; }
+        p++;
+      }
+      pos = it.row*COLS + it.col + 1;
+    }
+  });
+  return others.concat(pageItems);
+}
+
 function showSlotPicker(templateId){
   const COLS=4, ROWS=2; // 每页2行，2x2组件最多放在row0或row1
   const layout=getHomeLayout();
@@ -4076,20 +4218,16 @@ function showSlotPicker(templateId){
     for(let r=0;r<ROWS;r++){
       for(let c=0;c<COLS;c++){
         const k=`${page},${r},${c}`;
-        const k2=`${page},${r},${c+1}`;
-        const k3=`${page},${r+1},${c}`;
-        const k4=`${page},${r+1},${c+1}`;
-        const isOccupied=occupied.has(k)||occupied.has(k2)||occupied.has(k3)||occupied.has(k4);
-        const canPlace=c<=COLS-2 && r<=ROWS-2 && !isOccupied;
         const isSingleOccupied=occupied.has(k);
-        cells+=`<div onclick="${canPlace?`window._pickSlot(${page},${r},${c})`:'void 0'}"
-          style="width:100%;aspect-ratio:1;border-radius:8px;cursor:${canPlace?'pointer':'default'};
-          background:${isSingleOccupied?'rgba(0,0,0,0.2)':canPlace?'rgba(124,58,237,0.15)':'rgba(0,0,0,0.05)'};
-          border:2px solid ${canPlace?'rgba(124,58,237,0.4)':'transparent'};
+        // 全部格子可点：点了就把组件插到这个位置，其余自动让位重排
+        cells+=`<div onclick="window._pickSlot(${page},${r},${c})"
+          style="width:100%;aspect-ratio:1;border-radius:8px;cursor:pointer;
+          background:${isSingleOccupied?'rgba(124,58,237,0.12)':'rgba(124,58,237,0.18)'};
+          border:2px dashed rgba(124,58,237,0.45);
+          display:flex;align-items:center;justify-content:center;font-size:18px;color:rgba(124,58,237,.5);
           transition:all 0.15s;"
-          onmouseover="${canPlace?"this.style.background='rgba(124,58,237,0.3)'":'void 0'}"
-          onmouseout="${canPlace?`this.style.background='rgba(124,58,237,0.15)'`:'void 0'}">
-        </div>`;
+          onmouseover="this.style.background='rgba(124,58,237,0.32)'"
+          onmouseout="this.style.background='${isSingleOccupied?'rgba(124,58,237,0.12)':'rgba(124,58,237,0.18)'}'">${isSingleOccupied?'':'＋'}</div>`;
       }
     }
     return cells;
@@ -4097,7 +4235,7 @@ function showSlotPicker(templateId){
 
   function buildPickerHTML(){
     return `<div class="quick-modal-title">选择放置位置</div>
-    <div style="font-size:12px;color:#999;text-align:center;margin-bottom:12px">点击紫色格子放置 2×2 组件</div>
+    <div style="font-size:12px;color:#999;text-align:center;margin-bottom:12px">点任意格子放入组件，其他图标会自动让位</div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <button onclick="window._pickerPage(-1)" style="background:none;border:none;font-size:18px;cursor:pointer;color:#888;">‹</button>
       <span style="font-size:12px;color:#888">第 ${currentPage+1} 页 / 共 ${totalPages} 页</span>
@@ -4122,14 +4260,31 @@ function showSlotPicker(templateId){
 
   window._pickSlot=(page,row,col)=>{
     closeQuickModal();
+    const COLS=4;
+    let c=col, r=row;
+    if(c>COLS-2) c=COLS-2; // 组件不超右边界
     const newWidget={
-      page, row, col,
+      page, row:r, col:c,
       type:"widget", size:"2x2",
       id:"widget_"+Date.now(),
       template:templateId,
       config:{...(widgetTemplates[templateId]?.defaultConfig||{})}
     };
-    const layout=getHomeLayout();
+    let layout=getHomeLayout();
+    // 把新组件四格里原有的app挤到空位（自由网格：只挪被压住的）
+    const occupiedCells=[[r,c],[r,c+1],[r+1,c],[r+1,c+1]];
+    const conflict=layout.filter(it=>it.page===page && it.type==="app" && occupiedCells.some(([rr,cc])=>it.row===rr&&it.col===cc));
+    // 找空位安置冲突的app
+    const isFree=(rr,cc)=>!layout.some(it=>it.page===page && (
+      (it.type==="widget"&&it.size==="2x2"&&rr>=it.row&&rr<=it.row+1&&cc>=it.col&&cc<=it.col+1) ||
+      (it.type!=="widget"&&it.row===rr&&it.col===cc)
+    )) && !occupiedCells.some(([or,oc])=>or===rr&&oc===cc);
+    conflict.forEach(app=>{
+      let found=false;
+      for(let rr=0;rr<50&&!found;rr++)for(let cc=0;cc<COLS&&!found;cc++){
+        if(isFree(rr,cc)){ app.row=rr; app.col=cc; found=true; }
+      }
+    });
     layout.push(newWidget);
     saveHomeLayout(layout);
     renderHome();
@@ -4138,6 +4293,61 @@ function showSlotPicker(templateId){
 
   openQuickModal(buildPickerHTML());
 }
+
+// ===== 顶层碰撞自愈：把重叠的图标分开，防止图标被压住"消失" =====
+function healLayoutCollisions(layout){
+  const COLS=4;
+  const byPage={};
+  layout.forEach(it=>{ (byPage[it.page]=byPage[it.page]||[]).push(it); });
+  Object.keys(byPage).forEach(pg=>{
+    const items=byPage[pg];
+    const occ={};
+    const cellsOf=(it,r,c)=> it.type==="widget"&&it.size==="2x2" ? [[r,c],[r,c+1],[r+1,c],[r+1,c+1]] : [[r,c]];
+    const isFree=(it,r,c)=>{
+      if(it.type==="widget"&&it.size==="2x2"&&c>COLS-2) return false;
+      return cellsOf(it,r,c).every(([rr,cc])=> cc>=0&&cc<COLS&&rr>=0&&!occ[rr+","+cc]);
+    };
+    const place=(it)=> cellsOf(it,it.row,it.col).forEach(([r,c])=>occ[r+","+c]=it.id);
+    // 第一遍：当前位置不冲突的图标先就地占位（保住原位，不乱动）
+    const conflicted=[];
+    items.forEach(it=>{
+      if(isFree(it,it.row,it.col)) place(it);
+      else conflicted.push(it);
+    });
+    // 第二遍：只有真冲突的才找新空位
+    conflicted.forEach(it=>{
+      let found=false;
+      for(let r=0;r<60&&!found;r++)for(let c=0;c<COLS&&!found;c++){
+        if(isFree(it,r,c)){ it.row=r; it.col=c; place(it); found=true; }
+      }
+      if(!found) place(it);
+    });
+  });
+  return layout;
+}
+
+// ===== 整理图标：每页紧凑重排 =====
+function resetHomeLayout(){
+  let layout=getHomeLayout();
+  const pages=[...new Set(layout.map(it=>it.page))];
+  pages.forEach(pg=>{ layout=packPageLayout(layout, pg); });
+  saveHomeLayout(layout);
+  renderHome();
+  try{ toast("已整理图标"); }catch(e){}
+}
+window.resetHomeLayout=resetHomeLayout;
+
+// 桌宠开关
+function togglePet(){
+  DeskPet.setOn(!DeskPet.isOn());
+  updatePetToggleBtn();
+  try{ toast(DeskPet.isOn()?"桌宠已开启，回主屏看看～":"桌宠已关闭"); }catch(e){}
+}
+function updatePetToggleBtn(){
+  const btn=document.getElementById("petToggleBtn");
+  if(btn) btn.textContent=DeskPet.isOn()?"关闭桌宠":"开启桌宠";
+}
+window.togglePet=togglePet;
 
 // ===== 编辑组件 =====
 function editWidget(widgetId){
@@ -4313,7 +4523,10 @@ function renderWidget2x2(widgetId, item){
 function renderHome(){
   const COLS=4;
   const dockApps=Miao.apps.filter(a=>a.dock);
-  const layout=getHomeLayout();
+  let layout=getHomeLayout();
+  // 自愈：分开任何重叠的图标，防止"消失"
+  layout=healLayoutCollisions(layout);
+  saveHomeLayout(layout);
 
   // 按page分组
   const pageMap={};
@@ -4331,11 +4544,11 @@ function renderHome(){
     // 建坐标索引
     const posMap={};
     pageItems.forEach(item=>{ posMap[`${item.row},${item.col}`]=item; });
-    // 计算这页需要几行
+    // 计算这页需要几行（多留2行空格，方便自由拖放到下方）
     const maxRow=pageItems.reduce((max,item)=>{
       const itemRows=item.size==="2x2"?item.row+2:item.row+1;
       return Math.max(max,itemRows);
-    },2);
+    },2)+2;
     // 逐格渲染
     let cells="";
     for(let r=0;r<maxRow;r++){
@@ -4389,16 +4602,11 @@ function renderHome(){
       if(wid) try{ showWidgetMenu(e,wid); }catch(err){ console.warn(err); }
     });
     grid.addEventListener("touchstart",(e)=>{
-      const cell=e.target.closest(".widget-cell-2x2");
-      if(!cell) return;
-      const wid=cell.dataset.widgetId;
-      if(!wid) return;
-      wpTimer=setTimeout(()=>{
-        try{ showWidgetMenu(e,wid); }catch(err){ console.warn(err); }
-      },520);
+      // 组件触摸长按 → 交给拖拽系统处理，这里不再弹菜单
     },{passive:true});
     grid.addEventListener("touchend",()=>{ clearTimeout(wpTimer); },{passive:true});
     grid.addEventListener("touchmove",()=>{ clearTimeout(wpTimer); },{passive:true});
+    // 注：组件的触摸长按已交给 initAppDragSort 统一处理（原地松手=编辑菜单，拖走=移动）
   }
 
   // dock
@@ -4406,6 +4614,262 @@ function renderHome(){
 
   // 启动时钟实时更新
   startClockUpdater();
+  // 挂载app拖拽排序
+  initAppDragSort();
+}
+
+// ===== app 拖拽排序（同页内重排，iOS触摸式）=====
+function initAppDragSort(){
+  const grid=$("#appGrid");
+  if(!grid || grid._dragInited) return;
+  grid._dragInited=true;
+  let pressTimer=null, dragging=false, ghost=null;
+  let dragId=null, dragPage=null, dragEl=null, startX=0, startY=0;
+
+  function pageAppSeq(pageEl){
+    // 返回该页所有app格子（含占位），按视觉顺序
+    return Array.from(pageEl.querySelectorAll(".app-wrap, .app-placeholder, .widget-cell-2x2"));
+  }
+  function cleanup(){
+    clearTimeout(pressTimer);
+    if(ghost){ ghost.remove(); ghost=null; }
+    if(dragEl) dragEl.classList.remove("dragging");
+    $$(".home-page").forEach(p=>p.classList.remove("edit-mode"));
+    dragging=false; dragId=null; dragEl=null;
+    grid.style.overflowX="";
+  }
+  function startDrag(el, x, y){
+    dragging=true;
+    const isWidget = el.classList.contains("widget-cell-2x2");
+    dragId = isWidget ? el.dataset.widgetId : el.dataset.id;
+    dragEl=el;
+    const pageEl=el.closest(".home-page");
+    dragPage=pageEl?parseInt(pageEl.dataset.page):0;
+    pageEl && pageEl.classList.add("edit-mode");
+    el.classList.add("dragging");
+    ghost=document.createElement("div");
+    ghost.className="drag-ghost"+(isWidget?" ghost-widget":"");
+    const iconEl=el.querySelector(".app-icon");
+    if(isWidget){
+      ghost.innerHTML=`<div class="ghost-widget-inner">${el.innerHTML}</div>`;
+    } else {
+      ghost.innerHTML=`<div class="app-icon">${iconEl?iconEl.innerHTML:""}</div>`;
+    }
+    document.body.appendChild(ghost);
+    moveGhost(x,y);
+    grid.style.overflowX="hidden";
+    if(navigator.vibrate) try{ navigator.vibrate(15); }catch(e){}
+  }
+  function moveGhost(x,y){ if(ghost){ ghost.style.left=x+"px"; ghost.style.top=y+"px"; } }
+
+  function dropAt(x,y){
+   try{
+    const movedDist=Math.hypot(x-startX, y-startY);
+    const isWidget = dragEl && dragEl.classList.contains("widget-cell-2x2");
+    if(isWidget && movedDist<14){
+      const wid = dragEl.dataset.widgetId || dragId;
+      cleanup();
+      setTimeout(()=>{ try{ showWidgetMenu({preventDefault(){},stopPropagation(){},clientX:x,clientY:y}, wid); }catch(err){ console.warn(err); } }, 30);
+      return;
+    }
+    const pageEl=$$(".home-page")[dragPage];
+    if(!pageEl){ cleanup(); return; }
+    const COLS=4;
+    // 用手指正下方的真实元素来定位格子（最准，不受滚动/行高影响）
+    let targetRow=null, targetCol=null;
+    // 临时让幽灵不挡住elementFromPoint
+    if(ghost) ghost.style.display="none";
+    let under=document.elementFromPoint(x,y);
+    if(ghost) ghost.style.display="";
+    // 找到落点所在的格子元素
+    let cellEl = under && under.closest && under.closest(".app-wrap, .widget-cell-2x2, .app-placeholder");
+    if(cellEl && pageEl.contains(cellEl)){
+      // 这个格子在该页children里的索引 → 换算row/col
+      const idx=Array.prototype.indexOf.call(pageEl.children, cellEl);
+      if(idx>=0){ targetRow=Math.floor(idx/COLS); targetCol=idx%COLS; }
+      // 如果落在组件本身，用组件的row/col
+      if(cellEl.classList.contains("widget-cell-2x2")){
+        const wid=cellEl.dataset.widgetId;
+        const w=getHomeLayout().find(it=>it.id===wid);
+        if(w){ targetRow=w.row; targetCol=w.col; }
+      }
+    }
+    // 兜底：用几何估算
+    if(targetRow===null){
+      const gridRect=pageEl.getBoundingClientRect();
+      const cs=getComputedStyle(pageEl);
+      const padL=parseFloat(cs.paddingLeft)||0, padT=parseFloat(cs.paddingTop)||0, padR=parseFloat(cs.paddingRight)||0;
+      const gap=parseFloat(cs.gap)||14;
+      const cellW=(gridRect.width - padL - padR - gap*(COLS-1))/COLS;
+      const firstCell=pageEl.querySelector(".app-wrap,.app-placeholder,.widget-cell-2x2");
+      const cellH=firstCell?firstCell.getBoundingClientRect().height:78;
+      targetCol=Math.max(0,Math.min(COLS-1,Math.floor((x - gridRect.left - padL)/(cellW+gap))));
+      targetRow=Math.max(0,Math.floor((y - gridRect.top - padT)/(cellH+gap)));
+    }
+    swapTo(dragPage, dragId, targetRow, targetCol);
+   }catch(err){
+    console.error("拖拽放置出错", err);
+    try{ toast("拖拽出错："+(err&&err.message||err)); }catch(e){}
+    cleanup(); renderHome();
+   }
+  }
+  // 把被拖的item移到(row,col)；若目标位置有别的item则交换
+  function swapTo(page, id, row, col){
+    const layout=getHomeLayout();
+    const COLS=4;
+    const dragItem=layout.find(it=>it.page===page && it.id===id);
+    if(!dragItem){ cleanup(); return; }
+    const dragIsWidget = dragItem.type==="widget" && dragItem.size==="2x2";
+    let targetCol=col, targetRow=row;
+    if(dragIsWidget && targetCol>COLS-2) targetCol=COLS-2;
+    const occupantAt=(r,c)=>{
+      return layout.find(it=>{
+        if(it.id===id) return false;
+        if(it.page!==page) return false;
+        if(it.type==="widget" && it.size==="2x2"){
+          return (r>=it.row && r<=it.row+1 && c>=it.col && c<=it.col+1);
+        }
+        return it.row===r && it.col===c;
+      });
+    };
+    const occupant=occupantAt(targetRow,targetCol);
+    if(!occupant){
+      dragItem.row=targetRow; dragItem.col=targetCol;
+    } else if(occupant.id===id){
+      // 没动
+    } else {
+      const oldR=dragItem.row, oldC=dragItem.col;
+      dragItem.row=occupant.type==="widget"?occupant.row:targetRow;
+      dragItem.col=occupant.type==="widget"?occupant.col:targetCol;
+      occupant.row=oldR; occupant.col=oldC;
+    }
+    // 越界修正
+    layout.forEach(it=>{
+      if(it.type==="widget"&&it.size==="2x2"&&it.col>COLS-2) it.col=COLS-2;
+      if(it.col<0)it.col=0; if(it.row<0)it.row=0;
+    });
+    // ===== 碰撞兜底：保证没有任何图标被压住/重叠，绝不丢失 =====
+    resolveCollisions(layout, page, dragItem.id);
+    saveHomeLayout(layout);
+    cleanup();
+    renderHome();
+  }
+  // 检测重叠：除了刚拖动的item，其他被压住的逐个挪到最近空位
+  function resolveCollisions(layout, page, keepId){
+    const COLS=4;
+    const items=layout.filter(it=>it.page===page);
+    const cellsOf=(it)=> it.type==="widget"&&it.size==="2x2"
+      ? [[it.row,it.col],[it.row,it.col+1],[it.row+1,it.col],[it.row+1,it.col+1]]
+      : [[it.row,it.col]];
+    const buildOcc=(excludeId)=>{
+      const occ={};
+      items.forEach(it=>{ if(it.id===excludeId) return; cellsOf(it).forEach(([r,c])=>occ[r+","+c]=it.id); });
+      return occ;
+    };
+    // 优先级：keepId(刚拖的)固定不动，其余如有冲突就移走
+    // 先放keepId占位，再逐个检查其它
+    const ordered=[...items].sort((a,b)=> (a.id===keepId?-1:b.id===keepId?1:0));
+    const occ={};
+    const place=(it)=>{ cellsOf(it).forEach(([r,c])=>occ[r+","+c]=it.id); };
+    const isFreeFor=(it,r,c)=>{
+      const cells = it.type==="widget"&&it.size==="2x2" ? [[r,c],[r,c+1],[r+1,c],[r+1,c+1]] : [[r,c]];
+      if(it.type==="widget"&&it.size==="2x2"&&c>COLS-2) return false;
+      return cells.every(([rr,cc])=> cc>=0&&cc<COLS&&rr>=0&&!occ[rr+","+cc]);
+    };
+    ordered.forEach(it=>{
+      // 当前位置可用就留着
+      if(isFreeFor(it,it.row,it.col)){ place(it); return; }
+      // 否则找最近空位
+      let found=false;
+      for(let r=0;r<60&&!found;r++)for(let c=0;c<COLS&&!found;c++){
+        if(isFreeFor(it,r,c)){ it.row=r; it.col=c; place(it); found=true; }
+      }
+      if(!found) place(it); // 实在没位置也别丢
+    });
+  }
+  // 按"插到某个邻居前/后"重排，索引基于真实item序列
+  function reorderByNeighbor(page, id, neighborId, before){
+    const layout=getHomeLayout();
+    const COLS=4;
+    const pageItems=layout.filter(it=>it.page===page).sort((a,b)=>(a.row*COLS+a.col)-(b.row*COLS+b.col));
+    const fromIdx=pageItems.findIndex(it=>it.id===id);
+    if(fromIdx<0){ cleanup(); return; }
+    const moved=pageItems.splice(fromIdx,1)[0];
+    let nIdx=pageItems.findIndex(it=>it.id===neighborId);
+    if(nIdx<0) nIdx=pageItems.length-1;
+    let insertAt=before?nIdx:nIdx+1;
+    insertAt=Math.min(Math.max(0,insertAt), pageItems.length);
+    pageItems.splice(insertAt,0,moved);
+    const orderedIds=pageItems.map(it=>it.id);
+    const newLayout=packPageLayout(layout, page, orderedIds);
+    saveHomeLayout(newLayout);
+    cleanup();
+    renderHome();
+  }
+
+  // 把dragId移到该页targetIdx位置，app(1格)和组件(2x2)统一装箱重排
+  function reorder(page, id, targetIdx){
+    const layout=getHomeLayout();
+    const COLS=4;
+    const pageItems=layout.filter(it=>it.page===page).sort((a,b)=>(a.row*COLS+a.col)-(b.row*COLS+b.col));
+    const fromIdx=pageItems.findIndex(it=>it.id===id);
+    if(fromIdx<0){ cleanup(); return; }
+    const moved=pageItems.splice(fromIdx,1)[0];
+    let insertAt=Math.min(Math.max(0,targetIdx), pageItems.length);
+    pageItems.splice(insertAt,0,moved);
+    const orderedIds=pageItems.map(it=>it.id);
+    const newLayout=packPageLayout(layout, page, orderedIds);
+    saveHomeLayout(newLayout);
+    cleanup();
+    renderHome();
+  }
+
+  // 触摸
+  grid.addEventListener("touchstart",(e)=>{
+    const el=e.target.closest(".app-wrap, .widget-cell-2x2");
+    if(!el) return;
+    if(el.classList.contains("app-wrap") && !el.dataset.id) return;
+    if(el.classList.contains("widget-cell-2x2") && !el.dataset.widgetId) return;
+    const t=e.touches[0]; startX=t.clientX; startY=t.clientY;
+    pressTimer=setTimeout(()=>{ startDrag(el, t.clientX, t.clientY); }, 500);
+  },{passive:true});
+  grid.addEventListener("touchmove",(e)=>{
+    if(dragging){
+      e.preventDefault();
+      const t=e.touches[0]; moveGhost(t.clientX,t.clientY);
+    } else {
+      // 移动超过阈值则取消长按（是在滑页）
+      const t=e.touches[0];
+      if(Math.hypot(t.clientX-startX,t.clientY-startY)>10) clearTimeout(pressTimer);
+    }
+  },{passive:false});
+  grid.addEventListener("touchend",(e)=>{
+    if(dragging){
+      const t=e.changedTouches[0];
+      dropAt(t.clientX, t.clientY);
+    } else {
+      clearTimeout(pressTimer);
+    }
+  });
+  grid.addEventListener("touchcancel",()=>{ if(dragging) cleanup(); else clearTimeout(pressTimer); });
+
+  // 鼠标（桌面端调试）
+  grid.addEventListener("mousedown",(e)=>{
+    const el=e.target.closest(".app-wrap, .widget-cell-2x2");
+    if(!el) return;
+    if(el.classList.contains("app-wrap") && !el.dataset.id) return;
+    if(el.classList.contains("widget-cell-2x2") && !el.dataset.widgetId) return;
+    startX=e.clientX; startY=e.clientY;
+    pressTimer=setTimeout(()=>{ startDrag(el, e.clientX, e.clientY); }, 500);
+  });
+  window.addEventListener("mousemove",(e)=>{
+    if(dragging){ e.preventDefault(); moveGhost(e.clientX,e.clientY); }
+    else if(pressTimer){ if(Math.hypot(e.clientX-startX,e.clientY-startY)>10) clearTimeout(pressTimer); }
+  });
+  window.addEventListener("mouseup",(e)=>{
+    if(dragging) dropAt(e.clientX,e.clientY);
+    else clearTimeout(pressTimer);
+  });
 }
 
 let _clockTimer=null;
@@ -4504,6 +4968,166 @@ function rollDice(){
   const chat=$("#chat"); if(chat) chat.scrollTop=chat.scrollHeight;
 }
 
+/* ===== 桌宠兔子 ===== */
+const DeskPet = {
+  phrases: ["唔？","戳我干嘛呀~","今天也要开心鸭","我在这儿陪你哦","再戳…我要害羞了","摸摸头嘛","找我玩吗？","在的在的","嘿嘿~","乖乖待着呢"],
+  blinkTimer:null, bubbleTimer:null,
+  isOn(){ return Storage.get("petEnabled", false); },
+  setOn(v){ Storage.set("petEnabled", !!v); this.render(); },
+  getContainer(){ return document.querySelector(".phone-frame") || document.querySelector(".home-screen") || document.body; },
+  getBounds(){
+    const el=document.getElementById("deskPet");
+    const host=el && el.offsetParent ? el.offsetParent : this.getContainer();
+    const r=host.getBoundingClientRect();
+    return {w:r.width||390, h:r.height||700};
+  },
+  getPos(){
+    const bd=this.getBounds();
+    return Storage.get("petPos", {x: Math.max(0,bd.w-90), y: Math.round(bd.h*0.5)});
+  },
+  setPos(p){ Storage.set("petPos", p); },
+  render(){
+    const el=document.getElementById("deskPet");
+    if(!el) return;
+    if(!this.isOn()){ el.style.display="none"; this.stopBlink(); return; }
+    el.style.display="block";
+    const bd=this.getBounds();
+    const pos=this.getPos();
+    const maxX=Math.max(0,bd.w-72), maxY=Math.max(40,bd.h-120);
+    el.style.left=Math.max(0,Math.min(maxX,pos.x))+"px";
+    el.style.top=Math.max(40,Math.min(maxY,pos.y))+"px";
+    this.startBlink();
+  },
+  startBlink(){
+    this.stopBlink();
+    const blink=()=>{
+      const eyes=document.getElementById("petEyes");
+      if(eyes){ eyes.classList.add("pet-eyes-blink"); setTimeout(()=>eyes.classList.remove("pet-eyes-blink"),260); }
+      this.blinkTimer=setTimeout(blink, 2500+Math.random()*4000);
+    };
+    this.blinkTimer=setTimeout(blink, 3000);
+  },
+  stopBlink(){ if(this.blinkTimer){ clearTimeout(this.blinkTimer); this.blinkTimer=null; } },
+  say(text){
+    const b=document.getElementById("petBubble");
+    if(!b) return;
+    b.textContent=text;
+    b.classList.add("show");
+    if(this.bubbleTimer) clearTimeout(this.bubbleTimer);
+    this.bubbleTimer=setTimeout(()=>b.classList.remove("show"), 2200);
+  },
+  poke(){
+    const el=document.getElementById("deskPet");
+    if(!el || el._falling) return;
+    el.classList.remove("poked"); void el.offsetWidth; el.classList.add("poked");
+    setTimeout(()=>el.classList.remove("poked"), 520);
+    this.say(this.phrases[Math.floor(Math.random()*this.phrases.length)]);
+    if(navigator.vibrate) try{ navigator.vibrate(10); }catch(e){}
+  },
+  cryPhrases: ["呜呜…轻点啦","摔疼了啦！","哥哥坏…呜","唔…好痛","不要甩我嘛","555…","下次轻一点嘛"],
+  setCry(on){
+    const eyes=document.getElementById("petEyes");
+    const tears=document.getElementById("petTears");
+    if(tears) tears.style.display = on?"block":"none";
+    if(eyes) eyes.style.opacity = on?"0":"1"; // 哭时藏正常眼，露出><眼
+    const cryEyes=document.getElementById("petCryEyes");
+    if(cryEyes) cryEyes.style.display = on?"block":"none";
+  },
+  fling(vx, vy){
+    const el=document.getElementById("deskPet");
+    if(!el) return;
+    el._falling=true;
+    this.stopBlink();
+    this.setCry(true);
+    const host=el.offsetParent || el.parentElement;
+    const hr=host.getBoundingClientRect();
+    const maxX=hr.width-72, floorY=hr.height-120;
+    let x=parseFloat(el.style.left)||0, y=parseFloat(el.style.top)||0;
+    // 初速度（放大手指甩速），重力
+    let dx=vx*16, dy=vy*16;
+    // 限制初速度，别甩太猛飞太远
+    const MAXV=42;
+    dx=Math.max(-MAXV,Math.min(MAXV,dx));
+    dy=Math.max(-MAXV,Math.min(MAXV,dy));
+    const G=1.4, BOUNCE=0.55, FRICTION=0.86;
+    let bounces=0;
+    const tick=()=>{
+      dy+=G;
+      x+=dx; y+=dy;
+      // 硬边界：始终夹在屏幕内，撞墙立刻反弹（不会飞出去）
+      if(x<0){ x=0; dx=Math.abs(dx)*BOUNCE; }
+      if(x>maxX){ x=maxX; dx=-Math.abs(dx)*BOUNCE; }
+      if(y<0){ y=0; dy=Math.abs(dy)*BOUNCE; }
+      // 撞地面反弹
+      if(y>=floorY){
+        y=floorY; dy=-Math.abs(dy)*BOUNCE; dx*=FRICTION; bounces++;
+        if(Math.abs(dy)<2.5 || bounces>5){
+          y=floorY; el.style.left=x+"px"; el.style.top=y+"px";
+          el._falling=false;
+          this.setPos({x,y});
+          this.say(this.cryPhrases[Math.floor(Math.random()*this.cryPhrases.length)]);
+          setTimeout(()=>{ this.setCry(false); this.startBlink(); }, 2600);
+          return;
+        }
+      }
+      el.style.left=x+"px"; el.style.top=y+"px";
+      requestAnimationFrame(tick);
+    };
+    if(navigator.vibrate) try{ navigator.vibrate([20,40,20]); }catch(e){}
+    requestAnimationFrame(tick);
+  },
+  initDrag(){
+    const el=document.getElementById("deskPet");
+    if(!el || el._petInited) return;
+    el._petInited=true;
+    let dragging=false, moved=false, sx=0, sy=0, ox=0, oy=0;
+    let lastX=0, lastY=0, lastT=0, vx=0, vy=0; // 速度追踪
+    const down=(x,y)=>{
+      if(el._falling) return; // 摔落动画中不响应
+      dragging=true; moved=false; sx=x; sy=y;
+      const r=el.getBoundingClientRect(); ox=x-r.left; oy=y-r.top;
+      lastX=x; lastY=y; lastT=Date.now(); vx=0; vy=0;
+    };
+    const move=(x,y)=>{
+      if(!dragging) return;
+      if(Math.hypot(x-sx,y-sy)>5){ moved=true; el.classList.add("dragging"); }
+      if(moved){
+        const host=el.offsetParent || el.parentElement;
+        const hr=host.getBoundingClientRect();
+        const nx=x-hr.left-ox, ny=y-hr.top-oy;
+        el.style.left=nx+"px"; el.style.top=ny+"px";
+        // 记录瞬时速度（px/ms）
+        const now=Date.now(), dt=Math.max(1, now-lastT);
+        vx=(x-lastX)/dt; vy=(y-lastY)/dt;
+        lastX=x; lastY=y; lastT=now;
+      }
+    };
+    const up=()=>{
+      if(!dragging) return;
+      dragging=false; el.classList.remove("dragging");
+      if(moved){
+        const speed=Math.hypot(vx,vy); // px/ms
+        if(speed>0.9){
+          // 甩得够快 → 摔落
+          this.fling(vx, vy);
+        } else {
+          const x=parseFloat(el.style.left)||0, y=parseFloat(el.style.top)||0;
+          this.setPos({x, y});
+          this.render();
+        }
+      } else {
+        this.poke();
+      }
+    };
+    el.addEventListener("touchstart",(e)=>{ const t=e.touches[0]; down(t.clientX,t.clientY); },{passive:true});
+    el.addEventListener("touchmove",(e)=>{ if(dragging){ e.preventDefault(); const t=e.touches[0]; move(t.clientX,t.clientY); } },{passive:false});
+    el.addEventListener("touchend",up);
+    el.addEventListener("mousedown",(e)=>{ down(e.clientX,e.clientY); });
+    window.addEventListener("mousemove",(e)=>{ if(dragging) move(e.clientX,e.clientY); });
+    window.addEventListener("mouseup",up);
+  }
+};
+
 /* ===== 微信主动发消息系统 ===== */
 const ProactiveMsg = {
   timer: null,
@@ -4554,6 +5178,9 @@ const ProactiveMsg = {
         const badge = document.getElementById("wechatBadge");
         if(badge) badge.style.display = "block";
         const roleName = role.name || "角色";
+        // 取第一条文字消息当通知预览
+        const preview = (parsed.find(m=>m.type==="text")||{}).content || "发来一条消息";
+        sendSystemNotification(roleName, preview, role.avatar);
         showProactiveToast(`${roleName} 发来了消息`, ()=>{
           openApp("wechat");
           if(badge) badge.style.display = "none";
@@ -4564,6 +5191,27 @@ const ProactiveMsg = {
     }
   }
 };
+
+// ===== 系统通知（iOS PWA 加到主屏后可推送到通知栏）=====
+function ensureNotifyPermission(){
+  if(!("Notification" in window)) return;
+  if(Notification.permission==="default"){
+    try{ Notification.requestPermission(); }catch(e){}
+  }
+}
+function sendSystemNotification(title, body, icon){
+  try{
+    if(!("Notification" in window)) return;
+    if(Notification.permission!=="granted") return;
+    const n=new Notification(title, {
+      body: String(body||"").replace(/\[[^\]]*\]/g,"").slice(0,80),
+      icon: icon || "icon-192.png",
+      badge: "icon-192.png",
+      tag: "miao-proactive"
+    });
+    n.onclick=()=>{ try{ window.focus(); openApp("wechat"); const b=document.getElementById("wechatBadge"); if(b)b.style.display="none"; n.close(); }catch(e){} };
+  }catch(e){ console.warn("通知失败", e); }
+}
 
 function showProactiveToast(msg, onClick){
   let el = document.getElementById("proactiveToast");
