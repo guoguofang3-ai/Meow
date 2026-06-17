@@ -98,6 +98,22 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .app-screen.wechat .statusbar{background:var(--bar-bg,rgba(255,255,255,.92));color:var(--bar-text,#111827)}
 .app-screen.wechat .wechat-head{margin-top:-1px}
 .home-screen .statusbar{color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.35)}
+/* 桌宠兔子 */
+.desk-pet{position:absolute;width:72px;height:86px;z-index:50;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.desk-pet:active{cursor:grabbing}
+.pet-body{width:100%;height:100%;transition:transform .15s;animation:petIdle 3.5s ease-in-out infinite;transform-origin:bottom center}
+.pet-body svg{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,.2))}
+.desk-pet.dragging .pet-body{animation:none;transform:scale(1.12)}
+.desk-pet.poked .pet-body{animation:petPoke .5s ease}
+@keyframes petIdle{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
+@keyframes petPoke{0%{transform:scale(1)}30%{transform:scale(.85) translateY(4px)}60%{transform:scale(1.1) translateY(-6px)}100%{transform:scale(1)}}
+.pet-eyes-blink{animation:petBlink .25s ease}
+@keyframes petBlink{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.1)}}
+#petTears ellipse{animation:petTearDrop 1s ease-in-out infinite}
+@keyframes petTearDrop{0%{transform:translateY(0);opacity:.85}70%{opacity:.85}100%{transform:translateY(8px);opacity:0}}
+.pet-bubble{position:absolute;bottom:90px;left:50%;transform:translateX(-50%) scale(0);transform-origin:bottom center;background:#fff;color:#9a6b7e;font-size:12px;font-weight:600;padding:7px 12px;border-radius:14px;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.18);opacity:0;transition:transform .2s,opacity .2s;pointer-events:none;max-width:140px;white-space:normal;text-align:center;line-height:1.4}
+.pet-bubble.show{transform:translateX(-50%) scale(1);opacity:1}
+.pet-bubble::after{content:"";position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#fff;border-bottom:0}
 .home-top{padding:8px 22px 4px}
 .home-date{font-size:15px;font-weight:800;color:rgba(255,255,255,.88);text-shadow:0 2px 8px rgba(0,0,0,.35)}
 .app-grid{
@@ -2281,6 +2297,45 @@ body.multiselect-mode .msg{ cursor:pointer; }
       <div class="app-grid" id="appGrid"></div>
       <div class="page-dots" id="pageDots"></div>
       <div class="dock" id="dockGrid"></div>
+      <!-- 桌宠兔子 -->
+      <div id="deskPet" class="desk-pet" style="display:none">
+        <div class="pet-bubble" id="petBubble"></div>
+        <div class="pet-body" id="petBody">
+          <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="36" cy="106" rx="11" ry="7" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="64" cy="106" rx="11" ry="7" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="36" cy="106" rx="5" ry="3" fill="#ffd5e0"/>
+            <ellipse cx="64" cy="106" rx="5" ry="3" fill="#ffd5e0"/>
+            <ellipse cx="50" cy="86" rx="26" ry="24" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="50" cy="90" rx="15" ry="15" fill="#fff6f8"/>
+            <ellipse cx="26" cy="84" rx="7" ry="9" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="74" cy="84" rx="7" ry="9" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="38" cy="22" rx="8" ry="20" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="62" cy="22" rx="8" ry="20" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="38" cy="24" rx="4" ry="13" fill="#ffd5e0"/>
+            <ellipse cx="62" cy="24" rx="4" ry="13" fill="#ffd5e0"/>
+            <ellipse cx="50" cy="52" rx="30" ry="28" fill="#fff" stroke="#e8d0d8" stroke-width="1.5"/>
+            <ellipse cx="33" cy="56" rx="6" ry="4" fill="#ffc2d4" opacity=".7"/>
+            <ellipse cx="67" cy="56" rx="6" ry="4" fill="#ffc2d4" opacity=".7"/>
+            <g id="petEyes">
+              <circle cx="40" cy="48" r="3.5" fill="#5a4a52"/>
+              <circle cx="60" cy="48" r="3.5" fill="#5a4a52"/>
+              <circle cx="41" cy="47" r="1.2" fill="#fff"/>
+              <circle cx="61" cy="47" r="1.2" fill="#fff"/>
+            </g>
+            <g id="petCryEyes" style="display:none">
+              <path d="M36 45 l8 5 M44 45 l-8 5" stroke="#5a4a52" stroke-width="2" stroke-linecap="round"/>
+              <path d="M56 45 l8 5 M64 45 l-8 5" stroke="#5a4a52" stroke-width="2" stroke-linecap="round"/>
+            </g>
+            <g id="petTears" style="display:none">
+              <ellipse cx="36" cy="58" rx="2.5" ry="4" fill="#7ec8f0" opacity=".85"/>
+              <ellipse cx="64" cy="58" rx="2.5" ry="4" fill="#7ec8f0" opacity=".85"/>
+            </g>
+            <path d="M50 54 l-2.5 2.5 h5 z" fill="#ff9db5"/>
+            <path d="M50 57 q-4 4 -8 1 M50 57 q4 4 8 1" stroke="#d8a0b0" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
       <div class="home-indicator"></div>
     </section>
 
@@ -2848,10 +2903,12 @@ body.multiselect-mode .msg{ cursor:pointer; }
         <div class="header-title">桌宠</div>
         <span style="width:32px"></span>
       </div>
-      <div class="content" id="petContent" style="padding:20px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center">
-        <div style="font-size:72px">🐾</div>
-        <div style="font-size:17px;font-weight:700;color:var(--accent,#888)">桌宠</div>
-        <div style="font-size:13px;color:#999;line-height:1.7;max-width:260px">这里以后会住进一只小桌宠～<br>具体功能还在和哥哥商量中，先占个窝。</div>
+      <div class="content" id="petContent" style="padding:20px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center">
+        <div style="font-size:72px;margin-top:10px">🐰</div>
+        <div style="font-size:17px;font-weight:700;color:var(--accent,#888)">桌宠小兔</div>
+        <div style="font-size:13px;color:#999;line-height:1.7;max-width:280px">开启后，小兔子会待在主屏上。<br>可以拖动它换位置，戳一戳它会有反应～</div>
+        <button id="petToggleBtn" onclick="togglePet()" style="border:none;border-radius:14px;padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent,#888)">开启桌宠</button>
+        <div style="font-size:12px;color:#bbb;margin-top:4px">提示：戳一戳、拖一拖，它会陪着你</div>
       </div>
     </section>
 
@@ -3200,6 +3257,8 @@ async function init(){
   updateClock();
   setInterval(updateClock, 30000);
   ProactiveMsg.reset();
+  DeskPet.initDrag();
+  DeskPet.render();
   checkBackupReminder();
   // 恢复自定义字体
   const savedFontUrl=Storage.get("customFontUrl","");
@@ -3842,6 +3901,7 @@ function openApp(id){
     el.classList.add("active");
     Miao.state.currentApp=id;
     if(id==="moments") checkAutoMomentsOnOpen();
+    if(id==="pet") updatePetToggleBtn();
     renderAll();
     // 打开微信会话：强制滚到底，确保默认看到最新消息
     if(id==="wechat"){
@@ -4276,6 +4336,18 @@ function resetHomeLayout(){
   try{ toast("已整理图标"); }catch(e){}
 }
 window.resetHomeLayout=resetHomeLayout;
+
+// 桌宠开关
+function togglePet(){
+  DeskPet.setOn(!DeskPet.isOn());
+  updatePetToggleBtn();
+  try{ toast(DeskPet.isOn()?"桌宠已开启，回主屏看看～":"桌宠已关闭"); }catch(e){}
+}
+function updatePetToggleBtn(){
+  const btn=document.getElementById("petToggleBtn");
+  if(btn) btn.textContent=DeskPet.isOn()?"关闭桌宠":"开启桌宠";
+}
+window.togglePet=togglePet;
 
 // ===== 编辑组件 =====
 function editWidget(widgetId){
@@ -4895,6 +4967,166 @@ function rollDice(){
   renderChat();
   const chat=$("#chat"); if(chat) chat.scrollTop=chat.scrollHeight;
 }
+
+/* ===== 桌宠兔子 ===== */
+const DeskPet = {
+  phrases: ["唔？","戳我干嘛呀~","今天也要开心鸭","我在这儿陪你哦","再戳…我要害羞了","摸摸头嘛","找我玩吗？","在的在的","嘿嘿~","乖乖待着呢"],
+  blinkTimer:null, bubbleTimer:null,
+  isOn(){ return Storage.get("petEnabled", false); },
+  setOn(v){ Storage.set("petEnabled", !!v); this.render(); },
+  getContainer(){ return document.querySelector(".phone-frame") || document.querySelector(".home-screen") || document.body; },
+  getBounds(){
+    const el=document.getElementById("deskPet");
+    const host=el && el.offsetParent ? el.offsetParent : this.getContainer();
+    const r=host.getBoundingClientRect();
+    return {w:r.width||390, h:r.height||700};
+  },
+  getPos(){
+    const bd=this.getBounds();
+    return Storage.get("petPos", {x: Math.max(0,bd.w-90), y: Math.round(bd.h*0.5)});
+  },
+  setPos(p){ Storage.set("petPos", p); },
+  render(){
+    const el=document.getElementById("deskPet");
+    if(!el) return;
+    if(!this.isOn()){ el.style.display="none"; this.stopBlink(); return; }
+    el.style.display="block";
+    const bd=this.getBounds();
+    const pos=this.getPos();
+    const maxX=Math.max(0,bd.w-72), maxY=Math.max(40,bd.h-120);
+    el.style.left=Math.max(0,Math.min(maxX,pos.x))+"px";
+    el.style.top=Math.max(40,Math.min(maxY,pos.y))+"px";
+    this.startBlink();
+  },
+  startBlink(){
+    this.stopBlink();
+    const blink=()=>{
+      const eyes=document.getElementById("petEyes");
+      if(eyes){ eyes.classList.add("pet-eyes-blink"); setTimeout(()=>eyes.classList.remove("pet-eyes-blink"),260); }
+      this.blinkTimer=setTimeout(blink, 2500+Math.random()*4000);
+    };
+    this.blinkTimer=setTimeout(blink, 3000);
+  },
+  stopBlink(){ if(this.blinkTimer){ clearTimeout(this.blinkTimer); this.blinkTimer=null; } },
+  say(text){
+    const b=document.getElementById("petBubble");
+    if(!b) return;
+    b.textContent=text;
+    b.classList.add("show");
+    if(this.bubbleTimer) clearTimeout(this.bubbleTimer);
+    this.bubbleTimer=setTimeout(()=>b.classList.remove("show"), 2200);
+  },
+  poke(){
+    const el=document.getElementById("deskPet");
+    if(!el || el._falling) return;
+    el.classList.remove("poked"); void el.offsetWidth; el.classList.add("poked");
+    setTimeout(()=>el.classList.remove("poked"), 520);
+    this.say(this.phrases[Math.floor(Math.random()*this.phrases.length)]);
+    if(navigator.vibrate) try{ navigator.vibrate(10); }catch(e){}
+  },
+  cryPhrases: ["呜呜…轻点啦","摔疼了啦！","哥哥坏…呜","唔…好痛","不要甩我嘛","555…","下次轻一点嘛"],
+  setCry(on){
+    const eyes=document.getElementById("petEyes");
+    const tears=document.getElementById("petTears");
+    if(tears) tears.style.display = on?"block":"none";
+    if(eyes) eyes.style.opacity = on?"0":"1"; // 哭时藏正常眼，露出><眼
+    const cryEyes=document.getElementById("petCryEyes");
+    if(cryEyes) cryEyes.style.display = on?"block":"none";
+  },
+  fling(vx, vy){
+    const el=document.getElementById("deskPet");
+    if(!el) return;
+    el._falling=true;
+    this.stopBlink();
+    this.setCry(true);
+    const host=el.offsetParent || el.parentElement;
+    const hr=host.getBoundingClientRect();
+    const maxX=hr.width-72, floorY=hr.height-120;
+    let x=parseFloat(el.style.left)||0, y=parseFloat(el.style.top)||0;
+    // 初速度（放大手指甩速），重力
+    let dx=vx*16, dy=vy*16;
+    // 限制初速度，别甩太猛飞太远
+    const MAXV=42;
+    dx=Math.max(-MAXV,Math.min(MAXV,dx));
+    dy=Math.max(-MAXV,Math.min(MAXV,dy));
+    const G=1.4, BOUNCE=0.55, FRICTION=0.86;
+    let bounces=0;
+    const tick=()=>{
+      dy+=G;
+      x+=dx; y+=dy;
+      // 硬边界：始终夹在屏幕内，撞墙立刻反弹（不会飞出去）
+      if(x<0){ x=0; dx=Math.abs(dx)*BOUNCE; }
+      if(x>maxX){ x=maxX; dx=-Math.abs(dx)*BOUNCE; }
+      if(y<0){ y=0; dy=Math.abs(dy)*BOUNCE; }
+      // 撞地面反弹
+      if(y>=floorY){
+        y=floorY; dy=-Math.abs(dy)*BOUNCE; dx*=FRICTION; bounces++;
+        if(Math.abs(dy)<2.5 || bounces>5){
+          y=floorY; el.style.left=x+"px"; el.style.top=y+"px";
+          el._falling=false;
+          this.setPos({x,y});
+          this.say(this.cryPhrases[Math.floor(Math.random()*this.cryPhrases.length)]);
+          setTimeout(()=>{ this.setCry(false); this.startBlink(); }, 2600);
+          return;
+        }
+      }
+      el.style.left=x+"px"; el.style.top=y+"px";
+      requestAnimationFrame(tick);
+    };
+    if(navigator.vibrate) try{ navigator.vibrate([20,40,20]); }catch(e){}
+    requestAnimationFrame(tick);
+  },
+  initDrag(){
+    const el=document.getElementById("deskPet");
+    if(!el || el._petInited) return;
+    el._petInited=true;
+    let dragging=false, moved=false, sx=0, sy=0, ox=0, oy=0;
+    let lastX=0, lastY=0, lastT=0, vx=0, vy=0; // 速度追踪
+    const down=(x,y)=>{
+      if(el._falling) return; // 摔落动画中不响应
+      dragging=true; moved=false; sx=x; sy=y;
+      const r=el.getBoundingClientRect(); ox=x-r.left; oy=y-r.top;
+      lastX=x; lastY=y; lastT=Date.now(); vx=0; vy=0;
+    };
+    const move=(x,y)=>{
+      if(!dragging) return;
+      if(Math.hypot(x-sx,y-sy)>5){ moved=true; el.classList.add("dragging"); }
+      if(moved){
+        const host=el.offsetParent || el.parentElement;
+        const hr=host.getBoundingClientRect();
+        const nx=x-hr.left-ox, ny=y-hr.top-oy;
+        el.style.left=nx+"px"; el.style.top=ny+"px";
+        // 记录瞬时速度（px/ms）
+        const now=Date.now(), dt=Math.max(1, now-lastT);
+        vx=(x-lastX)/dt; vy=(y-lastY)/dt;
+        lastX=x; lastY=y; lastT=now;
+      }
+    };
+    const up=()=>{
+      if(!dragging) return;
+      dragging=false; el.classList.remove("dragging");
+      if(moved){
+        const speed=Math.hypot(vx,vy); // px/ms
+        if(speed>0.9){
+          // 甩得够快 → 摔落
+          this.fling(vx, vy);
+        } else {
+          const x=parseFloat(el.style.left)||0, y=parseFloat(el.style.top)||0;
+          this.setPos({x, y});
+          this.render();
+        }
+      } else {
+        this.poke();
+      }
+    };
+    el.addEventListener("touchstart",(e)=>{ const t=e.touches[0]; down(t.clientX,t.clientY); },{passive:true});
+    el.addEventListener("touchmove",(e)=>{ if(dragging){ e.preventDefault(); const t=e.touches[0]; move(t.clientX,t.clientY); } },{passive:false});
+    el.addEventListener("touchend",up);
+    el.addEventListener("mousedown",(e)=>{ down(e.clientX,e.clientY); });
+    window.addEventListener("mousemove",(e)=>{ if(dragging) move(e.clientX,e.clientY); });
+    window.addEventListener("mouseup",up);
+  }
+};
 
 /* ===== 微信主动发消息系统 ===== */
 const ProactiveMsg = {
