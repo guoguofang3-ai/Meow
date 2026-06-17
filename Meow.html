@@ -2072,11 +2072,15 @@ body.multiselect-mode .msg{ cursor:pointer; }
 .msg.user.blocked-msg .bubble-wrap{
   position:relative;
 }
-.msg.user.blocked-msg .bubble-wrap::before{
+.msg.user.blocked-msg .bubble{
+  position:relative;
+}
+.msg.user.blocked-msg .bubble::after{
   content:"!";
   position:absolute;
   left:-22px;
-  bottom:4px;
+  top:50%;
+  transform:translateY(-50%);
   width:16px;
   height:16px;
   border-radius:50%;
@@ -2086,7 +2090,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
   font-weight:700;
   line-height:16px;
   text-align:center;
-  flex-shrink:0;
+  z-index:2;
 }
 /* 引用块样式 */
 .quote-block{
@@ -2880,6 +2884,8 @@ body.multiselect-mode .msg{ cursor:pointer; }
           <div class="v3-section-title">体检 / 修复</div>
           <div class="btn-row"><button class="btn primary" data-action="run-health-check">重新体检</button><button class="btn" data-action="repair-data">一键修复默认值</button></div>
           <div id="healthResult"></div>
+          <div class="v3-sub" style="margin-top:12px">Claude助手里生成的图片会占用存储。点下面可清理掉所有已生成的图（聊天文字保留）。</div>
+          <div class="btn-row"><button class="btn" data-action="clear-gen-images">清理生成图片</button></div>
         </div>
 
         <div class="card">
@@ -2977,20 +2983,30 @@ body.multiselect-mode .msg{ cursor:pointer; }
 (function(){
 "use strict";
 // 全局错误捕获：手机看不了控制台时，把真实错误弹出来
-window.addEventListener("error", function(ev){
+function showErrBar(msg){
   try{
-    var msg = ev.message || "未知错误";
-    var loc = ev.lineno ? (" @"+ev.lineno+":"+ev.colno) : "";
     var el = document.getElementById("__errbar");
     if(!el){
       el = document.createElement("div");
       el.id = "__errbar";
-      el.style.cssText = "position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;background:rgba(200,40,40,.95);color:#fff;font-size:12px;padding:10px 12px;border-radius:10px;line-height:1.5;word-break:break-all;box-shadow:0 4px 16px rgba(0,0,0,.3)";
+      el.style.cssText = "position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;background:rgba(200,40,40,.95);color:#fff;font-size:12px;padding:10px 12px;border-radius:10px;line-height:1.5;word-break:break-all;box-shadow:0 4px 16px rgba(0,0,0,.3);max-height:40vh;overflow:auto";
       el.onclick=function(){ el.remove(); };
-      document.body.appendChild(el);
+      (document.body||document.documentElement).appendChild(el);
     }
-    el.textContent = "⚠ "+msg+loc+"（点我关闭）";
+    el.textContent = "⚠ "+msg+"（点我关闭）";
   }catch(e){}
+}
+window.addEventListener("error", function(ev){
+  var msg = ev.message || "未知错误";
+  var loc = ev.lineno ? (" @"+ev.lineno+":"+ev.colno) : "";
+  var stack = (ev.error && ev.error.stack) ? ("\n"+String(ev.error.stack).slice(0,300)) : "";
+  // 图片/资源加载失败不弹（避免误报）
+  if(ev.target && (ev.target.tagName==="IMG"||ev.target.tagName==="LINK"||ev.target.tagName==="SCRIPT") && !ev.message) return;
+  showErrBar(msg+loc+stack);
+}, true);
+window.addEventListener("unhandledrejection", function(ev){
+  var r=ev.reason;
+  showErrBar("Promise错误: "+(r&&r.message?r.message:String(r)).slice(0,200));
 });
 
 const $ = (sel, root=document)=>root.querySelector(sel);
@@ -3257,8 +3273,7 @@ async function init(){
   updateClock();
   setInterval(updateClock, 30000);
   ProactiveMsg.reset();
-  DeskPet.initDrag();
-  DeskPet.render();
+  try{ DeskPet.initDrag(); DeskPet.render(); }catch(e){ console.warn("桌宠初始化失败", e); }
   checkBackupReminder();
   // 恢复自定义字体
   const savedFontUrl=Storage.get("customFontUrl","");
@@ -3499,6 +3514,7 @@ function bindEvents(){
     if(action==="ai-relation") aiSummarizeRelation();
     if(action==="run-health-check") renderHealthCheck();
     if(action==="repair-data") repairDataDefaults();
+    if(action==="clear-gen-images") clearGenImages();
     if(action==="refresh-context-preview") renderApiContextPreview();
     if(action==="copy-context-preview") copyApiContextPreview();
     if(action==="refresh-error-log") renderErrorLog();
@@ -4347,7 +4363,24 @@ function updatePetToggleBtn(){
   const btn=document.getElementById("petToggleBtn");
   if(btn) btn.textContent=DeskPet.isOn()?"关闭桌宠":"开启桌宠";
 }
-window.togglePet=togglePet;
+// 清理Claude助手里已生成的图片数据（释放空间，文字保留）
+function clearGenImages(){
+  try{
+    const h=getClaudeHistory();
+    let count=0;
+    h.forEach(m=>{
+      if(m.type==="image_gen" && m.data && m.data.url){
+        delete m.data.url;
+        m.data.status="cleared";
+        count++;
+      }
+    });
+    saveClaudeHistory(h);
+    if(typeof renderClaude==="function") renderClaude();
+    toast(count>0?`已清理 ${count} 张生成图`:"没有可清理的生成图");
+  }catch(e){ toast("清理失败："+(e.message||e)); }
+}
+window.clearGenImages=clearGenImages;
 
 // ===== 编辑组件 =====
 function editWidget(widgetId){
@@ -4976,10 +5009,13 @@ const DeskPet = {
   setOn(v){ Storage.set("petEnabled", !!v); this.render(); },
   getContainer(){ return document.querySelector(".phone-frame") || document.querySelector(".home-screen") || document.body; },
   getBounds(){
-    const el=document.getElementById("deskPet");
-    const host=el && el.offsetParent ? el.offsetParent : this.getContainer();
-    const r=host.getBoundingClientRect();
-    return {w:r.width||390, h:r.height||700};
+    try{
+      const el=document.getElementById("deskPet");
+      const host=(el && el.offsetParent) ? el.offsetParent : this.getContainer();
+      if(!host || !host.getBoundingClientRect) return {w:390, h:700};
+      const r=host.getBoundingClientRect();
+      return {w:r.width||390, h:r.height||700};
+    }catch(e){ return {w:390, h:700}; }
   },
   getPos(){
     const bd=this.getBounds();
@@ -5159,13 +5195,19 @@ const ProactiveMsg = {
       if(!api.apiUrl || !api.apiKey || !api.model) return;
       const h = getHistory();
       // 用正常发消息的同一套：callAI 构建上下文，附加"主动发消息"情境
-      const extraSystem = "\n\n【系统提示：主动发消息】用户已超过10分钟没回你了。请你以角色身份，主动给用户发一条符合当前关系、情绪和最近聊天内容的微信消息（比如关心、撒娇、找话题、发个日常）。直接输出消息正文即可，就像真的在发微信。不要输出任何解释、占位符、continue、英文指令或元信息，不要询问要做什么。";
+      const extraSystem = "\n\n【系统提示：主动发消息】用户已超过10分钟没回你了。请你以角色身份，主动给用户发一条全新的、符合当前关系和情绪的微信消息（比如关心、催一下、撒娇、找新话题、说点日常）。重要：绝对不要重复或复述你之前已经发过的任何消息，要说新的内容。直接输出消息正文，不要输出解释、占位符、continue、英文指令或元信息。";
       const reply = await callAI(api, h, undefined, extraSystem);
       if(!reply || !reply.trim()) return;
       const groupId = uid("aigrp");
       const parsed = parseAIReplyUnified(reply, groupId);
       if(!parsed.length) return;
+      // 防重复：若生成内容与历史最近一条AI文字消息完全相同，丢弃（模型复读）
       const newH = getHistory();
+      const lastAiText = [...newH].reverse().find(m=>m.sender==="assistant" && m.type==="text");
+      const firstNewText = parsed.find(m=>m.type==="text");
+      if(lastAiText && firstNewText && lastAiText.content.trim()===firstNewText.content.trim()){
+        return; // 跟上一条一样，不存不推
+      }
       parsed.forEach(m=>newH.push(m));
       saveHistory(newH);
       // 在微信页就逐条弹，不在就直接存+提示
@@ -5244,6 +5286,7 @@ function sendMessage(){
   }
   h.push(msg);
   if(isBlocked()){
+    msg.blockedFail=true; // 永久标记：被拉黑期间发送失败，解除后仍显示感叹号
     h.push({id:uid("msg"), groupId:uid("sysgrp"), sender:"system", type:"system", content:"消息已发出，但被对方拒收了。", createdAt:Date.now()+1, time:nowTime()});
   }
   saveHistory(h);
@@ -5350,7 +5393,7 @@ function renderMessage(m,h,idx){
   const blockedData=Storage.get(Storage.roleKey("blocked"), false);
   const blockedAt=blockedData&&blockedData.blockedAt ? blockedData.blockedAt : null;
   const blockedNow=blockedData===true||(blockedData&&blockedData.blocked===true);
-  const isBlockedMsg=isUser && blockedNow && blockedAt && m.createdAt>=blockedAt;
+  const isBlockedMsg=isUser && (m.blockedFail===true || (blockedNow && blockedAt && m.createdAt>=blockedAt));
   const cls=isUser?"user":"role";
   const avatar=isUser?(userProfile.avatar||Miao.defaults.avatar):(role.avatar||Miao.defaults.avatar);
   const next=h[idx+1];
@@ -7471,6 +7514,9 @@ function renderClaudeBody(m){
     if(st==="done" && m.data.url){
       return `<div class="claude-img-card"><img class="claude-real-img" src="${escapeAttr(m.data.url)}" alt="" onclick="window.open('${escapeAttr(m.data.url)}','_blank')"></div>`;
     }
+    if(st==="cleared"){
+      return `<div class="claude-img-card img-err" style="background:rgba(150,150,150,.1);color:#999">🖼️ 图片已清理</div>`;
+    }
     if(st==="error"){
       return `<div class="claude-img-card img-err">图片生成失败${m.data.err?"："+escapeHtml(m.data.err):""}<button class="img-retry-btn" data-action="retry-img" data-id="${m.id}">重试</button></div>`;
     }
@@ -7617,6 +7663,29 @@ async function sendClaudeMessage(){
   await callClaudeReply();
 }
 // ===== Claude 助手生图（独立配置：地址可空默认聊天地址，密钥/模型单独）=====
+// 压缩base64图片（降到最大边768px，jpeg 0.75），大幅省空间
+function compressImageDataUrl(dataUrl, maxSide, quality){
+  return new Promise((resolve)=>{
+    try{
+      if(!dataUrl || !String(dataUrl).startsWith("data:image/")) return resolve(dataUrl);
+      const img=new Image();
+      img.onload=()=>{
+        try{
+          let w=img.width, h=img.height;
+          const ms=maxSide||768;
+          if(w>ms||h>ms){ if(w>=h){ h=Math.round(h*ms/w); w=ms; } else { w=Math.round(w*ms/h); h=ms; } }
+          const cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+          const ctx=cv.getContext("2d");
+          ctx.fillStyle="#fff"; ctx.fillRect(0,0,w,h);
+          ctx.drawImage(img,0,0,w,h);
+          resolve(cv.toDataURL("image/jpeg", quality||0.75));
+        }catch(e){ resolve(dataUrl); }
+      };
+      img.onerror=()=>resolve(dataUrl);
+      img.src=dataUrl;
+    }catch(e){ resolve(dataUrl); }
+  });
+}
 function extractImageUrl(text){
   if(!text) return "";
   const s=String(text);
@@ -7660,7 +7729,15 @@ async function runImageGen(msgId, prompt){
     if(typeof content==="string") txt=content;
     else if(Array.isArray(content)) txt=content.map(c=>c.text||c.image_url?.url||"").join(" ");
     const imgUrl=extractImageUrl(txt);
-    if(imgUrl) finish({status:"done", url:imgUrl});
+    if(imgUrl){
+      // 如果是base64（中转站直接返回图片数据），压缩后再存，省空间
+      if(String(imgUrl).startsWith("data:image/")){
+        const compressed=await compressImageDataUrl(imgUrl, 768, 0.75);
+        finish({status:"done", url:compressed});
+      } else {
+        finish({status:"done", url:imgUrl});
+      }
+    }
     else { console.warn("生图返回：", json); finish({status:"error", err:"未解析到图片"}); }
   }catch(e){
     clearTimeout(timeout);
