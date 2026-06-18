@@ -2437,7 +2437,8 @@ body.multiselect-mode .msg{ cursor:pointer; }
           </div>
           <label>系统提示</label><textarea id="roleSystemInput"></textarea>
           <div class="card" style="padding:14px;margin:8px 0">
-            <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--accent)">💳 亲属卡设置</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--accent)">💳 亲属卡设置</div>
+            <div style="font-size:11px;color:#999;margin-bottom:10px;line-height:1.5">亲属卡是角色愿意给你花的钱。角色可以在聊天里自己开通/调额度/充值；这里是手动底牌，也能直接设置。</div>
             <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px">
               <input type="checkbox" id="roleFamilyCardEnabled"> 开启亲属卡
             </label>
@@ -3472,6 +3473,7 @@ function bindEvents(){
     if(!btn) return;
     const action = btn.dataset.action;
     const id = btn.dataset.id;
+    const scope = btn.dataset.scope;
     if(action==="unlock" || action==="go-home"){
       e.preventDefault();
       e.stopPropagation();
@@ -3587,10 +3589,10 @@ function bindEvents(){
     if(action==="auto-moment-now") autoMomentNow();
     if(action==="toggle-auto-moment") toggleAutoMoment();
     if(action==="comment-moment") commentMoment(id);
-    if(action==="open-world-entry") openWorldEntryModal(id);
+    if(action==="open-world-entry") openWorldEntryModal(id, scope);
     if(action==="save-world-entry") saveWorldEntryFromModal();
-    if(action==="delete-world-entry") deleteWorldEntry(id);
-    if(action==="toggle-world-entry") toggleWorldEntry(id);
+    if(action==="delete-world-entry") deleteWorldEntry(id, scope);
+    if(action==="toggle-world-entry") toggleWorldEntry(id, scope);
     if(action==="toggle-preset-master"){ savePresetMaster(!getPresetMaster()); renderPresets(); }
     if(action==="open-greeting-entry") openGreetingEntryModal(id);
     if(action==="save-greeting-entry") saveGreetingEntryFromModal();
@@ -4359,10 +4361,12 @@ function togglePet(){
   updatePetToggleBtn();
   try{ toast(DeskPet.isOn()?"桌宠已开启，回主屏看看～":"桌宠已关闭"); }catch(e){}
 }
+window.togglePet=togglePet;
 function updatePetToggleBtn(){
   const btn=document.getElementById("petToggleBtn");
   if(btn) btn.textContent=DeskPet.isOn()?"关闭桌宠":"开启桌宠";
 }
+window.updatePetToggleBtn=updatePetToggleBtn;
 // 清理Claude助手里已生成的图片数据（释放空间，文字保留）
 function clearGenImages(){
   try{
@@ -5596,6 +5600,7 @@ function toggleMultiSelect(msgId){
   const countEl=document.getElementById("multiSelectCount");
   if(countEl) countEl.textContent="已选"+multiSelectedIds.size+"条";
 }
+window.toggleMultiSelect=toggleMultiSelect;
 
 window.deleteMultiSelected=function(){
   if(multiSelectedIds.size===0) return;
@@ -6348,12 +6353,29 @@ ${getStickerPromptList()}
 4. 表情包只能从"可用表情包"里按名称选择，不能编造。发送表情包指令后不要解释含义，不要加括号说明。
 5. 遇到用户转账/代付时，必须根据关系、上下文和人设自主决定是否收款/帮付。转账卡片上标注了付款来源（我的钱包/亲属卡），你可以根据来源做出反应。
 ${(()=>{
+  const role = currentRole();
   const card = getFamilyCard();
   const w = getUserWalletBalance();
   let info = `
 【钱包信息】
 user钱包余额：¥${w.toFixed(2)}`;
-  if(card) info += `\n${card.label}余额：¥${card.balance.toFixed(2)}（额度上限：¥${card.limit.toFixed(2)}）`;
+  if(card){
+    info += `\n${card.label}余额：¥${card.balance.toFixed(2)}（额度上限：¥${card.limit.toFixed(2)}）`;
+    const log = getFamilyCardLog(role.id).slice(-6);
+    if(log.length){
+      info += `\n${card.label}近期记录：` + log.map(l=>`${l.time} ${l.type}¥${l.amount.toFixed(2)}${l.note?"("+l.note+")":""}`).join("；");
+    }
+  } else {
+    info += `\n你还没有给user开亲属卡。`;
+  }
+  info += `
+
+【亲属卡说明（由你决定，不是user能开的）】
+亲属卡是你愿意给user花的钱，不等于你的全部财产。是否开、给多少额度、要不要上调、要不要充值，全部由你根据关系和人设自主决定。user用亲属卡花钱你能看到（上方记录）。
+可用指令（按需使用，不强制）：
+[开通亲属卡: 额度|卡名]  例：[开通亲属卡: 5000|樾哥的卡]（卡名可省略）
+[调整亲属卡额度: 新额度]  例：[调整亲属卡额度: 8000]
+[亲属卡充值: 金额]  例：[亲属卡充值: 2000]`;
   return info;
 })()}
 
@@ -6577,14 +6599,22 @@ function saveCurrentRoleFromForm(){
   // 性格、场景、开场白由 PNG 角色卡读取；此处不手动覆盖
   r.boundWorldRoleId=$("#roleWorldBindSelect")?.value || r.id;
   r.systemPrompt=$("#roleSystemInput").value;
-  // 亲属卡配置
+  // 亲属卡配置（用户端可手动开/调，作为底牌；角色也能用指令开/调）
   const cardEnabled = document.getElementById("roleFamilyCardEnabled")?.checked;
-  r.familyCard = cardEnabled ? {
-    enabled: true,
-    label: document.getElementById("roleFamilyCardLabel")?.value.trim() || "亲属卡",
-    limit: parseFloat(document.getElementById("roleFamilyCardLimit")?.value)||0,
-    balance: parseFloat(document.getElementById("roleFamilyCardBalance")?.value)||0,
-  } : {enabled: false};
+  if(cardEnabled){
+    const newLimit = parseFloat(document.getElementById("roleFamilyCardLimit")?.value)||0;
+    const newBalance = parseFloat(document.getElementById("roleFamilyCardBalance")?.value)||0;
+    r.familyCard = {
+      enabled: true,
+      label: document.getElementById("roleFamilyCardLabel")?.value.trim() || (r.name+"给的卡"),
+      limit: newLimit,
+      balance: newBalance,
+    };
+    // 同步实时余额，否则 getFamilyCard 会读到旧值，编辑余额不生效
+    Storage.set("familyCard_" + r.id, Math.round(newBalance*100)/100);
+  } else {
+    r.familyCard = {enabled: false};
+  }
   saveRoles(roles);
   renderAll();
   toast("角色已保存");
@@ -8643,6 +8673,12 @@ function saveWorldEntries(list, roleId){
   const targetId = roleId || role?.boundWorldRoleId || role?.id || Miao.state.currentRoleId;
   Storage.set(Storage.roleKey("worldbook", targetId), list);
 }
+function getGlobalWorldEntries(){
+  return Storage.get("worldbook_global", []);
+}
+function saveGlobalWorldEntries(list){
+  Storage.set("worldbook_global", list);
+}
 function getGreetingEntries(){
   return Storage.get(Storage.roleKey("greetings"), []);
 }
@@ -8654,12 +8690,16 @@ function getRecentContextText(){
 }
 function getMatchedWorldEntries(){
   const text=getRecentContextText().toLowerCase();
-  return getWorldEntries().filter(e=>{
+  const matchFn=e=>{
     if(e.enabled===false) return false;
     const keys=String(e.keys||"").split(/[,，、\n]/).map(x=>x.trim().toLowerCase()).filter(Boolean);
     if(!keys.length) return true;
     return keys.some(k=>text.includes(k));
-  });
+  };
+  // 全局世界书优先在前，角色世界书在后
+  const global=getGlobalWorldEntries().filter(matchFn).map(e=>({...e,_scope:"global"}));
+  const local=getWorldEntries().filter(matchFn).map(e=>({...e,_scope:"local"}));
+  return [...global, ...local];
 }
 
 /* ===== 预设模块 JS ===== */
@@ -8893,23 +8933,9 @@ window.setActivePov=function(id){
 };
 /* ===== 预设模块 JS END ===== */
 
-function renderWorldbook(){
-  const box=$("#worldList");
-  if(!box) return;
-  const current=currentRole();
-  const list=getWorldEntries();
-  const open=true;
-  box.innerHTML=`<div class="world-folder-card open">
-    <div class="world-folder-head">
-      <div class="world-folder-left">
-        <img src="${escapeAttr(current.avatar||Miao.defaults.avatar)}">
-        <div><div class="world-folder-name">${escapeHtml(current.name)} 的世界书</div><div class="world-folder-sub">${list.length} 条世界书 · 当前角色绑定分组</div></div>
-      </div>
-      <button class="btn" onclick="MiaoToggleWorldFolder('${current.id}')">展开/收起</button>
-    </div>
-    <div class="world-folder-body" id="currentWorldFolderBody" style="display:${(Miao.state.worldFolderOpen===false)?"none":"block"}">
-      <div class="btn-row"><button class="btn primary" data-action="open-world-entry">新增当前角色条目</button></div>
-      ${list.length?list.map(e=>`<div class="world-entry ${e.enabled===false?"off":""}">
+function _worldEntryCardHtml(e, scope){
+  const sc=scope==="global"?' data-scope="global"':'';
+  return `<div class="world-entry ${e.enabled===false?"off":""}">
         <div class="entry-top" style="cursor:pointer" onclick="this.closest('.world-entry').querySelector('.entry-content').classList.toggle('open');this.querySelector('.entry-toggle-arrow').classList.toggle('open')">
           <div style="flex:1;min-width:0">
             <div class="entry-name">${escapeHtml(e.title||"未命名条目")} <span class="entry-toggle-arrow">›</span></div>
@@ -8919,11 +8945,44 @@ function renderWorldbook(){
         </div>
         <div class="entry-content">${escapeHtml(e.content||"")}</div>
         <div class="entry-actions">
-          <button data-action="open-world-entry" data-id="${e.id}">编辑</button>
-          <button data-action="toggle-world-entry" data-id="${e.id}">${e.enabled===false?"启用":"停用"}</button>
-          <button class="danger" data-action="delete-world-entry" data-id="${e.id}">删除</button>
+          <button data-action="open-world-entry" data-id="${e.id}"${sc}>编辑</button>
+          <button data-action="toggle-world-entry" data-id="${e.id}"${sc}>${e.enabled===false?"启用":"停用"}</button>
+          <button class="danger" data-action="delete-world-entry" data-id="${e.id}"${sc}>删除</button>
         </div>
-      </div>`).join(""):`<div class="v3-sub">这个角色还没有世界书条目。</div>`}
+      </div>`;
+}
+function renderWorldbook(){
+  const box=$("#worldList");
+  if(!box) return;
+  const current=currentRole();
+  const list=getWorldEntries();
+  const globalList=getGlobalWorldEntries();
+  const globalOpen=Miao.state.globalWorldFolderOpen!==false;
+  box.innerHTML=`<div class="world-folder-card open">
+    <div class="world-folder-head">
+      <div class="world-folder-left">
+        <div style="width:42px;height:42px;border-radius:10px;background:var(--accent,#7aa7ff);display:flex;align-items:center;justify-content:center;font-size:20px">🌐</div>
+        <div><div class="world-folder-name">全局世界书</div><div class="world-folder-sub">${globalList.length} 条 · 对所有角色生效</div></div>
+      </div>
+      <button class="btn" onclick="MiaoToggleGlobalWorldFolder()">展开/收起</button>
+    </div>
+    <div class="world-folder-body" style="display:${globalOpen?"block":"none"}">
+      <div class="v3-sub" style="margin-bottom:8px">放通用设定（如活人感、男性模板等），所有角色共享，不必每个角色重复添加。</div>
+      <div class="btn-row"><button class="btn primary" data-action="open-world-entry" data-scope="global">新增全局条目</button></div>
+      ${globalList.length?globalList.map(e=>_worldEntryCardHtml(e,"global")).join(""):`<div class="v3-sub">还没有全局世界书条目。</div>`}
+    </div>
+  </div>
+  <div class="world-folder-card open">
+    <div class="world-folder-head">
+      <div class="world-folder-left">
+        <img src="${escapeAttr(current.avatar||Miao.defaults.avatar)}">
+        <div><div class="world-folder-name">${escapeHtml(current.name)} 的世界书</div><div class="world-folder-sub">${list.length} 条世界书 · 当前角色绑定分组</div></div>
+      </div>
+      <button class="btn" onclick="MiaoToggleWorldFolder('${current.id}')">展开/收起</button>
+    </div>
+    <div class="world-folder-body" id="currentWorldFolderBody" style="display:${(Miao.state.worldFolderOpen===false)?"none":"block"}">
+      <div class="btn-row"><button class="btn primary" data-action="open-world-entry">新增当前角色条目</button></div>
+      ${list.length?list.map(e=>_worldEntryCardHtml(e,"local")).join(""):`<div class="v3-sub">这个角色还没有世界书条目。</div>`}
     </div>
   </div>`;
 }
@@ -8934,43 +8993,57 @@ window.MiaoToggleWorldFolder=function(roleId){
   Miao.state.worldFolderOpen = Miao.state.worldFolderOpen===false ? true : false;
   renderWorldbook();
 };
-function openWorldEntryModal(id){
-  const e=getWorldEntries().find(x=>x.id===id) || {id:"",title:"",keys:"",content:"",enabled:true};
-  openQuickModal(`<div class="quick-modal-title">${id?"编辑":"新增"}世界书条目</div>
+window.MiaoToggleGlobalWorldFolder=function(){
+  Miao.state.globalWorldFolderOpen = Miao.state.globalWorldFolderOpen===false ? true : false;
+  renderWorldbook();
+};
+function openWorldEntryModal(id, scope){
+  const isGlobal=scope==="global";
+  const src=isGlobal?getGlobalWorldEntries():getWorldEntries();
+  const e=src.find(x=>x.id===id) || {id:"",title:"",keys:"",content:"",enabled:true};
+  openQuickModal(`<div class="quick-modal-title">${id?"编辑":"新增"}${isGlobal?"全局":""}世界书条目</div>
     <input id="worldEditId" type="hidden" value="${escapeAttr(e.id||"")}">
+    <input id="worldEditScope" type="hidden" value="${isGlobal?"global":"local"}">
     <label>标题</label><input id="worldTitle" value="${escapeAttr(e.title||"")}" placeholder="例如：两人的关系">
-    <label>关键词</label><input id="worldKeys" value="${escapeAttr(e.keys||"")}" placeholder="多个关键词用逗号分隔">
+    <label>关键词</label><input id="worldKeys" value="${escapeAttr(e.keys||"")}" placeholder="留空=每轮都注入；多个关键词用逗号分隔">
     <label>内容</label><textarea id="worldContent" placeholder="命中关键词后注入给 AI 的设定内容">${escapeHtml(e.content||"")}</textarea>
     <div class="btn-row"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-world-entry">保存</button></div>`);
   $("#quickModal").classList.add("wide");
 }
 function saveWorldEntryFromModal(){
   const id=$("#worldEditId")?.value || "";
+  const scope=$("#worldEditScope")?.value || "local";
+  const isGlobal=scope==="global";
   const title=($("#worldTitle")?.value||"").trim() || "未命名条目";
   const keys=($("#worldKeys")?.value||"").trim();
   const content=($("#worldContent")?.value||"").trim();
   if(!content){ toast("请填写世界书内容"); return; }
-  const list=getWorldEntries();
+  const list=isGlobal?getGlobalWorldEntries():getWorldEntries();
   if(id){
     const e=list.find(x=>x.id===id);
     if(e){ e.title=title; e.keys=keys; e.content=content; }
   }else{
     list.push({id:uid("world"), title, keys, content, enabled:true, createdAt:Date.now()});
   }
-  saveWorldEntries(list);
+  if(isGlobal) saveGlobalWorldEntries(list); else saveWorldEntries(list);
   closeQuickModal();
   renderWorldbook();
   toast("世界书已保存");
 }
-function deleteWorldEntry(id){
-  saveWorldEntries(getWorldEntries().filter(e=>e.id!==id));
+function deleteWorldEntry(id, scope){
+  if(scope==="global"){
+    saveGlobalWorldEntries(getGlobalWorldEntries().filter(e=>e.id!==id));
+  }else{
+    saveWorldEntries(getWorldEntries().filter(e=>e.id!==id));
+  }
   renderWorldbook();
   toast("已删除世界书条目");
 }
-function toggleWorldEntry(id){
-  const list=getWorldEntries();
+function toggleWorldEntry(id, scope){
+  const isGlobal=scope==="global";
+  const list=isGlobal?getGlobalWorldEntries():getWorldEntries();
   const e=list.find(x=>x.id===id);
-  if(e){ e.enabled = e.enabled===false ? true : false; saveWorldEntries(list); }
+  if(e){ e.enabled = e.enabled===false ? true : false; isGlobal?saveGlobalWorldEntries(list):saveWorldEntries(list); }
   renderWorldbook();
 }
 function renderGreetings(){
@@ -9578,20 +9651,76 @@ function getWallet(){ return Storage.get("wallet", {balance:0}); }
 function saveWallet(w){ Storage.set("wallet", w); }
 function getUserWalletBalance(){ return getWallet().balance || 0; }
 
-function getFamilyCard(){
-  const role = currentRole();
+// 收到角色转账：钱加进用户钱包
+function addToWallet(amount){
+  const a=parseFloat(amount)||0;
+  if(a<=0) return;
+  const w=getWallet();
+  w.balance = Math.round(((w.balance||0) + a)*100)/100;
+  saveWallet(w);
+}
+
+// ===== 亲属卡 =====
+// 数据结构：role.familyCard = {enabled, label, limit(额度上限), balance(初始余额)}
+// 当前余额单独存 familyCard_<roleId>，消费/充值记录存 familyCardLog_<roleId>
+function getFamilyCard(roleId){
+  const role = roleId ? getRoles().find(r=>r.id===roleId) : currentRole();
   if(!role) return null;
   const cfg = role.familyCard;
   if(!cfg || !cfg.enabled) return null;
-  const key = "familyCard_" + role.id;
-  const stored = Storage.get(key, null);
+  const stored = Storage.get("familyCard_" + role.id, null);
   const balance = stored !== null ? stored : (parseFloat(cfg.balance)||0);
-  return { label: cfg.label||"亲属卡", limit: parseFloat(cfg.limit)||0, balance };
+  return { roleId: role.id, label: cfg.label||"亲属卡", limit: parseFloat(cfg.limit)||0, balance };
 }
-function saveFamilyCardBalance(balance){
-  const role = currentRole();
+function saveFamilyCardBalance(balance, roleId){
+  const role = roleId ? getRoles().find(r=>r.id===roleId) : currentRole();
   if(!role) return;
-  Storage.set("familyCard_" + role.id, balance);
+  Storage.set("familyCard_" + role.id, Math.round(balance*100)/100);
+}
+// 角色用指令开通亲属卡
+function familyCardGrant(limit, label){
+  const role=currentRole();
+  if(!role) return;
+  role.familyCard = {
+    enabled:true,
+    label: (label||"").trim() || (role.name+"给的卡"),
+    limit: parseFloat(limit)||0,
+    balance: parseFloat(limit)||0
+  };
+  saveRoles(getRoles().map(r=>r.id===role.id?role:r));
+  saveFamilyCardBalance(parseFloat(limit)||0, role.id);
+  logFamilyCard(role.id, "开通", parseFloat(limit)||0);
+}
+// 角色调整额度上限（同时把余额补到新上限，体现"愿意给更多"）
+function familyCardSetLimit(newLimit){
+  const role=currentRole();
+  if(!role || !role.familyCard || !role.familyCard.enabled) return;
+  const nl=parseFloat(newLimit)||0;
+  role.familyCard.limit = nl;
+  saveRoles(getRoles().map(r=>r.id===role.id?role:r));
+  // 上调额度时把余额顶到新上限；下调时余额不超过新上限
+  const card=getFamilyCard(role.id);
+  saveFamilyCardBalance(Math.min(nl, Math.max(card.balance, nl)), role.id);
+  logFamilyCard(role.id, "调整额度", nl);
+}
+// 角色给亲属卡充值（余额+，不超过上限可由角色决定，这里允许充到上限）
+function familyCardTopUp(amount){
+  const role=currentRole();
+  if(!role || !role.familyCard || !role.familyCard.enabled) return;
+  const card=getFamilyCard(role.id);
+  const add=parseFloat(amount)||0;
+  saveFamilyCardBalance(card.balance + add, role.id);
+  logFamilyCard(role.id, "充值", add);
+}
+// 消费/操作记录，供注入系统提示
+function getFamilyCardLog(roleId){
+  return Storage.get("familyCardLog_" + roleId, []);
+}
+function logFamilyCard(roleId, type, amount, note){
+  const log=getFamilyCardLog(roleId);
+  log.push({type, amount:parseFloat(amount)||0, note:note||"", time:nowTime(), ts:Date.now()});
+  // 只留最近20条
+  Storage.set("familyCardLog_" + roleId, log.slice(-20));
 }
 
 function openWallet(){
@@ -9644,7 +9773,8 @@ function confirmTransferSource(source){
     const card = getFamilyCard();
     if(!card){ toast("亲属卡不可用"); return; }
     if(card.balance < amount){ toast("亲属卡余额不足"); return; }
-    saveFamilyCardBalance(Math.round((card.balance - amount)*100)/100);
+    saveFamilyCardBalance(card.balance - amount, card.roleId);
+    logFamilyCard(card.roleId, "消费", amount, p.note||"");
     toast(`已从${card.label}扣款 ¥${amount}`);
   }
   document.getElementById("transferSourceMask").style.display = "none";
@@ -9652,7 +9782,7 @@ function confirmTransferSource(source){
   Miao.state.pendingTransferSource = null;
 }
 
-// 角色收款时，从user钱包扣除对应金额
+// 用户给角色转账、角色收款时，从user钱包扣除对应金额
 function receiveTransferToWallet(amount){
   const w = getWallet();
   w.balance = Math.max(0, Math.round((w.balance - amount)*100)/100);
@@ -10088,9 +10218,11 @@ function collectRoleTransfer(id){
   m.data=m.data||{};
   if(m.data.status==="collected") return;
   m.data.status="collected";
+  addToWallet(parseFloat(m.data.amount)||0);
   h.push({id:uid("msg"), groupId:uid("sysgrp"), sender:"user", type:"received", content:"你已收款", data:{amount:m.data.amount}, createdAt:Date.now(), time:nowTime()});
   saveHistory(h);
   renderChat();
+  toast(`已收款 ¥${m.data.amount}，已存入钱包`);
 }
 function manualPayDelivery(id){
   const h=getHistory();
@@ -10289,6 +10421,31 @@ function parseAIReplyUnified(raw, groupId){
           quoteSender:quoted?quoted.sender:"user"
         };
         return null;
+      }
+    },
+    {
+      regex:/[\[【]\s*开通亲属卡[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)\s*(?:\|\s*([^\]】]*?))?[\]】]/g,
+      parse(m){
+        const limit=Number(m[1]).toFixed(2);
+        const label=String(m[2]||"").trim();
+        familyCardGrant(limit, label);
+        return {type:"system", content:`${currentRole().name}给你开通了亲属卡（额度 ¥${limit}）`, data:{}};
+      }
+    },
+    {
+      regex:/[\[【]\s*调整亲属卡额度[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)[\]】]/g,
+      parse(m){
+        const nl=Number(m[1]).toFixed(2);
+        familyCardSetLimit(nl);
+        return {type:"system", content:`亲属卡额度已调整为 ¥${nl}`, data:{}};
+      }
+    },
+    {
+      regex:/[\[【]\s*亲属卡充值[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)[\]】]/g,
+      parse(m){
+        const a=Number(m[1]).toFixed(2);
+        familyCardTopUp(a);
+        return {type:"system", content:`亲属卡已充值 ¥${a}`, data:{}};
       }
     },
     {
