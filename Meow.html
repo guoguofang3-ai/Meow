@@ -5858,6 +5858,7 @@ function stripInstructions(t){
     .replace(imageInstructionRegex(),"")
     .replace(/[\[【]\s*(?:发送链接|链接)[:：]\s*[^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*(?:状态更新|主动转账|向user发起代付)[:：]\s*[^\]】]*[\]】]/g,"")
+    .replace(/[\[【]\s*读取网页[:：]\s*[^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*(?:收款|拒收转账|帮忙代付|同意代付|拒绝代付)[^\]】]*[\]】]/g,"")
     .replace(/含义[:：]\s*.*/g,"")
     .replace(/[\[【](?:拉黑|解除拉黑)[\]】]/g,"")
@@ -6025,7 +6026,32 @@ async function callAIReply(){
         Miao.state.streamPartial[streamMsgId]=partial;
       }
     }:undefined;
-    const reply=await callAI(api,h,onChunk);
+    // 用户消息里贴了网址：先抓取，注入给AI
+    let userUrlNote="";
+    const pastedUrl=extractBareUrl(newUser.content||"");
+    if(pastedUrl){
+      if(!useStream) toast("正在读网页…");
+      const page=await fetchWebPage(pastedUrl);
+      userUrlNote = page.ok
+        ? `\n\n【网页读取结果】user消息里的网址（${page.url}）内容如下${page.truncated?"（已截断）":""}，可结合它回复：\n${page.content}`
+        : `\n\n【网页读取失败】user贴的网址没读成功（${page.error}），如有需要可告诉user读不了。`;
+    }
+    let reply=await callAI(api,h,onChunk,userUrlNote);
+    // 若AI想读网页：抓取内容后，带着内容再问一次，让它基于真实内容回复
+    const wantUrl=extractReadWebUrl(reply);
+    if(wantUrl){
+      if(useStream){
+        const bubble=document.querySelector('[data-id="'+streamMsgId+'"] .bubble');
+        if(bubble) bubble.textContent="（正在读网页…）";
+      } else {
+        toast("正在读网页…");
+      }
+      const page=await fetchWebPage(wantUrl);
+      const note = page.ok
+        ? `\n\n【网页读取结果】你刚才请求读取的网页（${page.url}）内容如下${page.truncated?"（已截断）":""}，请基于真实内容回复user，不要再输出[读取网页]指令：\n${page.content}`
+        : `\n\n【网页读取失败】你请求读取的网页没读成功，原因：${page.error}。请如实告诉user读不了，不要再输出[读取网页]指令。`;
+      reply=await callAI(api,h,onChunk,note);
+    }
     const groupId=uid("aigrp");
     if(useStream){
       // 流式完成：用真实解析结果替换临时消息
@@ -6142,6 +6168,44 @@ function checkDiceMarker(replyText){
   saveHistory(h);
   renderChat();
   const chat=document.getElementById("chat"); if(chat) chat.scrollTop=chat.scrollHeight;
+}
+
+// ===== 联网读网页（经 r.jina.ai 中间人，超时+截断）=====
+async function fetchWebPage(url){
+  let u=String(url||"").trim();
+  if(!u) return {ok:false, error:"网址为空"};
+  if(!/^https?:\/\//i.test(u)) u="https://"+u;
+  // r.jina.ai：把目标网址拼在后面，它返回清理过的正文
+  const proxyUrl="https://r.jina.ai/"+u;
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(), 20000); // 20秒超时
+  try{
+    const res=await fetch(proxyUrl, {signal:ctrl.signal, headers:{"Accept":"text/plain"}});
+    clearTimeout(timer);
+    if(!res.ok) return {ok:false, error:"抓取失败 HTTP "+res.status};
+    let text=await res.text();
+    if(!text || !text.trim()) return {ok:false, error:"没读到内容（可能需要登录或被拦截）"};
+    // 截断：最多保留前 6000 字，防止把超长正文全塞给AI拖慢
+    const MAX=6000;
+    let truncated=false;
+    if(text.length>MAX){ text=text.slice(0,MAX); truncated=true; }
+    return {ok:true, content:text, truncated, url:u};
+  }catch(e){
+    clearTimeout(timer);
+    if(e.name==="AbortError") return {ok:false, error:"超时（网页太慢或无法访问）"};
+    return {ok:false, error:"读取出错："+(e.message||e)};
+  }
+}
+
+// 从文本里抽出第一个 [读取网页:URL] 指令的URL
+function extractReadWebUrl(text){
+  const m=String(text||"").match(/[\[【]\s*读取网页[:：]\s*([^\]】]+?)\s*[\]】]/);
+  return m ? m[1].trim() : null;
+}
+// 从用户消息里抽第一个裸URL
+function extractBareUrl(text){
+  const m=String(text||"").match(/https?:\/\/[^\s，。！？、）】"']+/);
+  return m ? m[0] : null;
 }
 
 async function callAI(api, history, onChunk, extraSystem){
@@ -6342,6 +6406,13 @@ ${getStickerPromptList()}
 - [拉黑]：将user拉黑，拉黑期间user的消息仍会注入上下文
 - [解除拉黑]：解除拉黑状态
 - 何时拉黑、拉黑多久、期间是否回复、何时解除，均根据你的人设自行判断，代码不做限制
+
+【联网读网页】
+- [读取网页:网址]：当你想看某个网页的真实内容时使用，例如 [读取网页:https://example.com/article]。
+- 系统会去抓取该网页，把真实内容返回给你，你再基于内容回复user。
+- 只能读公开网页；需要登录的页面（小红书、微博等）读不了，读不到时系统会告诉你。
+- 一次只读一个网址。拿到内容后正常回复，不要再重复输出这个指令。
+- 不要凭空编造网页内容；要读就发指令，读不到就如实说。
 
 【格式规则】
 1. 你只能扮演${role.name}，不能替user说话。
