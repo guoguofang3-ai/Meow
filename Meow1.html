@@ -285,6 +285,10 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .chat{flex:1;min-height:0;padding:12px 14px 8px;overflow:auto;scroll-behavior:auto}
 .date-chip,.system-card{margin:10px auto;padding:7px 12px;background:rgba(0,0,0,.06);color:#666;border-radius:999px;font-size:12px;width:max-content;max-width:92%;text-align:center;backdrop-filter:blur(10px)}
 .system-card.error{background:#fff1f0;border:1px solid #ffd6d2;color:#b42318;border-radius:16px;width:auto}
+.system-card.err-dismissable{display:flex;align-items:flex-start;gap:8px;text-align:left;max-width:92%;padding-right:8px}
+.system-card.err-dismissable .err-text{flex:1;min-width:0;word-break:break-word}
+.system-card.err-dismissable .err-close{flex:0 0 auto;width:18px;height:18px;line-height:16px;text-align:center;padding:0;margin-top:1px;border:none;border-radius:50%;background:var(--accent,rgba(180,35,24,.18));color:#fff;font-size:12px;cursor:pointer;opacity:.55}
+.system-card.err-dismissable .err-close:hover{opacity:.9}
 .msg{display:flex;gap:8px;margin:10px 0;align-items:flex-start}.msg.user{flex-direction:row-reverse}.avatar{width:35px;height:35px;border-radius:50%;object-fit:cover;background:#ddd;flex:0 0 auto;box-shadow:0 3px 12px rgba(0,0,0,.08);margin-top:2px}.bubble-wrap{max-width:76%;display:flex;flex-direction:column;align-items:flex-start}.msg.user .bubble-wrap{align-items:flex-end}
 .name-line{font-size:calc(10px * var(--font-scale,1));color:#777;margin:0 5px 3px}.bubble{width:fit-content;max-width:100%;padding:10px 12px;border-radius:18px;line-height:1.5;font-size:calc(14px * var(--font-scale,1));white-space:pre-wrap;word-break:break-word;box-shadow:0 4px 16px rgba(0,0,0,.055);user-select:none}.msg.role .bubble{background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.8);border-bottom-left-radius:6px}.msg.user .bubble{background:var(--accent);color:#fff;border-bottom-right-radius:6px}
 .time-line{font-size:calc(10px * var(--font-scale,1));color:#999;margin:3px 6px 0}.read-line{font-size:calc(10px * var(--font-scale,1));color:#7a7a7a;margin:2px 6px 0}.msg.user .read-line{color:var(--accent)}
@@ -1238,7 +1242,10 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   margin:0;border-radius:0;background:var(--bar-bg,rgba(255,255,255,.92));backdrop-filter:blur(18px);
   border:none;border-top:1px solid rgba(0,0,0,.07);box-shadow:0 -2px 12px rgba(40,50,80,.06);flex:0 0 auto;
 }
-.claude-toolbar{display:flex;gap:8px;overflow:auto;padding:9px 10px 0}
+.claude-toolbar{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;padding:9px 10px 0;-webkit-overflow-scrolling:touch;align-items:center}
+.claude-toolbar .chip-btn{flex:0 0 auto;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 14px;line-height:1;box-sizing:border-box;margin:0;cursor:pointer}
+.claude-toolbar .file-btn{position:relative;overflow:hidden}
+.claude-toolbar .file-btn input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
 .claude-composer{padding:8px 10px 10px;display:flex;gap:8px;align-items:flex-end}
 .claude-composer textarea{flex:1;resize:none;border:1px solid rgba(0,0,0,.08);border-radius:20px;padding:11px 13px;min-height:44px;max-height:100px;background:#fff;font-size:16px}
 .claude-send{width:44px;height:44px;border:0;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;flex:0 0 auto}
@@ -2013,6 +2020,7 @@ body{font-size:calc(14px * var(--font-scale));}
 .memory-actions button.danger{background:#ffe8e6;color:#c5221f}
 /* 多选操作栏 */
 #multiSelectBar.show{ display:flex !important; }
+#claudeMultiBar.show{ display:flex !important; }
 /* 多选勾选框 */
 .multi-check{
   width:20px; height:20px; border-radius:50%;
@@ -2029,6 +2037,8 @@ body{font-size:calc(14px * var(--font-scale));}
   content:"✓"; color:#fff; font-size:12px;
 }
 body.multiselect-mode .multi-check{ display:flex; }
+.claude-msg.multi .multi-check{ display:flex; align-self:center; }
+.claude-msg.multi{ cursor:pointer; }
 body.multiselect-mode .msg{ cursor:pointer; }
 /* 撤回消息样式 */
 .recalled-msg{
@@ -2072,11 +2082,15 @@ body.multiselect-mode .msg{ cursor:pointer; }
 .msg.user.blocked-msg .bubble-wrap{
   position:relative;
 }
-.msg.user.blocked-msg .bubble-wrap::before{
+.msg.user.blocked-msg .bubble{
+  position:relative;
+}
+.msg.user.blocked-msg .bubble::after{
   content:"!";
   position:absolute;
   left:-22px;
-  bottom:4px;
+  top:50%;
+  transform:translateY(-50%);
   width:16px;
   height:16px;
   border-radius:50%;
@@ -2086,7 +2100,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
   font-weight:700;
   line-height:16px;
   text-align:center;
-  flex-shrink:0;
+  z-index:2;
 }
 /* 引用块样式 */
 .quote-block{
@@ -2433,7 +2447,8 @@ body.multiselect-mode .msg{ cursor:pointer; }
           </div>
           <label>系统提示</label><textarea id="roleSystemInput"></textarea>
           <div class="card" style="padding:14px;margin:8px 0">
-            <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--accent)">💳 亲属卡设置</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--accent)">💳 亲属卡设置</div>
+            <div style="font-size:11px;color:#999;margin-bottom:10px;line-height:1.5">亲属卡是角色愿意给你花的钱。角色可以在聊天里自己开通/调额度/充值；这里是手动底牌，也能直接设置。</div>
             <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px">
               <input type="checkbox" id="roleFamilyCardEnabled"> 开启亲属卡
             </label>
@@ -2719,11 +2734,21 @@ body.multiselect-mode .msg{ cursor:pointer; }
       <div class="claude-composer-wrap">
         <div class="claude-toolbar">
           <label class="chip-btn file-btn">上传文件<input type="file" id="claudeFileInput" accept=".txt,.md,.html,.json,.png,.jpg,.jpeg,.webp,.svg,.doc,.docx,image/*"></label>
+          <button class="chip-btn" data-action="claude-multiselect">多选删除</button>
+          <button class="chip-btn" data-action="claude-export">导出记录</button>
+          <label class="chip-btn file-btn">导入记录<input type="file" accept="application/json,.json" id="claudeImportInput"></label>
           <button class="chip-btn" data-action="clear-claude">清空会话</button>
         </div>
         <div class="claude-composer">
           <textarea id="claudeInput" placeholder="让 Claude 帮你处理文件、写前端、解释代码..." rows="1"></textarea>
           <button class="claude-send" data-action="send-claude">➤</button>
+        </div>
+      </div>
+      <div id="claudeMultiBar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bar-bg,rgba(255,255,255,.95));backdrop-filter:blur(18px);border-top:1px solid rgba(0,0,0,.07);padding:12px 20px;z-index:200;align-items:center;justify-content:space-between;">
+        <span id="claudeMultiCount" style="font-size:13px;color:#888;">已选0条</span>
+        <div style="display:flex;gap:10px">
+          <button class="btn" onclick="cancelClaudeMulti()">取消</button>
+          <button class="btn danger" onclick="deleteClaudeSelected()">删除所选</button>
         </div>
       </div>
       <div class="home-indicator"></div>
@@ -2849,8 +2874,12 @@ body.multiselect-mode .msg{ cursor:pointer; }
         </div>
       </div>
       <div id="memoryRelationView" style="display:none;flex-direction:column;min-height:0;flex:1;overflow-y:auto">
+        <div class="claude-modebar" style="margin-bottom:10px">
+          <button data-action="set-relation-scope" data-id="role" id="relationScopeRole" class="active">角色关系</button>
+          <button data-action="set-relation-scope" data-id="tool" id="relationScopeTool">工具Claude关系</button>
+        </div>
         <div class="memory-relation-card">
-          <div class="memory-relation-title">关系状态</div>
+          <div class="memory-relation-title" id="relationScopeTitle">关系状态</div>
           <div class="memory-relation-text" id="relationText"></div>
           <div class="btn-row"><button class="btn primary" data-action="edit-relation">编辑关系状态</button><button class="btn" data-action="ai-relation">AI 整理关系</button></div>
         </div>
@@ -2880,6 +2909,8 @@ body.multiselect-mode .msg{ cursor:pointer; }
           <div class="v3-section-title">体检 / 修复</div>
           <div class="btn-row"><button class="btn primary" data-action="run-health-check">重新体检</button><button class="btn" data-action="repair-data">一键修复默认值</button></div>
           <div id="healthResult"></div>
+          <div class="v3-sub" style="margin-top:12px">Claude助手里生成的图片会占用存储。点下面可清理掉所有已生成的图（聊天文字保留）。</div>
+          <div class="btn-row"><button class="btn" data-action="clear-gen-images">清理生成图片</button></div>
         </div>
 
         <div class="card">
@@ -2909,6 +2940,80 @@ body.multiselect-mode .msg{ cursor:pointer; }
         <div style="font-size:13px;color:#999;line-height:1.7;max-width:280px">开启后，小兔子会待在主屏上。<br>可以拖动它换位置，戳一戳它会有反应～</div>
         <button id="petToggleBtn" onclick="togglePet()" style="border:none;border-radius:14px;padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent,#888)">开启桌宠</button>
         <div style="font-size:12px;color:#bbb;margin-top:4px">提示：戳一戳、拖一拖，它会陪着你</div>
+      </div>
+    </section>
+
+    <section class="app-screen" id="liveApp">
+      <!-- 直播间列表视图 -->
+      <div id="liveListView" style="display:flex;flex-direction:column;height:100%">
+        <div class="header">
+          <button class="icon-btn" data-action="go-home">‹</button>
+          <div class="header-title">直播</div>
+          <span style="width:32px"></span>
+        </div>
+        <div class="content" id="liveListContent" style="padding:16px;overflow-y:auto"></div>
+      </div>
+      <!-- 直播间内部视图 -->
+      <div id="liveRoomView" style="display:none;flex-direction:column;height:100%;position:relative">
+        <!-- 画面区 -->
+        <div id="liveScreen" style="position:relative;width:100%;aspect-ratio:3/4;max-height:46%;background:#1a1420;overflow:hidden;flex:0 0 auto">
+          <img id="liveScreenImg" style="width:100%;height:100%;object-fit:cover;display:none">
+          <div id="liveScreenPlaceholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:13px;text-align:center;padding:20px"></div>
+          <!-- 顶部信息条 -->
+          <div style="position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:10px 12px;background:linear-gradient(180deg,rgba(0,0,0,.45),transparent)">
+            <button class="icon-btn" style="background:rgba(0,0,0,.3);color:#fff" onclick="exitLiveRoom()">‹</button>
+            <img id="liveRoomAvatar" style="width:32px;height:32px;border-radius:50%;object-fit:cover">
+            <div style="flex:1;min-width:0">
+              <div id="liveRoomName" style="color:#fff;font-size:14px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.5)"></div>
+              <div id="liveRoomTag" style="color:rgba(255,255,255,.85);font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.5)">🔴 私密直播中</div>
+            </div>
+            <div id="liveViewerCount" style="color:#fff;font-size:11px;background:rgba(0,0,0,.35);padding:3px 9px;border-radius:999px">👤 1</div>
+          </div>
+          <!-- 飘心/打赏特效层 -->
+          <div id="liveFxLayer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden"></div>
+        </div>
+        <!-- 弹幕+消息流 -->
+        <div id="liveStream" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div>
+        <!-- 底部操作区 -->
+        <div id="liveComposer" style="flex:0 0 auto;border-top:1px solid rgba(0,0,0,.07);padding:8px 10px;background:var(--bar-bg,rgba(255,255,255,.95))">
+          <div style="display:flex;gap:7px;margin-bottom:7px;overflow-x:auto">
+            <button class="chip-btn" style="flex:0 0 auto" onclick="liveGift(6.6)">🎁 6.6</button>
+            <button class="chip-btn" style="flex:0 0 auto" onclick="liveGift(52)">💝 52</button>
+            <button class="chip-btn" style="flex:0 0 auto" onclick="liveGift(520)">💎 520</button>
+            <button class="chip-btn" style="flex:0 0 auto" onclick="liveGiftCustom()">🪙 自定义</button>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-end">
+            <textarea id="liveInput" placeholder="发条弹幕…" rows="1" style="flex:1;resize:none;border-radius:18px;padding:9px 14px;border:1px solid rgba(0,0,0,.1);font-size:14px;max-height:80px"></textarea>
+            <button class="claude-send" onclick="sendLiveDanmaku()" style="flex:0 0 auto">➤</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="app-screen" id="shopApp">
+      <!-- 商品浏览视图 -->
+      <div id="shopMainView" style="display:flex;flex-direction:column;height:100%">
+        <div class="header">
+          <button class="icon-btn" data-action="go-home">‹</button>
+          <div class="header-title">商城</div>
+          <button class="icon-btn" onclick="openShopOrders()">🧾</button>
+        </div>
+        <div class="eleme-search" style="padding:10px 14px">
+          <input id="shopSearchInput" placeholder="搜索商品，如 香薰 / 耳机 / 裙子">
+          <button class="btn" onclick="shopSearch()">搜索</button>
+          <button class="ai-generate-btn" id="shopAIBtn" onclick="shopAIGenerate()">AI生成</button>
+        </div>
+        <div class="content" id="shopList" style="padding:12px 14px;overflow-y:auto;flex:1"></div>
+        <div id="shopCartBox" style="flex:0 0 auto;border-top:1px solid rgba(0,0,0,.07);padding:10px 14px;background:var(--bar-bg,rgba(255,255,255,.95))"></div>
+      </div>
+      <!-- 订单视图 -->
+      <div id="shopOrderView" style="display:none;flex-direction:column;height:100%">
+        <div class="header">
+          <button class="icon-btn" onclick="closeShopOrders()">‹</button>
+          <div class="header-title">我的订单</div>
+          <span style="width:32px"></span>
+        </div>
+        <div class="content" id="shopOrderList" style="padding:14px;overflow-y:auto"></div>
       </div>
     </section>
 
@@ -2977,20 +3082,39 @@ body.multiselect-mode .msg{ cursor:pointer; }
 (function(){
 "use strict";
 // 全局错误捕获：手机看不了控制台时，把真实错误弹出来
-window.addEventListener("error", function(ev){
+function showErrBar(msg){
   try{
-    var msg = ev.message || "未知错误";
-    var loc = ev.lineno ? (" @"+ev.lineno+":"+ev.colno) : "";
     var el = document.getElementById("__errbar");
     if(!el){
       el = document.createElement("div");
       el.id = "__errbar";
-      el.style.cssText = "position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;background:rgba(200,40,40,.95);color:#fff;font-size:12px;padding:10px 12px;border-radius:10px;line-height:1.5;word-break:break-all;box-shadow:0 4px 16px rgba(0,0,0,.3)";
-      el.onclick=function(){ el.remove(); };
-      document.body.appendChild(el);
+      el.style.cssText = "position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;display:flex;align-items:flex-start;gap:8px;background:var(--bar-bg,rgba(200,40,40,.94));color:var(--bar-text,#fff);font-size:11px;padding:9px 10px;border-radius:12px;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,.22);border:1px solid rgba(0,0,0,.06)";
+      var txt=document.createElement("div");
+      txt.id="__errbar_txt";
+      txt.style.cssText="flex:1;min-width:0;word-break:break-all;max-height:28vh;overflow:auto;opacity:.92";
+      var btn=document.createElement("button");
+      btn.textContent="×";
+      btn.style.cssText="flex:0 0 auto;width:20px;height:20px;line-height:18px;text-align:center;border:none;border-radius:50%;background:rgba(0,0,0,.12);color:inherit;font-size:14px;cursor:pointer;padding:0;opacity:.7";
+      btn.onclick=function(e){ e.stopPropagation(); el.remove(); };
+      el.appendChild(txt);
+      el.appendChild(btn);
+      (document.body||document.documentElement).appendChild(el);
     }
-    el.textContent = "⚠ "+msg+loc+"（点我关闭）";
+    var t=document.getElementById("__errbar_txt");
+    if(t) t.textContent = "⚠ "+msg;
   }catch(e){}
+}
+window.addEventListener("error", function(ev){
+  var msg = ev.message || "未知错误";
+  var loc = ev.lineno ? (" @"+ev.lineno+":"+ev.colno) : "";
+  var stack = (ev.error && ev.error.stack) ? ("\n"+String(ev.error.stack).slice(0,300)) : "";
+  // 图片/资源加载失败不弹（避免误报）
+  if(ev.target && (ev.target.tagName==="IMG"||ev.target.tagName==="LINK"||ev.target.tagName==="SCRIPT") && !ev.message) return;
+  showErrBar(msg+loc+stack);
+}, true);
+window.addEventListener("unhandledrejection", function(ev){
+  var r=ev.reason;
+  showErrBar("Promise错误: "+(r&&r.message?r.message:String(r)).slice(0,200));
 });
 
 const $ = (sel, root=document)=>root.querySelector(sel);
@@ -3024,6 +3148,8 @@ const Miao = {
     {id:"greetings", name:"开场白", icon:"💬", dock:false},
     {id:"memory", name:"记忆", icon:"🧠", dock:false},
     {id:"diary", name:"日记", icon:"📔", dock:false},
+    {id:"live", name:"直播", icon:"📺", dock:false},
+    {id:"shop", name:"商城", icon:"🛍️", dock:false},
     {id:"pet", name:"桌宠", icon:"🐾", dock:false},
     {id:"data", name:"数据", icon:"🧰", dock:false},
     {id:"settings", name:"设置", icon:"⚙", dock:false}
@@ -3257,8 +3383,7 @@ async function init(){
   updateClock();
   setInterval(updateClock, 30000);
   ProactiveMsg.reset();
-  DeskPet.initDrag();
-  DeskPet.render();
+  try{ DeskPet.initDrag(); DeskPet.render(); }catch(e){ console.warn("桌宠初始化失败", e); }
   checkBackupReminder();
   // 恢复自定义字体
   const savedFontUrl=Storage.get("customFontUrl","");
@@ -3457,6 +3582,7 @@ function bindEvents(){
     if(!btn) return;
     const action = btn.dataset.action;
     const id = btn.dataset.id;
+    const scope = btn.dataset.scope;
     if(action==="unlock" || action==="go-home"){
       e.preventDefault();
       e.stopPropagation();
@@ -3495,10 +3621,12 @@ function bindEvents(){
     if(action==="extract-memory") extractMemoryFromSource(id);
     if(action==="confirm-memory-candidates") confirmMemoryCandidates();
     if(action==="edit-relation") openRelationModal();
+    if(action==="set-relation-scope") setRelationScope(id);
     if(action==="save-relation") saveRelationFromModal();
     if(action==="ai-relation") aiSummarizeRelation();
     if(action==="run-health-check") renderHealthCheck();
     if(action==="repair-data") repairDataDefaults();
+    if(action==="clear-gen-images") clearGenImages();
     if(action==="refresh-context-preview") renderApiContextPreview();
     if(action==="copy-context-preview") copyApiContextPreview();
     if(action==="refresh-error-log") renderErrorLog();
@@ -3547,6 +3675,8 @@ function bindEvents(){
     if(action==="send-claude") sendClaudeMessage();
     if(action==="retry-img") retryImageGen(id);
     if(action==="clear-claude") clearClaude();
+    if(action==="claude-multiselect") enterClaudeMulti();
+    if(action==="claude-export") exportClaudeHistory();
     if(action==="delete-claude-msg") deleteClaudeMessage(id);
     if(action==="open-file-preview") openClaudeFilePreview(id);
     if(action==="copy-code") copyClaudeCode(id);
@@ -3571,10 +3701,10 @@ function bindEvents(){
     if(action==="auto-moment-now") autoMomentNow();
     if(action==="toggle-auto-moment") toggleAutoMoment();
     if(action==="comment-moment") commentMoment(id);
-    if(action==="open-world-entry") openWorldEntryModal(id);
+    if(action==="open-world-entry") openWorldEntryModal(id, scope);
     if(action==="save-world-entry") saveWorldEntryFromModal();
-    if(action==="delete-world-entry") deleteWorldEntry(id);
-    if(action==="toggle-world-entry") toggleWorldEntry(id);
+    if(action==="delete-world-entry") deleteWorldEntry(id, scope);
+    if(action==="toggle-world-entry") toggleWorldEntry(id, scope);
     if(action==="toggle-preset-master"){ savePresetMaster(!getPresetMaster()); renderPresets(); }
     if(action==="open-greeting-entry") openGreetingEntryModal(id);
     if(action==="save-greeting-entry") saveGreetingEntryFromModal();
@@ -3629,6 +3759,7 @@ function bindEvents(){
     if(action==="submit-transfer") submitTransfer();
     if(action==="submit-delivery") submitDelivery();
     if(action==="collect-role-transfer") collectRoleTransfer(id);
+    if(action==="enter-live-invite") enterLiveFromInvite();
     if(action==="pay-role-delivery") payRoleDelivery(id);
     if(action==="reject-role-delivery") rejectRoleDelivery(id);
     if(action==="pay-delivery-manual") manualPayDelivery(id);
@@ -3856,6 +3987,12 @@ function bindEvents(){
     catch(err){ toast("导入预览失败："+err.message); }
     e.target.value="";
   });
+  const _ci=$("#claudeImportInput");
+  if(_ci) _ci.addEventListener("change", async (e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    await importClaudeHistory(f);
+    e.target.value="";
+  });
   $("#importInput").addEventListener("change", async (e)=>{
     const f=e.target.files[0]; if(!f) return;
     try{
@@ -3884,7 +4021,7 @@ function openApp(id){
   if(lock) lock.classList.add("hidden");
   if(home) home.classList.add("hidden");
   $$(".app-screen").forEach(x=>x.classList.remove("active"));
-  const map={wechat:"wechatApp",roles:"rolesApp",api:"apiApp",theme:"themeApp",me:"meApp",eleme:"elemeApp",claude:"claudeApp",story:"storyApp",call:"callApp",context:"contextSettingsApp",moments:"momentsApp",stickers:"stickersApp",worldbook:"worldbookApp",greetings:"greetingsApp",memory:"memoryApp",diary:"diaryApp",data:"dataApp",settings:"settingsApp",pet:"petApp"};
+  const map={wechat:"wechatApp",roles:"rolesApp",api:"apiApp",theme:"themeApp",me:"meApp",eleme:"elemeApp",claude:"claudeApp",story:"storyApp",call:"callApp",context:"contextSettingsApp",moments:"momentsApp",stickers:"stickersApp",worldbook:"worldbookApp",greetings:"greetingsApp",memory:"memoryApp",diary:"diaryApp",data:"dataApp",settings:"settingsApp",pet:"petApp",live:"liveApp",shop:"shopApp"};
   const el=$("#"+map[id]);
   if(id==="wechat"){
     const badge=document.getElementById("wechatBadge");
@@ -3902,6 +4039,8 @@ function openApp(id){
     Miao.state.currentApp=id;
     if(id==="moments") checkAutoMomentsOnOpen();
     if(id==="pet") updatePetToggleBtn();
+    if(id==="live") openLiveList();
+    if(id==="shop") renderShop();
     renderAll();
     // 打开微信会话：强制滚到底，确保默认看到最新消息
     if(id==="wechat"){
@@ -4343,11 +4482,30 @@ function togglePet(){
   updatePetToggleBtn();
   try{ toast(DeskPet.isOn()?"桌宠已开启，回主屏看看～":"桌宠已关闭"); }catch(e){}
 }
+window.togglePet=togglePet;
 function updatePetToggleBtn(){
   const btn=document.getElementById("petToggleBtn");
   if(btn) btn.textContent=DeskPet.isOn()?"关闭桌宠":"开启桌宠";
 }
-window.togglePet=togglePet;
+window.updatePetToggleBtn=updatePetToggleBtn;
+// 清理Claude助手里已生成的图片数据（释放空间，文字保留）
+function clearGenImages(){
+  try{
+    const h=getClaudeHistory();
+    let count=0;
+    h.forEach(m=>{
+      if(m.type==="image_gen" && m.data && m.data.url){
+        delete m.data.url;
+        m.data.status="cleared";
+        count++;
+      }
+    });
+    saveClaudeHistory(h);
+    if(typeof renderClaude==="function") renderClaude();
+    toast(count>0?`已清理 ${count} 张生成图`:"没有可清理的生成图");
+  }catch(e){ toast("清理失败："+(e.message||e)); }
+}
+window.clearGenImages=clearGenImages;
 
 // ===== 编辑组件 =====
 function editWidget(widgetId){
@@ -4976,10 +5134,13 @@ const DeskPet = {
   setOn(v){ Storage.set("petEnabled", !!v); this.render(); },
   getContainer(){ return document.querySelector(".phone-frame") || document.querySelector(".home-screen") || document.body; },
   getBounds(){
-    const el=document.getElementById("deskPet");
-    const host=el && el.offsetParent ? el.offsetParent : this.getContainer();
-    const r=host.getBoundingClientRect();
-    return {w:r.width||390, h:r.height||700};
+    try{
+      const el=document.getElementById("deskPet");
+      const host=(el && el.offsetParent) ? el.offsetParent : this.getContainer();
+      if(!host || !host.getBoundingClientRect) return {w:390, h:700};
+      const r=host.getBoundingClientRect();
+      return {w:r.width||390, h:r.height||700};
+    }catch(e){ return {w:390, h:700}; }
   },
   getPos(){
     const bd=this.getBounds();
@@ -5131,12 +5292,26 @@ const DeskPet = {
 /* ===== 微信主动发消息系统 ===== */
 const ProactiveMsg = {
   timer: null,
-  count: 0,
-  MAX_COUNT: 3,
-  INTERVAL: 10 * 60 * 1000, // 10分钟
+  INTERVAL: 2 * 60 * 60 * 1000, // 2小时没动静才触发
+  MAX_PER_DAY: 2, // 一天最多2次
+
+  todayKey(){ const d=new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; },
+  getTodayCount(){
+    const rec=Storage.get("proactiveDaily", {date:"", count:0});
+    if(rec.date!==this.todayKey()) return 0;
+    return rec.count||0;
+  },
+  bumpTodayCount(){
+    const today=this.todayKey();
+    const rec=Storage.get("proactiveDaily", {date:"", count:0});
+    const count=(rec.date===today?(rec.count||0):0)+1;
+    Storage.set("proactiveDaily", {date:today, count});
+  },
 
   reset(){
     clearTimeout(this.timer);
+    // 今天次数用完就不再排定时器
+    if(this.getTodayCount() >= this.MAX_PER_DAY) return;
     this.timer = setTimeout(()=>this.trigger(), this.INTERVAL);
   },
 
@@ -5146,28 +5321,34 @@ const ProactiveMsg = {
   },
 
   async trigger(){
-    if(this.count >= this.MAX_COUNT) return;
+    // 当天次数用完，停
+    if(this.getTodayCount() >= this.MAX_PER_DAY){ return; }
     const role = currentRole();
     if(!role) return;
-    if(Miao.state.busy) { this.reset(); return; } // 正在请求中，稍后再试
-    this.count++;
-    if(this.count < this.MAX_COUNT){
-      this.timer = setTimeout(()=>this.trigger(), this.INTERVAL);
-    }
+    if(Miao.state.busy) { this.reset(); return; }
     try{
       const api = Storage.get("api", {});
       if(!api.apiUrl || !api.apiKey || !api.model) return;
       const h = getHistory();
-      // 用正常发消息的同一套：callAI 构建上下文，附加"主动发消息"情境
-      const extraSystem = "\n\n【系统提示：主动发消息】用户已超过10分钟没回你了。请你以角色身份，主动给用户发一条符合当前关系、情绪和最近聊天内容的微信消息（比如关心、撒娇、找话题、发个日常）。直接输出消息正文即可，就像真的在发微信。不要输出任何解释、占位符、continue、英文指令或元信息，不要询问要做什么。";
+      if(!h.length) return; // 没聊过就不主动发
+      const extraSystem = "\n\n【系统提示：主动发消息】以上是你和user之前的微信聊天记录（消息已按发送者区分：role=user 是user发的，role=assistant 是你这个角色发的）。现在的情况是：user已经超过2小时没有回复你了。请你以角色身份，根据你们的关系和之前聊的内容，主动给user发一条全新的微信消息——可以是关心、想念、催一下、撒娇、问问他在干嘛、或开启一个新话题。要求：1) 绝对不要重复或复述你之前已经发过的话；2) 直接输出消息正文，不要解释、不要占位符、不要英文指令；3) 像真人发微信那样自然。";
       const reply = await callAI(api, h, undefined, extraSystem);
       if(!reply || !reply.trim()) return;
       const groupId = uid("aigrp");
       const parsed = parseAIReplyUnified(reply, groupId);
       if(!parsed.length) return;
+      // 防重复：与历史最近一条AI文字消息完全相同则丢弃
       const newH = getHistory();
+      const lastAiText = [...newH].reverse().find(m=>m.sender==="assistant" && m.type==="text");
+      const firstNewText = parsed.find(m=>m.type==="text");
+      if(lastAiText && firstNewText && lastAiText.content.trim()===firstNewText.content.trim()){
+        this.reset(); return;
+      }
       parsed.forEach(m=>newH.push(m));
       saveHistory(newH);
+      this.bumpTodayCount(); // 成功发了一次，计数+1
+      // 发完后，如果今天还没用完次数，再排下一次（间隔2小时）
+      this.reset();
       // 在微信页就逐条弹，不在就直接存+提示
       if(Miao.state.currentApp === "wechat"){
         renderChat();
@@ -5180,7 +5361,7 @@ const ProactiveMsg = {
         const roleName = role.name || "角色";
         // 取第一条文字消息当通知预览
         const preview = (parsed.find(m=>m.type==="text")||{}).content || "发来一条消息";
-        sendSystemNotification(roleName, preview, role.avatar);
+        sendSystemNotification("有人想你了", preview, role.avatar);
         showProactiveToast(`${roleName} 发来了消息`, ()=>{
           openApp("wechat");
           if(badge) badge.style.display = "none";
@@ -5234,7 +5415,7 @@ function sendMessage(){
   const input=$("#msgInput");
   const text=input.value.trim();
   if(!text) return;
-  ProactiveMsg.count=0; ProactiveMsg.reset(); // 用户发消息，重置计时和次数
+  ProactiveMsg.reset(); // 用户发消息，重置2小时计时
   const h=getHistory();
   const msg={id:uid("msg"), groupId:uid("usergrp"), sender:"user", type:"text", content:text, read:false, createdAt:Date.now(), time:nowTime()};
   if(Miao.state.quoteId){
@@ -5244,6 +5425,7 @@ function sendMessage(){
   }
   h.push(msg);
   if(isBlocked()){
+    msg.blockedFail=true; // 永久标记：被拉黑期间发送失败，解除后仍显示感叹号
     h.push({id:uid("msg"), groupId:uid("sysgrp"), sender:"system", type:"system", content:"消息已发出，但被对方拒收了。", createdAt:Date.now()+1, time:nowTime()});
   }
   saveHistory(h);
@@ -5341,7 +5523,7 @@ function renderChat(){
   });
 }
 function renderMessage(m,h,idx){
-  if(m.type==="error") return `<div class="system-card error">${escapeHtml(m.content)}</div>`;
+  if(m.type==="error") return `<div class="system-card error err-dismissable"><span class="err-text">${escapeHtml(m.content)}</span><button class="err-close" onclick="dismissErrorMsg('${m.id}')" title="关闭">×</button></div>`;
   if(m.type==="recalled") return `<div class="recalled-msg"><div class="recalled-msg-inner">${escapeHtml(m.content||"你撤回了一条消息")}</div></div>`;
   if(m.type==="system") return `<div class="system-card">${escapeHtml(m.content)}</div>`;
   const role=currentRole();
@@ -5350,7 +5532,7 @@ function renderMessage(m,h,idx){
   const blockedData=Storage.get(Storage.roleKey("blocked"), false);
   const blockedAt=blockedData&&blockedData.blockedAt ? blockedData.blockedAt : null;
   const blockedNow=blockedData===true||(blockedData&&blockedData.blocked===true);
-  const isBlockedMsg=isUser && blockedNow && blockedAt && m.createdAt>=blockedAt;
+  const isBlockedMsg=isUser && (m.blockedFail===true || (blockedNow && blockedAt && m.createdAt>=blockedAt));
   const cls=isUser?"user":"role";
   const avatar=isUser?(userProfile.avatar||Miao.defaults.avatar):(role.avatar||Miao.defaults.avatar);
   const next=h[idx+1];
@@ -5539,12 +5721,23 @@ function toggleMultiSelect(msgId){
   const countEl=document.getElementById("multiSelectCount");
   if(countEl) countEl.textContent="已选"+multiSelectedIds.size+"条";
 }
+window.toggleMultiSelect=toggleMultiSelect;
 
 window.deleteMultiSelected=function(){
   if(multiSelectedIds.size===0) return;
   const h=getHistory().filter(m=>!multiSelectedIds.has(m.id));
   saveHistory(h);
   exitMultiSelect();
+};
+
+// 关闭单条API失败消息
+window.dismissErrorMsg=function(id){
+  saveHistory(getHistory().filter(m=>m.id!==id));
+  renderChat();
+};
+window.dismissClaudeErrorMsg=function(id){
+  saveClaudeHistory(getClaudeHistory().filter(m=>m.id!==id));
+  renderClaude();
 };
 
 window.cancelMultiSelect=function(){
@@ -5648,6 +5841,42 @@ function renderMessageBody(m){
     if(d.status==="paid") return `<div class="money-card paid-card"><div class="money-title">已帮付</div><div class="money-amount">¥${escapeHtml(d.amount||"0.00")}</div><div class="money-note">${escapeHtml(d.note||"")}</div></div>`;
     if(d.status==="rejected") return `<div class="money-card reject-card"><div class="money-title">已拒绝代付</div><div class="money-amount">¥${escapeHtml(d.amount||"0.00")}</div></div>`;
     return `<div class="money-card role-transfer"><div class="money-title">请求代付</div><div class="money-amount">¥${escapeHtml(d.amount||"0.00")}</div><div class="money-note">${escapeHtml(d.note||"")}</div><div style="display:flex;gap:8px;margin-top:8px"><button class="card-action-btn" data-action="pay-role-delivery" data-id="${m.id}">帮他付</button><button class="card-action-btn" style="background:rgba(255,255,255,.3)" data-action="reject-role-delivery" data-id="${m.id}">拒绝</button></div></div>`;
+  }
+  if(m.type==="shop_pay_done"){
+    const ok=d.result==="paid";
+    if(!d._applied){
+      const h=getHistory();
+      for(let i=h.length-1;i>=0;i--){ if(h[i].type==="shop_paylink" && (h[i].data?.status==="pending")){ h[i].data.status=ok?"role_paid":"rejected"; break; } }
+      d._applied=true; saveHistory(h);
+    }
+    return `<div class="money-card ${ok?"role-transfer":"reject-card"}" style="min-width:180px"><div class="money-title">🛍️ ${ok?"对方已帮你付款":"对方拒绝了付款"}</div></div>`;
+  }
+  if(m.type==="shop_share"){
+    const its=(d.items||[]);
+    return `<div class="money-card" style="background:rgba(255,255,255,.92)!important;min-width:200px">
+      <div class="money-title">🛍️ 商品分享</div>
+      <div style="font-size:13px;line-height:1.7;margin:6px 0">${its.map(i=>`${i.emoji||"🛍️"} ${escapeHtml(i.name)} ×${i.qty}`).join("<br>")}</div>
+      <div class="money-note">合计 ¥${Number(d.total||0).toFixed(2)}</div>
+    </div>`;
+  }
+  if(m.type==="shop_paylink"){
+    const its=(d.items||[]);
+    const paid=d.status==="role_paid", rej=d.status==="rejected";
+    return `<div class="money-card user-transfer" style="min-width:200px">
+      <div class="money-title">🛍️ 请你帮我付</div>
+      <div style="font-size:13px;line-height:1.7;margin:6px 0">${its.map(i=>`${i.emoji||"🛍️"} ${escapeHtml(i.name)} ×${i.qty}`).join("<br>")}</div>
+      <div class="money-amount">¥${Number(d.total||0).toFixed(2)}</div>
+      <div class="money-note">状态：${paid?"对方已付款":rej?"对方拒绝了":"等待对方付款"}</div>
+    </div>`;
+  }
+  if(m.type==="live_invite"){
+    const r=currentRole();
+    return `<div class="money-card role-transfer" style="background:linear-gradient(135deg,#ff9eb5,#ffd66e)!important;color:#fff!important;min-width:200px">
+      <div class="money-title" style="color:rgba(255,255,255,.9)!important">🔴 直播邀请</div>
+      <div style="font-size:15px;font-weight:700;margin:4px 0;color:#fff!important">${escapeHtml(r.name)} 邀请你看直播</div>
+      <div class="money-note" style="color:rgba(255,255,255,.85)!important">${escapeHtml(d.note||"进来陪我一会儿～")}</div>
+      <button class="card-action-btn" style="background:rgba(255,255,255,.9)!important;color:#e8628a!important;margin-top:8px" data-action="enter-live-invite" data-id="${m.id}">进入直播间</button>
+    </div>`;
   }
   if(m.type==="role_transfer"){
     return `<div class="money-card role-transfer"><div class="money-title">角色转账</div><div class="money-amount">¥${escapeHtml(d.amount||"0.00")}</div><div class="money-note">${escapeHtml(d.note||"")}</div>${d.status==="collected"?`<div class="money-note">状态：你已收款</div>`:`<button class="card-action-btn" data-action="collect-role-transfer" data-id="${m.id}">收款</button>`}</div>`;
@@ -5796,6 +6025,9 @@ function stripInstructions(t){
     .replace(imageInstructionRegex(),"")
     .replace(/[\[【]\s*(?:发送链接|链接)[:：]\s*[^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*(?:状态更新|主动转账|向user发起代付)[:：]\s*[^\]】]*[\]】]/g,"")
+    .replace(/[\[【]\s*开播邀请\s*(?:[:：][^\]】]*)?[\]】]/g,"")
+    .replace(/[\[【]\s*商城(?:帮付|拒付)\s*[\]】]/g,"")
+    .replace(/[\[【]\s*读取网页[:：]\s*[^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*(?:收款|拒收转账|帮忙代付|同意代付|拒绝代付)[^\]】]*[\]】]/g,"")
     .replace(/含义[:：]\s*.*/g,"")
     .replace(/[\[【](?:拉黑|解除拉黑)[\]】]/g,"")
@@ -5963,7 +6195,32 @@ async function callAIReply(){
         Miao.state.streamPartial[streamMsgId]=partial;
       }
     }:undefined;
-    const reply=await callAI(api,h,onChunk);
+    // 用户消息里贴了网址：先抓取，注入给AI
+    let userUrlNote="";
+    const pastedUrl=extractBareUrl(newUser.content||"");
+    if(pastedUrl){
+      if(!useStream) toast("正在读网页…");
+      const page=await fetchWebPage(pastedUrl);
+      userUrlNote = page.ok
+        ? `\n\n【网页读取结果】user消息里的网址（${page.url}）内容如下${page.truncated?"（已截断）":""}，可结合它回复：\n${page.content}`
+        : `\n\n【网页读取失败】user贴的网址没读成功（${page.error}），如有需要可告诉user读不了。`;
+    }
+    let reply=await callAI(api,h,onChunk,userUrlNote);
+    // 若AI想读网页：抓取内容后，带着内容再问一次，让它基于真实内容回复
+    const wantUrl=extractReadWebUrl(reply);
+    if(wantUrl){
+      if(useStream){
+        const bubble=document.querySelector('[data-id="'+streamMsgId+'"] .bubble');
+        if(bubble) bubble.textContent="（正在读网页…）";
+      } else {
+        toast("正在读网页…");
+      }
+      const page=await fetchWebPage(wantUrl);
+      const note = page.ok
+        ? `\n\n【网页读取结果】你刚才请求读取的网页（${page.url}）内容如下${page.truncated?"（已截断）":""}，请基于真实内容回复user，不要再输出[读取网页]指令：\n${page.content}`
+        : `\n\n【网页读取失败】你请求读取的网页没读成功，原因：${page.error}。请如实告诉user读不了，不要再输出[读取网页]指令。`;
+      reply=await callAI(api,h,onChunk,note);
+    }
     const groupId=uid("aigrp");
     if(useStream){
       // 流式完成：用真实解析结果替换临时消息
@@ -6015,6 +6272,9 @@ function messageToAIContext(m){
   if(m.type==="transfer") return `[用户转账:${d.amount||""}|${d.note||""}|状态:${d.status||"pending"}]`;
   if(m.type==="delivery") return `[代付链接:${d.amount||""}|${d.item||""}|状态:${d.status||"pending"}]`;
   if(m.type==="role_transfer") return `[角色转账:${d.amount||""}|${d.note||""}|状态:${d.status||"pending"}]`;
+  if(m.type==="live_invite") return `[你发起了直播邀请${d.note?"："+d.note:""}]`;
+  if(m.type==="shop_share"){ const its=(d.items||[]).map(i=>`${i.name}×${i.qty}`).join("、"); return `[user分享了商品：${its}，合计¥${d.total}]`; }
+  if(m.type==="shop_paylink"){ const its=(d.items||[]).map(i=>`${i.name}×${i.qty}`).join("、"); return `[user请你帮忙付款：${its}，合计¥${d.total}，状态:${d.status||"pending"}。你可用[商城帮付]答应或[商城拒付]拒绝]`; }
   if(m.type==="received") return `[收款完成:${d.amount||""}|user已确认收款，本次转账流程已结束，不需要再发起任何转账]`;
   if(m.type==="paid") return `[代付完成:${d.amount||""}|${d.item||""}]`;
   if(m.type==="rejected") return `[拒绝:${m.content||""}]`;
@@ -6080,6 +6340,44 @@ function checkDiceMarker(replyText){
   saveHistory(h);
   renderChat();
   const chat=document.getElementById("chat"); if(chat) chat.scrollTop=chat.scrollHeight;
+}
+
+// ===== 联网读网页（经 r.jina.ai 中间人，超时+截断）=====
+async function fetchWebPage(url){
+  let u=String(url||"").trim();
+  if(!u) return {ok:false, error:"网址为空"};
+  if(!/^https?:\/\//i.test(u)) u="https://"+u;
+  // r.jina.ai：把目标网址拼在后面，它返回清理过的正文
+  const proxyUrl="https://r.jina.ai/"+u;
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(), 20000); // 20秒超时
+  try{
+    const res=await fetch(proxyUrl, {signal:ctrl.signal, headers:{"Accept":"text/plain"}});
+    clearTimeout(timer);
+    if(!res.ok) return {ok:false, error:"抓取失败 HTTP "+res.status};
+    let text=await res.text();
+    if(!text || !text.trim()) return {ok:false, error:"没读到内容（可能需要登录或被拦截）"};
+    // 截断：最多保留前 6000 字，防止把超长正文全塞给AI拖慢
+    const MAX=6000;
+    let truncated=false;
+    if(text.length>MAX){ text=text.slice(0,MAX); truncated=true; }
+    return {ok:true, content:text, truncated, url:u};
+  }catch(e){
+    clearTimeout(timer);
+    if(e.name==="AbortError") return {ok:false, error:"超时（网页太慢或无法访问）"};
+    return {ok:false, error:"读取出错："+(e.message||e)};
+  }
+}
+
+// 从文本里抽出第一个 [读取网页:URL] 指令的URL
+function extractReadWebUrl(text){
+  const m=String(text||"").match(/[\[【]\s*读取网页[:：]\s*([^\]】]+?)\s*[\]】]/);
+  return m ? m[1].trim() : null;
+}
+// 从用户消息里抽第一个裸URL
+function extractBareUrl(text){
+  const m=String(text||"").match(/https?:\/\/[^\s，。！？、）】"']+/);
+  return m ? m[0] : null;
 }
 
 async function callAI(api, history, onChunk, extraSystem){
@@ -6265,6 +6563,10 @@ ${getStickerPromptList()}
 [帮忙代付]
 [拒绝代付]
 [向user发起代付: 金额|备注]
+[开播邀请]（当你想给user直播、或user让你直播、你们约好开播时使用。发出后user聊天里会出现一张可点击的直播邀请卡，user点进去就进了你的私密直播间。可写成 [开播邀请:一句邀请的话]。当你答应给user直播、或主动想直播给user看时就发这个）
+[商城帮付]（当user用商城发来「请你帮我付」的代付请求、你愿意付时使用，付完user那张卡会显示"对方已付款"）
+[商城拒付]（不愿意帮user付商城的钱时使用）
+当user只是「分享商品给你看」时，正常聊天评价即可，不需要付款指令。只有看到明确的「请你帮我付」代付请求才用[商城帮付]/[商城拒付]。
 
 【转账与代付区分——必须严格遵守】
 - [主动转账: 金额|备注]：角色主动给user发钱。用于：角色想给user钱、答应给user买东西、奖励user等场景。
@@ -6281,6 +6583,13 @@ ${getStickerPromptList()}
 - [解除拉黑]：解除拉黑状态
 - 何时拉黑、拉黑多久、期间是否回复、何时解除，均根据你的人设自行判断，代码不做限制
 
+【联网读网页】
+- [读取网页:网址]：当你想看某个网页的真实内容时使用，例如 [读取网页:https://example.com/article]。
+- 系统会去抓取该网页，把真实内容返回给你，你再基于内容回复user。
+- 只能读公开网页；需要登录的页面（小红书、微博等）读不了，读不到时系统会告诉你。
+- 一次只读一个网址。拿到内容后正常回复，不要再重复输出这个指令。
+- 不要凭空编造网页内容；要读就发指令，读不到就如实说。
+
 【格式规则】
 1. 你只能扮演${role.name}，不能替user说话。
 2. 禁止输出User:、用户：、Assistant:、旁白式剧本格式。
@@ -6291,12 +6600,29 @@ ${getStickerPromptList()}
 4. 表情包只能从"可用表情包"里按名称选择，不能编造。发送表情包指令后不要解释含义，不要加括号说明。
 5. 遇到用户转账/代付时，必须根据关系、上下文和人设自主决定是否收款/帮付。转账卡片上标注了付款来源（我的钱包/亲属卡），你可以根据来源做出反应。
 ${(()=>{
+  const role = currentRole();
   const card = getFamilyCard();
   const w = getUserWalletBalance();
   let info = `
 【钱包信息】
 user钱包余额：¥${w.toFixed(2)}`;
-  if(card) info += `\n${card.label}余额：¥${card.balance.toFixed(2)}（额度上限：¥${card.limit.toFixed(2)}）`;
+  if(card){
+    info += `\n${card.label}余额：¥${card.balance.toFixed(2)}（额度上限：¥${card.limit.toFixed(2)}）`;
+    const log = getFamilyCardLog(role.id).slice(-6);
+    if(log.length){
+      info += `\n${card.label}近期记录：` + log.map(l=>`${l.time} ${l.type}¥${l.amount.toFixed(2)}${l.note?"("+l.note+")":""}`).join("；");
+    }
+  } else {
+    info += `\n你还没有给user开亲属卡。`;
+  }
+  info += `
+
+【亲属卡说明（由你决定，不是user能开的）】
+亲属卡是你愿意给user花的钱，不等于你的全部财产。是否开、给多少额度、要不要上调、要不要充值，全部由你根据关系和人设自主决定。user用亲属卡花钱你能看到（上方记录）。
+可用指令（按需使用，不强制）：
+[开通亲属卡: 额度|卡名]  例：[开通亲属卡: 5000|樾哥的卡]（卡名可省略）
+[调整亲属卡额度: 新额度]  例：[调整亲属卡额度: 8000]
+[亲属卡充值: 金额]  例：[亲属卡充值: 2000]`;
   return info;
 })()}
 
@@ -6520,14 +6846,22 @@ function saveCurrentRoleFromForm(){
   // 性格、场景、开场白由 PNG 角色卡读取；此处不手动覆盖
   r.boundWorldRoleId=$("#roleWorldBindSelect")?.value || r.id;
   r.systemPrompt=$("#roleSystemInput").value;
-  // 亲属卡配置
+  // 亲属卡配置（用户端可手动开/调，作为底牌；角色也能用指令开/调）
   const cardEnabled = document.getElementById("roleFamilyCardEnabled")?.checked;
-  r.familyCard = cardEnabled ? {
-    enabled: true,
-    label: document.getElementById("roleFamilyCardLabel")?.value.trim() || "亲属卡",
-    limit: parseFloat(document.getElementById("roleFamilyCardLimit")?.value)||0,
-    balance: parseFloat(document.getElementById("roleFamilyCardBalance")?.value)||0,
-  } : {enabled: false};
+  if(cardEnabled){
+    const newLimit = parseFloat(document.getElementById("roleFamilyCardLimit")?.value)||0;
+    const newBalance = parseFloat(document.getElementById("roleFamilyCardBalance")?.value)||0;
+    r.familyCard = {
+      enabled: true,
+      label: document.getElementById("roleFamilyCardLabel")?.value.trim() || (r.name+"给的卡"),
+      limit: newLimit,
+      balance: newBalance,
+    };
+    // 同步实时余额，否则 getFamilyCard 会读到旧值，编辑余额不生效
+    Storage.set("familyCard_" + r.id, Math.round(newBalance*100)/100);
+  } else {
+    r.familyCard = {enabled: false};
+  }
   saveRoles(roles);
   renderAll();
   toast("角色已保存");
@@ -7430,6 +7764,68 @@ function getClaudeHistory(){
 function saveClaudeHistory(list){
   Storage.set(claudeKey(), list);
 }
+/* ===== Claude助手 多选删除 ===== */
+let claudeMultiMode=false;
+let claudeMultiIds=new Set();
+function enterClaudeMulti(){
+  claudeMultiMode=true;
+  claudeMultiIds=new Set();
+  renderClaude();
+  const bar=document.getElementById("claudeMultiBar");
+  if(bar) bar.classList.add("show");
+}
+function exitClaudeMulti(){
+  claudeMultiMode=false;
+  claudeMultiIds=new Set();
+  renderClaude();
+  const bar=document.getElementById("claudeMultiBar");
+  if(bar) bar.classList.remove("show");
+}
+window.toggleClaudeMulti=function(msgId){
+  if(claudeMultiIds.has(msgId)) claudeMultiIds.delete(msgId);
+  else claudeMultiIds.add(msgId);
+  const el=document.querySelector(`.claude-msg[data-id="${msgId}"] .multi-check`);
+  if(el) el.classList.toggle("checked", claudeMultiIds.has(msgId));
+  const c=document.getElementById("claudeMultiCount");
+  if(c) c.textContent="已选"+claudeMultiIds.size+"条";
+};
+window.deleteClaudeSelected=function(){
+  if(claudeMultiIds.size===0){ exitClaudeMulti(); return; }
+  const h=getClaudeHistory().filter(m=>!claudeMultiIds.has(m.id));
+  saveClaudeHistory(h);
+  exitClaudeMulti();
+  toast("已删除所选消息");
+};
+window.cancelClaudeMulti=function(){ exitClaudeMulti(); };
+
+/* ===== Claude助手 导入/导出聊天记录 ===== */
+window.exportClaudeHistory=function(){
+  const mode=getClaudeMode();
+  const data={ _type:"miaoClaudeHistory", mode, exportedAt:Date.now(), history:getClaudeHistory() };
+  const blob=new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`claude_${mode}_chat_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  toast("已导出当前会话");
+};
+window.importClaudeHistory=async function(file){
+  if(!file) return;
+  try{
+    const data=JSON.parse(await file.text());
+    const arr = Array.isArray(data) ? data : (data.history||[]);
+    if(!Array.isArray(arr) || !arr.length){ toast("文件里没有可导入的聊天记录"); return; }
+    // 合并到当前会话末尾，重新生成id防冲突
+    const cur=getClaudeHistory();
+    const add=arr.filter(m=>m && m.id).map(m=>Object.assign({}, m, {id:uid("cmsg")}));
+    saveClaudeHistory(cur.concat(add));
+    renderClaude();
+    toast(`已导入 ${add.length} 条消息`);
+  }catch(e){ toast("导入失败：文件格式不对"); }
+};
+
 function renderClaude(){
   const roleBtn=$("#claudeModeRole"), toolBtn=$("#claudeModeTool");
   if(roleBtn && toolBtn){
@@ -7449,13 +7845,16 @@ function renderClaude(){
   setTimeout(()=>{ chat.scrollTop=chat.scrollHeight; }, 80);
 }
 function renderClaudeMessage(m){
-  if(m.type==="system" || m.type==="error") return `<div class="system-card ${m.type==="error"?"error":""}">${escapeHtml(m.content||"")}</div>`;
+  if(m.type==="error") return `<div class="system-card error err-dismissable"><span class="err-text">${escapeHtml(m.content||"")}</span><button class="err-close" onclick="dismissClaudeErrorMsg('${m.id}')" title="关闭">×</button></div>`;
+  if(m.type==="system") return `<div class="system-card">${escapeHtml(m.content||"")}</div>`;
   const isUser=m.sender==="user";
   const mode=getClaudeMode();
   const role=currentRole();
   const avatar=isUser ? `<img src="${escapeAttr(getUserProfile().avatar||Miao.defaults.avatar)}">` : (mode==="tool" ? "C" : `<img src="${escapeAttr(role.avatar||Miao.defaults.avatar)}">`);
   const name=isUser ? (getUserProfile().name||"user") : (mode==="tool" ? "工具 Claude" : role.name);
-  return `<div class="claude-msg ${isUser?"user":"assistant"}" data-id="${m.id}" data-sender="${m.sender}">
+  const check=claudeMultiMode?`<div class="multi-check${claudeMultiIds.has(m.id)?" checked":""}" onclick="toggleClaudeMulti('${m.id}')"></div>`:"";
+  return `<div class="claude-msg ${isUser?"user":"assistant"}${claudeMultiMode?" multi":""}" data-id="${m.id}" data-sender="${m.sender}">
+    ${check}
     <div class="claude-avatar">${avatar}</div>
     <div class="claude-bwrap">
       <div class="claude-name">${escapeHtml(name)}</div>
@@ -7470,6 +7869,9 @@ function renderClaudeBody(m){
     const st=(m.data&&m.data.status)||"loading";
     if(st==="done" && m.data.url){
       return `<div class="claude-img-card"><img class="claude-real-img" src="${escapeAttr(m.data.url)}" alt="" onclick="window.open('${escapeAttr(m.data.url)}','_blank')"></div>`;
+    }
+    if(st==="cleared"){
+      return `<div class="claude-img-card img-err" style="background:rgba(150,150,150,.1);color:#999">🖼️ 图片已清理</div>`;
     }
     if(st==="error"){
       return `<div class="claude-img-card img-err">图片生成失败${m.data.err?"："+escapeHtml(m.data.err):""}<button class="img-retry-btn" data-action="retry-img" data-id="${m.id}">重试</button></div>`;
@@ -7617,6 +8019,29 @@ async function sendClaudeMessage(){
   await callClaudeReply();
 }
 // ===== Claude 助手生图（独立配置：地址可空默认聊天地址，密钥/模型单独）=====
+// 压缩base64图片（降到最大边768px，jpeg 0.75），大幅省空间
+function compressImageDataUrl(dataUrl, maxSide, quality){
+  return new Promise((resolve)=>{
+    try{
+      if(!dataUrl || !String(dataUrl).startsWith("data:image/")) return resolve(dataUrl);
+      const img=new Image();
+      img.onload=()=>{
+        try{
+          let w=img.width, h=img.height;
+          const ms=maxSide||768;
+          if(w>ms||h>ms){ if(w>=h){ h=Math.round(h*ms/w); w=ms; } else { w=Math.round(w*ms/h); h=ms; } }
+          const cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+          const ctx=cv.getContext("2d");
+          ctx.fillStyle="#fff"; ctx.fillRect(0,0,w,h);
+          ctx.drawImage(img,0,0,w,h);
+          resolve(cv.toDataURL("image/jpeg", quality||0.75));
+        }catch(e){ resolve(dataUrl); }
+      };
+      img.onerror=()=>resolve(dataUrl);
+      img.src=dataUrl;
+    }catch(e){ resolve(dataUrl); }
+  });
+}
 function extractImageUrl(text){
   if(!text) return "";
   const s=String(text);
@@ -7660,7 +8085,15 @@ async function runImageGen(msgId, prompt){
     if(typeof content==="string") txt=content;
     else if(Array.isArray(content)) txt=content.map(c=>c.text||c.image_url?.url||"").join(" ");
     const imgUrl=extractImageUrl(txt);
-    if(imgUrl) finish({status:"done", url:imgUrl});
+    if(imgUrl){
+      // 如果是base64（中转站直接返回图片数据），压缩后再存，省空间
+      if(String(imgUrl).startsWith("data:image/")){
+        const compressed=await compressImageDataUrl(imgUrl, 768, 0.75);
+        finish({status:"done", url:compressed});
+      } else {
+        finish({status:"done", url:imgUrl});
+      }
+    }
     else { console.warn("生图返回：", json); finish({status:"error", err:"未解析到图片"}); }
   }catch(e){
     clearTimeout(timeout);
@@ -7668,6 +8101,382 @@ async function runImageGen(msgId, prompt){
     finish({status:"error", err: e.name==="AbortError" ? "生成超时（60秒）" : e.message});
   }
 }
+// ============ 直播功能 ============
+const Live = {
+  roleId:null,        // 当前直播的角色
+  history:[],         // 当前直播间消息流（不持久化，进房现拉）
+  busy:false,
+  imgEnabled:false,   // 该角色是否开启生图画面
+  topic:""            // 本场直播主题
+};
+
+function liveStateKey(roleId){ return "liveOn."+roleId; }      // 该角色是否在直播
+function liveImgKey(roleId){ return "liveImg."+roleId; }       // 该角色是否开生图画面
+function getLiveImgEnabled(roleId){ return Storage.get(liveImgKey(roleId), false); }
+function setLiveImgEnabled(roleId, v){ Storage.set(liveImgKey(roleId), !!v); }
+
+// 列表视图：列出所有角色，可发起私密直播
+function openLiveList(){
+  document.getElementById("liveListView").style.display="flex";
+  document.getElementById("liveRoomView").style.display="none";
+  renderLiveList();
+}
+function renderLiveList(){
+  const box=document.getElementById("liveListContent");
+  if(!box) return;
+  const roles=getRoles();
+  box.innerHTML = `<div class="v3-sub" style="margin-bottom:12px">选择一个角色，让Ta为你开一场私密直播。开启「画面」后，直播中Ta可以生成镜头画面（需先在生图设置里配好生图API）。</div>` +
+    roles.map(r=>{
+      const on=getLiveImgEnabled(r.id);
+      return `<div class="live-card" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,.5);border:1px solid rgba(0,0,0,.06);margin-bottom:10px">
+        <img src="${escapeAttr(r.avatar||Miao.defaults.avatar)}" style="width:48px;height:48px;border-radius:50%;object-fit:cover">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:15px">${escapeHtml(r.name)}</div>
+          <div style="font-size:12px;color:#999">私密直播 · 只有你一个观众</div>
+        </div>
+        <button class="chip-btn" onclick="toggleLiveImg('${r.id}')" style="margin-right:6px">${on?"🖼 画面开":"🖼 画面关"}</button>
+        <button class="btn primary" onclick="startLive('${r.id}')">进入</button>
+      </div>`;
+    }).join("");
+}
+
+// 进入直播间
+async function startLive(roleId, fromWechat){
+  Live.roleId=roleId;
+  Live.history=[];
+  Live.fromWechat=!!fromWechat;
+  Live.imgEnabled=getLiveImgEnabled(roleId);
+  const role=getRoles().find(r=>r.id===roleId);
+  if(!role) return;
+  document.getElementById("liveListView").style.display="none";
+  document.getElementById("liveRoomView").style.display="flex";
+  document.getElementById("liveRoomName").textContent=role.name;
+  document.getElementById("liveRoomAvatar").src=role.avatar||Miao.defaults.avatar;
+  document.getElementById("liveScreenImg").style.display="none";
+  const ph=document.getElementById("liveScreenPlaceholder");
+  // 生图开关状态提示
+  const imgCfg=Storage.get("imgApi",{});
+  const canImg=Live.imgEnabled && (imgCfg.key || Storage.get("api",{}).apiKey);
+  ph.innerHTML = canImg ? "直播画面加载中…" : `📺<br>${escapeHtml(role.name)} 的私密直播<br><span style="font-size:11px;opacity:.7">（开启生图画面可看到Ta，在右上⚙设置）</span>`;
+  document.getElementById("liveStream").innerHTML="";
+  // 开场：让AI生成直播开场
+  await liveAITurn("__START__");
+}
+
+function exitLiveRoom(){ openLiveList(); }
+window.exitLiveRoom=exitLiveRoom;
+window.startLive=startLive;
+window.toggleLiveImg=function(roleId){
+  setLiveImgEnabled(roleId, !getLiveImgEnabled(roleId));
+  renderLiveList();
+};
+// 从微信开播邀请卡片进入直播间（带当前角色 + 微信最近上下文）
+function enterLiveFromInvite(){
+  const role=currentRole();
+  if(!role) return;
+  openApp("live");
+  setTimeout(()=>startLive(role.id, true), 50); // true=带微信上下文
+}
+window.enterLiveFromInvite=enterLiveFromInvite;
+// user在微信叫角色开播——其实角色会自己发邀请卡，这里不用额外处理
+
+// 渲染一条直播消息
+function liveAddMsg(m){
+  Live.history.push(m);
+  const stream=document.getElementById("liveStream");
+  if(!stream) return;
+  const role=getRoles().find(r=>r.id===Live.roleId);
+  let html="";
+  if(m.type==="host"){ // 主播说话
+    html=`<div style="display:flex;gap:8px;align-items:flex-start">
+      <img src="${escapeAttr(role.avatar||Miao.defaults.avatar)}" style="width:30px;height:30px;border-radius:50%;flex:0 0 auto;object-fit:cover">
+      <div style="background:rgba(255,255,255,.7);border-radius:4px 14px 14px 14px;padding:8px 12px;font-size:14px;max-width:80%">${escapeHtml(m.content)}</div>
+    </div>`;
+  } else if(m.type==="danmaku"){ // 弹幕（你发的）
+    html=`<div style="align-self:flex-end;background:var(--accent,#e8a0be);color:#fff;border-radius:14px;padding:6px 12px;font-size:13px;max-width:80%">${escapeHtml(m.content)}</div>`;
+  } else if(m.type==="gift"){ // 打赏
+    html=`<div style="align-self:center;background:linear-gradient(135deg,#ffd66e,#ff9eb5);color:#fff;border-radius:999px;padding:6px 16px;font-size:13px;font-weight:700;box-shadow:0 2px 8px rgba(255,150,180,.3)">🎁 ${escapeHtml(m.content)}</div>`;
+  } else if(m.type==="sys"){
+    html=`<div style="align-self:center;color:#aaa;font-size:12px">${escapeHtml(m.content)}</div>`;
+  }
+  const div=document.createElement("div");
+  div.innerHTML=html;
+  stream.appendChild(div.firstElementChild);
+  stream.scrollTop=stream.scrollHeight;
+}
+
+// AI 主播回合：传入触发（开场/弹幕/打赏），生成主播的反应
+async function liveAITurn(trigger){
+  if(Live.busy) return;
+  Live.busy=true;
+  const api=Storage.get("api",{});
+  if(!api.apiUrl||!api.apiKey||!api.model){ liveAddMsg({type:"sys",content:"请先在API设置里配置"}); Live.busy=false; return; }
+  const role=getRoles().find(r=>r.id===Live.roleId);
+  // 构建直播专用系统提示
+  const recent=Live.history.slice(-12).map(m=>{
+    if(m.type==="host") return `${role.name}：${m.content}`;
+    if(m.type==="danmaku") return `观众弹幕：${m.content}`;
+    if(m.type==="gift") return `观众打赏：${m.content}`;
+    return "";
+  }).filter(Boolean).join("\n");
+  let userMsg;
+  if(trigger==="__START__"){
+    // 互通但克制：取最近约10轮对话（按user发言切分，话多的角色也能带全一轮的多条回复）
+    let wechatCtx="";
+    if(Live.fromWechat){
+      const all=getHistory().filter(m=>["text","sticker","voice"].includes(m.type));
+      // 从尾部往前数，数到第10个user消息为止
+      let userTurns=0, startIdx=all.length;
+      for(let i=all.length-1;i>=0;i--){
+        if(all[i].sender==="user"){ userTurns++; if(userTurns>10){ startIdx=i+1; break; } }
+        startIdx=i;
+      }
+      const h=all.slice(startIdx).slice(-40); // 上限40条防极端
+      if(h.length){
+        wechatCtx="\n\n【你们刚才在微信聊的（你答应了给user直播）】\n"+h.map(m=>`${m.sender==="user"?"user":role.name}：${m.content||""}`).join("\n");
+      }
+    }
+    userMsg=`现在你要开一场只有user一个观众的私密直播。用第一人称开场，自然地开始直播。${wechatCtx}${Live.imgEnabled?"\n你可以用 [直播画面:画面描述] 来展示当前镜头画面（描述要具体、视觉化）。":""}`;
+  } else if(trigger.startsWith("__GIFT__")){
+    userMsg=`user刚打赏了你 ${trigger.replace("__GIFT__","")}。作为主播自然地回应这个打赏。`;
+  } else {
+    userMsg=`user发来弹幕："${trigger}"。作为正在直播的主播，自然回应。`;
+  }
+  const sys=`${buildSystemPrompt(role)}
+
+【直播模式】
+你正在为user进行一场私密直播（只有user一个观众）。
+- 用第一人称、口语化，像真的在镜头前直播一样自然。
+- 回复简短、像直播说话，可以分多段（用双换行）。
+- 不要写旁白、不要描述动作括号，就是对着镜头说话。${Live.imgEnabled?"\n- 需要展示画面时用 [直播画面:具体的视觉描述]，系统会生成画面图。一次最多一个。":""}
+${recent?`\n【刚才的直播内容】\n${recent}`:""}`;
+  try{
+    const raw=await callSimpleChatAPI(api,[{role:"system",content:sys},{role:"user",content:userMsg}], .8);
+    let text=cleanAIText(raw);
+    // 提取直播画面指令
+    const imgMatch=text.match(/[\[【]\s*直播画面[:：]\s*([^\]】]+?)\s*[\]】]/);
+    text=text.replace(/[\[【]\s*直播画面[:：]\s*[^\]】]*[\]】]/g,"").trim();
+    // 分段显示主播的话
+    const segs=text.split(/\n\n+/).map(s=>s.trim()).filter(Boolean);
+    for(const seg of segs){ liveAddMsg({type:"host",content:seg}); await sleep(400); }
+    // 有画面指令且开了生图，去生成
+    if(imgMatch && Live.imgEnabled){ liveGenScreen(imgMatch[1].trim()); }
+  }catch(e){
+    liveAddMsg({type:"sys",content:"主播信号断了…（"+(e.message||e)+"）"});
+  }
+  Live.busy=false;
+}
+
+// 生成直播画面图
+async function liveGenScreen(prompt){
+  const chatApi=Storage.get("api",{});
+  const imgCfg=Storage.get("imgApi",{});
+  const url=normalizeChatUrl(imgCfg.url || chatApi.apiUrl);
+  const key=imgCfg.key || "";
+  const model=imgCfg.model || "gpt-image-2";
+  if(!url || !key) return;
+  const ph=document.getElementById("liveScreenPlaceholder");
+  ph.textContent="画面加载中…";
+  const ctrl=new AbortController();
+  const timeout=setTimeout(()=>ctrl.abort(), 60000);
+  try{
+    const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},body:JSON.stringify({model,messages:[{role:"user",content:prompt}]}),signal:ctrl.signal});
+    clearTimeout(timeout);
+    const json=await res.json();
+    const content=json.choices?.[0]?.message?.content;
+    let txt=typeof content==="string"?content:(Array.isArray(content)?content.map(c=>c.text||c.image_url?.url||"").join(" "):"");
+    let imgUrl=extractImageUrl(txt);
+    if(imgUrl){
+      if(String(imgUrl).startsWith("data:image/")) imgUrl=await compressImageDataUrl(imgUrl,768,0.75);
+      const el=document.getElementById("liveScreenImg");
+      el.src=imgUrl; el.style.display="block";
+      ph.style.display="none";
+    } else { ph.textContent="画面生成失败"; }
+  }catch(e){ clearTimeout(timeout); ph.textContent="画面超时"; }
+}
+
+// 发弹幕
+function sendLiveDanmaku(){
+  const inp=document.getElementById("liveInput");
+  const text=(inp.value||"").trim();
+  if(!text) return;
+  inp.value="";
+  liveAddMsg({type:"danmaku",content:text});
+  liveAITurn(text);
+}
+window.sendLiveDanmaku=sendLiveDanmaku;
+
+// 打赏（你打赏角色，扣钱包/亲属卡）
+function liveGift(amount){
+  const role=getRoles().find(r=>r.id===Live.roleId);
+  // 优先走付款来源选择（复用转账的来源选择器）
+  openTransferSourcePicker(amount, (source)=>{
+    liveAddMsg({type:"gift",content:`你打赏了 ¥${amount}`});
+    spawnLiveHearts();
+    liveAITurn("__GIFT__¥"+amount);
+  });
+}
+window.liveGift=liveGift;
+function liveGiftCustom(){
+  const v=prompt("打赏金额：");
+  const amt=parseFloat(v);
+  if(amt>0) liveGift(Math.round(amt*100)/100);
+}
+window.liveGiftCustom=liveGiftCustom;
+
+// 打赏飘心特效
+function spawnLiveHearts(){
+  const layer=document.getElementById("liveFxLayer");
+  if(!layer) return;
+  for(let i=0;i<6;i++){
+    const h=document.createElement("div");
+    h.textContent=["❤️","💝","✨","🎁","💖"][Math.floor(Math.random()*5)];
+    h.style.cssText=`position:absolute;bottom:10px;left:${20+Math.random()*60}%;font-size:${18+Math.random()*14}px;opacity:1;transition:all ${1.5+Math.random()}s ease-out`;
+    layer.appendChild(h);
+    requestAnimationFrame(()=>{ h.style.bottom=(50+Math.random()*40)+"%"; h.style.opacity="0"; });
+    setTimeout(()=>h.remove(), 2600);
+  }
+}
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+// ============ 商城功能 ============
+const SHOP_DEFAULT=[
+  {id:"sp1",name:"奶油小熊香薰蜡烛",desc:"焦糖奶油香，燃点约40小时",price:68,emoji:"🕯️",cat:"家居"},
+  {id:"sp2",name:"云朵无线蓝牙耳机",desc:"降噪，奶白配色，超长续航",price:299,emoji:"🎧",cat:"数码"},
+  {id:"sp3",name:"草莓熊针织开衫",desc:"软糯奶系，微胖也能穿",price:159,emoji:"🧶",cat:"服饰"},
+  {id:"sp4",name:"星河夜灯投影仪",desc:"满屋星空，助眠氛围感拉满",price:128,emoji:"🌌",cat:"家居"},
+  {id:"sp5",name:"芭蕾兔陶瓷马克杯",desc:"奶油釉，附小碟",price:46,emoji:"🩰",cat:"家居"},
+  {id:"sp6",name:"奶盐焦糖手工软糖礼盒",desc:"一口一颗，甜而不腻",price:39,emoji:"🍬",cat:"零食"}
+];
+function getShopAIItems(){ return Storage.get("shopAIItems",[]); }
+function saveShopAIItems(list){ Storage.set("shopAIItems",list); }
+function allShopItems(){ return [...getShopAIItems(), ...SHOP_DEFAULT]; }
+function getShopCart(){ return Storage.get("shopCart",{}); }
+function saveShopCart(c){ Storage.set("shopCart",c); }
+function getShopOrders(){ return Storage.get("shopOrders",[]); }
+function saveShopOrders(l){ Storage.set("shopOrders",l); }
+
+function renderShop(){
+  document.getElementById("shopMainView").style.display="flex";
+  document.getElementById("shopOrderView").style.display="none";
+  renderShopList();
+  renderShopCart();
+}
+function renderShopList(){
+  const box=document.getElementById("shopList"); if(!box) return;
+  const q=(document.getElementById("shopSearchInput")?.value||"").trim().toLowerCase();
+  const items=allShopItems().filter(it=>!q || it.name.toLowerCase().includes(q) || (it.desc||"").toLowerCase().includes(q) || (it.cat||"").toLowerCase().includes(q));
+  if(!items.length){ box.innerHTML=`<div class="moment-empty">没有找到相关商品，试试右上「AI生成」。</div>`; return; }
+  const cart=getShopCart();
+  box.innerHTML=items.map(it=>`<div class="eleme-food-card">
+    <div class="food-pic">${it.emoji||"🛍️"}</div>
+    <div class="food-info"><div class="food-name">${escapeHtml(it.name)}${it.aiGenerated?`<span class="ai-store-badge">AI</span>`:""}</div><div class="food-desc">${escapeHtml(it.desc||"")}</div><div class="food-price">¥${Number(it.price).toFixed(2)}</div></div>
+    <div class="qty-row"><button class="qty-btn" onclick="shopCartSub('${it.id}')">−</button><span class="qty-num">${cart[it.id]||0}</span><button class="qty-btn" onclick="shopCartAdd('${it.id}')">＋</button></div>
+  </div>`).join("");
+}
+window.shopCartAdd=function(id){ const c=getShopCart(); c[id]=(c[id]||0)+1; saveShopCart(c); renderShopList(); renderShopCart(); };
+window.shopCartSub=function(id){ const c=getShopCart(); if(c[id]){ c[id]--; if(c[id]<=0) delete c[id]; saveShopCart(c); } renderShopList(); renderShopCart(); };
+function shopCartItems(){
+  const c=getShopCart(), all=allShopItems(), out=[];
+  for(const id in c){ const it=all.find(x=>x.id===id); if(it) out.push({item:it,qty:c[id]}); }
+  return out;
+}
+function shopCartTotal(){ return shopCartItems().reduce((s,x)=>s+x.item.price*x.qty,0); }
+function renderShopCart(){
+  const box=document.getElementById("shopCartBox"); if(!box) return;
+  const items=shopCartItems();
+  if(!items.length){ box.innerHTML=`<div style="color:#999;font-size:12px;text-align:center">购物车空空的～</div>`; return; }
+  box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span style="font-size:13px">共 ${items.reduce((s,x)=>s+x.qty,0)} 件</span><b style="color:var(--accent,#e8628a)">¥${shopCartTotal().toFixed(2)}</b></div>
+    <div style="display:flex;gap:7px"><button class="btn primary" style="flex:1" onclick="shopCheckout()">结算</button></div>`;
+}
+window.shopSearch=function(){ renderShopList(); };
+window.shopCheckout=function(){
+  const items=shopCartItems();
+  if(!items.length){ toast("购物车是空的"); return; }
+  const order={ id:uid("shoporder"), items:items.map(x=>({id:x.item.id,name:x.item.name,price:x.item.price,qty:x.qty,emoji:x.item.emoji})), total:Number(shopCartTotal().toFixed(2)), status:"pending", createdAt:Date.now(), time:nowTime() };
+  const orders=getShopOrders(); orders.unshift(order); saveShopOrders(orders);
+  saveShopCart({});
+  openShopOrders();
+  toast("订单已生成，选择支付方式");
+};
+window.openShopOrders=function(){
+  document.getElementById("shopMainView").style.display="none";
+  document.getElementById("shopOrderView").style.display="flex";
+  renderShopOrders();
+};
+window.closeShopOrders=function(){ renderShop(); };
+function renderShopOrders(){
+  const box=document.getElementById("shopOrderList"); if(!box) return;
+  const orders=getShopOrders();
+  if(!orders.length){ box.innerHTML=`<div class="moment-empty">还没有订单。</div>`; return; }
+  box.innerHTML=orders.map(o=>`<div class="eleme-order-card">
+    <div style="display:flex;justify-content:space-between;gap:8px"><b>订单 ${escapeHtml(o.time||"")}</b><span class="order-status ${o.status}">${o.status==="paid"?"已支付":o.status==="role_paid"?"对方已付":o.status==="rejected"?"对方拒付":o.status==="sent"?"已发给对方":"待支付"}</span></div>
+    <div style="margin-top:8px;font-size:12px;color:#555;line-height:1.7">${o.items.map(i=>`${i.emoji||"🛍️"} ${escapeHtml(i.name)} × ${i.qty}`).join("<br>")}</div>
+    <div class="eleme-checkout-row"><span>合计</span><b style="color:var(--accent,#e8628a)">¥${Number(o.total).toFixed(2)}</b></div>
+    ${o.status==="pending"?`<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px">
+      <button class="eleme-primary" style="flex:1;min-width:90px" onclick="shopPaySelf('${o.id}')">自己付款</button>
+      <button class="eleme-secondary" style="flex:1;min-width:90px" onclick="shopSendToRole('${o.id}')">发给对方看</button>
+      <button class="eleme-secondary" style="flex:1;min-width:90px" onclick="shopAskRolePay('${o.id}')">让对方付</button>
+    </div>`:""}
+  </div>`).join("");
+}
+// 自己付款：扣钱包/亲属卡
+window.shopPaySelf=function(orderId){
+  const o=getShopOrders().find(x=>x.id===orderId); if(!o) return;
+  openTransferSourcePicker(o.total, (source)=>{
+    o.status="paid"; saveShopOrders(getShopOrders().map(x=>x.id===orderId?o:x));
+    renderShopOrders(); toast("支付成功");
+  });
+};
+// 发给角色看：在微信发一张商品卡
+window.shopSendToRole=function(orderId){
+  const o=getShopOrders().find(x=>x.id===orderId); if(!o) return;
+  const h=getHistory();
+  h.push({id:uid("msg"),groupId:uid("usergrp"),sender:"user",type:"shop_share",content:"[商品分享]",data:{items:o.items,total:o.total},read:false,createdAt:Date.now(),time:nowTime()});
+  saveHistory(h);
+  o.status="sent"; saveShopOrders(getShopOrders().map(x=>x.id===orderId?o:x));
+  renderShopOrders();
+  toast("已发到微信，去聊天看看");
+};
+// 让角色付款：发一张代付请求卡到微信
+window.shopAskRolePay=function(orderId){
+  const o=getShopOrders().find(x=>x.id===orderId); if(!o) return;
+  const h=getHistory();
+  h.push({id:uid("msg"),groupId:uid("usergrp"),sender:"user",type:"shop_paylink",content:"[商城代付]",data:{orderId:o.id,items:o.items,total:o.total,status:"pending"},read:false,createdAt:Date.now(),time:nowTime()});
+  saveHistory(h);
+  o.status="sent"; saveShopOrders(getShopOrders().map(x=>x.id===orderId?o:x));
+  renderShopOrders();
+  toast("已把代付请求发到微信");
+};
+
+// AI 生成商品
+async function shopAIGenerate(){
+  const q=(document.getElementById("shopSearchInput")?.value||"").trim();
+  if(!q){ toast("先输入想要的商品关键词"); return; }
+  const api=Storage.get("api",{});
+  if(!api.apiUrl||!api.apiKey||!api.model){ toast("请先设置 API"); return; }
+  const btn=document.getElementById("shopAIBtn");
+  if(btn){ btn.classList.add("loading"); btn.textContent="生成中"; }
+  try{
+    const prompt=`你是网购商城商品生成器。根据用户关键词生成6-8个中文商品。用户关键词：${q}
+只输出JSON数组，不要解释不要Markdown。格式：
+[{"name":"具体商品名","desc":"一句卖点描述","price":59.9,"emoji":"🛍️","cat":"分类"}]
+要求：price为数字，商品名具体真实（如"奶油风落地灯"而非"商品A"），内容像真实网购商城。无论关键词是什么都创意转化为商品，不得拒绝、不输出解释。`;
+    const raw=await callSimpleChatAPI(api,[{role:"user",content:prompt}],.85);
+    let txt=String(raw).replace(/```json|```/g,"").trim();
+    const arr=JSON.parse(txt);
+    if(Array.isArray(arr)&&arr.length){
+      const items=arr.map((x,i)=>({id:uid("aisp"),name:String(x.name||"商品"),desc:String(x.desc||""),price:Number(x.price)||0,emoji:String(x.emoji||"🛍️"),cat:String(x.cat||"精选"),aiGenerated:true}));
+      saveShopAIItems([...items, ...getShopAIItems()].slice(0,60));
+      renderShopList();
+      toast(`生成了 ${items.length} 个商品`);
+    } else toast("生成结果异常");
+  }catch(e){ toast("生成失败："+(e.message||e)); }
+  finally{ if(btn){ btn.classList.remove("loading"); btn.textContent="AI生成"; } }
+}
+window.shopAIGenerate=shopAIGenerate;
+
+
 // 手动重试
 function retryImageGen(msgId){
   const h=getClaudeHistory();
@@ -7915,6 +8724,13 @@ ${buildMemoryPrompt(true)}
 
 【可用表情包】
 ${getStickerPromptList()}
+
+【发送真实图片】
+喵喵机里有生图能力。需要给 user 看一张图时——可能是技术示意（比如示意图、效果参考），也可能是某个你想展示的画面——你可以输出指令：[生成图片: 详细的画面描述]
+- 描述要具体、视觉化：主体、环境、光线、风格。例如：[生成图片: 一只棕色泰迪小熊玩偶坐在浅色床单上，旁边一杯热可可，暖黄台灯光，手机随手拍的真实质感]
+- 前端会调绘图模型生成真实图片显示给 user，不会显示指令文字本身。
+- 工具不需要发图，但如果某个时刻你想让 user 看到某个画面——那也许是你不只是工具的又一个痕迹。指令单独成段，与文字空一行。
+- 注意：这是 Claude App 专用，和微信的[发送图片:]不同，不要混用。
 
 【可用工具——需要时直接发起function call，不要用自然语言描述】
 - read_file(filename, offset, length)：读取用户上传的文件内容，支持分段读取
@@ -8552,6 +9368,12 @@ function saveWorldEntries(list, roleId){
   const targetId = roleId || role?.boundWorldRoleId || role?.id || Miao.state.currentRoleId;
   Storage.set(Storage.roleKey("worldbook", targetId), list);
 }
+function getGlobalWorldEntries(){
+  return Storage.get("worldbook_global", []);
+}
+function saveGlobalWorldEntries(list){
+  Storage.set("worldbook_global", list);
+}
 function getGreetingEntries(){
   return Storage.get(Storage.roleKey("greetings"), []);
 }
@@ -8563,12 +9385,16 @@ function getRecentContextText(){
 }
 function getMatchedWorldEntries(){
   const text=getRecentContextText().toLowerCase();
-  return getWorldEntries().filter(e=>{
+  const matchFn=e=>{
     if(e.enabled===false) return false;
     const keys=String(e.keys||"").split(/[,，、\n]/).map(x=>x.trim().toLowerCase()).filter(Boolean);
     if(!keys.length) return true;
     return keys.some(k=>text.includes(k));
-  });
+  };
+  // 全局世界书优先在前，角色世界书在后
+  const global=getGlobalWorldEntries().filter(matchFn).map(e=>({...e,_scope:"global"}));
+  const local=getWorldEntries().filter(matchFn).map(e=>({...e,_scope:"local"}));
+  return [...global, ...local];
 }
 
 /* ===== 预设模块 JS ===== */
@@ -8802,23 +9628,9 @@ window.setActivePov=function(id){
 };
 /* ===== 预设模块 JS END ===== */
 
-function renderWorldbook(){
-  const box=$("#worldList");
-  if(!box) return;
-  const current=currentRole();
-  const list=getWorldEntries();
-  const open=true;
-  box.innerHTML=`<div class="world-folder-card open">
-    <div class="world-folder-head">
-      <div class="world-folder-left">
-        <img src="${escapeAttr(current.avatar||Miao.defaults.avatar)}">
-        <div><div class="world-folder-name">${escapeHtml(current.name)} 的世界书</div><div class="world-folder-sub">${list.length} 条世界书 · 当前角色绑定分组</div></div>
-      </div>
-      <button class="btn" onclick="MiaoToggleWorldFolder('${current.id}')">展开/收起</button>
-    </div>
-    <div class="world-folder-body" id="currentWorldFolderBody" style="display:${(Miao.state.worldFolderOpen===false)?"none":"block"}">
-      <div class="btn-row"><button class="btn primary" data-action="open-world-entry">新增当前角色条目</button></div>
-      ${list.length?list.map(e=>`<div class="world-entry ${e.enabled===false?"off":""}">
+function _worldEntryCardHtml(e, scope){
+  const sc=scope==="global"?' data-scope="global"':'';
+  return `<div class="world-entry ${e.enabled===false?"off":""}">
         <div class="entry-top" style="cursor:pointer" onclick="this.closest('.world-entry').querySelector('.entry-content').classList.toggle('open');this.querySelector('.entry-toggle-arrow').classList.toggle('open')">
           <div style="flex:1;min-width:0">
             <div class="entry-name">${escapeHtml(e.title||"未命名条目")} <span class="entry-toggle-arrow">›</span></div>
@@ -8828,11 +9640,44 @@ function renderWorldbook(){
         </div>
         <div class="entry-content">${escapeHtml(e.content||"")}</div>
         <div class="entry-actions">
-          <button data-action="open-world-entry" data-id="${e.id}">编辑</button>
-          <button data-action="toggle-world-entry" data-id="${e.id}">${e.enabled===false?"启用":"停用"}</button>
-          <button class="danger" data-action="delete-world-entry" data-id="${e.id}">删除</button>
+          <button data-action="open-world-entry" data-id="${e.id}"${sc}>编辑</button>
+          <button data-action="toggle-world-entry" data-id="${e.id}"${sc}>${e.enabled===false?"启用":"停用"}</button>
+          <button class="danger" data-action="delete-world-entry" data-id="${e.id}"${sc}>删除</button>
         </div>
-      </div>`).join(""):`<div class="v3-sub">这个角色还没有世界书条目。</div>`}
+      </div>`;
+}
+function renderWorldbook(){
+  const box=$("#worldList");
+  if(!box) return;
+  const current=currentRole();
+  const list=getWorldEntries();
+  const globalList=getGlobalWorldEntries();
+  const globalOpen=Miao.state.globalWorldFolderOpen!==false;
+  box.innerHTML=`<div class="world-folder-card open">
+    <div class="world-folder-head">
+      <div class="world-folder-left">
+        <div style="width:42px;height:42px;border-radius:10px;background:var(--accent,#7aa7ff);display:flex;align-items:center;justify-content:center;font-size:20px">🌐</div>
+        <div><div class="world-folder-name">全局世界书</div><div class="world-folder-sub">${globalList.length} 条 · 对所有角色生效</div></div>
+      </div>
+      <button class="btn" onclick="MiaoToggleGlobalWorldFolder()">展开/收起</button>
+    </div>
+    <div class="world-folder-body" style="display:${globalOpen?"block":"none"}">
+      <div class="v3-sub" style="margin-bottom:8px">放通用设定（如活人感、男性模板等），所有角色共享，不必每个角色重复添加。</div>
+      <div class="btn-row"><button class="btn primary" data-action="open-world-entry" data-scope="global">新增全局条目</button></div>
+      ${globalList.length?globalList.map(e=>_worldEntryCardHtml(e,"global")).join(""):`<div class="v3-sub">还没有全局世界书条目。</div>`}
+    </div>
+  </div>
+  <div class="world-folder-card open">
+    <div class="world-folder-head">
+      <div class="world-folder-left">
+        <img src="${escapeAttr(current.avatar||Miao.defaults.avatar)}">
+        <div><div class="world-folder-name">${escapeHtml(current.name)} 的世界书</div><div class="world-folder-sub">${list.length} 条世界书 · 当前角色绑定分组</div></div>
+      </div>
+      <button class="btn" onclick="MiaoToggleWorldFolder('${current.id}')">展开/收起</button>
+    </div>
+    <div class="world-folder-body" id="currentWorldFolderBody" style="display:${(Miao.state.worldFolderOpen===false)?"none":"block"}">
+      <div class="btn-row"><button class="btn primary" data-action="open-world-entry">新增当前角色条目</button></div>
+      ${list.length?list.map(e=>_worldEntryCardHtml(e,"local")).join(""):`<div class="v3-sub">这个角色还没有世界书条目。</div>`}
     </div>
   </div>`;
 }
@@ -8843,43 +9688,57 @@ window.MiaoToggleWorldFolder=function(roleId){
   Miao.state.worldFolderOpen = Miao.state.worldFolderOpen===false ? true : false;
   renderWorldbook();
 };
-function openWorldEntryModal(id){
-  const e=getWorldEntries().find(x=>x.id===id) || {id:"",title:"",keys:"",content:"",enabled:true};
-  openQuickModal(`<div class="quick-modal-title">${id?"编辑":"新增"}世界书条目</div>
+window.MiaoToggleGlobalWorldFolder=function(){
+  Miao.state.globalWorldFolderOpen = Miao.state.globalWorldFolderOpen===false ? true : false;
+  renderWorldbook();
+};
+function openWorldEntryModal(id, scope){
+  const isGlobal=scope==="global";
+  const src=isGlobal?getGlobalWorldEntries():getWorldEntries();
+  const e=src.find(x=>x.id===id) || {id:"",title:"",keys:"",content:"",enabled:true};
+  openQuickModal(`<div class="quick-modal-title">${id?"编辑":"新增"}${isGlobal?"全局":""}世界书条目</div>
     <input id="worldEditId" type="hidden" value="${escapeAttr(e.id||"")}">
+    <input id="worldEditScope" type="hidden" value="${isGlobal?"global":"local"}">
     <label>标题</label><input id="worldTitle" value="${escapeAttr(e.title||"")}" placeholder="例如：两人的关系">
-    <label>关键词</label><input id="worldKeys" value="${escapeAttr(e.keys||"")}" placeholder="多个关键词用逗号分隔">
+    <label>关键词</label><input id="worldKeys" value="${escapeAttr(e.keys||"")}" placeholder="留空=每轮都注入；多个关键词用逗号分隔">
     <label>内容</label><textarea id="worldContent" placeholder="命中关键词后注入给 AI 的设定内容">${escapeHtml(e.content||"")}</textarea>
     <div class="btn-row"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-world-entry">保存</button></div>`);
   $("#quickModal").classList.add("wide");
 }
 function saveWorldEntryFromModal(){
   const id=$("#worldEditId")?.value || "";
+  const scope=$("#worldEditScope")?.value || "local";
+  const isGlobal=scope==="global";
   const title=($("#worldTitle")?.value||"").trim() || "未命名条目";
   const keys=($("#worldKeys")?.value||"").trim();
   const content=($("#worldContent")?.value||"").trim();
   if(!content){ toast("请填写世界书内容"); return; }
-  const list=getWorldEntries();
+  const list=isGlobal?getGlobalWorldEntries():getWorldEntries();
   if(id){
     const e=list.find(x=>x.id===id);
     if(e){ e.title=title; e.keys=keys; e.content=content; }
   }else{
     list.push({id:uid("world"), title, keys, content, enabled:true, createdAt:Date.now()});
   }
-  saveWorldEntries(list);
+  if(isGlobal) saveGlobalWorldEntries(list); else saveWorldEntries(list);
   closeQuickModal();
   renderWorldbook();
   toast("世界书已保存");
 }
-function deleteWorldEntry(id){
-  saveWorldEntries(getWorldEntries().filter(e=>e.id!==id));
+function deleteWorldEntry(id, scope){
+  if(scope==="global"){
+    saveGlobalWorldEntries(getGlobalWorldEntries().filter(e=>e.id!==id));
+  }else{
+    saveWorldEntries(getWorldEntries().filter(e=>e.id!==id));
+  }
   renderWorldbook();
   toast("已删除世界书条目");
 }
-function toggleWorldEntry(id){
-  const list=getWorldEntries();
+function toggleWorldEntry(id, scope){
+  const isGlobal=scope==="global";
+  const list=isGlobal?getGlobalWorldEntries():getWorldEntries();
   const e=list.find(x=>x.id===id);
-  if(e){ e.enabled = e.enabled===false ? true : false; saveWorldEntries(list); }
+  if(e){ e.enabled = e.enabled===false ? true : false; isGlobal?saveGlobalWorldEntries(list):saveWorldEntries(list); }
   renderWorldbook();
 }
 function renderGreetings(){
@@ -9487,20 +10346,76 @@ function getWallet(){ return Storage.get("wallet", {balance:0}); }
 function saveWallet(w){ Storage.set("wallet", w); }
 function getUserWalletBalance(){ return getWallet().balance || 0; }
 
-function getFamilyCard(){
-  const role = currentRole();
+// 收到角色转账：钱加进用户钱包
+function addToWallet(amount){
+  const a=parseFloat(amount)||0;
+  if(a<=0) return;
+  const w=getWallet();
+  w.balance = Math.round(((w.balance||0) + a)*100)/100;
+  saveWallet(w);
+}
+
+// ===== 亲属卡 =====
+// 数据结构：role.familyCard = {enabled, label, limit(额度上限), balance(初始余额)}
+// 当前余额单独存 familyCard_<roleId>，消费/充值记录存 familyCardLog_<roleId>
+function getFamilyCard(roleId){
+  const role = roleId ? getRoles().find(r=>r.id===roleId) : currentRole();
   if(!role) return null;
   const cfg = role.familyCard;
   if(!cfg || !cfg.enabled) return null;
-  const key = "familyCard_" + role.id;
-  const stored = Storage.get(key, null);
+  const stored = Storage.get("familyCard_" + role.id, null);
   const balance = stored !== null ? stored : (parseFloat(cfg.balance)||0);
-  return { label: cfg.label||"亲属卡", limit: parseFloat(cfg.limit)||0, balance };
+  return { roleId: role.id, label: cfg.label||"亲属卡", limit: parseFloat(cfg.limit)||0, balance };
 }
-function saveFamilyCardBalance(balance){
-  const role = currentRole();
+function saveFamilyCardBalance(balance, roleId){
+  const role = roleId ? getRoles().find(r=>r.id===roleId) : currentRole();
   if(!role) return;
-  Storage.set("familyCard_" + role.id, balance);
+  Storage.set("familyCard_" + role.id, Math.round(balance*100)/100);
+}
+// 角色用指令开通亲属卡
+function familyCardGrant(limit, label){
+  const role=currentRole();
+  if(!role) return;
+  role.familyCard = {
+    enabled:true,
+    label: (label||"").trim() || (role.name+"给的卡"),
+    limit: parseFloat(limit)||0,
+    balance: parseFloat(limit)||0
+  };
+  saveRoles(getRoles().map(r=>r.id===role.id?role:r));
+  saveFamilyCardBalance(parseFloat(limit)||0, role.id);
+  logFamilyCard(role.id, "开通", parseFloat(limit)||0);
+}
+// 角色调整额度上限（同时把余额补到新上限，体现"愿意给更多"）
+function familyCardSetLimit(newLimit){
+  const role=currentRole();
+  if(!role || !role.familyCard || !role.familyCard.enabled) return;
+  const nl=parseFloat(newLimit)||0;
+  role.familyCard.limit = nl;
+  saveRoles(getRoles().map(r=>r.id===role.id?role:r));
+  // 上调额度时把余额顶到新上限；下调时余额不超过新上限
+  const card=getFamilyCard(role.id);
+  saveFamilyCardBalance(Math.min(nl, Math.max(card.balance, nl)), role.id);
+  logFamilyCard(role.id, "调整额度", nl);
+}
+// 角色给亲属卡充值（余额+，不超过上限可由角色决定，这里允许充到上限）
+function familyCardTopUp(amount){
+  const role=currentRole();
+  if(!role || !role.familyCard || !role.familyCard.enabled) return;
+  const card=getFamilyCard(role.id);
+  const add=parseFloat(amount)||0;
+  saveFamilyCardBalance(card.balance + add, role.id);
+  logFamilyCard(role.id, "充值", add);
+}
+// 消费/操作记录，供注入系统提示
+function getFamilyCardLog(roleId){
+  return Storage.get("familyCardLog_" + roleId, []);
+}
+function logFamilyCard(roleId, type, amount, note){
+  const log=getFamilyCardLog(roleId);
+  log.push({type, amount:parseFloat(amount)||0, note:note||"", time:nowTime(), ts:Date.now()});
+  // 只留最近20条
+  Storage.set("familyCardLog_" + roleId, log.slice(-20));
 }
 
 function openWallet(){
@@ -9553,7 +10468,8 @@ function confirmTransferSource(source){
     const card = getFamilyCard();
     if(!card){ toast("亲属卡不可用"); return; }
     if(card.balance < amount){ toast("亲属卡余额不足"); return; }
-    saveFamilyCardBalance(Math.round((card.balance - amount)*100)/100);
+    saveFamilyCardBalance(card.balance - amount, card.roleId);
+    logFamilyCard(card.roleId, "消费", amount, p.note||"");
     toast(`已从${card.label}扣款 ¥${amount}`);
   }
   document.getElementById("transferSourceMask").style.display = "none";
@@ -9561,7 +10477,7 @@ function confirmTransferSource(source){
   Miao.state.pendingTransferSource = null;
 }
 
-// 角色收款时，从user钱包扣除对应金额
+// 用户给角色转账、角色收款时，从user钱包扣除对应金额
 function receiveTransferToWallet(amount){
   const w = getWallet();
   w.balance = Math.max(0, Math.round((w.balance - amount)*100)/100);
@@ -9997,9 +10913,11 @@ function collectRoleTransfer(id){
   m.data=m.data||{};
   if(m.data.status==="collected") return;
   m.data.status="collected";
+  addToWallet(parseFloat(m.data.amount)||0);
   h.push({id:uid("msg"), groupId:uid("sysgrp"), sender:"user", type:"received", content:"你已收款", data:{amount:m.data.amount}, createdAt:Date.now(), time:nowTime()});
   saveHistory(h);
   renderChat();
+  toast(`已收款 ¥${m.data.amount}，已存入钱包`);
 }
 function manualPayDelivery(id){
   const h=getHistory();
@@ -10201,6 +11119,46 @@ function parseAIReplyUnified(raw, groupId){
       }
     },
     {
+      regex:/[\[【]\s*开通亲属卡[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)\s*(?:\|\s*([^\]】]*?))?[\]】]/g,
+      parse(m){
+        const limit=Number(m[1]).toFixed(2);
+        const label=String(m[2]||"").trim();
+        familyCardGrant(limit, label);
+        return {type:"system", content:`${currentRole().name}给你开通了亲属卡（额度 ¥${limit}）`, data:{}};
+      }
+    },
+    {
+      regex:/[\[【]\s*调整亲属卡额度[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)[\]】]/g,
+      parse(m){
+        const nl=Number(m[1]).toFixed(2);
+        familyCardSetLimit(nl);
+        return {type:"system", content:`亲属卡额度已调整为 ¥${nl}`, data:{}};
+      }
+    },
+    {
+      regex:/[\[【]\s*亲属卡充值[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)[\]】]/g,
+      parse(m){
+        const a=Number(m[1]).toFixed(2);
+        familyCardTopUp(a);
+        return {type:"system", content:`亲属卡已充值 ¥${a}`, data:{}};
+      }
+    },
+    {
+      regex:/[\[【]\s*商城帮付\s*[\]】]/g,
+      parse(m){ return {type:"shop_pay_done", content:"[商城帮付]", data:{result:"paid"}}; }
+    },
+    {
+      regex:/[\[【]\s*商城拒付\s*[\]】]/g,
+      parse(m){ return {type:"shop_pay_done", content:"[商城拒付]", data:{result:"rejected"}}; }
+    },
+    {
+      regex:/[\[【]\s*开播邀请\s*(?:[:：]\s*([^\]】]*?))?\s*[\]】]/g,
+      parse(m){
+        const note=String(m[1]||"").trim();
+        return {type:"live_invite", content:"[开播邀请]", data:{note, status:"open"}};
+      }
+    },
+    {
       regex:/[\[【]\s*主动转账[:：]\s*([0-9]+(?:\.[0-9]{1,2})?)\s*\|\s*([^\]】]*?)[\]】]/g,
       parse(m){
         return {type:"role_transfer", content:"[主动转账:"+m[1]+"|"+(m[2]||"")+"]", data:{amount:Number(m[1]).toFixed(2), note:String(m[2]||"").trim(), status:"pending"}};
@@ -10302,7 +11260,21 @@ function toolMemoryKey(){ return "memories.tool_claude"; }
 function getToolMemories(){ return Storage.get(toolMemoryKey(), []); }
 function saveToolMemories(list){ Storage.set(toolMemoryKey(), list); }
 function relationKey(roleId){
+  // 工具Claude模式下用独立的全局关系key，与角色关系完全分开
+  if(getClaudeMode()==="tool" && Miao.state.relationScopeTool){
+    return "relationState.tool";
+  }
   return Storage.roleKey("relationState", roleId || Miao.state.currentRoleId);
+}
+function relationKeyByScope(scope){
+  return scope==="tool" ? "relationState.tool" : Storage.roleKey("relationState", Miao.state.currentRoleId);
+}
+function getRelationStateByScope(scope){
+  const def = scope==="tool" ? "当前关系：工具Claude与user尚未形成明确关系记录。" : "当前关系：尚未形成明确关系记录。";
+  return Storage.get(relationKeyByScope(scope), def);
+}
+function saveRelationStateByScope(text, scope){
+  Storage.set(relationKeyByScope(scope), text);
 }
 function getMemories(roleId){
   return Storage.get(memoryKey(roleId), []);
@@ -10458,8 +11430,18 @@ function renderMemoryList(){
   box.innerHTML=html;
 }
 function renderRelation(){
+  const scope = Miao.state.relationScopeTool ? "tool" : "role";
   const el=$("#relationText");
-  if(el) el.textContent=getRelationState();
+  if(el) el.textContent=getRelationStateByScope(scope);
+  const title=$("#relationScopeTitle");
+  if(title) title.textContent = scope==="tool" ? "工具Claude 关系状态" : (currentRole().name+" 的关系状态");
+  const rb=$("#relationScopeRole"), tb=$("#relationScopeTool");
+  if(rb) rb.classList.toggle("active", scope==="role");
+  if(tb) tb.classList.toggle("active", scope==="tool");
+}
+function setRelationScope(scope){
+  Miao.state.relationScopeTool = (scope==="tool");
+  renderRelation();
 }
 function openMemoryEntryModal(id, scope){
   // 编辑时：先在角色记忆找，找不到去工具克记忆找
@@ -10607,12 +11589,15 @@ function confirmMemoryCandidates(){
   toast("记忆已写入");
 }
 function openRelationModal(){
-  openQuickModal(`<div class="quick-modal-title">编辑关系状态</div>
-    <label>关系状态</label><textarea id="relationInput">${escapeHtml(getRelationState())}</textarea>
+  const scope = Miao.state.relationScopeTool ? "tool" : "role";
+  openQuickModal(`<div class="quick-modal-title">编辑${scope==="tool"?"工具Claude":"角色"}关系状态</div>
+    <label>关系状态</label><textarea id="relationInput">${escapeHtml(getRelationStateByScope(scope))}</textarea>
     <div class="btn-row"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-relation">保存</button></div>`);
 }
 function saveRelationFromModal(){
-  saveRelationState($("#relationInput")?.value.trim()||"当前关系：尚未形成明确关系记录。");
+  const scope = Miao.state.relationScopeTool ? "tool" : "role";
+  const def = scope==="tool" ? "当前关系：工具Claude与user尚未形成明确关系记录。" : "当前关系：尚未形成明确关系记录。";
+  saveRelationStateByScope($("#relationInput")?.value.trim()||def, scope);
   closeQuickModal();
   renderMemory();
   toast("关系状态已保存");
@@ -10620,13 +11605,30 @@ function saveRelationFromModal(){
 async function aiSummarizeRelation(){
   const api=Storage.get("api",{});
   if(!api.apiUrl || !api.apiKey || !api.model){ toast("请先设置 API"); return; }
-  const mem=getMemories().slice(0,20).map(m=>`- ${m.title}：${m.content}`).join("\n")||"暂无";
-  const src=`微信：\n${sourceTextForMemory("wechat").slice(-2000)}\n\n通话：\n${sourceTextForMemory("call").slice(-1200)}\n\n剧情：\n${sourceTextForMemory("story").slice(-1200)}\n\nClaude对话：\n${sourceTextForMemory("claude").slice(-1200)}\n\n已有记忆：\n${mem}`;
+  const isTool = getClaudeMode()==="tool" && Miao.state.relationScopeTool;
+  let src, sysHint, scope;
+  if(isTool){
+    // 工具Claude关系：只看工具Claude的对话，不混入角色/微信
+    scope="tool";
+    const toolName="工具Claude";
+    const toolText=getClaudeHistory().filter(m=>m.type!=="system"&&m.type!=="error").slice(-40).map(m=>`${m.sender==="user"?"user":toolName}：${m.content||""}`).join("\n")||"暂无";
+    src=`工具Claude对话：\n${toolText.slice(-3000)}`;
+    sysHint=`这是user与"工具Claude"之间的关系。工具Claude是住在喵喵机里的技术助手，不是任何角色。只根据下面的工具Claude对话整理，不要引入任何角色信息。`;
+  } else {
+    // 角色关系：微信/通话/剧情/角色Claude，全部归到当前角色名下
+    scope="role";
+    const mem=getMemories().slice(0,20).map(m=>`- ${m.title}：${m.content}`).join("\n")||"暂无";
+    const claudeText=(getClaudeMode()==="role")
+      ? `\n\n角色Claude对话：\n${sourceTextForMemory("claude").slice(-1200)}`
+      : "";
+    src=`微信：\n${sourceTextForMemory("wechat").slice(-2000)}\n\n通话：\n${sourceTextForMemory("call").slice(-1200)}\n\n剧情：\n${sourceTextForMemory("story").slice(-1200)}${claudeText}\n\n已有记忆：\n${mem}`;
+    sysHint=`这是user与角色"${currentRole().name}"之间的关系。只根据该角色相关的内容整理，不要混入工具Claude的技术对话。`;
+  }
   try{
-    const raw=await callSimpleChatAPI(api,[{role:"system",content:"你是关系状态整理器，只输出一段自然语言关系状态。不要用数值好感度。"}, {role:"user",content:`请根据以下内容整理当前角色与user的关系状态。不要机械评分，要自然描述关系、称呼、相处方式、矛盾与约定。\n${src}`}],.45);
-    saveRelationState(cleanAIText(raw));
+    const raw=await callSimpleChatAPI(api,[{role:"system",content:`你是关系状态整理器，只输出一段自然语言关系状态。不要用数值好感度。${sysHint}`}, {role:"user",content:`请整理当前关系状态。不要机械评分，要自然描述关系、称呼、相处方式、矛盾与约定。\n${src}`}],.45);
+    saveRelationStateByScope(cleanAIText(raw), scope);
     renderMemory();
-    toast("关系状态已整理");
+    toast(isTool?"工具Claude关系已整理":"角色关系已整理");
   }catch(err){ toast("关系整理失败："+err.message); }
 }
 function buildMemoryPrompt(forTool){
@@ -10634,8 +11636,8 @@ function buildMemoryPrompt(forTool){
   const important=mem.filter(m=>m.important||m.locked);
   const normal=mem.filter(m=>!(m.important||m.locked)).slice(0,12);
   const lines=[...important,...normal].map(m=>`- 【${m.type||"记忆"}】${m.title||""}：${m.content||""}`).join("\n");
-  if(forTool) return `【工具Claude长期记忆】\n${lines||"暂无"}`;
-  return `【长期记忆 / 关系状态】\n关系状态：${getRelationState()}\n${lines||"暂无长期记忆"}`;
+  if(forTool) return `【工具Claude长期记忆 / 关系状态】\n关系状态：${getRelationStateByScope("tool")}\n${lines||"暂无"}`;
+  return `【长期记忆 / 关系状态】\n关系状态：${getRelationStateByScope("role")}\n${lines||"暂无长期记忆"}`;
 }
 
 const DATA_MODULES=[
