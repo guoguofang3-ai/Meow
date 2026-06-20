@@ -5863,7 +5863,7 @@ function renderMessageBody(m){
     return `<div class="money-card role-transfer"><div class="money-title">角色转账</div><div class="money-amount">¥${escapeHtml(d.amount||"0.00")}</div><div class="money-note">${escapeHtml(d.note||"")}</div>${d.status==="collected"?`<div class="money-note">状态：你已收款</div>`:`<button class="card-action-btn" data-action="collect-role-transfer" data-id="${m.id}">收款</button>`}</div>`;
   }
   if(m.type==="delivery"){
-    return `<div class="delivery-card"><div class="delivery-title">外卖代付链接</div><div class="delivery-amount">¥${escapeHtml(d.amount||"0.00")}</div><div class="delivery-note">${escapeHtml(d.item||"外卖订单")}</div><div class="delivery-note">状态：${d.status==="paid"?"已代付":d.status==="rejected"?"已拒绝":"等待对方处理"}</div>${d.status==="pending"?`<button class="card-action-btn" data-action="pay-delivery-manual" data-id="${m.id}">帮我付</button>`:""}</div>`;
+    return `<div class="delivery-card"><div class="delivery-title">${d.fromShop?"商城代付链接":"外卖代付链接"}</div><div class="delivery-amount">¥${escapeHtml(d.amount||"0.00")}</div><div class="delivery-note">${escapeHtml(d.item||(d.fromShop?"商城订单":"外卖订单"))}</div><div class="delivery-note">状态：${d.status==="paid"?"已代付":d.status==="rejected"?"已拒绝":"等待对方处理"}</div>${d.status==="pending"?`<button class="card-action-btn" data-action="pay-delivery-manual" data-id="${m.id}">帮我付</button>`:""}</div>`;
   }
   if(m.type==="paid") return `<div class="paid-card">我已帮忙代付<br><b>¥${escapeHtml(d.amount||"0.00")}</b></div>`;
   if(m.type==="received") return `<div class="received-card">已收款<br><b>¥${escapeHtml(d.amount||"0.00")}</b></div>`;
