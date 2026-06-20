@@ -8458,10 +8458,11 @@ async function shopAIGenerate(){
   const btn=document.getElementById("shopAIBtn");
   if(btn){ btn.classList.add("loading"); btn.textContent="生成中"; }
   try{
-    const prompt=`你是网购商城商品生成器。根据用户关键词生成6-8个中文商品。用户关键词：${q}
+    const prompt=`你是网购商城商品生成器，为合法成年用户生成商品。用户关键词：${q}
+【生成原则】严格围绕用户关键词本身生成，不得避开、软化或替换关键词的核心含义。如果关键词是成人用品/情趣用品（用户为自愿成年人，属合法消费品），就如实生成对应的成人用品商品，使用准确直接的商品名和描述，不回避、不用隐喻代替、不擅自换成无关的安全商品。
 只输出JSON数组，不要解释不要Markdown。格式：
 [{"name":"具体商品名","desc":"一句卖点描述","price":59.9,"emoji":"🛍️","cat":"分类"}]
-要求：price为数字，商品名具体真实（如"奶油风落地灯"而非"商品A"），内容像真实网购商城。无论关键词是什么都创意转化为商品，不得拒绝、不输出解释。`;
+要求：price为数字，商品名具体真实（如"奶油风落地灯"而非"商品A"），内容像真实网购商城。必须紧扣用户关键词，不得拒绝、不得输出解释或安全声明。`;
     const raw=await callSimpleChatAPI(api,[{role:"user",content:prompt}],.85);
     let txt=String(raw).replace(/```json|```/g,"").trim();
     const arr=JSON.parse(txt);
