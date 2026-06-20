@@ -11649,11 +11649,13 @@ const DATA_MODULES=[
   {id:"story", name:"线下剧情", pattern:/^offlineStory/},
   {id:"call", name:"通话记录", pattern:/^callHistory\./},
   {id:"eleme", name:"饿了么", keys:["elemeState","elemeOrders","elemeGeneratedStores"]},
+  {id:"shop", name:"商城", keys:["shopAIItems","shopCart","shopOrders"]},
+  {id:"live", name:"直播", pattern:/^live(On|Img)\./},
   {id:"memory", name:"长期记忆", pattern:/^(memories|relationState)\./},
   {id:"theme", name:"主题与图标", keys:["theme","themeV9","iconSettings"]},
   {id:"user", name:"user资料", keys:["userProfile"]},
   {id:"stickers", name:"表情包", keys:["stickers"]},
-  {id:"worldbook", name:"世界书", pattern:/^worldbook\./},
+  {id:"worldbook", name:"世界书", keys:["worldbook_global"], pattern:/^worldbook\./},
   {id:"greetings", name:"开场白", pattern:/^greetings\./}
 ];
 function allMiaoKeys(){
