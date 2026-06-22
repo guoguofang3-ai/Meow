@@ -2375,30 +2375,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
 .acc-btn.on{background:#7bc97b;color:#fff}
 
 
-/* ===== 输入框跳舞像素 Clawd ===== */
-.composer-wrap,.claude-composer-wrap{position:relative;overflow:visible}
-.input-clawd{position:absolute;left:18px;bottom:58px;width:82px;height:54px;z-index:120;pointer-events:none;transform-origin:50% 100%;animation:clawdDance 1.05s steps(2,end) infinite;image-rendering:pixelated}
-.input-clawd .clawd-shadow{position:absolute;left:18px;bottom:2px;width:42px;height:5px;background:#8b8177;opacity:.42;transform:skewX(-10deg);animation:clawdShadow 1.05s steps(2,end) infinite}
-.input-clawd .clawd-body{position:absolute;left:22px;bottom:11px;width:39px;height:25px;background:#ee886d;border-radius:0;box-shadow:-8px 8px 0 #ee886d,8px 8px 0 #ee886d,-13px 13px 0 #ee886d,13px 13px 0 #ee886d}
-.input-clawd .clawd-body:before,.input-clawd .clawd-body:after{content:"";position:absolute;top:7px;width:5px;height:9px;background:#161616}
-.input-clawd .clawd-body:before{left:9px}.input-clawd .clawd-body:after{right:9px}
-.input-clawd .clawd-leg{position:absolute;bottom:7px;width:5px;height:10px;background:#ee886d}
-.input-clawd .l1{left:26px}.input-clawd .l2{left:38px}.input-clawd .l3{right:31px}.input-clawd .l4{right:20px}
-.input-clawd .clawd-arm{position:absolute;bottom:21px;width:15px;height:9px;background:#ee886d}
-.input-clawd .clawd-arm.left{left:8px;transform:rotate(-18deg);animation:clawdLeftArm 1.05s steps(2,end) infinite}
-.input-clawd .clawd-arm.right{right:7px;transform:rotate(22deg);animation:clawdRightArm 1.05s steps(2,end) infinite}
-.input-clawd .clawd-spark{position:absolute;right:3px;top:8px;width:6px;height:6px;background:#ffd92e;box-shadow:0 8px 0 #ffd92e,8px 8px 0 #ffd92e,8px 0 0 #ffd92e;animation:clawdSpark 1.05s steps(2,end) infinite}
-.input-clawd .clawd-bubble{position:absolute;left:3px;top:0;width:20px;height:16px;background:#fff;box-shadow:4px 0 0 #fff,8px 0 0 #fff,0 4px 0 #fff,4px 4px 0 #fff,8px 4px 0 #fff,12px 4px 0 #fff,4px 8px 0 #fff,8px 8px 0 #fff,12px 8px 0 #fff,16px 12px 0 #fff;opacity:.9;transform:scale(.75)}
-.input-clawd .clawd-bubble i{position:absolute;left:5px;top:6px;width:3px;height:3px;background:#1687ff;box-shadow:7px 0 0 #1687ff,14px 0 0 #1687ff}
-.composer-wrap.clawd-typing .input-clawd{animation-duration:.52s}.composer-wrap.clawd-typing .clawd-bubble{opacity:1}
-@keyframes clawdDance{0%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}100%{transform:translateY(0) rotate(-2deg)}}
-@keyframes clawdShadow{0%,100%{transform:scaleX(1) skewX(-10deg);opacity:.42}50%{transform:scaleX(.78) skewX(-10deg);opacity:.28}}
-@keyframes clawdLeftArm{0%,100%{transform:rotate(-18deg) translateY(0)}50%{transform:rotate(15deg) translateY(-6px)}}
-@keyframes clawdRightArm{0%,100%{transform:rotate(22deg) translateY(-4px)}50%{transform:rotate(-14deg) translateY(2px)}}
-@keyframes clawdSpark{0%,100%{opacity:.25;transform:translateY(2px) scale(.8)}50%{opacity:1;transform:translateY(-2px) scale(1)}}
-
-
-/* ===== Clawd v2：按参考图一比一像素格，还原小巧跑动版 ===== */
+/* ===== Clawd v2：工具栏顶部小巧跑动像素版 ===== */
 .composer-wrap,.claude-composer-wrap{position:relative!important;overflow:visible!important}
 .input-clawd.pixel-clawd-real{
   --px:3px;
@@ -2415,71 +2392,15 @@ body.multiselect-mode .msg{ cursor:pointer; }
   animation:clawdRunTop 8.5s linear infinite alternate!important;
   filter:drop-shadow(0 2px 2px rgba(0,0,0,.18));
 }
-.input-clawd.pixel-clawd-real .clawd-sprite{
-  position:absolute;
-  left:0;top:0;
-  width:calc(var(--px) * 15);
-  height:calc(var(--px) * 9);
-  animation:clawdTinyDance .48s steps(2,end) infinite;
-}
-.input-clawd.pixel-clawd-real .clawd-cell{
-  position:absolute;
-  width:var(--px);
-  height:var(--px);
-  image-rendering:pixelated;
-}
-.input-clawd.pixel-clawd-real .clawd-mouth{
-  position:absolute;
-  left:calc(var(--px) * 5);
-  top:calc(var(--px) * 6);
-  width:calc(var(--px) * 5);
-  height:var(--px);
-  background:#77706b;
-  opacity:.42;
-}
-.input-clawd.pixel-clawd-real .clawd-pop{
-  position:absolute;
-  left:calc(var(--px) * 1);
-  top:calc(var(--px) * -2);
-  width:calc(var(--px) * 4);
-  height:calc(var(--px) * 3);
-  opacity:.92;
-  transform:scale(.72);
-}
-.input-clawd.pixel-clawd-real .clawd-pop i{
-  position:absolute;
-  width:var(--px);
-  height:var(--px);
-  background:#fff;
-  box-shadow:
-    var(--px) 0 0 #fff,
-    calc(var(--px) * 2) 0 0 #fff,
-    0 var(--px) 0 #fff,
-    var(--px) var(--px) 0 #fff,
-    calc(var(--px) * 2) var(--px) 0 #fff,
-    calc(var(--px) * 3) var(--px) 0 #fff,
-    var(--px) calc(var(--px) * 2) 0 #fff,
-    calc(var(--px) * 2) calc(var(--px) * 2) 0 #fff,
-    calc(var(--px) * 3) calc(var(--px) * 3) 0 #fff;
-}
-.input-clawd.pixel-clawd-real .clawd-pop i:after{
-  content:"";
-  position:absolute;
-  left:var(--px);top:var(--px);
-  width:var(--px);height:var(--px);
-  background:#1687ff;
-  box-shadow:calc(var(--px) * 2) 0 0 #1687ff, calc(var(--px) * 4) 0 0 #1687ff;
-}
-.composer-wrap.clawd-typing .input-clawd.pixel-clawd-real,
-.claude-composer-wrap.clawd-typing .input-clawd.pixel-clawd-real{animation-duration:4.2s!important}
-@keyframes clawdRunTop{
-  from{transform:translateX(8px)}
-  to{transform:translateX(calc(min(430px,100vw) - 68px))}
-}
-@keyframes clawdTinyDance{
-  0%,100%{transform:translateY(0) scaleX(1)}
-  50%{transform:translateY(-3px) scaleX(.98)}
-}
+.input-clawd.pixel-clawd-real .clawd-sprite{position:absolute;left:0;top:0;width:calc(var(--px) * 15);height:calc(var(--px) * 9);animation:clawdTinyDance .48s steps(2,end) infinite}
+.input-clawd.pixel-clawd-real .clawd-cell{position:absolute;width:var(--px);height:var(--px);image-rendering:pixelated}
+.input-clawd.pixel-clawd-real .clawd-mouth{position:absolute;left:calc(var(--px) * 5);top:calc(var(--px) * 6);width:calc(var(--px) * 5);height:var(--px);background:#77706b;opacity:.42}
+.input-clawd.pixel-clawd-real .clawd-pop{position:absolute;left:calc(var(--px) * 1);top:calc(var(--px) * -2);width:calc(var(--px) * 4);height:calc(var(--px) * 3);opacity:.92;transform:scale(.72)}
+.input-clawd.pixel-clawd-real .clawd-pop i{position:absolute;width:var(--px);height:var(--px);background:#fff;box-shadow:var(--px) 0 0 #fff,calc(var(--px) * 2) 0 0 #fff,0 var(--px) 0 #fff,var(--px) var(--px) 0 #fff,calc(var(--px) * 2) var(--px) 0 #fff,calc(var(--px) * 3) var(--px) 0 #fff,var(--px) calc(var(--px) * 2) 0 #fff,calc(var(--px) * 2) calc(var(--px) * 2) 0 #fff,calc(var(--px) * 3) calc(var(--px) * 3) 0 #fff}
+.input-clawd.pixel-clawd-real .clawd-pop i:after{content:"";position:absolute;left:var(--px);top:var(--px);width:var(--px);height:var(--px);background:#1687ff;box-shadow:calc(var(--px) * 2) 0 0 #1687ff,calc(var(--px) * 4) 0 0 #1687ff}
+.composer-wrap.clawd-typing .input-clawd.pixel-clawd-real,.claude-composer-wrap.clawd-typing .input-clawd.pixel-clawd-real{animation-duration:4.2s!important}
+@keyframes clawdRunTop{from{transform:translateX(8px)}to{transform:translateX(calc(min(430px,100vw) - 68px))}}
+@keyframes clawdTinyDance{0%,100%{transform:translateY(0) scaleX(1)}50%{transform:translateY(-3px) scaleX(.98)}}
 
 </style>
 </head>
@@ -6227,7 +6148,7 @@ function consumeImageLeftovers(text, add){
   }).trim();
 }
 
-// 统一清理模型泄露的思维链：兼容 <think>...</think> 和 <thinking>...</thinking>
+// 统一清理模型泄露的思维链：兼容 <think>...</think> / <thinking>...</thinking> / HTML转义标签
 function normalizeThinkingTags(text){
   return String(text||"")
     .replace(/&lt;\s*(\/?\s*think(?:ing)?[^&<>]*)\s*&gt;/gi,"<$1>")
@@ -6242,7 +6163,9 @@ function extractThinkingContent(text){
   while((m=re.exec(s))) if(m[1].trim()) parts.push(m[1].trim());
   const unclosed=s.match(/<thinking\b[^>]*>([\s\S]*)$/i);
   if(unclosed && unclosed[1].trim()) parts.push(unclosed[1].trim());
-  return parts.join("\n\n")||"";
+  // 去重，避免模型重复输出同一段内心
+  const seen=new Set();
+  return parts.map(x=>x.trim()).filter(x=>x&&!seen.has(x)&&seen.add(x)).join("\n\n")||"";
 }
 function stripThinkingBlocks(text){
   return normalizeThinkingTags(text)
@@ -6253,28 +6176,24 @@ function stripThinkingBlocks(text){
 }
 function isReasoningLeakLine(line){
   const x=String(line||"");
-  return /(让我想想|我应该|用户想|用户需要|user|User|正确的指令格式|指令格式|格式写错|写错了|重新来|回顾一下|上一条|这次重新|应该自然回应|先补上歌|补上歌|分享歌|分享一首歌|最终回复|普通正文|音频URL需要|没有真实的音频URL|至少能看到歌曲的基本信息|would respond|matching the energy|showing he's present|overthink|acknowledge he's here|maybe prompt|I should|The user wants|Need to|Let's respond|Final answer)/i.test(x);
+  return /(让我想想|我应该|用户想|用户需要|user|User|正确的指令格式|指令格式|格式写错|写错了|重新来|回顾一下|上一条|这次重新|应该自然回应|先补上歌|补上歌|最终回复|普通正文|音频URL需要|没有真实的音频URL|至少能看到歌曲的基本信息|would respond|matching the energy|showing he's present|overthink|acknowledge he's here|maybe prompt|I should|The user wants|Need to|Let's respond|Final answer)/i.test(x);
 }
 function normalizeThinkingForPanel(thinking, finalText){
   let t=stripThinkingBlocks(thinking).trim();
   if(!t) return "";
   const final=stripThinkingBlocks(finalText||"").trim();
   if(final && t.includes(final)) t=t.replace(final,"").trim();
-
-  // 不允许功能指令、最终回复、英文 reasoning 工作日志进入内心独白
   t=t.replace(/\[(?:分享音乐|发送图片|发送表情包|表情包|语音|链接|主动转账|向user发起代付)[^\]]*\]/g,"");
   const seen=new Set();
-  let lines=t.split(/\n+/).map(x=>x.trim()).filter(line=>{
+  const lines=t.split(/\n+/).map(x=>x.trim()).filter(line=>{
     if(!line) return false;
     if(isReasoningLeakLine(line)) return false;
-    const letters=(line.match(/[A-Za-z]/g)||[]).length;
-    if(letters>=8) return false;
+    if((line.match(/[A-Za-z]/g)||[]).length>=8) return false;
     if(seen.has(line)) return false;
     seen.add(line);
     return true;
   });
   t=lines.join("\n").trim();
-
   if(!t || !/[\u4e00-\u9fff]/.test(t)){
     return "我想顺着她的话自然回应，不把话说得太像解释。";
   }
@@ -6284,30 +6203,88 @@ function normalizeThinkingForPanel(thinking, finalText){
   if(!/[我咱]/.test(t.slice(0,12))) t="我"+t.replace(/^[，。；、\s]+/,"");
   return t;
 }
-function wrapAIThinking(thinking, content){
-  const clean=normalizeThinkingForPanel(thinking, content);
-  return clean ? `<thinking>${clean}</thinking>\n${content||""}` : (content||"");
+function removeReasoningLeakText(text){
+  return String(text||"").split(/\n+/).map(x=>x.trim()).filter(line=>line && !isReasoningLeakLine(line)).join("\n").trim();
+}
+function autoThinkingHash(text){
+  const s=String(text||"");
+  let h=0;
+  for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
+  return h;
+}
+function autoThinkingPick(list, seed){
+  if(!list.length) return "";
+  return list[autoThinkingHash(seed)%list.length];
 }
 function autoThinkingFromMsg(msg){
   if(!msg || msg.sender==="user" || msg.type==="system") return "";
   const type=msg.type||"text";
-  const d=msg.data||{};
   const c=stripThinkingBlocks(msg.content||"").trim();
-  if(type==="music") return "我想把这首歌递过去，让她先听见我的意思。";
-  if(type==="sticker") return "我想用这个小东西接住她的情绪，别把话说重。";
-  if(type==="image_desc") return "我想把画面发给她，让她不用听我解释太多。";
-  if(type==="voice") return "我想让语气比文字更近一点，轻轻把话递过去。";
+  if(type==="music") return autoThinkingPick([
+    "我想把这首歌递过去，让她先听见我的意思。",
+    "我想用歌替我开口，比解释更轻一点。",
+    "我想挑一首合适的歌，让气氛慢慢落下来。"
+  ], c+type);
+  if(type==="sticker") return autoThinkingPick([
+    "我想用这个小东西接住她的情绪，别把话说重。",
+    "我想先逗她一下，让气氛别那么硬。",
+    "我想把反应藏在表情里，轻一点给她看。"
+  ], c+type);
+  if(type==="image_desc") return autoThinkingPick([
+    "我想把画面发给她，让她不用听我解释太多。",
+    "我想让她直接看见我想表达的东西。",
+    "我想用图片把话递过去，别说得太满。"
+  ], c+type);
+  if(type==="voice") return autoThinkingPick([
+    "我想让语气比文字更近一点，轻轻把话递过去。",
+    "我想让她听见我的语气，不只看见字。",
+    "我想把声音放低一点，像靠近她说。"
+  ], c+type);
   if(type==="transfer" || type==="role_transfer") return "我想用行动把心意递过去，不绕太多弯。";
-  if(/[？?]/.test(c)) return "我想顺着她的话问回去，留一点继续靠近的余地。";
-  if(c.length<=8) return "我想用很短的话接住她，不把情绪摊得太满。";
-  if(/想你|喜欢|别哭|抱|亲|在/.test(c)) return "我想把真实的心意说出来，但不要说得像解释。";
-  return "我想顺着她的话自然回应，不把话说得太像解释。";
+  if(/[？?]/.test(c)) return autoThinkingPick([
+    "我想顺着她的话问回去，留一点继续靠近的余地。",
+    "我想先把问题抛回去，看她到底想听我说什么。",
+    "我想接住她的问题，不急着把话说死。"
+  ], c);
+  if(/想你|喜欢|别哭|抱|亲|在/.test(c)) return autoThinkingPick([
+    "我想把真实的心意说出来，但不要说得像解释。",
+    "我想靠近一点说，让她知道我不是敷衍。",
+    "我想让这句话听起来简单一点，但是真的。"
+  ], c);
+  if(c.length<=8) return autoThinkingPick([
+    "我想用很短的话接住她，不把情绪摊得太满。",
+    "我想少说一点，让话停在刚好的地方。",
+    "我想把反应压短一点，别显得太刻意。"
+  ], c);
+  return autoThinkingPick([
+    "我想顺着她的话自然回应，不把话说得太像解释。",
+    "我想先接住她的意思，再慢慢把话往下放。",
+    "我想让回应自然一点，不把心思摊得太明显。",
+    "我想跟着她的节奏说，不急着抢过话头。"
+  ], c);
 }
-function removeReasoningLeakText(text){
-  return String(text||"").split(/\n+/).map(x=>x.trim()).filter(line=>{
-    if(!line) return false;
-    return !isReasoningLeakLine(line);
-  }).join("\n").trim();
+function isExplicitMusicRequest(text){
+  const t=String(text||"").replace(/\s+/g,"");
+  return /(分享|发|来|放|推|推荐|听).{0,8}(歌|音乐|歌曲)|(?:歌|音乐|歌曲).{0,8}(分享|发|来一首|放一首|推荐)/.test(t);
+}
+function musicRequestHint(text){
+  if(!isExplicitMusicRequest(text)) return "";
+  return `\n\n【强制音乐请求】user刚刚明确要求你分享/播放/推荐一首歌。你必须至少输出一个音乐指令，并且该指令要单独成段：\n[分享音乐: 歌名|歌手|专辑|附言|歌词氛围或原创短句|]\n不要只回复标点、省略号、“又来”、“说话”、“你先发的省略号”，也不要解释格式。`;
+}
+function fallbackMusicMsg(groupId, seedText){
+  const picks=[
+    {title:"想你",artist:"陈洁仪",album:"入戏太深",note:"给你。",lyrics:"歌词氛围：温柔、想念、像把话轻轻放到你手里。"},
+    {title:"慢慢喜欢你",artist:"莫文蔚",album:"我们在中场相遇",note:"这首适合现在。",lyrics:"歌词氛围：慢慢靠近，认真又不吵。"},
+    {title:"小半",artist:"陈粒",album:"小梦大半",note:"听这个。",lyrics:"歌词氛围：轻、倔、像把心事藏进夜里。"},
+    {title:"告白气球",artist:"周杰伦",album:"周杰伦的床边故事",note:"别笑。",lyrics:"歌词氛围：轻快、甜一点，像故意把气氛放软。"}
+  ];
+  const p=picks[autoThinkingHash(seedText)%picks.length];
+  return {id:uid("msg"),groupId,sender:"role",type:"music",content:"[音乐:"+p.title+"]",data:{title:p.title,artist:p.artist,album:p.album,note:p.note,lyrics:p.lyrics,audioUrl:"",duration:"0:30",previewUrl:"",coverUrl:""},read:false,createdAt:Date.now(),time:nowTime(),thinking:"我想直接把歌递过去，别再用沉默绕开她。"};
+}
+function ensureMusicForExplicitRequest(parsed, groupId, userText){
+  if(!isExplicitMusicRequest(userText)) return parsed;
+  if((parsed||[]).some(m=>m.type==="music")) return parsed;
+  return [fallbackMusicMsg(groupId, userText)];
 }
 // Claude 文件助手要保护代码块，避免误删代码块里的 <think>/<thinking> 示例
 function stripThinkingBlocksKeepCode(text){
@@ -6518,7 +6495,8 @@ async function callAIReply(){
         ? `\n\n【网页读取结果】user消息里的网址（${page.url}）内容如下${page.truncated?"（已截断）":""}，可结合它回复：\n${page.content}`
         : `\n\n【网页读取失败】user贴的网址没读成功（${page.error}），如有需要可告诉user读不了。`;
     }
-    let reply=await callAI(api,h,onChunk,userUrlNote);
+    const musicHint=musicRequestHint(newUser.content||"");
+    let reply=await callAI(api,h,onChunk,userUrlNote+musicHint);
     // 若AI想读网页：抓取内容后，带着内容再问一次，让它基于真实内容回复
     const wantUrl=extractReadWebUrl(reply);
     if(wantUrl){
@@ -6532,7 +6510,7 @@ async function callAIReply(){
       const note = page.ok
         ? `\n\n【网页读取结果】你刚才请求读取的网页（${page.url}）内容如下${page.truncated?"（已截断）":""}，请基于真实内容回复user，不要再输出[读取网页]指令：\n${page.content}`
         : `\n\n【网页读取失败】你请求读取的网页没读成功，原因：${page.error}。请如实告诉user读不了，不要再输出[读取网页]指令。`;
-      reply=await callAI(api,h,onChunk,note);
+      reply=await callAI(api,h,onChunk,note+musicHint);
     }
     const groupId=uid("aigrp");
     const thinkingContent=extractThinkingContent(reply);
@@ -6540,7 +6518,7 @@ async function callAIReply(){
       // 流式完成：用真实解析结果替换临时消息
       const hh=getHistory();
       const idx=hh.findIndex(m=>m.id===streamMsgId);
-      const parsed=parseAIReplyUnified(reply,groupId);
+      let parsed=ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||"");
       if(!parsed.length){ saveHistory(hh); renderChat(); Miao.state.busy=false; return; }
       if(parsed[0]) parsed[0].thinking=thinkingContent || autoThinkingFromMsg(parsed[0]);
       if(idx>=0) hh.splice(idx,1,...parsed);
@@ -6555,7 +6533,7 @@ async function callAIReply(){
       checkDiceMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
     } else {
-      const parsed=parseAIReplyUnified(reply,groupId);
+      let parsed=ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||"");
       if(!parsed.length){ saveHistory(h); renderChat(); Miao.state.busy=false; return; }
       if(parsed[0]) parsed[0].thinking=thinkingContent || autoThinkingFromMsg(parsed[0]);
       // 逐条弹出，拟真人连发
@@ -6595,6 +6573,8 @@ function messageToAIContext(m){
   if(m.type==="received") return `[收款完成:${d.amount||""}|user已确认收款，本次转账流程已结束，不需要再发起任何转账]`;
   if(m.type==="paid") return `[代付完成:${d.amount||""}|${d.item||""}]`;
   if(m.type==="rejected") return `[拒绝:${m.content||""}]`;
+  // 用户原话必须原样进入上下文，不能用“思维链泄露过滤器”清理，否则会误删“分享一首歌”等真实请求。
+  if(m.sender==="user") return quotePrefix+(m.content||"");
   return quotePrefix+removeReasoningLeakText(stripThinkingBlocks(m.content||""));
 }
 
@@ -6758,9 +6738,7 @@ async function callAI(api, history, onChunk, extraSystem){
         if(d==="[DONE]") break;
         try{
           const j=JSON.parse(d);
-          const deltaObj=j.choices?.[0]?.delta || {};
-          const delta=deltaObj.content||"";
-          // 不读取 provider reasoning_content，避免英文工作日志/重复最终回复进入“内心独白”
+          const delta=j.choices?.[0]?.delta?.content||"";
           if(delta){ full+=delta; onChunk(full); }
         }catch(e){}
       }
@@ -6791,8 +6769,6 @@ async function callAI(api, history, onChunk, extraSystem){
     // 没有tool_calls，返回普通文字
     if(!msg.tool_calls || msg.tool_calls.length===0){
       const content=msg.content || (Array.isArray(data.content) ? data.content.filter(b=>b.type==="text").map(b=>b.text).join("") : null) || data.output_text || "";
-      // 不读取 provider reasoning_content：它经常是英文/第三人称/复述最终回复。
-      // 只保留模型在正文里显式写出的 <thinking>中文第一人称内心</thinking>，后续解析器会隐藏进面板。
       Miao.state.lastAIContent=content;
       return content;
     }
@@ -6878,8 +6854,9 @@ ${getStickerPromptList()}
 [撤回: 消息内容片段]（撤回你之前发的某条消息，片段用于匹配目标消息；不加片段则撤回最近一条。何时撤回根据你的人设自行判断）
 [链接: 平台|标题|正文内容|评论1//评论2//评论3]
 平台可选：小红书、微博、贴吧、论坛、新闻。评论字段可省略。
-[分享音乐: 歌名|歌手|专辑|附言|歌词/歌词节选|音频URL]（分享一首歌给user，专辑、附言、音频URL可省略；第5栏“歌词/歌词节选”尽量填写，至少写一句歌词氛围或原创短句，避免卡片没有歌词；音频URL必须是可公开访问的 mp3/m4a/ogg 直链；不知道真实音频直链时必须把音频URL留空，绝对不要编造链接；附言是你想对user说的话；歌词字段用于展示用户提供的歌词、短句节选或你自写的原创歌词片段，不要输出整首受版权保护的歌词）
+[分享音乐: 歌名|歌手|专辑|附言|歌词/歌词节选|音频URL]（分享一首歌给user，专辑、附言、音频URL可省略；第5栏“歌词/歌词节选”尽量填写，至少写一句歌词氛围或原创短句，避免卡片没有歌词；音频URL必须是可公开访问的 mp3/m4a/ogg 直链；不知道真实音频直链时必须把音频URL留空，绝对不要编造链接；不要输出整首受版权保护的歌词）
 示例：[分享音乐: Medicine|Daughter|The Wild Youth|声音轻得像哄你睡，歌词在拆骨头。|歌词氛围：冷、轻、像夜里低声哄睡。|]
+当 user 明确说“分享一首歌/发首歌/来首歌/放首歌/推荐一首歌”时，必须直接使用 [分享音乐: ...] 指令，不要用句号、省略号、“又来”“说话”等短句代替。
 不要在聊天正文解释“我格式写错了/重新来/补一首歌”，也不要连续重复分享同一首歌。
 [收款]
 [拒收转账]
@@ -6916,14 +6893,14 @@ ${getStickerPromptList()}
 【格式规则】
 1. 你只能扮演${role.name}，不能替user说话。
 2. 禁止输出User:、用户：、Assistant:、旁白式剧本格式。
-6. 不要把思考过程、元分析直接写进普通聊天正文。动作描写、心理描写、环境描写正常保留。
-   不要使用英文 thinking/reasoning。需要给前端内心独白时，只能写 <thinking>我……</thinking>，必须中文第一人称，前端会隐藏到“内心独白”面板，不能混入普通气泡。
-   <thinking> 里只写“我……”第一人称角色内心/情绪/判断，1句中文即可；角色和内心独白视角必须是一体的。
-   <thinking> 里不要英文，不要复述最终回复，不要写 user/用户/角色，不要把最终回复或 [分享音乐]、[发送图片] 等指令写进 thinking，不要写“用户想让我……/我应该……”这种模型工作日志。
+6. 普通聊天正文不要输出思考过程、元分析或格式纠错。动作描写、心理描写、环境描写正常保留。
+   需要给前端内心独白时，只能写 <thinking>我……</thinking>，必须中文第一人称，前端会隐藏到“内心独白”面板，不能混入普通气泡。
+   <thinking> 里只写“我……”第一人称角色内心/情绪/判断，1句中文即可；不要英文，不要复述最终回复，不要写 user/用户/角色，不要把最终回复或 [分享音乐]、[发送图片] 等指令写进 thinking。
    禁止在普通正文中出现：「The user wants me to...」「I should respond by...」「Let me respond in character」「用户想让我说X」「我应该这样回应」「格式写错了」「重新来」「回顾一下」
    普通聊天正文只输出角色的回应，不分析，不解释；如果上一条音乐/图片/表情已经发出，不要因为觉得格式不对而解释或重复补发。
+   不要纠缠 user 的省略号、标点或测试语句；如果 user 在测试功能、让你分享音乐、图片或表情，直接按当前明确请求回应。
 3. 只输出微信聊天内容；可以用双换行分成多条气泡。
-7. 如果你具有思考能力（thinking/think），请始终使用中文进行思考。
+7. 如果输出 <thinking>，必须是中文第一人称角色内心。
 4. 表情包只能从"可用表情包"里按名称选择，不能编造。发送表情包指令后不要解释含义，不要加括号说明。
 5. 遇到用户转账/代付时，必须根据关系、上下文和人设自主决定是否收款/帮付。转账卡片上标注了付款来源（我的钱包/亲属卡），你可以根据来源做出反应。
 ${(()=>{
@@ -10869,7 +10846,6 @@ function toggleMusicPlay(msgId){
   const h=getHistory();
   const m=h.find(x=>x.id===msgId);
   if(!m||!m.data) return;
-  // 先尝试完整音频直链；如果为空或无效，必须回退到原来的 iTunes previewUrl，避免破坏旧版可听的30秒试听
   const audioUrl=normalizeAudioUrl(m.data.audioUrl) || normalizeAudioUrl(m.data.previewUrl);
   if(audioUrl){
     MusicPlayer.play(msgId,audioUrl);
@@ -12828,37 +12804,6 @@ window.dismissBackupReminder=async function(){
 init().catch(e=>{ console.error("[init]", e); renderAll(); });
 })();
 </script>
-
-<script>
-(function(){
-  function ensureInputClawd(){
-    const wraps=document.querySelectorAll(".composer-wrap,.claude-composer-wrap");
-    if(!wraps.length) return;
-    wraps.forEach(wrap=>{
-      if(wrap.querySelector(".input-clawd")) return;
-      const pet=document.createElement("div");
-      pet.className="input-clawd";
-      pet.setAttribute("aria-hidden","true");
-      pet.innerHTML='<div class="clawd-bubble"><i></i></div><div class="clawd-spark"></div><div class="clawd-arm left"></div><div class="clawd-arm right"></div><div class="clawd-body"></div><div class="clawd-leg l1"></div><div class="clawd-leg l2"></div><div class="clawd-leg l3"></div><div class="clawd-leg l4"></div><div class="clawd-shadow"></div>';
-      wrap.appendChild(pet);
-      const input=wrap.querySelector("textarea");
-      if(input){
-        const setTyping=()=>wrap.classList.toggle("clawd-typing", !!input.value.trim() || document.activeElement===input);
-        input.addEventListener("input",setTyping);
-        input.addEventListener("focus",setTyping);
-        input.addEventListener("blur",setTyping);
-        setTyping();
-      }
-    });
-  }
-  window.ensureInputClawd=ensureInputClawd;
-  document.addEventListener("DOMContentLoaded",ensureInputClawd);
-  setTimeout(ensureInputClawd,600);
-  setTimeout(ensureInputClawd,1600);
-  new MutationObserver(()=>ensureInputClawd()).observe(document.documentElement,{childList:true,subtree:true});
-})();
-</script>
-
 
 <script>
 (function(){
