@@ -2664,8 +2664,8 @@ body.multiselect-mode .msg{ cursor:pointer; }
           <div class="v3-sub" style="margin-bottom:6px">用于之后把角色文字回复生成真实语音气泡。先填密钥和 Voice ID；不影响当前聊天 API。</div>
           <label>ElevenLabs API Key</label><input id="ttsApiKeyInput" placeholder="xi-api-key / sk_..." type="password">
           <label>Voice ID</label><input id="ttsVoiceIdInput" placeholder="例如：21m00Tcm4TlvDq8ikWAM">
-          <label>TTS 模型名称</label><input id="ttsModelInput" placeholder="eleven_multilingual_v2">
-          <div class="v3-sub" style="margin-top:4px">不知道填什么就用默认：eleven_multilingual_v2</div>
+          <label>TTS 模型名称</label><input id="ttsModelInput" placeholder="eleven_v3">
+          <div class="v3-sub" style="margin-top:4px">不知道填什么就用默认：eleven_v3（语气标签更明显）</div>
           <label>角色语音回复模式</label>
           <select id="ttsModeInput">
             <option value="off">关闭真实语音（只保留文字语音）</option>
@@ -3677,7 +3677,7 @@ function ensureDefaults(){
     Storage.set("api", {apiUrl:"", apiKey:"", model:"", format:"openai"});
   }
   if(!Storage.get("ttsApi", null)){
-    Storage.set("ttsApi", {provider:"elevenlabs", apiKey:"", voiceId:"", model:"eleven_multilingual_v2", mode:"explicit"});
+    Storage.set("ttsApi", {provider:"elevenlabs", apiKey:"", voiceId:"", model:"eleven_v3", mode:"explicit"});
   }
   if(!Storage.get("theme", null)){
     Storage.set("theme", {themeId:"simple"});
@@ -7320,7 +7320,7 @@ function renderApi(){
   const ttsCfg=Storage.get("ttsApi",{});
   const _tk=document.getElementById("ttsApiKeyInput"); if(_tk) _tk.value=ttsCfg.apiKey||"";
   const _tv=document.getElementById("ttsVoiceIdInput"); if(_tv) _tv.value=ttsCfg.voiceId||"";
-  const _tm=document.getElementById("ttsModelInput"); if(_tm) _tm.value=ttsCfg.model||"eleven_multilingual_v2";
+  const _tm=document.getElementById("ttsModelInput"); if(_tm) _tm.value=ttsCfg.model||"eleven_v3";
   const _tmode=document.getElementById("ttsModeInput"); if(_tmode) _tmode.value=ttsCfg.mode||"explicit";
   $("#apiFormatInput").value=api.format||"openai";
 }
@@ -7329,7 +7329,7 @@ function saveApiFromForm(){
   const iu=document.getElementById("imgApiUrlInput"), ik=document.getElementById("imgApiKeyInput"), im=document.getElementById("imgModelInput");
   Storage.set("imgApi", { url:(iu?iu.value.trim():""), key:(ik?ik.value.trim():""), model:(im?im.value.trim():"") });
   const tk=document.getElementById("ttsApiKeyInput"), tv=document.getElementById("ttsVoiceIdInput"), tm=document.getElementById("ttsModelInput"), tmode=document.getElementById("ttsModeInput");
-  Storage.set("ttsApi", { provider:"elevenlabs", apiKey:(tk?tk.value.trim():""), voiceId:(tv?tv.value.trim():""), model:(tm?tm.value.trim():"eleven_multilingual_v2")||"eleven_multilingual_v2", mode:(tmode?tmode.value:"explicit")||"explicit" });
+  Storage.set("ttsApi", { provider:"elevenlabs", apiKey:(tk?tk.value.trim():""), voiceId:(tv?tv.value.trim():""), model:(tm?tm.value.trim():"eleven_v3")||"eleven_v3", mode:(tmode?tmode.value:"explicit")||"explicit" });
   toast("API 设置已保存");
 }
 async function testApi(){
@@ -11847,7 +11847,7 @@ function getElevenLabsTTSConfig(){
   const cfg=Storage.get("ttsApi",{});
   const apiKey=String(cfg.apiKey||"").trim();
   const voiceId=String(cfg.voiceId||"").trim();
-  const model=String(cfg.model||"eleven_multilingual_v2").trim()||"eleven_multilingual_v2";
+  const model=String(cfg.model||"eleven_v3").trim()||"eleven_multilingual_v2";
   if(!apiKey || !voiceId) return null;
   return {apiKey, voiceId, model};
 }
@@ -11855,7 +11855,7 @@ async function elevenLabsTTS(text, cfg){
   const url="https://api.elevenlabs.io/v1/text-to-speech/"+encodeURIComponent(cfg.voiceId);
   const body={
     text:String(text||"").slice(0,2500),
-    model_id:cfg.model||"eleven_multilingual_v2",
+    model_id:cfg.model||"eleven_v3",
     voice_settings:{stability:0.5, similarity_boost:0.75, style:0.5, use_speaker_boost:true}
   };
   const res=await fetch(url,{
@@ -12581,8 +12581,7 @@ function parseAIReplyUnified(raw, groupId){
     {
       // 语音支持两种外层格式：
       // 1) [语音: 普通内容]
-      // 2) 【语音: [sigh] [low voice] English line
-中文：中文翻译】
+      // 2) 【语音: [sigh] [low voice] English line / 中文：中文翻译】
       // 第二种允许内部出现 ElevenLabs v3 的方括号 audio tags。
       regex:/【\s*(?:发送语音|语音)[:：]\s*([\s\S]*?)】|\[\s*(?:发送语音|语音)[:：]\s*([^\]]+?)\]/g,
       parse(m){
