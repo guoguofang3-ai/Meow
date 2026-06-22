@@ -465,6 +465,32 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   max-width:220px;
 }
 .voice-text.show{display:block}
+.voice-text-toggle{
+  margin-top:4px;border:0;border-radius:999px;padding:4px 8px;
+  background:rgba(0,0,0,.045);color:#888;font-size:11px;font-weight:850;
+  align-self:flex-start;
+}
+.msg.user .voice-text-toggle{align-self:flex-end}
+.voice-bubble.voice-real{position:relative}
+.voice-bubble.voice-real:after{
+  content:"▶";font-size:10px;opacity:.68;margin-left:2px;flex-shrink:0;
+}
+.voice-bubble.voice-real.playing:after{content:"❚❚"}
+.real-voice-panel{display:flex;flex-direction:column;gap:10px}
+.real-voice-tip{font-size:12px;color:#888;line-height:1.55}
+.real-voice-status{font-size:13px;color:#666;background:#f6f7fb;border-radius:14px;padding:10px 12px;line-height:1.5;min-height:40px}
+.real-voice-record-btn{
+  width:100%;border:0;border-radius:999px;padding:13px 16px;
+  background:var(--accent);color:#fff;font-weight:1000;font-size:15px;
+  box-shadow:0 8px 20px color-mix(in srgb,var(--accent) 22%,transparent);
+}
+.real-voice-record-btn.recording{animation:realVoicePulse 1s ease-in-out infinite;background:#d64b5f}
+@keyframes realVoicePulse{0%,100%{transform:scale(1)}50%{transform:scale(.985)}}
+.real-voice-actions{display:flex;gap:8px;align-items:center}
+.real-voice-actions .btn{flex:1}
+.real-voice-preview{width:100%;display:none}
+.real-voice-preview.show{display:block}
+
 .link-card{
   min-width:200px;
   max-width:260px;
@@ -2634,6 +2660,22 @@ body.multiselect-mode .msg{ cursor:pointer; }
           <label>生图 API 地址（可留空，默认用聊天地址）</label><input id="imgApiUrlInput" placeholder="https://api.example.com/v1/chat/completions">
           <label>生图密钥（专门的分组密钥）</label><input id="imgApiKeyInput" placeholder="sk-..." type="password">
           <label>生图模型名称</label><input id="imgModelInput" placeholder="gpt-image-2">
+          <div class="v3-section-title" style="margin-top:14px">语音 / TTS 设置（ElevenLabs）</div>
+          <div class="v3-sub" style="margin-bottom:6px">用于之后把角色文字回复生成真实语音气泡。先填密钥和 Voice ID；不影响当前聊天 API。</div>
+          <label>ElevenLabs API Key</label><input id="ttsApiKeyInput" placeholder="xi-api-key / sk_..." type="password">
+          <label>Voice ID</label><input id="ttsVoiceIdInput" placeholder="例如：21m00Tcm4TlvDq8ikWAM">
+          <label>TTS 模型名称</label><input id="ttsModelInput" placeholder="eleven_multilingual_v2">
+          <div class="v3-sub" style="margin-top:4px">不知道填什么就用默认：eleven_multilingual_v2</div>
+          <label>角色语音回复模式</label>
+          <select id="ttsModeInput">
+            <option value="off">关闭真实语音（只保留文字语音）</option>
+            <option value="explicit">只在角色输出 [语音: ...] 时生成</option>
+            <option value="occasional">偶尔自动语音</option>
+            <option value="always">总是转成语音</option>
+          </select>
+          <div class="btn-row"><button class="btn" data-action="fetch-tts-models">拉取 TTS 模型</button></div>
+          <div class="status-box" id="ttsStatus"></div>
+          <div class="model-list" id="ttsModelList"></div>
           <div class="rowline" style="margin-top:8px"><div><b>流式传输</b><div class="v3-sub">逐字输出，需要中转站支持 stream:true</div></div><button class="toggle" id="streamToggle" data-action="toggle-stream"></button></div>
           <div class="rowline" style="margin-top:8px"><div><b>消息提示音</b><div class="v3-sub">角色逐条发消息时播放提示音</div></div><button class="toggle" id="msgSoundToggle" data-action="toggle-msg-sound"></button></div>
           <div class="btn-row"><button class="btn primary" data-action="save-api">保存设置</button><button class="btn" data-action="test-api">测试连接</button><button class="btn" data-action="fetch-models">拉取模型</button></div>
@@ -3069,6 +3111,8 @@ body.multiselect-mode .msg{ cursor:pointer; }
           <div id="healthResult"></div>
           <div class="v3-sub" style="margin-top:12px">Claude助手里生成的图片会占用存储。点下面可清理掉所有已生成的图（聊天文字保留）。</div>
           <div class="btn-row"><button class="btn" data-action="clear-gen-images">清理生成图片</button></div>
+          <div class="v3-sub" style="margin-top:12px">角色真实语音会占用存储。可清理已播放的角色语音缓存，保留语音文字和气泡；user 自己录的真实语音不会被清理。</div>
+          <div class="btn-row"><button class="btn" data-action="clear-role-voice-cache">清理已听角色语音</button></div>
         </div>
 
         <div class="card">
@@ -3632,6 +3676,9 @@ function ensureDefaults(){
   if(!Storage.get("api", null)){
     Storage.set("api", {apiUrl:"", apiKey:"", model:"", format:"openai"});
   }
+  if(!Storage.get("ttsApi", null)){
+    Storage.set("ttsApi", {provider:"elevenlabs", apiKey:"", voiceId:"", model:"eleven_multilingual_v2", mode:"explicit"});
+  }
   if(!Storage.get("theme", null)){
     Storage.set("theme", {themeId:"simple"});
   }
@@ -3818,6 +3865,7 @@ function bindEvents(){
     if(action==="run-health-check") renderHealthCheck();
     if(action==="repair-data") repairDataDefaults();
     if(action==="clear-gen-images") clearGenImages();
+    if(action==="clear-role-voice-cache") clearPlayedRoleVoiceCache(true);
     if(action==="refresh-context-preview") renderApiContextPreview();
     if(action==="copy-context-preview") copyApiContextPreview();
     if(action==="refresh-error-log") renderErrorLog();
@@ -3930,6 +3978,11 @@ function bindEvents(){
       if(panel) panel.classList.toggle("show");
       return;
     }
+    if(action==="play-voice-audio"){
+      e.preventDefault(); e.stopPropagation();
+      playVoiceAudio(id, e.target.closest(".voice-bubble"));
+      return;
+    }
     if(action==="toggle-voice-text"){
       const card = e.target.closest(".voice-msg-wrap");
       if(card){ const t=card.querySelector(".voice-text"); if(t) t.classList.toggle("show"); }
@@ -3992,8 +4045,10 @@ function bindEvents(){
     if(action==="toggle-stream"){ Storage.set("streamEnabled",!Storage.get("streamEnabled",false)); renderApi(); }
     if(action==="toggle-msg-sound"){ Storage.set("msgSoundEnabled",!Storage.get("msgSoundEnabled",true)); renderApi(); playMessageSound(); }
     if(action==="test-api") testApi();
-    if(action==="fetch-models") fetchModels();
-    if(action==="select-model") selectModel(id);
+    if(action==="fetch-models"){ fetchModels(); return; }
+    if(action==="select-model"){ selectModel(id); return; }
+    if(action==="fetch-tts-models"){ fetchTTSModels(); return; }
+    if(action==="select-tts-model"){ selectTTSModel(id); return; }
     if(action==="apply-theme") applyTheme(id, true);
     if(action==="apply-theme-preset") applyThemePreset(id);
     if(action==="apply-custom-theme") applyCustomThemeFromEditor();
@@ -4202,6 +4257,7 @@ function bindEvents(){
 }
 function forceGoHome(){
   // 唯一回主屏入口：不受通话状态、残留 active、上次页面影响
+  if(Miao.state.currentApp==="wechat") clearPlayedRoleVoiceCache(false);
   $$(".app-screen").forEach(x=>x.classList.remove("active"));
   const lock=$("#lockScreen"), home=$("#homeScreen");
   if(lock) lock.classList.add("hidden");
@@ -4213,6 +4269,8 @@ function showHome(){
   forceGoHome();
 }
 function openApp(id){
+  const prevApp=Miao.state.currentApp;
+  if(prevApp==="wechat" && id!=="wechat") clearPlayedRoleVoiceCache(false);
   const lock=$("#lockScreen"), home=$("#homeScreen");
   if(lock) lock.classList.add("hidden");
   if(home) home.classList.add("hidden");
@@ -5531,7 +5589,7 @@ const ProactiveMsg = {
       const reply = await callAI(api, h, undefined, extraSystem);
       if(!reply || !reply.trim()) return;
       const groupId = uid("aigrp");
-      const parsed = parseAIReplyUnified(reply, groupId);
+      const parsed = applyAutoVoiceMode(parseAIReplyUnified(reply, groupId), "");
       if(!parsed.length) return;
       // 防重复：与历史最近一条AI文字消息完全相同则丢弃
       const newH = getHistory();
@@ -5543,6 +5601,7 @@ const ProactiveMsg = {
       parsed.forEach(m=>newH.push(m));
       saveHistory(newH);
       parsed.filter(m=>m.type==="music"&&m.data&&!m.data.previewUrl).forEach(m=>hydrateAIMusicMsg(m.id,m.data.title,m.data.artist));
+      parsed.filter(m=>m.type==="voice"&&m.sender==="role").forEach(m=>hydrateRoleVoiceTTS(m.id, Miao.state.currentRoleId));
       this.bumpTodayCount(); // 成功发了一次，计数+1
       // 发完后，如果今天还没用完次数，再排下一次（间隔2小时）
       this.reset();
@@ -6000,17 +6059,21 @@ function renderMessageBody(m){
     return `<img class="sticker-msg-img" src="${escapeAttr(d.url||"")}" alt="${escapeAttr(d.name||"表情包")}">`;
   }
   if(m.type==="voice"){
-    const text = m.data?.text || m.content || "";
-    const dur = m.data?.duration || Math.max(1, Math.min(60, Math.ceil(text.length/5)));
+    const text = m.data?.text || m.data?.transcript || m.content || "";
+    const dur = m.data?.duration || Math.max(1, Math.min(60, Math.ceil(String(text).length/5)));
     const isUser = m.sender==="user";
+    const hasAudio = !!(m.data?.audioData || m.data?.audioUrl);
     const heights=[8,14,10,18,12,16,9,13,11,17];
     const waves = Array.from({length:10}, (_,i)=>`<span style="height:${heights[i%heights.length]}px"></span>`).join("");
-    return `<div class="voice-msg-wrap" data-action="toggle-voice-text">
-      <div class="voice-bubble${isUser?" user-voice":""}">
+    const safeText = text && !/^\[?语音[:：]/.test(String(text)) ? text : (hasAudio ? "（真实语音，未识别文字）" : (m.data?.audioCleared ? "（语音缓存已清理，文字保留）" : text));
+    const ttsStatus = m.data?.ttsStatus==="loading" ? "（角色语音生成中…）" : (m.data?.ttsStatus==="error" ? "（角色语音生成失败，保留文字语音）" : "");
+    const displayText = [ttsStatus, safeText].filter(Boolean).join("\n");
+    return `<div class="voice-msg-wrap">
+      <div class="voice-bubble${isUser?" user-voice":""}${hasAudio?" voice-real":""}" data-action="${hasAudio?"play-voice-audio":"toggle-voice-text"}" data-id="${escapeAttr(m.id)}">
         <div class="voice-wave">${waves}</div>
         <span class="voice-dur">${dur}"</span>
       </div>
-      <div class="voice-text">${escapeHtml(text)}</div>
+      ${displayText?`<button class="voice-text-toggle" data-action="toggle-voice-text">转文字</button><div class="voice-text">${escapeHtml(displayText)}</div>`:""}
     </div>`;
   }
   if(m.type==="link"){
@@ -6486,6 +6549,7 @@ async function revealMessagesSequentially(baseHistory, parsed, groupId){
     const h=Storage.get(histKey, []);
     h.push(msg);
     Storage.set(histKey, h);
+    if(msg.type==="voice" && msg.sender==="role") hydrateRoleVoiceTTS(msg.id, targetRoleId);
     // 仅当仍停留在该会话时渲染、播音、动画
     if(stillHere()){
       renderChat();
@@ -6574,7 +6638,7 @@ async function callAIReply(){
       // 流式完成：用真实解析结果替换临时消息
       const hh=getHistory();
       const idx=hh.findIndex(m=>m.id===streamMsgId);
-      let parsed=ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||"");
+      let parsed=applyAutoVoiceMode(ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||""), newUser.content||"");
       if(!parsed.length){ saveHistory(hh); renderChat(); Miao.state.busy=false; return; }
       if(parsed[0]) parsed[0].thinking=thinkingContent || autoThinkingFromMsg(parsed[0], newUser.content||"");
       if(idx>=0) hh.splice(idx,1,...parsed);
@@ -6583,13 +6647,14 @@ async function callAIReply(){
       if(Miao.state.streamPartial) delete Miao.state.streamPartial[streamMsgId];
       saveHistory(hh);
       parsed.filter(m=>m.type==="music"&&m.data&&!m.data.previewUrl).forEach(m=>hydrateAIMusicMsg(m.id,m.data.title,m.data.artist));
+      parsed.filter(m=>m.type==="voice"&&m.sender==="role").forEach(m=>hydrateRoleVoiceTTS(m.id, Miao.state.currentRoleId));
       renderChat();
       checkSaveMarker(Miao.state.lastAIContent||"");
       checkStickyNoteMarker(Miao.state.lastAIContent||"");
       checkDiceMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
     } else {
-      let parsed=ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||"");
+      let parsed=applyAutoVoiceMode(ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||""), newUser.content||"");
       if(!parsed.length){ saveHistory(h); renderChat(); Miao.state.busy=false; return; }
       if(parsed[0]) parsed[0].thinking=thinkingContent || autoThinkingFromMsg(parsed[0], newUser.content||"");
       // 逐条弹出，拟真人连发
@@ -7271,12 +7336,19 @@ function renderApi(){
   const _iu=document.getElementById("imgApiUrlInput"); if(_iu) _iu.value=imgCfg.url||"";
   const _ik=document.getElementById("imgApiKeyInput"); if(_ik) _ik.value=imgCfg.key||"";
   const _im=document.getElementById("imgModelInput"); if(_im) _im.value=imgCfg.model||"";
+  const ttsCfg=Storage.get("ttsApi",{});
+  const _tk=document.getElementById("ttsApiKeyInput"); if(_tk) _tk.value=ttsCfg.apiKey||"";
+  const _tv=document.getElementById("ttsVoiceIdInput"); if(_tv) _tv.value=ttsCfg.voiceId||"";
+  const _tm=document.getElementById("ttsModelInput"); if(_tm) _tm.value=ttsCfg.model||"eleven_multilingual_v2";
+  const _tmode=document.getElementById("ttsModeInput"); if(_tmode) _tmode.value=ttsCfg.mode||"explicit";
   $("#apiFormatInput").value=api.format||"openai";
 }
 function saveApiFromForm(){
   Storage.set("api", {apiUrl:$("#apiUrlInput").value.trim(), apiKey:$("#apiKeyInput").value.trim(), model:$("#modelInput").value.trim(), format:$("#apiFormatInput").value});
   const iu=document.getElementById("imgApiUrlInput"), ik=document.getElementById("imgApiKeyInput"), im=document.getElementById("imgModelInput");
   Storage.set("imgApi", { url:(iu?iu.value.trim():""), key:(ik?ik.value.trim():""), model:(im?im.value.trim():"") });
+  const tk=document.getElementById("ttsApiKeyInput"), tv=document.getElementById("ttsVoiceIdInput"), tm=document.getElementById("ttsModelInput"), tmode=document.getElementById("ttsModeInput");
+  Storage.set("ttsApi", { provider:"elevenlabs", apiKey:(tk?tk.value.trim():""), voiceId:(tv?tv.value.trim():""), model:(tm?tm.value.trim():"eleven_multilingual_v2")||"eleven_multilingual_v2", mode:(tmode?tmode.value:"explicit")||"explicit" });
   toast("API 设置已保存");
 }
 async function testApi(){
@@ -7296,11 +7368,12 @@ async function testApi(){
   }
 }
 async function fetchModels(){
+  // 文字/聊天模型拉取逻辑：保持原版，只使用聊天 API 设置，不读取 ElevenLabs 配置。
   saveApiFromForm();
   const status=$("#apiStatus"), list=$("#modelList");
-  list.innerHTML="";
+  if(list) list.innerHTML="";
   status.className="status-box";
-  status.textContent="正在拉取模型...";
+  status.textContent="正在拉取文字模型...";
   try{
     const api=Storage.get("api",{});
     if(api.format==="bedrock") throw new Error("Bedrock 通道通常不支持 /v1/models，请手动填写模型名称");
@@ -7312,11 +7385,11 @@ async function fetchModels(){
     const models=(data.data||[]).map(x=>x.id).filter(Boolean);
     if(!models.length) throw new Error("没有读取到模型列表");
     status.className="status-box ok";
-    status.textContent=`已拉取 ${models.length} 个模型，点击可填入模型名称。`;
-    list.innerHTML=models.map(m=>`<button class="model-item" data-action="select-model" data-id="${escapeHtml(m)}">${escapeHtml(m)}</button>`).join("");
+    status.textContent=`已拉取 ${models.length} 个文字模型，点击可填入模型名称。`;
+    if(list) list.innerHTML=models.map(m=>`<button class="model-item" data-action="select-model" data-id="${escapeHtml(m)}">${escapeHtml(m)}</button>`).join("");
   }catch(err){
     status.className="status-box error";
-    status.textContent="拉取失败："+err.message;
+    status.textContent="文字模型拉取失败："+err.message;
   }
 }
 function selectModel(model){
@@ -7324,6 +7397,42 @@ function selectModel(model){
   saveApiFromForm();
   renderApi();
   toast("已填入模型："+model);
+}
+async function fetchTTSModels(){
+  saveApiFromForm();
+  const status=document.getElementById("ttsStatus") || $("#apiStatus"), list=document.getElementById("ttsModelList");
+  if(list) list.innerHTML="";
+  status.className="status-box";
+  status.textContent="正在拉取 ElevenLabs TTS 模型...";
+  try{
+    const cfg=Storage.get("ttsApi",{});
+    if(!cfg.apiKey) throw new Error("请先填写 ElevenLabs API Key");
+    const res=await fetch("https://api.elevenlabs.io/v1/models",{headers:{"xi-api-key":cfg.apiKey}});
+    const text=await res.text();
+    if(!res.ok) throw new Error(text.slice(0,180)||res.statusText);
+    const data=JSON.parse(text);
+    const models=(data||[]).filter(m=>m && m.model_id && m.can_do_text_to_speech!==false);
+    if(!models.length) throw new Error("没有读取到可用 TTS 模型");
+    status.className="status-box ok";
+    status.textContent=`已拉取 ${models.length} 个 TTS 模型，点击可填入模型名称。`;
+    if(list){
+      list.innerHTML=models.map(m=>{
+        const id=m.model_id;
+        const name=m.name ? ` · ${m.name}` : "";
+        return `<button class="model-item" data-action="select-tts-model" data-id="${escapeHtml(id)}">${escapeHtml(id+name)}</button>`;
+      }).join("");
+    }
+  }catch(err){
+    status.className="status-box error";
+    status.textContent="拉取 TTS 模型失败："+err.message;
+  }
+}
+function selectTTSModel(model){
+  const input=document.getElementById("ttsModelInput");
+  if(input) input.value=model;
+  saveApiFromForm();
+  renderApi();
+  toast("已填入 TTS 模型："+model);
 }
 function renderThemes(){
   renderThemePresetGrid();
@@ -10683,6 +10792,7 @@ function openQuickModal(html){
   mask.classList.add("show");
 }
 window.closeQuickModal=function closeQuickModal(){
+  try{ if(window.RealVoiceMessage && typeof window.RealVoiceMessage.reset==="function") window.RealVoiceMessage.reset(); }catch(e){}
   $("#quickModalMask").classList.remove("show");
   $("#quickModal").classList.remove("wide");
   $("#quickModal").innerHTML="";
@@ -11701,24 +11811,458 @@ async function getStoredFile(filename){
   });
 }
 
+
+function blobToDataURL(blob){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=()=>resolve(String(r.result||""));
+    r.onerror=()=>reject(r.error||new Error("read blob failed"));
+    r.readAsDataURL(blob);
+  });
+}
+
+function getVoiceTTSMode(){
+  const cfg=Storage.get("ttsApi",{});
+  return String(cfg.mode || "explicit");
+}
+function isRealTTSOff(){
+  return getVoiceTTSMode()==="off";
+}
+function containsCJK(s){
+  return /[\u3400-\u9fff\uf900-\ufaff]/.test(String(s||""));
+}
+function stripVoiceStageDirections(s){
+  let t=String(s||"").trim();
+  // 旧文字语音常写成：（音色/场景/语气）真正要说的话
+  // 真实 TTS 只朗读后面的正文，不读括号里的音色/场景提示。
+  t=t.replace(/^\s*[（(][^\n()（）]{1,120}[）)]\s*/u,"");
+  return t.trim();
+}
+function stripVoiceChineseTranslation(s){
+  let t=String(s||"").trim();
+  // 推荐格式：English sentence.\n中文：中文翻译
+  // 或：English sentence.（中文：中文翻译）
+  t=t.replace(/\s*[（(]\s*(?:中文(?:翻译)?|翻译|Chinese|CN)\s*[:：][\s\S]*?[）)]\s*$/iu,"");
+  t=t.replace(/(?:\n|\r|^)\s*(?:中文(?:翻译)?|翻译|Chinese|CN)\s*[:：][\s\S]*$/iu,"");
+  // 兼容单行：English sentence. 中文：中文翻译
+  t=t.replace(/\s+(?:中文(?:翻译)?|翻译|Chinese|CN)\s*[:：][\s\S]*$/iu,"");
+  // 兼容：English sentence. / 中文翻译 ；只有斜杠后明显是中文时才删，避免误删英文里的 /。
+  t=t.replace(/\s*[\/／｜|]\s*([\s\S]*)$/u,(m,tail)=>containsCJK(tail)?"":m);
+  return t.trim();
+}
+function getVoiceSpeakText(raw){
+  // UI 仍显示原来的文字语音全文；这里只决定送去 ElevenLabs 朗读的文本。
+  let t=String(raw||"").trim();
+  t=stripVoiceStageDirections(t);
+  t=stripVoiceChineseTranslation(t);
+  return t.trim();
+}
+
+function getElevenLabsTTSConfig(){
+  if(isRealTTSOff()) return null;
+  const cfg=Storage.get("ttsApi",{});
+  const apiKey=String(cfg.apiKey||"").trim();
+  const voiceId=String(cfg.voiceId||"").trim();
+  const model=String(cfg.model||"eleven_multilingual_v2").trim()||"eleven_multilingual_v2";
+  if(!apiKey || !voiceId) return null;
+  return {apiKey, voiceId, model};
+}
+async function elevenLabsTTS(text, cfg){
+  const url="https://api.elevenlabs.io/v1/text-to-speech/"+encodeURIComponent(cfg.voiceId);
+  const body={
+    text:String(text||"").slice(0,2500),
+    model_id:cfg.model||"eleven_multilingual_v2",
+    voice_settings:{stability:0.5, similarity_boost:0.75}
+  };
+  const res=await fetch(url,{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Accept":"audio/mpeg","xi-api-key":cfg.apiKey},
+    body:JSON.stringify(body)
+  });
+  if(!res.ok){
+    let detail="";
+    try{ detail=(await res.text()).slice(0,220); }catch(e){}
+    throw new Error(detail || ("ElevenLabs TTS HTTP "+res.status));
+  }
+  return await res.blob();
+}
+async function hydrateRoleVoiceTTS(msgId, roleId){
+  try{
+    const cfg=getElevenLabsTTSConfig();
+    if(!cfg) return;
+    const histKey=Storage.roleKey("wechatHistory", roleId||Miao.state.currentRoleId);
+    let h=Storage.get(histKey,[]);
+    let m=h.find(x=>x.id===msgId && x.sender==="role" && x.type==="voice");
+    if(!m || !m.data) return;
+    const rawVoiceText=String(m.data.text || m.data.transcript || "").trim();
+    const text=getVoiceSpeakText(rawVoiceText);
+    if(!text || m.data.audioData || m.data.audioUrl || m.data.ttsStatus==="loading" || m.data.ttsStatus==="done" || /^skipped/.test(String(m.data.ttsStatus||""))) return;
+    // 英文音色读中文会很怪：如果清理后的朗读文本里还有中文，就不生成真实 TTS，保留原文字语音气泡。
+    if(containsCJK(text)){
+      m.data.ttsStatus="skipped_lang";
+      m.data.ttsSkippedReason="朗读文本含中文，已跳过真实语音，保留文字语音";
+      Storage.set(histKey,h);
+      return;
+    }
+    m.data.ttsStatus="loading";
+    m.data.ttsProvider="elevenlabs";
+    Storage.set(histKey,h);
+    if(Miao.state.currentRoleId===(roleId||Miao.state.currentRoleId) && Miao.state.currentApp==="wechat") renderChat();
+
+    const blob=await elevenLabsTTS(text,cfg);
+    const dataUrl=await blobToDataURL(blob);
+    h=Storage.get(histKey,[]);
+    m=h.find(x=>x.id===msgId && x.sender==="role" && x.type==="voice");
+    if(!m || !m.data) return;
+    m.data.audioData=dataUrl;
+    m.data.mime=blob.type||"audio/mpeg";
+    m.data.real=true;
+    m.data.tts=true;
+    m.data.ephemeral=true;
+    m.data.ttsStatus="done";
+    m.data.audioCleared=false;
+    Storage.set(histKey,h);
+    if(Miao.state.currentRoleId===(roleId||Miao.state.currentRoleId) && Miao.state.currentApp==="wechat") renderChat();
+  }catch(err){
+    try{
+      const histKey=Storage.roleKey("wechatHistory", roleId||Miao.state.currentRoleId);
+      const h=Storage.get(histKey,[]);
+      const m=h.find(x=>x.id===msgId && x.sender==="role" && x.type==="voice");
+      if(m && m.data){
+        m.data.ttsStatus="error";
+        m.data.ttsError=String(err?.message||err).slice(0,220);
+        Storage.set(histKey,h);
+        if(Miao.state.currentRoleId===(roleId||Miao.state.currentRoleId) && Miao.state.currentApp==="wechat") renderChat();
+      }
+    }catch(e){}
+    console.warn("[ElevenLabs TTS]", err);
+  }
+}
+window.hydrateRoleVoiceTTS=hydrateRoleVoiceTTS;
+
+
+function sttLangToISO(lang){
+  const s=String(lang||"");
+  if(s.startsWith("en")) return "en";
+  if(s.startsWith("zh")) return "zh";
+  if(s.startsWith("ja")) return "ja";
+  if(s.startsWith("ko")) return "ko";
+  return "";
+}
+function getElevenLabsSTTConfig(){
+  const cfg=Storage.get("ttsApi",{});
+  const apiKey=String(cfg.apiKey||"").trim();
+  if(!apiKey) return null;
+  return {
+    apiKey,
+    model:"scribe_v2",
+    languageCode:sttLangToISO(Storage.get("voiceSttLang",""))
+  };
+}
+async function elevenLabsSTT(blob,cfg){
+  const fd=new FormData();
+  fd.append("model_id", cfg.model||"scribe_v2");
+  fd.append("file", blob, "voice.webm");
+  if(cfg.languageCode) fd.append("language_code", cfg.languageCode);
+  fd.append("tag_audio_events", "false");
+  const res=await fetch("https://api.elevenlabs.io/v1/speech-to-text",{
+    method:"POST",
+    headers:{"xi-api-key":cfg.apiKey},
+    body:fd
+  });
+  if(!res.ok){
+    let detail="";
+    try{ detail=(await res.text()).slice(0,260); }catch(e){}
+    throw new Error(detail || ("ElevenLabs STT HTTP "+res.status));
+  }
+  const data=await res.json();
+  return String(data.text||"").trim();
+}
+async function tryApiTranscribeUserVoice(blob,setStatus){
+  const cfg=getElevenLabsSTTConfig();
+  if(!cfg) return "";
+  try{
+    if(setStatus) setStatus("浏览器没有识别到文字，正在用 ElevenLabs STT 转写…");
+    return await elevenLabsSTT(blob,cfg);
+  }catch(err){
+    console.warn("[ElevenLabs STT]",err);
+    if(setStatus) setStatus("录音已保存，但 API 转写失败。可以手动补文字。\n"+String(err?.message||err).slice(0,120));
+    return "";
+  }
+}
+
+const RealVoiceMessage = {
+  recorder:null,
+  stream:null,
+  chunks:[],
+  audioData:"",
+  mime:"",
+  startedAt:0,
+  duration:0,
+  timer:null,
+  stopTimer:null,
+  recognition:null,
+  transcript:"",
+  sttHint:"",
+  maxMs:60000,
+  chooseMime(){
+    if(typeof MediaRecorder==="undefined" || !MediaRecorder.isTypeSupported) return "";
+    const candidates=["audio/mp4","audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus"];
+    return candidates.find(t=>MediaRecorder.isTypeSupported(t)) || "";
+  },
+  reset(){
+    this.recorder=null; this.stream=null; this.chunks=[]; this.audioData=""; this.mime="";
+    this.startedAt=0; this.duration=0; this.transcript=""; this.sttHint="";
+    clearInterval(this.timer); this.timer=null;
+    clearTimeout(this.stopTimer); this.stopTimer=null;
+    this.stopRecognition();
+  },
+  setStatus(text){ const el=document.getElementById("realVoiceStatus"); if(el) el.textContent=text; },
+  setRecordBtn(on){
+    const b=document.getElementById("realVoiceRecordBtn");
+    if(b){ b.classList.toggle("recording",!!on); b.textContent=on?"松开发送前先停止录音":"按住录音"; }
+  },
+  updateTimer(){
+    if(!this.startedAt) return;
+    const sec=Math.max(0,Math.ceil((Date.now()-this.startedAt)/1000));
+    const tail=this.transcript ? `
+识别：${this.transcript}` : (this.sttHint||"");
+    this.setStatus(`录音中 ${sec}s / 60s${tail}`);
+  },
+  blobToDataURL(blob){
+    return new Promise((resolve,reject)=>{
+      const r=new FileReader();
+      r.onload=()=>resolve(String(r.result||""));
+      r.onerror=()=>reject(r.error||new Error("read audio failed"));
+      r.readAsDataURL(blob);
+    });
+  },
+  startRecognition(){
+    const Ctor=window.SpeechRecognition || window.webkitSpeechRecognition;
+    const lang=String(Storage.get("voiceSttLang","zh-CN")||"zh-CN");
+    if(!Ctor){
+      this.sttHint="\n提示：当前浏览器不支持自动识别，请在下方手动补文字。";
+      this.updateTimer();
+      return false;
+    }
+    try{
+      const rec=new Ctor();
+      this.recognition=rec;
+      rec.lang=lang;
+      rec.continuous=true;
+      rec.interimResults=true;
+      rec.onresult=(ev)=>{
+        let finalText="", interim="";
+        for(let i=ev.resultIndex;i<ev.results.length;i++){
+          const t=ev.results[i][0]?.transcript || "";
+          if(ev.results[i].isFinal) finalText+=t;
+          else interim+=t;
+        }
+        if(finalText) this.transcript=(this.transcript+finalText).trim();
+        const box=document.getElementById("voiceInputText");
+        if(box) box.value=(this.transcript + (interim?" "+interim:" ")).trim();
+        this.updateTimer();
+      };
+      rec.onerror=(ev)=>{
+        this.sttHint="\n提示：自动识别失败（"+(ev?.error||"unknown")+"），可以手动补文字。";
+        this.updateTimer();
+      };
+      rec.start();
+      return true;
+    }catch(e){
+      this.sttHint="\n提示：自动识别启动失败，可以手动补文字。";
+      this.updateTimer();
+      return false;
+    }
+  },
+  stopRecognition(){
+    try{ if(this.recognition) this.recognition.stop(); }catch(e){}
+    this.recognition=null;
+  },
+  async start(){
+    if(this.recorder && this.recorder.state==="recording") return;
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder==="undefined"){
+      toast("当前浏览器不支持真实录音，可以先用文字语音");
+      return;
+    }
+    try{
+      this.reset();
+      this.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+      this.mime=this.chooseMime();
+      this.recorder=this.mime ? new MediaRecorder(this.stream,{mimeType:this.mime}) : new MediaRecorder(this.stream);
+      this.chunks=[];
+      this.recorder.ondataavailable=(ev)=>{ if(ev.data && ev.data.size>0) this.chunks.push(ev.data); };
+      this.recorder.onstop=async()=>{
+        clearInterval(this.timer); clearTimeout(this.stopTimer); this.stopRecognition(); this.setRecordBtn(false);
+        try{ this.stream?.getTracks?.().forEach(t=>t.stop()); }catch(e){}
+        this.duration=Math.max(1,Math.min(60,Math.ceil((Date.now()-this.startedAt)/1000)));
+        const blob=new Blob(this.chunks,{type:this.mime || this.chunks[0]?.type || "audio/webm"});
+        this.audioData=await this.blobToDataURL(blob);
+        const audio=document.getElementById("realVoicePreview");
+        if(audio){ audio.src=this.audioData; audio.classList.add("show"); }
+        let text=(document.getElementById("voiceInputText")?.value||"").trim();
+        if(!text){
+          text=await tryApiTranscribeUserVoice(blob,(s)=>this.setStatus(s));
+          const box=document.getElementById("voiceInputText");
+          if(text && box) box.value=text;
+        }
+        this.setStatus(`已录好 ${this.duration}s${text?"，文字已转成文本，可编辑后发送":"。没有识别到文字，也可以手动补一句方便角色理解"}`);
+      };
+      this.startedAt=Date.now();
+      this.recorder.start();
+      this.setRecordBtn(true);
+      this.setStatus("录音中 1s / 60s");
+      this.timer=setInterval(()=>this.updateTimer(),500);
+      this.stopTimer=setTimeout(()=>this.stop(),this.maxMs);
+      this.startRecognition();
+      if(navigator.vibrate) try{navigator.vibrate(10);}catch(e){}
+    }catch(err){
+      this.setRecordBtn(false);
+      try{ this.stream?.getTracks?.().forEach(t=>t.stop()); }catch(e){}
+      toast("录音启动失败："+(err?.message||err));
+    }
+  },
+  stop(){
+    try{
+      if(this.recorder && this.recorder.state==="recording") this.recorder.stop();
+    }catch(e){}
+  },
+  cancel(){
+    try{ if(this.recorder && this.recorder.state==="recording") this.recorder.stop(); }catch(e){}
+    this.reset();
+    this.setStatus("已取消录音");
+    this.setRecordBtn(false);
+  },
+  bindModal(){
+    const btn=document.getElementById("realVoiceRecordBtn");
+    if(!btn || btn.dataset.bound) return;
+    btn.dataset.bound="1";
+    btn.addEventListener("contextmenu",e=>e.preventDefault());
+    btn.addEventListener("touchstart",e=>{e.preventDefault();this.start();},{passive:false});
+    btn.addEventListener("touchend",e=>{e.preventDefault();this.stop();},{passive:false});
+    btn.addEventListener("touchcancel",e=>{e.preventDefault();this.cancel();},{passive:false});
+    btn.addEventListener("mousedown",e=>{e.preventDefault();this.start();});
+    window.addEventListener("mouseup",()=>this.stop());
+  },
+  send(){
+    const text=(document.getElementById("voiceInputText")?.value||"").trim();
+    if(!this.audioData && !text){ toast("请先录音，或输入文字语音内容"); return; }
+    const h=getHistory();
+    const dur=this.audioData ? (this.duration||1) : Math.max(1,Math.min(60,Math.ceil(text.length/5)));
+    h.push({
+      id:uid("msg"), groupId:uid("usergrp"), sender:"user", type:"voice",
+      content:`[语音:${text || "真实语音"}]`,
+      data:{text, transcript:text, duration:dur, audioData:this.audioData||"", mime:this.mime||"", real:!!this.audioData},
+      read:false, createdAt:Date.now(), time:nowTime()
+    });
+    saveHistory(h);
+    this.reset();
+    closeQuickModal();
+    renderChat();
+    const chat=document.getElementById("chat"); if(chat) requestAnimationFrame(()=>{chat.scrollTop=chat.scrollHeight;});
+  }
+};
+window.RealVoiceMessage=RealVoiceMessage;
+
 function openVoiceInput(){
+  RealVoiceMessage.reset();
   openQuickModal(`<div class="quick-modal-title">发送语音</div>
-<div style="font-size:12px;color:#999;margin-bottom:8px">格式：（声音描述）说的内容，括号可省略</div>
-<textarea id="voiceInputText" placeholder="例：（声音有点哑）在干嘛" style="width:100%;height:80px;resize:none;border-radius:10px;border:1px solid #ddd;padding:8px;font-size:14px;box-sizing:border-box"></textarea>
-<button class="btn primary" data-action="submit-voice-input" style="margin-top:10px;width:100%">发送</button>`);
-  setTimeout(()=>{ const t=document.getElementById("voiceInputText"); if(t) t.focus(); },100);
+<div class="real-voice-panel">
+  <div class="real-voice-tip">按住录音，松开停止。会保存真实音频；浏览器识别不到时，会尝试用 ElevenLabs STT 转成文字，方便角色读懂。</div>
+  <label style="margin:0 0 4px;font-size:12px;color:#666;font-weight:800">我的语音识别语言</label>
+  <select id="voiceSttLangInput" style="width:100%;border-radius:12px;padding:9px 10px;border:1px solid #ddd;margin-bottom:8px">
+    <option value="zh-CN">中文普通话 zh-CN</option>
+    <option value="en-US">英文 en-US</option>
+    <option value="en-GB">英文 en-GB</option>
+    <option value="ja-JP">日语 ja-JP</option>
+    <option value="ko-KR">韩语 ko-KR</option>
+  </select>
+  <div class="real-voice-status" id="realVoiceStatus">准备录音。也可以只输入文字，发送原来的文字语音。</div>
+  <button class="real-voice-record-btn" id="realVoiceRecordBtn" type="button">按住录音</button>
+  <audio class="real-voice-preview" id="realVoicePreview" controls></audio>
+  <textarea id="voiceInputText" placeholder="自动识别的文字会出现在这里；也可以手动补充，方便角色理解" style="width:100%;height:82px;resize:none;border-radius:12px;border:1px solid #ddd;padding:9px;font-size:14px;box-sizing:border-box"></textarea>
+  <div class="real-voice-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="submit-voice-input">发送</button></div>
+</div>`);
+  setTimeout(()=>{
+    const langInput=document.getElementById("voiceSttLangInput");
+    if(langInput){
+      langInput.value=Storage.get("voiceSttLang","zh-CN")||"zh-CN";
+      langInput.addEventListener("change",()=>Storage.set("voiceSttLang", langInput.value||"zh-CN"));
+    }
+    RealVoiceMessage.bindModal();
+  },80);
 }
 function submitVoiceInput(){
-  const t=document.getElementById("voiceInputText");
-  const text=(t?.value||"").trim();
-  if(!text){ toast("请输入语音内容"); return; }
-  const h=getHistory();
-  const dur=Math.max(1,Math.min(60,Math.ceil(text.length/5)));
-  h.push({id:uid("msg"), groupId:uid("usergrp"), sender:"user", type:"voice", content:`[语音:${text}]`, data:{text, duration:dur}, read:false, createdAt:Date.now(), time:nowTime()});
-  saveHistory(h);
-  closeQuickModal();
-  renderChat();
+  RealVoiceMessage.send();
 }
+
+let currentVoiceAudio=null;
+function playVoiceAudio(id, bubbleEl){
+  const h=getHistory();
+  const m=h.find(x=>x.id===id);
+  const d=m?.data||{};
+  const src=d.audioData || d.audioUrl || "";
+  if(!src){
+    const card=bubbleEl?.closest(".voice-msg-wrap");
+    if(card){ const t=card.querySelector(".voice-text"); if(t) t.classList.toggle("show"); }
+    return;
+  }
+  try{
+    if(currentVoiceAudio){ currentVoiceAudio.pause(); currentVoiceAudio=null; }
+    document.querySelectorAll(".voice-bubble.playing").forEach(x=>x.classList.remove("playing"));
+    const audio=new Audio(src);
+    currentVoiceAudio=audio;
+    if(bubbleEl) bubbleEl.classList.add("playing");
+    audio.onended=()=>{
+      if(bubbleEl) bubbleEl.classList.remove("playing");
+      if(currentVoiceAudio===audio) currentVoiceAudio=null;
+      markRoleVoicePlayed(id);
+    };
+    audio.onerror=()=>{ if(bubbleEl) bubbleEl.classList.remove("playing"); toast("语音播放失败"); };
+    audio.play().catch(err=>{ if(bubbleEl) bubbleEl.classList.remove("playing"); toast("播放被拦截，请再点一次"); });
+  }catch(err){ toast("语音播放失败："+(err?.message||err)); }
+}
+
+function markRoleVoicePlayed(id){
+  try{
+    const h=getHistory();
+    const m=h.find(x=>x.id===id);
+    if(!m || m.sender!=="role" || m.type!=="voice" || !m.data) return;
+    m.data.played=true;
+    m.data.playedAt=Date.now();
+    saveHistory(h);
+  }catch(e){}
+}
+
+function clearPlayedRoleVoiceCache(manual){
+  try{
+    const keys=allMiaoKeys ? allMiaoKeys().filter(k=>k.startsWith("wechatHistory.")) : [Storage.roleKey("wechatHistory")];
+    let cleared=0;
+    keys.forEach(k=>{
+      const h=Storage.get(k,[]);
+      if(!Array.isArray(h) || !h.length) return;
+      let changed=false;
+      h.forEach(m=>{
+        if(!m || m.sender!=="role" || m.type!=="voice" || !m.data) return;
+        const hasAudio=!!(m.data.audioData || m.data.audioUrl);
+        const canClear=hasAudio && m.data.played;
+        if(!canClear) return;
+        delete m.data.audioData;
+        delete m.data.audioUrl;
+        m.data.audioCleared=true;
+        m.data.clearedAt=Date.now();
+        changed=true;
+        cleared++;
+      });
+      if(changed) Storage.set(k,h);
+    });
+    if(cleared>0 && typeof renderChat==="function") renderChat();
+    if(manual) toast(cleared>0?`已清理 ${cleared} 条角色语音缓存`:"没有可清理的角色语音缓存");
+    return cleared;
+  }catch(e){ if(manual) toast("清理语音缓存失败："+(e.message||e)); return 0; }
+}
+window.clearPlayedRoleVoiceCache=clearPlayedRoleVoiceCache;
+
 function openImageDescModalOriginal(){
   openQuickModal(`<div class="quick-modal-title">发送图片</div>
     <label>上传图片（可选，模型可直接看到）</label>
@@ -11891,6 +12435,39 @@ function latestPendingTransfer(history){
 function latestPendingDelivery(history){
   return history.slice().reverse().find(m=>m.type==="delivery" && m.data?.status==="pending");
 }
+
+function getTTSMode(){
+  return getVoiceTTSMode();
+}
+function shouldAutoVoiceText(text, userText){
+  const s=String(text||"").trim();
+  if(!s || s.length>140) return false;
+  const u=String(userText||"");
+  if(/语音|发个语音|说句话|念给我听|用声音|听你说|声音/.test(u)) return true;
+  if(/晚安|想你|过来|听话|乖|别怕|在呢|抱|亲|睡吧|喂|嗯|哼|笨蛋|小狗|宝宝|宝贝|撒娇|轻声|小声|耳边/.test(s)) return true;
+  if(s.length<=28 && /[。！？!?~～…]?$/.test(s) && /[呢呀啊嘛吧哦喔啦哼嗯]/.test(s)) return true;
+  return false;
+}
+function textMsgToVoiceMsg(m){
+  const text=String(m.content||"").trim();
+  const dur=Math.max(1,Math.min(60,Math.ceil(text.length/5)));
+  const out=Object.assign({},m,{type:"voice",content:"[语音:"+text+"]"});
+  out.data=Object.assign({},m.data||{},{text,transcript:text,duration:dur,autoVoice:true});
+  return out;
+}
+function applyAutoVoiceMode(parsed, userText){
+  const mode=getTTSMode();
+  if(mode==="explicit") return parsed;
+  return (parsed||[]).map(m=>{
+    if(!m || m.sender!=="role" || m.type!=="text") return m;
+    const text=String(m.content||"").trim();
+    if(!text) return m;
+    if(mode==="always") return textMsgToVoiceMsg(m);
+    if(mode==="occasional" && shouldAutoVoiceText(text,userText)) return textMsgToVoiceMsg(m);
+    return m;
+  });
+}
+
 function parseAIReplyUnified(raw, groupId){
   const out=[];
   const h=getHistory();
