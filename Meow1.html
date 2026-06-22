@@ -2498,7 +2498,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
       <div class="thinking-mask" id="thinkingMask" onclick="closeThinking(event)">
         <div class="thinking-panel" onclick="event.stopPropagation()">
           <div class="thinking-panel-handle"></div>
-          <div class="thinking-panel-title">思维过程</div>
+          <div class="thinking-panel-title">ThoughProcess</div>
           <div class="thinking-panel-body" id="thinkingBody"></div>
         </div>
       </div>
@@ -5961,6 +5961,7 @@ function renderMessageBody(m){
     const coverHtml=d.coverUrl ? `<img src="${escapeAttr(d.coverUrl)}" alt="">` : "♪";
     const sub=album ? artist+" · "+album : artist;
     const note=d.note||"";
+    const lyrics=d.lyrics||"";
     const dur=d.duration||"0:30";
     return `<div class="music-card" data-msg-id="${m.id}">
       <div class="music-card-body">
@@ -5974,6 +5975,7 @@ function renderMessageBody(m){
       <div class="music-card-progress" id="mc-bar-${m.id}" onclick="seekMusic(event,'${m.id}')"><div class="music-card-progress-fill" id="mc-fill-${m.id}"></div></div>
       <div class="music-card-meta"><span id="mc-cur-${m.id}">0:00</span><span id="mc-dur-${m.id}">${escapeHtml(dur)}</span></div>
       ${note?`<div class="music-card-expand has-note" onclick="this.nextElementSibling.classList.toggle('show')">💬 附言</div><div class="music-card-note">${escapeHtml(note)}</div>`:""}
+      ${lyrics?`<div class="music-card-expand has-note" onclick="this.nextElementSibling.classList.toggle('show')">🎵 歌词</div><div class="music-card-note">${escapeHtml(lyrics)}</div>`:""}
     </div>`;
   }
   if(m.type==="image_desc"){
@@ -6134,6 +6136,27 @@ function stripThinkingBlocks(text){
     .replace(/<think(?:ing)?\b[^>]*>[\s\S]*$/gi,"")
     .replace(/<\/think(?:ing)?>/gi,"")
     .trim();
+}
+function normalizeThinkingForPanel(thinking, finalText){
+  let t=String(thinking||"").trim();
+  if(!t) return "";
+  const final=stripThinkingBlocks(finalText||"").trim();
+  // 避免把最终回复又完整塞进思维面板
+  if(final && t.includes(final)) t=t.replace(final,"").trim();
+  // 清理常见英文元分析/计划句，避免面板里出现“模型工作日志”
+  t=t.split(/\n+/).map(x=>x.trim()).filter(line=>{
+    if(!line) return false;
+    return !/^(we need|i need|the user|user wants|i should|we should|let'?s|need to|the response|final answer|assistant should)\b/i.test(line);
+  }).join("\n").trim();
+  // 如果服务商返回的是英文 reasoning_content，不直接展示；思维面板只保留中文角色内心
+  if(t && !/[\u4e00-\u9fff]/.test(t)){
+    return "模型返回了非中文推理字段，已隐藏。请让角色使用 <thinking>中文角色内心</thinking>，或换支持中文 reasoning 的模型。";
+  }
+  return t;
+}
+function wrapAIThinking(thinking, content){
+  const clean=normalizeThinkingForPanel(thinking, content);
+  return clean ? `<thinking>${clean}</thinking>\n${content||""}` : (content||"");
 }
 // Claude 文件助手要保护代码块，避免误删代码块里的 <think>/<thinking> 示例
 function stripThinkingBlocksKeepCode(text){
@@ -6410,7 +6433,7 @@ function messageToAIContext(m){
   if(m.type==="sticker") return `[表情包:${d.name||m.content}|含义:${d.meaning||""}]`;
   if(m.type==="voice") return `[语音:${d.text||m.content}]`;
   if(m.type==="link") return `[链接:${d.platform||"论坛"}|${d.title||""}]`;
-  if(m.type==="music") return `[音乐:${d.title||""}|${d.artist||""}${d.note?"|附言:"+d.note:""}]`;
+  if(m.type==="music") return `[音乐:${d.title||""}|${d.artist||""}${d.note?"|附言:"+d.note:""}${d.lyrics?"|歌词:"+String(d.lyrics).slice(0,200):""}${d.audioUrl?"|有完整音频":""}]`;
   if(m.type==="image_desc") return `[图片描述:${d.description||m.content}]`;
   if(m.type==="transfer") return `[用户转账:${d.amount||""}|${d.note||""}|状态:${d.status||"pending"}]`;
   if(m.type==="delivery") return `[代付链接:${d.amount||""}|${d.item||""}|状态:${d.status||"pending"}]`;
@@ -6622,9 +6645,7 @@ async function callAI(api, history, onChunk, extraSystem){
     if(!msg.tool_calls || msg.tool_calls.length===0){
       const content=msg.content || (Array.isArray(data.content) ? data.content.filter(b=>b.type==="text").map(b=>b.text).join("") : null) || data.output_text || "";
       const thinking=(msg.reasoning_content || msg.reasoning || msg.thinking || data.reasoning_content || data.reasoning || "").trim?.() || "";
-      const finalContent=thinking
-        ? `<thinking>${thinking}</thinking>\n${content}`
-        : content;
+      const finalContent=wrapAIThinking(thinking, content);
       Miao.state.lastAIContent=finalContent;
       return finalContent;
     }
@@ -6710,8 +6731,8 @@ ${getStickerPromptList()}
 [撤回: 消息内容片段]（撤回你之前发的某条消息，片段用于匹配目标消息；不加片段则撤回最近一条。何时撤回根据你的人设自行判断）
 [链接: 平台|标题|正文内容|评论1//评论2//评论3]
 平台可选：小红书、微博、贴吧、论坛、新闻。评论字段可省略。
-[分享音乐: 歌名|歌手|专辑|附言]（分享一首歌给user，专辑和附言可省略。附言是你想对user说的话，比如"这首歌让我想起你"）
-示例：[分享音乐: Medicine|Daughter|The Wild Youth|声音轻得像哄你睡，歌词在拆骨头。]
+[分享音乐: 歌名|歌手|专辑|附言|歌词/歌词节选|音频URL]（分享一首歌给user，专辑、附言、歌词、音频URL可省略。音频URL必须是可公开访问的 mp3/m4a/ogg 直链；附言是你想对user说的话；歌词字段用于展示用户提供的歌词、短句节选或你自写的原创歌词片段，不要输出整首受版权保护的歌词）
+示例：[分享音乐: Medicine|Daughter|The Wild Youth|声音轻得像哄你睡，歌词在拆骨头。|歌词氛围：冷、轻、像夜里低声哄睡。|https://example.com/music/medicine.mp3]
 [收款]
 [拒收转账]
 [主动转账: 金额|备注]
@@ -6749,6 +6770,7 @@ ${getStickerPromptList()}
 2. 禁止输出User:、用户：、Assistant:、旁白式剧本格式。
 6. 不要把思考过程、元分析直接写进普通聊天正文。动作描写、心理描写、环境描写正常保留。
    如模型支持独立 thinking/reasoning 字段，请在该字段中用中文思考；如必须显式输出角色内心整理，请只放进 <thinking>...</thinking>，前端会隐藏到“思维过程”面板，不能混入普通气泡。
+   <thinking> 里只写角色内心/情绪/判断，1-3句中文即可；不要英文，不要复述最终回复，不要写“用户想让我……/我应该……”这种模型工作日志。
    禁止在普通正文中出现：「The user wants me to...」「I should respond by...」「Let me respond in character」「用户想让我说X」「我应该这样回应」
    普通聊天正文只输出角色的回应，不分析，不解释。
 3. 只输出微信聊天内容；可以用双换行分成多条气泡。
@@ -10689,8 +10711,9 @@ function toggleMusicPlay(msgId){
   const h=getHistory();
   const m=h.find(x=>x.id===msgId);
   if(!m||!m.data) return;
-  if(m.data.previewUrl){
-    MusicPlayer.play(msgId,m.data.previewUrl);
+  const audioUrl=m.data.audioUrl || m.data.previewUrl;
+  if(audioUrl){
+    MusicPlayer.play(msgId,audioUrl);
   }else{
     toast("正在搜索歌曲…");
     fetchMusicInfo(m.data.title,m.data.artist).then(info=>{
@@ -10739,7 +10762,9 @@ function openMusicInput(){
 <input id="musicTitleInput" placeholder="歌曲名" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:13px;box-sizing:border-box">
 <input id="musicArtistInput" placeholder="歌手" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:13px;box-sizing:border-box">
 <input id="musicAlbumInput" placeholder="专辑（选填）" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:13px;box-sizing:border-box">
-<textarea id="musicNoteInput" placeholder="附言（选填）想说点什么？" style="width:100%;height:50px;resize:none;border-radius:8px;border:1px solid #ddd;padding:7px;font-size:12px;box-sizing:border-box;margin-bottom:10px"></textarea>
+<textarea id="musicNoteInput" placeholder="附言（选填）想说点什么？" style="width:100%;height:50px;resize:none;border-radius:8px;border:1px solid #ddd;padding:7px;font-size:12px;box-sizing:border-box;margin-bottom:8px"></textarea>
+<textarea id="musicLyricsInput" placeholder="歌词/歌词节选（选填）" style="width:100%;height:78px;resize:none;border-radius:8px;border:1px solid #ddd;padding:7px;font-size:12px;box-sizing:border-box;margin-bottom:8px"></textarea>
+<input id="musicAudioUrlInput" placeholder="完整音频URL（选填，mp3/m4a/ogg直链）" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:10px;font-size:13px;box-sizing:border-box">
 <button class="btn primary" onclick="submitMusicInput()" style="width:100%">搜索并发送</button>`);
 }
 window.openMusicInput=openMusicInput;
@@ -10749,6 +10774,8 @@ async function submitMusicInput(){
   const artist=(document.getElementById("musicArtistInput")?.value||"").trim();
   const album=(document.getElementById("musicAlbumInput")?.value||"").trim();
   const note=(document.getElementById("musicNoteInput")?.value||"").trim();
+  const lyrics=(document.getElementById("musicLyricsInput")?.value||"").trim();
+  const audioUrl=(document.getElementById("musicAudioUrlInput")?.value||"").trim();
   if(!title){toast("请输入歌曲名");return;}
   closeQuickModal();
   toast("正在搜索…");
@@ -10763,8 +10790,10 @@ async function submitMusicInput(){
       artist:info.artist||artist,
       album:info.album||album,
       note,
+      lyrics,
       coverUrl:info.coverUrl||"",
       previewUrl:info.previewUrl||"",
+      audioUrl,
       duration:info.duration||"0:30"
     },
     read:false,createdAt:Date.now(),time:nowTime()
@@ -10773,7 +10802,8 @@ async function submitMusicInput(){
   renderChat();
   const chat=$("#chat");
   if(chat) requestAnimationFrame(()=>{chat.scrollTop=chat.scrollHeight;});
-  if(info.previewUrl) toast("已找到音源，点击播放");
+  if(audioUrl) toast("已使用完整音频链接，点击播放");
+  else if(info.previewUrl) toast("已找到试听音源，点击播放");
   else toast("未找到音源，已保存为卡片");
 }
 window.submitMusicInput=submitMusicInput;
@@ -11870,7 +11900,9 @@ function parseAIReplyUnified(raw, groupId){
         const artist=parts[1]||"";
         const album=parts[2]||"";
         const note=parts[3]||"";
-        return {type:"music", content:"[音乐:"+title+"]", data:{title,artist,album,note,duration:"0:30",previewUrl:"",coverUrl:""}};
+        const lyrics=parts[4]||"";
+        const audioUrl=parts[5]||"";
+        return {type:"music", content:"[音乐:"+title+"]", data:{title,artist,album,note,lyrics,audioUrl,duration:"0:30",previewUrl:"",coverUrl:""}};
       }
     },
     {
