@@ -99,7 +99,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .app-screen.wechat .wechat-head{margin-top:-1px}
 .home-screen .statusbar{color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.35)}
 /* 桌宠兔子 */
-.desk-pet{position:absolute;width:72px;height:86px;z-index:50;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.desk-pet{position:absolute;width:52px;height:62px;z-index:50;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .desk-pet:active{cursor:grabbing}
 .pet-body{width:100%;height:100%;transition:transform .15s;animation:petIdle 3.5s ease-in-out infinite;transform-origin:bottom center}
 .pet-body svg{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,.2))}
@@ -579,18 +579,45 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .music-card-meta{display:flex;justify-content:space-between;padding:4px 12px 8px;font-size:10px;color:#bbb}
 .music-card-note{padding:0 12px 10px;font-size:calc(12px * var(--font-scale,1));color:#888;line-height:1.5;white-space:pre-wrap;display:none}
 .music-card-note.show{display:block}
-.music-card-expand{padding:0 12px 8px;font-size:11px;color:#bbb;cursor:pointer;display:none}
-.music-card-expand.has-note{display:block}
+.music-card-expand{padding:0 12px 8px;font-size:11px;color:#bbb;cursor:pointer;display:none;align-items:center;gap:7px}
+.music-card-expand.has-note{display:flex}
+.music-row-icon{width:13px;height:13px;display:inline-block;position:relative;flex:0 0 auto;color:#bbb}
+.music-row-icon.note::before{content:"";position:absolute;left:1px;top:2px;width:10px;height:8px;border:1.6px solid currentColor;border-radius:4px}
+.music-row-icon.note::after{content:"";position:absolute;left:4px;bottom:0;width:4px;height:4px;border-left:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:skew(-25deg)}
+.music-row-icon.lyric::before{content:"";position:absolute;left:3px;top:1px;width:6px;height:10px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;border-radius:0 0 0 5px}
+.music-row-icon.lyric::after{content:"";position:absolute;left:7px;top:1px;width:5px;height:2px;background:currentColor;border-radius:2px}
 .music-card-cover.spinning img{animation:musicSpin 4s linear infinite}
 @keyframes musicSpin{to{transform:rotate(360deg)}}
+
+.lyrics-mask{position:absolute;inset:0;z-index:790;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.36);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.lyrics-mask.show{display:flex}
+.lyrics-panel{width:100%;height:78%;border-radius:26px 26px 0 0;overflow:hidden;position:relative;background:#15131a;color:#fff;box-shadow:0 -18px 54px rgba(0,0,0,.3);display:flex;flex-direction:column;animation:thinkSlideUp .25s ease}
+.lyrics-bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(24px);transform:scale(1.16);opacity:.34}
+.lyrics-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,14,.5),rgba(10,10,14,.88))}
+.lyrics-head,.lyrics-body,.lyrics-controls{position:relative;z-index:1}
+.lyrics-head{display:flex;align-items:center;gap:12px;padding:18px 18px 10px}
+.lyrics-cover{width:54px;height:54px;border-radius:14px;object-fit:cover;background:rgba(255,255,255,.12);flex:0 0 auto}
+.lyrics-title{font-size:16px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lyrics-artist{font-size:12px;opacity:.65;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lyrics-close{margin-left:auto;width:34px;height:34px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;position:relative}
+.lyrics-close:before,.lyrics-close:after{content:"";position:absolute;left:10px;top:16px;width:14px;height:2px;background:currentColor;border-radius:2px}
+.lyrics-close:before{transform:rotate(45deg)}.lyrics-close:after{transform:rotate(-45deg)}
+.lyrics-body{flex:1;min-height:0;overflow:auto;padding:12px 26px 18px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.lyric-line{min-height:30px;padding:8px 0;text-align:center;font-size:15px;line-height:1.55;color:rgba(255,255,255,.44);transition:all .2s}
+.lyric-line.active{font-size:20px;font-weight:950;color:#fff;text-shadow:0 4px 18px rgba(0,0,0,.35)}
+.lyric-empty{padding:38px 18px;text-align:center;color:rgba(255,255,255,.62);font-size:14px;line-height:1.7;white-space:pre-wrap}
+.lyrics-controls{padding:10px 22px 20px;display:flex;gap:12px;align-items:center;color:rgba(255,255,255,.78);font-size:12px}
+.lyrics-controls .music-card-play{width:38px;height:38px;background:rgba(255,255,255,.18);box-shadow:none}
 
 .thinking-btn{
   display:inline-flex;align-items:center;justify-content:center;
   width:22px;height:22px;border-radius:50%;border:none;
   background:rgba(0,0,0,.05);color:#bbb;font-size:12px;
   cursor:pointer;margin:3px 6px 0;padding:0;
-  transition:background .15s,color .15s;vertical-align:middle;
+  transition:background .15s,color .15s;vertical-align:middle;position:relative;
 }
+.thinking-btn::before{content:"";position:absolute;left:5px;top:9px;width:12px;height:7px;border:1.6px solid currentColor;border-radius:999px;background:transparent}
+.thinking-btn::after{content:"";position:absolute;left:8px;top:5px;width:7px;height:7px;border:1.6px solid currentColor;border-bottom-color:transparent;border-radius:50%;background:transparent}
 .thinking-btn:hover,.thinking-btn:active{background:rgba(0,0,0,.1);color:#888}
 .thinking-mask{
   position:absolute;inset:0;z-index:780;display:none;
@@ -2458,6 +2485,76 @@ body.multiselect-mode .msg{ cursor:pointer; }
 .clawd-setting-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .clawd-setting-row select{flex:1;min-width:145px}
 
+
+/* ===== 自绘音乐/思维链图标 + 网易云风格歌词弹层 ===== */
+.music-card-play{font-size:0;position:relative;}
+.music-card-play .music-play-icon{display:block;position:relative;width:15px;height:16px;color:currentColor;}
+.music-card-play .music-play-icon:before{content:"";position:absolute;left:3px;top:1px;width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:10px solid currentColor;}
+.music-card-play.playing .music-play-icon:before,.music-card-play.playing .music-play-icon:after{content:"";position:absolute;top:1px;width:4px;height:14px;border:0;border-radius:2px;background:currentColor;}
+.music-card-play.playing .music-play-icon:before{left:3px}.music-card-play.playing .music-play-icon:after{right:3px}
+.music-cover-icon{width:24px;height:24px;border:2px solid currentColor;border-radius:50%;opacity:.9;position:relative;display:inline-block;}
+.music-cover-icon:after{content:"";position:absolute;left:7px;top:7px;width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.9;}
+.music-row-icon{display:inline-block;width:16px;height:16px;margin-right:8px;vertical-align:-3px;position:relative;color:currentColor;}
+.note-mini-icon:before{content:"";position:absolute;left:2px;top:3px;width:12px;height:9px;border:1.7px solid currentColor;border-radius:7px;}
+.note-mini-icon:after{content:"";position:absolute;left:5px;bottom:1px;width:5px;height:5px;border-left:1.7px solid currentColor;border-bottom:1.7px solid currentColor;transform:skew(-20deg);}
+.lyric-mini-icon:before,.lyric-mini-icon:after{content:"";position:absolute;left:2px;right:2px;height:1.8px;background:currentColor;border-radius:99px;}
+.lyric-mini-icon:before{top:4px}.lyric-mini-icon:after{top:10px;width:9px;right:auto;}
+.thinking-btn{font-size:0;}
+.thinking-btn .think-drawn-icon{display:block;width:15px;height:12px;position:relative;color:currentColor;}
+.thinking-btn .think-drawn-icon:before{content:"";position:absolute;left:2px;top:3px;width:11px;height:7px;border:1.7px solid currentColor;border-radius:8px;background:transparent;}
+.thinking-btn .think-drawn-icon:after{content:"";position:absolute;left:1px;bottom:0;width:4px;height:4px;border-radius:50%;background:currentColor;box-shadow:5px -6px 0 -1px currentColor;}
+.lyrics-mask{position:absolute;inset:0;z-index:790;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.32);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);}
+.lyrics-mask.show{display:flex}
+.lyrics-panel{position:relative;width:100%;height:76%;border-radius:28px 28px 0 0;overflow:hidden;background:linear-gradient(180deg,rgba(30,28,34,.92),rgba(13,12,16,.96));color:#fff;box-shadow:0 -18px 48px rgba(0,0,0,.28);display:flex;flex-direction:column;}
+.lyrics-bg{position:absolute;inset:-18px;background-size:cover;background-position:center;filter:blur(24px);opacity:.28;transform:scale(1.08);}
+.lyrics-panel:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.18),rgba(0,0,0,.52));pointer-events:none;}
+.lyrics-close{position:absolute;right:16px;top:14px;z-index:3;width:34px;height:34px;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;}
+.lyrics-close:before,.lyrics-close:after{content:"";position:absolute;left:10px;top:16px;width:14px;height:2px;background:currentColor;border-radius:99px}.lyrics-close:before{transform:rotate(45deg)}.lyrics-close:after{transform:rotate(-45deg)}
+.lyrics-head{position:relative;z-index:2;display:flex;align-items:center;gap:12px;padding:24px 58px 12px 18px;}
+.lyrics-cover{width:54px;height:54px;border-radius:16px;background:rgba(255,255,255,.14);background-size:cover;background-position:center;flex:0 0 auto;box-shadow:0 8px 22px rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.75);}
+.lyrics-title-wrap{min-width:0;flex:1}.lyrics-title{font-size:17px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lyrics-artist{font-size:12px;opacity:.68;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lyrics-play{width:40px;height:40px;border:0;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+.lyrics-play .music-play-icon{display:block;position:relative;width:15px;height:16px;color:currentColor;}.lyrics-play .music-play-icon:before{content:"";position:absolute;left:3px;top:1px;width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:10px solid currentColor}.lyrics-play.playing .music-play-icon:before,.lyrics-play.playing .music-play-icon:after{content:"";position:absolute;top:1px;width:4px;height:14px;border:0;border-radius:2px;background:currentColor}.lyrics-play.playing .music-play-icon:before{left:3px}.lyrics-play.playing .music-play-icon:after{right:3px}
+.lyrics-lines{position:relative;z-index:2;flex:1;min-height:0;overflow-y:auto;padding:28px 30px 42px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;text-align:center;}
+.lyric-line{font-size:15px;line-height:2.05;color:rgba(255,255,255,.42);transition:all .22s ease;white-space:pre-wrap;}
+.lyric-line.active{font-size:20px;font-weight:900;color:rgba(255,255,255,.96);transform:scale(1.03);}
+.lyric-empty{margin-top:46px;font-size:14px;line-height:1.9;color:rgba(255,255,255,.58);white-space:pre-wrap;}
+.lyrics-foot{position:relative;z-index:2;padding:0 22px 24px;color:rgba(255,255,255,.72);font-size:11px;display:flex;justify-content:space-between;gap:12px;}
+
+
+/* ===== 歌词卡片主题适配：结构仿实时歌词，颜色交给喵喵机/美化CSS ===== */
+.lyrics-mask{background:rgba(0,0,0,.24);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+.lyrics-panel{
+  --lyrics-bg: color-mix(in srgb, var(--bar-bg, var(--card, #fff)) 88%, transparent);
+  --lyrics-text: var(--bar-text, var(--text, #111827));
+  --lyrics-muted: color-mix(in srgb, var(--lyrics-text) 44%, transparent);
+  --lyrics-soft: color-mix(in srgb, var(--lyrics-text) 18%, transparent);
+  --lyrics-accent: var(--accent, #c07a92);
+  height:78%;border-radius:28px 28px 0 0;
+  background:var(--lyrics-bg);color:var(--lyrics-text);
+  box-shadow:0 -18px 54px rgba(0,0,0,.22);
+}
+.lyrics-panel:before{content:"";position:absolute;left:50%;top:12px;transform:translateX(-50%);width:46px;height:5px;border-radius:999px;background:var(--lyrics-soft);z-index:3;}
+.lyrics-panel:after{display:none!important;}
+.lyrics-bg{opacity:.10!important;filter:blur(30px)!important;transform:scale(1.18)!important;}
+.lyrics-shade{background:linear-gradient(180deg,color-mix(in srgb,var(--lyrics-bg) 82%,transparent),color-mix(in srgb,var(--lyrics-bg) 96%,transparent))!important;}
+.lyrics-head{padding:38px 42px 10px 18px!important;gap:12px!important;}
+.lyrics-cover{width:48px!important;height:48px!important;border-radius:13px!important;box-shadow:0 8px 20px rgba(0,0,0,.10);background:var(--lyrics-soft)!important;}
+.lyrics-title{font-size:17px!important;font-weight:900!important;color:var(--lyrics-text)!important;letter-spacing:-.2px;}
+.lyrics-artist{font-size:12px!important;color:var(--lyrics-muted)!important;opacity:1!important;margin-top:4px!important;}
+.lyrics-close{position:absolute!important;right:20px!important;top:52px!important;background:transparent!important;color:var(--lyrics-muted)!important;box-shadow:none!important;}
+.lyrics-close:before,.lyrics-close:after{background:currentColor!important;height:2px!important;}
+.lyrics-body{padding:26px 30px 44px!important;text-align:center!important;}
+.lyric-line{margin:22px 0!important;color:var(--lyrics-muted)!important;font-size:16px!important;line-height:1.45!important;font-weight:600!important;transition:color .25s,transform .25s,opacity .25s!important;opacity:.72;}
+.lyric-line .lyric-main{font-size:16px;letter-spacing:.2px;}
+.lyric-line .lyric-trans{font-size:13px;margin-top:7px;color:var(--lyrics-muted);font-weight:500;letter-spacing:.3px;}
+.lyric-line.active{color:var(--lyrics-accent)!important;font-size:16px!important;transform:scale(1.035)!important;opacity:1;font-weight:900!important;}
+.lyric-line.active .lyric-main{font-size:18px;font-weight:950;}
+.lyric-line.active .lyric-trans{color:color-mix(in srgb,var(--lyrics-accent) 72%,var(--lyrics-text));font-weight:700;}
+.lyric-empty{margin-top:46px!important;color:var(--lyrics-muted)!important;font-size:14px!important;line-height:1.9!important;white-space:pre-wrap;}
+.lyrics-controls{position:absolute!important;left:0;right:0;bottom:0;padding:10px 24px 18px!important;color:var(--lyrics-muted)!important;justify-content:space-between!important;background:linear-gradient(180deg,transparent,var(--lyrics-bg));}
+.lyrics-controls .music-card-play{background:color-mix(in srgb,var(--lyrics-accent) 16%,transparent)!important;color:var(--lyrics-accent)!important;box-shadow:none!important;}
+
 </style>
 </head>
 <body>
@@ -2584,6 +2681,18 @@ body.multiselect-mode .msg{ cursor:pointer; }
           <div class="thinking-panel-handle"></div>
           <div class="thinking-panel-title">ThoughtProcess</div>
           <div class="thinking-panel-body" id="thinkingBody"></div>
+        </div>
+      </div>
+      <div class="lyrics-mask" id="lyricsMask" onclick="closeLyricsModal(event)">
+        <div class="lyrics-panel" onclick="event.stopPropagation()">
+          <div class="lyrics-bg" id="lyricsBg"></div><div class="lyrics-shade"></div>
+          <div class="lyrics-head">
+            <img class="lyrics-cover" id="lyricsCover" alt="">
+            <div style="min-width:0;flex:1"><div class="lyrics-title" id="lyricsTitle"></div><div class="lyrics-artist" id="lyricsArtist"></div></div>
+            <button class="lyrics-close" onclick="closeLyricsModal()" aria-label="关闭歌词"></button>
+          </div>
+          <div class="lyrics-body" id="lyricsBody"></div>
+          <div class="lyrics-controls"><span id="lyricsCur">0:00</span><button class="music-card-play" id="lyricsPlayBtn" onclick="toggleLyricsPlay()" aria-label="播放/暂停"><span class="music-play-icon"></span></button><span id="lyricsDur">0:00</span></div>
         </div>
       </div>
       <div class="home-indicator"></div>
@@ -5827,7 +5936,7 @@ function renderMessage(m,h,idx){
       ${!isUser?`<div class="name-line">${escapeHtml(role.name)}</div>`:""}
       ${m.quoteId ? renderQuoteBlock(m) : ""}
       ${renderMessageBody(m)}
-      <div class="time-line">${escapeHtml(m.time||"")}${!isUser&&m.thinking?` <button class="thinking-btn" onclick="openThinking('${m.id}')" title="查看思考链">☁</button>`:""}</div>
+      <div class="time-line">${escapeHtml(m.time||"")}${!isUser&&m.thinking?` <button class="thinking-btn" onclick="openThinking('${m.id}')" title="查看思考链" aria-label="查看思考链"></button>`:""}</div>
       ${isUser?`<div class="read-line">${m.read?"已读":"未读"}</div>`:""}
     </div>
   </div>`;
@@ -6124,10 +6233,9 @@ function renderMessageBody(m){
     const title=escapeHtml(d.title||"未知歌曲");
     const artist=escapeHtml(d.artist||"未知歌手");
     const album=escapeHtml(d.album||"");
-    const coverHtml=d.coverUrl ? `<img src="${escapeAttr(d.coverUrl)}" alt="">` : "♪";
+    const coverHtml=d.coverUrl ? `<img src="${escapeAttr(d.coverUrl)}" alt="">` : `<span class="music-cover-icon"></span>`;
     const sub=album ? artist+" · "+album : artist;
-    const note=d.note||"";
-    const debugLog=Array.isArray(d.debugLog)?d.debugLog.join("\n"):"";
+    const note=String(d.note||"").replace(/\n*\[排查记录\][\s\S]*$/," ").trim();
     const lyrics=d.lyrics||"";
     const dur=d.duration||"0:30";
     return `<div class="music-card" data-msg-id="${m.id}">
@@ -6137,14 +6245,12 @@ function renderMessageBody(m){
           <div class="music-card-title">${title}</div>
           <div class="music-card-artist">${sub}</div>
         </div>
-        <button class="music-card-play" id="mc-play-${m.id}" onclick="toggleMusicPlay('${m.id}')">▶</button>
+        <button class="music-card-play" id="mc-play-${m.id}" onclick="toggleMusicPlay('${m.id}')" aria-label="播放/暂停"><span class="music-play-icon"></span></button>
       </div>
       <div class="music-card-progress" id="mc-bar-${m.id}" onclick="seekMusic(event,'${m.id}')"><div class="music-card-progress-fill" id="mc-fill-${m.id}"></div></div>
       <div class="music-card-meta"><span id="mc-cur-${m.id}">0:00</span><span id="mc-dur-${m.id}">${escapeHtml(dur)}</span></div>
-      ${note?`<div class="music-card-expand has-note" onclick="this.nextElementSibling.classList.toggle('show')">💬 附言</div><div class="music-card-note">${escapeHtml(note)}</div>`:""}
-      ${debugLog?`<div class="music-card-expand has-note" onclick="this.nextElementSibling.classList.toggle('show')">🧪 排查</div><div class="music-card-note">${escapeHtml(debugLog)}</div>`:""}
-      <div class="music-card-expand has-note" onclick="this.nextElementSibling.classList.toggle('show')">🎵 歌词</div>
-      <div class="music-card-note">${escapeHtml(lyrics || "暂无歌词。角色没有在指令第5栏提供歌词/歌词节选。")}</div>
+      ${note?`<div class="music-card-expand has-note" onclick="this.nextElementSibling.classList.toggle('show')"><span class="music-row-icon note-mini-icon"></span>附言</div><div class="music-card-note">${escapeHtml(note)}</div>`:""}
+      <div class="music-card-expand has-note" onclick="openLyricsModal('${m.id}')"><span class="music-row-icon lyric-mini-icon"></span>歌词</div>
     </div>`;
   }
   if(m.type==="image_desc"){
@@ -6316,7 +6422,7 @@ function stripThinkingBlocks(text){
 }
 function isReasoningLeakLine(line){
   const x=String(line||"");
-  return /(让我想想|我应该|用户想|用户需要|user|User|正确的指令格式|指令格式|格式写错|写错了|重新来|回顾一下|上一条|这次重新|应该自然回应|先补上歌|补上歌|最终回复|普通正文|后台规则|解释后台|前端|LLM|提示词|系统规则|音频URL需要|没有真实的音频URL|至少能看到歌曲的基本信息|would respond|matching the energy|showing he's present|overthink|acknowledge he's here|maybe prompt|I should|The user wants|Need to|Let's respond|Final answer)/i.test(x);
+  return /(让我想想|我应该|我需要|我先|用户想|用户需要|用户|user|User|角色|当前关系|自然回应|简短回应|接住|话题|适合|反问|分析|推理|决定怎么|正确的指令格式|指令格式|格式写错|写错了|重新来|回顾一下|上一条|这次重新|应该自然回应|先补上歌|补上歌|最终回复|普通正文|后台规则|解释后台|前端|LLM|提示词|系统规则|音频URL需要|没有真实的音频URL|至少能看到歌曲的基本信息|would respond|matching the energy|showing he's present|overthink|acknowledge he's here|maybe prompt|I should|The user wants|Need to|Let's respond|Final answer)/i.test(x);
 }
 function normalizeThinkingForPanel(thinking, finalText){
   let t=stripThinkingBlocks(thinking).trim();
@@ -6337,7 +6443,7 @@ function normalizeThinkingForPanel(thinking, finalText){
   if(!t || !/[\u4e00-\u9fff]/.test(t)) return "我先接住这句话，短一点回应。";
   t=t.replace(/\buser\b/gi,"她").replace(/用户/g,"她").replace(/角色/g,"我");
   const sentences=t.split(/(?<=[。！？!?])/).map(x=>x.trim()).filter(Boolean);
-  if(sentences.length>2) t=sentences.slice(0,2).join("");
+  if(sentences.length>1) t=sentences.slice(0,1).join("");
   return t.replace(/^[，。；、\s]+/,"");
 }
 function removeReasoningLeakText(text){
@@ -6362,17 +6468,46 @@ function autoThinkingFromMsg(msg, userText){
   const who=(!whoRaw || whoRaw==="user") ? "她" : whoRaw;
   const type=msg.type||"text";
   const reply=stripThinkingBlocks(msg.content||"").trim();
-  const user=cleanSnippet(userText||"",54);
-  const about=user ? `${who}刚才说：「${user}${String(userText||"").length>user.length?"…":""}」。` : `${who}在继续这个话题。`;
-  if(type==="music") return `${who}想听歌，我先把歌递过去，再留一句简短的话。`;
-  if(type==="sticker") return `${who}的情绪适合用表情接住，少说一点会更自然。`;
-  if(type==="image_desc") return `${who}发来一张图片，我先看画面里的重点，再顺着她的话回应。`;
-  if(type==="voice") return `${who}发来语音，我先看转写内容，再用更贴近当前气氛的方式回她。`;
-  if(type==="transfer" || type==="role_transfer") return `${who}提到了钱或照顾，我用行动回应会比解释更直接。`;
-  if(/[？?]/.test(reply)) return `${about}这里适合反问一句，把话题轻轻接回去。`;
-  if(/想你|喜欢|别哭|抱|亲|在/.test(reply)) return `${about}她要的是被接住的感觉，回应要短一点、贴近一点。`;
-  if(reply.length<=8) return `${about}日常闲聊，简短回应就好。`;
-  return `${about}我先接住她的意思，再按当前关系自然回应。`;
+  const seed=[type,reply,userText||""].join("|");
+  const pools={
+    music:[
+      "这首歌比解释更合适。",
+      "想把这点心情藏进歌里递给她。",
+      "不多说了，让旋律替我靠近一点。"
+    ],
+    sticker:[
+      "话到这里，表情比字更轻。",
+      "她的情绪冒出来了，我想软一点接住。",
+      "少说一点，反而更像我。"
+    ],
+    image_desc:[
+      "画面里的细节比她说出口的还诚实。",
+      "我盯着那张图，心里先有了反应。",
+      "她把这一刻递过来，我想认真看完。"
+    ],
+    voice:[
+      "听见她的声音，距离一下子近了。",
+      "她这样说话，我很难装作平静。",
+      "语气比文字更藏不住心情。"
+    ],
+    transfer:[
+      "她把照顾说得很轻，我却听得很清楚。",
+      "这件事不用讲太多，行动会更像答案。",
+      "钱只是表面，后面那点心意更重。"
+    ],
+    text:[
+      "她这句话落下来，我心里跟着软了一下。",
+      "我听懂了她没明说的那一层。",
+      "这会儿不想讲道理，只想靠近一点。",
+      "她把话递过来，我不想让它掉在地上。",
+      "我有点想逗她，又舍不得太过。"
+    ]
+  };
+  if(type==="transfer" || type==="role_transfer") return autoThinkingPick(pools.transfer, seed);
+  if(pools[type]) return autoThinkingPick(pools[type], seed);
+  if(/[？?]/.test(reply)) return autoThinkingPick(["她突然这样问，我心里先停了一拍。","这个问题不像表面那么轻。","我想认真答，又想留一点余地。"], seed);
+  if(reply.length<=8) return autoThinkingPick(["短短一句，反而更贴近。","她没多说，我却听得出来。","气氛轻了一点，我也跟着放松。"], seed);
+  return autoThinkingPick(pools.text, seed);
 }
 function isExplicitMusicRequest(text){
   const t=String(text||"").replace(/\s+/g,"");
@@ -6676,7 +6811,10 @@ function messageToAIContext(m){
   if(m.type==="sticker") return `[表情包:${d.name||m.content}|含义:${d.meaning||""}]`;
   if(m.type==="voice") return `[语音:${d.text||m.content}]`;
   if(m.type==="link") return `[链接:${d.platform||"论坛"}|${d.title||""}]`;
-  if(m.type==="music") return `[音乐:${d.title||""}|${d.artist||""}${d.note?"|附言:"+d.note:""}${d.lyrics?"|歌词:"+String(d.lyrics).slice(0,200):""}${d.audioUrl?"|有完整音频":""}]`;
+  if(m.type==="music"){
+    const cleanNote=String(d.note||"").replace(/\n*\[排查记录\][\s\S]*$/," ").trim();
+    return `[音乐:${d.title||""}|${d.artist||""}${cleanNote?"|附言:"+cleanNote:""}${d.lyrics?"|歌词:"+String(d.lyrics).slice(0,200):""}${d.audioUrl?"|有完整音频":""}]`;
+  }
   if(m.type==="image_desc") return `[图片描述:${d.description||m.content}]`;
   if(m.type==="transfer") return `[用户转账:${d.amount||""}|${d.note||""}|状态:${d.status||"pending"}]`;
   if(m.type==="delivery") return `[代付链接:${d.amount||""}|${d.item||""}|状态:${d.status||"pending"}]`;
@@ -7009,12 +7147,12 @@ ${getStickerPromptList()}
 1. 你只能扮演${role.name}，不能替user说话。
 2. 禁止输出User:、用户：、Assistant:、旁白式剧本格式。
 6. 普通聊天正文不要输出思考过程、元分析或格式纠错。动作描写、心理描写、环境描写正常保留。
-   需要给前端内心独白时，只能写 <thinking>……</thinking>，前端会隐藏到 Thought process 面板，不能混入普通气泡。
-   <thinking> 里只写一条简短的中文内心/观察，像这样："果果在问我关于恋爱的选择题。第一次见面可以接受的肢体接触是捏脸还是拥抱，我要按人设选。" 或 "果果发了一张宵夜照片，看起来是炒粉/炒面。外卖，有辣椒和鸡蛋，美团外卖点的。"。
-   <thinking> 不要写后台规则、格式规则、系统提示、指令解释、LLM、前端、token、模型分析；不要复述最终回复；不要把 [分享音乐]、[发送图片]、[语音] 等功能指令写进 thinking。
+   如果要给前端内心独白，只能写 <thinking>……</thinking>，前端会隐藏到 Thought process 面板，不能混入普通气泡。
+   <thinking> 不是推理日志，也不是“我应该怎么回复”的计划。它只写角色当下的一句私心/情绪/观察，像角色脑子里一闪而过的话，最好不超过30个中文字符。
+   <thinking> 的风格必须跟角色本人一致：冷淡的人就短而克制，黏人的人就软一点，嘴硬的人可以别扭；不要使用“用户/角色/我应该/我先/适合/回应/当前关系/格式/指令/模型/前端/系统”等机械词。
    普通聊天正文只输出角色的回应，不分析，不解释；如果 user 在测试功能、让你分享音乐、图片或表情，直接按当前明确请求回应。
 3. 只输出微信聊天内容；可以用双换行分成多条气泡。
-7. 如果输出 <thinking>，只写角色当下的简短内心/观察，不要写后台规则。
+7. 如果输出 <thinking>，只写一句角色内心，不要写后台规则。
 8. 如果输出语音，优先使用全角外层格式，方便内部使用 ElevenLabs v3 audio tags：
    【语音: [softly] [low voice] I missed you.
 中文：我想你了。】
@@ -11010,6 +11148,7 @@ function buildNcmResult(song,u,kind,debugLog,title,artist){
     artist:getSongArtists(song)||artist,
     album,
     coverUrl,
+    songId:song.id||u.id||"",
     duration:durSec?fmtTime(durSec):(kind==="full"?"":"0:30"),
     audioUrl:kind==="full"?u.url:"",
     previewUrl:kind==="preview"?u.url:"",
@@ -11057,7 +11196,9 @@ const MusicPlayer={
     const id=this.currentMsgId;if(!id) return;
     const btn=document.getElementById("mc-play-"+id);
     const cover=document.getElementById("mc-cover-"+id);
-    if(btn){btn.textContent=playing?"⏸":"▶";btn.classList.toggle("playing",!!playing);}
+    if(btn){btn.classList.toggle("playing",!!playing);btn.setAttribute("aria-label",playing?"暂停":"播放");}
+    const lbtn=document.getElementById("lyricsPlayBtn");
+    if(lbtn && LyricsUI.msgId===id){lbtn.classList.toggle("playing",!!playing);lbtn.setAttribute("aria-label",playing?"暂停":"播放");}
     if(cover) cover.classList.toggle("spinning",!!playing);
   },
   startProgress(){
@@ -11098,11 +11239,9 @@ function toggleMusicPlay(msgId){
       coverUrl:info.coverUrl||m.data.coverUrl||"",
       duration:info.duration||m.data.duration||"0:30",
       album:info.album||m.data.album||"",
-      source:info.source||m.data.source||"",
-      debugLog:Array.isArray(info.debugLog)?info.debugLog:(m.data.debugLog||[])
+      songId:info.songId||m.data.songId||"",
+      source:info.source||m.data.source||""
     });
-    const debug=compactMusicDebug(info);
-    if(debug && !m.data.note) m.data.note=debug;
     saveHistory(h);renderChat();
     setTimeout(()=>MusicPlayer.play(msgId,playUrl),100);
   }).catch(e=>toast("搜索失败："+e.message));
@@ -11218,8 +11357,7 @@ async function submitMusicInput(){
   if(!title){toast("请输入歌曲名");return;}
   closeQuickModal();toast(manualAudioUrl?"正在补全歌曲信息…":"正在搜索…");
   const info=await fetchMusicInfo(title,artist);
-  const debug=compactMusicDebug(info);
-  const note=[userNote,debug].filter(Boolean).join("\n\n");
+  const note=userNote;
   const h=getHistory();
   h.push({
     id:uid("msg"),groupId:uid("usergrp"),sender:"user",type:"music",content:"[音乐:"+title+"]",
@@ -11232,8 +11370,8 @@ async function submitMusicInput(){
       previewUrl:manualAudioUrl?"":(info.previewUrl||""),
       audioUrl:manualAudioUrl||info.audioUrl||"",
       duration:manualAudioUrl?(info.duration||""):(info.duration||"0:30"),
-      source:manualAudioUrl?"manual":(info.source||""),
-      debugLog:Array.isArray(info.debugLog)?info.debugLog:[]
+      songId:manualAudioUrl?"":(info.songId||""),
+      source:manualAudioUrl?"manual":(info.source||"")
     },
     read:false,createdAt:Date.now(),time:nowTime()
   });
@@ -11257,14 +11395,135 @@ function hydrateAIMusicMsg(msgId,title,artist){
     if(info.coverUrl&&!m.data.coverUrl) m.data.coverUrl=info.coverUrl;
     if(info.duration) m.data.duration=info.duration;
     if(info.album&&!m.data.album) m.data.album=info.album;
+    if(info.songId&&!m.data.songId) m.data.songId=info.songId;
     if(info.source&&!m.data.source) m.data.source=info.source;
-    if(Array.isArray(info.debugLog)) m.data.debugLog=info.debugLog;
-    const debug=compactMusicDebug(info);
-    if(debug&&!m.data.note) m.data.note=debug;
     saveHistory(h);renderChat();
   }).catch(e=>console.warn("hydrateAIMusicMsg",e));
 }
 window.hydrateAIMusicMsg=hydrateAIMusicMsg;
+
+
+// ===== 实时歌词面板 =====
+const LyricsUI={msgId:null,lines:[],rafId:null,activeIndex:-1};
+function parseLrc(text){
+  const out=[];
+  String(text||"").split(/\n+/).forEach(line=>{
+    const tags=[...line.matchAll(/\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\]/g)];
+    if(!tags.length) return;
+    const content=line.replace(/\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\]/g,"").trim();
+    if(!content) return;
+    tags.forEach(t=>{
+      const ms=Number((t[3]||"0").padEnd(3,"0").slice(0,3));
+      out.push({time:Number(t[1])*60+Number(t[2])+ms/1000,text:content});
+    });
+  });
+  return out.sort((a,b)=>a.time-b.time);
+}
+function mergeTranslatedLyrics(mainLines, transLines){
+  const main=mainLines||[];
+  const trans=transLines||[];
+  return main.map(line=>{
+    let best=null, diff=999;
+    for(const t of trans){
+      const d=Math.abs(t.time-line.time);
+      if(d<diff){diff=d;best=t;}
+    }
+    return {...line, trans:(best&&diff<0.85)?best.text:""};
+  });
+}
+async function fetchNcmLyrics(songId){
+  if(!songId) return [];
+  const key="ncm_lyrics_"+songId;
+  try{
+    const cached=localStorage.getItem(key);
+    if(cached) return parseLrc(cached);
+  }catch(e){}
+  const json=await fetchJsonWithTimeout(musicUrl("/lyric",{id:String(songId)}));
+  const mainRaw=json?.lrc?.lyric||json?.klyric?.lyric||"";
+  const transRaw=json?.tlyric?.lyric||"";
+  const merged=mergeTranslatedLyrics(parseLrc(mainRaw), parseLrc(transRaw));
+  try{ if(mainRaw||transRaw) localStorage.setItem(key,JSON.stringify({mainRaw,transRaw})); }catch(e){}
+  return merged;
+}
+function renderLyricsLines(lines,fallback){
+  const body=document.getElementById("lyricsBody");
+  if(!body) return;
+  if(lines&&lines.length){
+    body.innerHTML=lines.map((l,i)=>`<div class="lyric-line" data-idx="${i}"><div class="lyric-main">${escapeHtml(l.text)}</div>${l.trans?`<div class="lyric-trans">${escapeHtml(l.trans)}</div>`:""}</div>`).join("");
+  }else{
+    body.innerHTML=`<div class="lyric-empty">${escapeHtml(fallback||"暂无同步歌词")}</div>`;
+  }
+}
+async function openLyricsModal(msgId){
+  const h=getHistory();
+  const m=h.find(x=>x.id===msgId);
+  if(!m||!m.data) return;
+  LyricsUI.msgId=msgId;
+  LyricsUI.lines=[];
+  LyricsUI.activeIndex=-1;
+  const d=m.data;
+  const mask=document.getElementById("lyricsMask");
+  const bg=document.getElementById("lyricsBg");
+  const cover=document.getElementById("lyricsCover");
+  const title=document.getElementById("lyricsTitle");
+  const artist=document.getElementById("lyricsArtist");
+  if(bg) bg.style.backgroundImage=d.coverUrl?`url(${d.coverUrl})`:"";
+  if(cover){cover.src=d.coverUrl||"";cover.style.visibility=d.coverUrl?"visible":"hidden";}
+  if(title) title.textContent=d.title||"未知歌曲";
+  if(artist) artist.textContent=[d.artist,d.album].filter(Boolean).join(" · ");
+  if(mask) mask.classList.add("show");
+  renderLyricsLines([],"正在读取同步歌词…");
+  try{
+    const lines=await fetchNcmLyrics(d.songId);
+    LyricsUI.lines=lines;
+    const fallback=d.lyrics?`暂无同步歌词\n\n角色附言：\n${d.lyrics}`:"暂无同步歌词";
+    renderLyricsLines(lines,fallback);
+  }catch(e){
+    const fallback=d.lyrics?`歌词读取失败\n\n角色附言：\n${d.lyrics}`:"歌词读取失败";
+    renderLyricsLines([],fallback);
+  }
+  startLyricsSync();
+}
+function closeLyricsModal(e){
+  if(e&&e.target!==e.currentTarget) return;
+  const mask=document.getElementById("lyricsMask");
+  if(mask) mask.classList.remove("show");
+  if(LyricsUI.rafId){cancelAnimationFrame(LyricsUI.rafId);LyricsUI.rafId=null;}
+}
+function toggleLyricsPlay(){
+  if(!LyricsUI.msgId) return;
+  toggleMusicPlay(LyricsUI.msgId);
+}
+function startLyricsSync(){
+  if(LyricsUI.rafId) cancelAnimationFrame(LyricsUI.rafId);
+  const tick=()=>{
+    const cur=document.getElementById("lyricsCur");
+    const dur=document.getElementById("lyricsDur");
+    const lbtn=document.getElementById("lyricsPlayBtn");
+    const isCurrent=MusicPlayer.currentMsgId===LyricsUI.msgId && MusicPlayer.audio;
+    const t=isCurrent?(MusicPlayer.audio.currentTime||0):0;
+    const d=isCurrent&&Number.isFinite(MusicPlayer.audio.duration)?MusicPlayer.audio.duration:0;
+    if(cur) cur.textContent=fmtTime(t);
+    if(dur) dur.textContent=d?fmtTime(d):"0:00";
+    if(lbtn) lbtn.classList.toggle("playing",!!(isCurrent&&MusicPlayer.audio&&!MusicPlayer.audio.paused));
+    if(LyricsUI.lines.length){
+      let idx=0;
+      for(let i=0;i<LyricsUI.lines.length;i++){ if(LyricsUI.lines[i].time<=t+0.15) idx=i; else break; }
+      if(idx!==LyricsUI.activeIndex){
+        LyricsUI.activeIndex=idx;
+        document.querySelectorAll("#lyricsBody .lyric-line").forEach((el,i)=>el.classList.toggle("active",i===idx));
+        const active=document.querySelector(`#lyricsBody .lyric-line[data-idx="${idx}"]`);
+        if(active) active.scrollIntoView({block:"center",behavior:"smooth"});
+      }
+    }
+    LyricsUI.rafId=requestAnimationFrame(tick);
+  };
+  LyricsUI.rafId=requestAnimationFrame(tick);
+}
+window.openLyricsModal=openLyricsModal;
+window.closeLyricsModal=closeLyricsModal;
+window.toggleLyricsPlay=toggleLyricsPlay;
+
 
 // ===== 思维链面板 =====
 function openThinking(msgId){
