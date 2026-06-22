@@ -5765,6 +5765,7 @@ function renderChat(){
     return;
   }
   chat.innerHTML=`<div class="date-chip">今天</div>` + h.map((m,idx)=>renderMessage(m,h,idx)).join("");
+  scheduleMissingRoleVoiceHydration();
   if(!stick) return; // 用户正在往上翻历史，不强行拽回底部
     requestAnimationFrame(()=>{
     chat.scrollTop=chat.scrollHeight;
@@ -5777,6 +5778,20 @@ function renderChat(){
       else img.addEventListener("load",()=>{ loaded++; if(loaded===imgs.length) chat.scrollTop=chat.scrollHeight; },{once:true});
     });
   });
+}
+function scheduleMissingRoleVoiceHydration(){
+  try{
+    if(typeof isRealTTSOff==="function" && isRealTTSOff()) return;
+    if(!Miao.state.voiceHydrateTried) Miao.state.voiceHydrateTried={};
+    const h=getHistory();
+    h.filter(m=>m && m.sender==="role" && m.type==="voice" && m.data && !m.data.audioData && !m.data.audioUrl && m.data.ttsStatus!=="loading" && m.data.ttsStatus!=="done")
+      .slice(-6)
+      .forEach(m=>{
+        if(Miao.state.voiceHydrateTried[m.id]) return;
+        Miao.state.voiceHydrateTried[m.id]=1;
+        setTimeout(()=>hydrateRoleVoiceTTS(m.id, Miao.state.currentRoleId),80);
+      });
+  }catch(e){}
 }
 function renderMessage(m,h,idx){
   if(m.type==="error") return `<div class="system-card error err-dismissable"><span class="err-text">${escapeHtml(m.content)}</span><button class="err-close" onclick="dismissErrorMsg('${m.id}')" title="关闭">×</button></div>`;
@@ -6287,7 +6302,7 @@ function stripThinkingBlocks(text){
 }
 function isReasoningLeakLine(line){
   const x=String(line||"");
-  return /(让我想想|我应该|用户想|用户需要|user|User|正确的指令格式|指令格式|格式写错|写错了|重新来|回顾一下|上一条|这次重新|应该自然回应|先补上歌|补上歌|最终回复|普通正文|音频URL需要|没有真实的音频URL|至少能看到歌曲的基本信息|would respond|matching the energy|showing he's present|overthink|acknowledge he's here|maybe prompt|I should|The user wants|Need to|Let's respond|Final answer)/i.test(x);
+  return /(让我想想|我应该|用户想|用户需要|user|User|正确的指令格式|指令格式|格式写错|写错了|重新来|回顾一下|上一条|这次重新|应该自然回应|先补上歌|补上歌|最终回复|普通正文|后台规则|解释后台|前端|LLM|提示词|系统规则|音频URL需要|没有真实的音频URL|至少能看到歌曲的基本信息|would respond|matching the energy|showing he's present|overthink|acknowledge he's here|maybe prompt|I should|The user wants|Need to|Let's respond|Final answer)/i.test(x);
 }
 function normalizeThinkingForPanel(thinking, finalText){
   let t=stripThinkingBlocks(thinking).trim();
@@ -6305,14 +6320,11 @@ function normalizeThinkingForPanel(thinking, finalText){
     return true;
   });
   t=lines.join("\n").trim();
-  if(!t || !/[\u4e00-\u9fff]/.test(t)){
-    return "我想顺着她的话自然回应，不把话说得太像解释。";
-  }
+  if(!t || !/[\u4e00-\u9fff]/.test(t)) return "我先接住这句话，短一点回应。";
   t=t.replace(/\buser\b/gi,"她").replace(/用户/g,"她").replace(/角色/g,"我");
   const sentences=t.split(/(?<=[。！？!?])/).map(x=>x.trim()).filter(Boolean);
   if(sentences.length>2) t=sentences.slice(0,2).join("");
-  if(!/[我咱]/.test(t.slice(0,12))) t="我"+t.replace(/^[，。；、\s]+/,"");
-  return t;
+  return t.replace(/^[，。；、\s]+/,"");
 }
 function removeReasoningLeakText(text){
   return String(text||"").split(/\n+/).map(x=>x.trim()).filter(line=>line && !isReasoningLeakLine(line)).join("\n").trim();
@@ -6332,55 +6344,21 @@ function cleanSnippet(text, n=46){
 }
 function autoThinkingFromMsg(msg, userText){
   if(!msg || msg.sender==="user" || msg.type==="system") return "";
+  const whoRaw=(typeof getUserProfile==="function" ? (getUserProfile().name||"") : "").trim();
+  const who=(!whoRaw || whoRaw==="user") ? "她" : whoRaw;
   const type=msg.type||"text";
-  const d=msg.data||{};
   const reply=stripThinkingBlocks(msg.content||"").trim();
-  const user=cleanSnippet(userText||"");
-  const quoted=user ? `她刚才说：「${user}${String(userText||"").length>user.length?"…":""}」` : "需要根据上一轮对话继续。";
-  const tone="语气要保持角色本身的简短和克制，不解释后台规则。";
-  if(type==="music"){
-    return [
-      quoted,
-      "这是明确的音乐请求，应该触发音乐卡片，而不是用省略号或短句挡回去。",
-      `已选：${d.title||"一首歌"}${d.artist?" / "+d.artist:""}。直接递给她。`
-    ].join("\n\n");
-  }
-  if(type==="sticker"){
-    return [quoted,"这类回应适合用表情包承接情绪。",tone].join("\n\n");
-  }
-  if(type==="image_desc"){
-    return [quoted,"图片比解释更直接，先把画面递过去。",tone].join("\n\n");
-  }
-  if(type==="voice"){
-    return [quoted,"文字可能太硬，用语音会更贴近当前气氛。",tone].join("\n\n");
-  }
-  if(type==="transfer" || type==="role_transfer"){
-    return [quoted,"这里用行动比解释更有效。","直接把心意放进转账卡片里。"].join("\n\n");
-  }
-  if(/[？?]/.test(reply)){
-    return autoThinkingPick([
-      [quoted,"回复里带了反问，说明还在试探她真正想要的回答。",tone].join("\n\n"),
-      [quoted,"需要把问题接回去，留一点继续对话的余地。",tone].join("\n\n")
-    ], reply+user);
-  }
-  if(/想你|喜欢|别哭|抱|亲|在/.test(reply)){
-    return autoThinkingPick([
-      [quoted,"这句回复在表达靠近和在意。","不要把情绪拆开解释，直接说出来更像他。"].join("\n\n"),
-      [quoted,"这里不需要长篇分析，只要把心意压短一点递过去。",tone].join("\n\n")
-    ], reply+user);
-  }
-  if(reply.length<=8){
-    return autoThinkingPick([
-      [quoted,"适合用很短的句子接住，不把反应拉长。",tone].join("\n\n"),
-      [quoted,"当前回复是短句，重点是态度，不是解释。",tone].join("\n\n"),
-      [quoted,"少说一点更符合角色状态，让她继续往下问。"].join("\n\n")
-    ], reply+user);
-  }
-  return autoThinkingPick([
-    [quoted,"需要顺着她的语气回应，不把话说得像功能说明。",tone].join("\n\n"),
-    [quoted,"先接住她的意思，再把回答压进角色语气里。",tone].join("\n\n"),
-    [quoted,"这条回复应该自然落下，不暴露任何格式或系统规则。"].join("\n\n")
-  ], reply+user);
+  const user=cleanSnippet(userText||"",54);
+  const about=user ? `${who}刚才说：「${user}${String(userText||"").length>user.length?"…":""}」。` : `${who}在继续这个话题。`;
+  if(type==="music") return `${who}想听歌，我先把歌递过去，再留一句简短的话。`;
+  if(type==="sticker") return `${who}的情绪适合用表情接住，少说一点会更自然。`;
+  if(type==="image_desc") return `${who}发来一张图片，我先看画面里的重点，再顺着她的话回应。`;
+  if(type==="voice") return `${who}发来语音，我先看转写内容，再用更贴近当前气氛的方式回她。`;
+  if(type==="transfer" || type==="role_transfer") return `${who}提到了钱或照顾，我用行动回应会比解释更直接。`;
+  if(/[？?]/.test(reply)) return `${about}这里适合反问一句，把话题轻轻接回去。`;
+  if(/想你|喜欢|别哭|抱|亲|在/.test(reply)) return `${about}她要的是被接住的感觉，回应要短一点、贴近一点。`;
+  if(reply.length<=8) return `${about}日常闲聊，简短回应就好。`;
+  return `${about}我先接住她的意思，再按当前关系自然回应。`;
 }
 function isExplicitMusicRequest(text){
   const t=String(text||"").replace(/\s+/g,"");
@@ -7015,13 +6993,16 @@ ${getStickerPromptList()}
 1. 你只能扮演${role.name}，不能替user说话。
 2. 禁止输出User:、用户：、Assistant:、旁白式剧本格式。
 6. 普通聊天正文不要输出思考过程、元分析或格式纠错。动作描写、心理描写、环境描写正常保留。
-   需要给前端内心独白时，只能写 <thinking>我……</thinking>，必须中文第一人称，前端会隐藏到“内心独白”面板，不能混入普通气泡。
-   <thinking> 里只写“我……”第一人称角色内心/情绪/判断，1句中文即可；不要英文，不要复述最终回复，不要写 user/用户/角色，不要把最终回复或 [分享音乐]、[发送图片] 等指令写进 thinking。
-   禁止在普通正文中出现：「The user wants me to...」「I should respond by...」「Let me respond in character」「用户想让我说X」「我应该这样回应」「格式写错了」「重新来」「回顾一下」
-   普通聊天正文只输出角色的回应，不分析，不解释；如果上一条音乐/图片/表情已经发出，不要因为觉得格式不对而解释或重复补发。
-   不要纠缠 user 的省略号、标点或测试语句；如果 user 在测试功能、让你分享音乐、图片或表情，直接按当前明确请求回应。
+   需要给前端内心独白时，只能写 <thinking>……</thinking>，前端会隐藏到 Thought process 面板，不能混入普通气泡。
+   <thinking> 里只写一条简短的中文内心/观察，像这样："果果在问我关于恋爱的选择题。第一次见面可以接受的肢体接触是捏脸还是拥抱，我要按人设选。" 或 "果果发了一张宵夜照片，看起来是炒粉/炒面。外卖，有辣椒和鸡蛋，美团外卖点的。"。
+   <thinking> 不要写后台规则、格式规则、系统提示、指令解释、LLM、前端、token、模型分析；不要复述最终回复；不要把 [分享音乐]、[发送图片]、[语音] 等功能指令写进 thinking。
+   普通聊天正文只输出角色的回应，不分析，不解释；如果 user 在测试功能、让你分享音乐、图片或表情，直接按当前明确请求回应。
 3. 只输出微信聊天内容；可以用双换行分成多条气泡。
-7. 如果输出 <thinking>，必须是中文第一人称角色内心。
+7. 如果输出 <thinking>，只写角色当下的简短内心/观察，不要写后台规则。
+8. 如果输出语音，优先使用全角外层格式，方便内部使用 ElevenLabs v3 audio tags：
+   【语音: [softly] [low voice] I missed you.
+中文：我想你了。】
+   真正朗读的台词写英文；中文翻译只放在“中文：”后面。不要用中文当真实朗读台词。
 4. 表情包只能从"可用表情包"里按名称选择，不能编造。发送表情包指令后不要解释含义，不要加括号说明。
 5. 遇到用户转账/代付时，必须根据关系、上下文和人设自主决定是否收款/帮付。转账卡片上标注了付款来源（我的钱包/亲属卡），你可以根据来源做出反应。
 ${(()=>{
@@ -11875,7 +11856,7 @@ async function elevenLabsTTS(text, cfg){
   const body={
     text:String(text||"").slice(0,2500),
     model_id:cfg.model||"eleven_multilingual_v2",
-    voice_settings:{stability:0.5, similarity_boost:0.75}
+    voice_settings:{stability:0.5, similarity_boost:0.75, style:0.5, use_speaker_boost:true}
   };
   const res=await fetch(url,{
     method:"POST",
@@ -11899,14 +11880,7 @@ async function hydrateRoleVoiceTTS(msgId, roleId){
     if(!m || !m.data) return;
     const rawVoiceText=String(m.data.text || m.data.transcript || "").trim();
     const text=getVoiceSpeakText(rawVoiceText);
-    if(!text || m.data.audioData || m.data.audioUrl || m.data.ttsStatus==="loading" || m.data.ttsStatus==="done" || /^skipped/.test(String(m.data.ttsStatus||""))) return;
-    // 英文音色读中文会很怪：如果清理后的朗读文本里还有中文，就不生成真实 TTS，保留原文字语音气泡。
-    if(containsCJK(text)){
-      m.data.ttsStatus="skipped_lang";
-      m.data.ttsSkippedReason="朗读文本含中文，已跳过真实语音，保留文字语音";
-      Storage.set(histKey,h);
-      return;
-    }
+    if(!text || m.data.audioData || m.data.audioUrl || m.data.ttsStatus==="loading" || m.data.ttsStatus==="done") return;
     m.data.ttsStatus="loading";
     m.data.ttsProvider="elevenlabs";
     Storage.set(histKey,h);
@@ -12150,6 +12124,7 @@ const RealVoiceMessage = {
   send(){
     const text=(document.getElementById("voiceInputText")?.value||"").trim();
     if(!this.audioData && !text){ toast("请先录音，或输入文字语音内容"); return; }
+    if(this.audioData && !text){ toast("语音还没有转成文字。请等转写完成，或在下方手动补一句，角色才能看懂。"); return; }
     const h=getHistory();
     const dur=this.audioData ? (this.duration||1) : Math.max(1,Math.min(60,Math.ceil(text.length/5)));
     h.push({
@@ -12604,9 +12579,14 @@ function parseAIReplyUnified(raw, groupId){
       }
     },
     {
-      regex:/[\[【]\s*(?:发送语音|语音)[:：]\s*([^\]】]+?)[\]】]/g,
+      // 语音支持两种外层格式：
+      // 1) [语音: 普通内容]
+      // 2) 【语音: [sigh] [low voice] English line
+中文：中文翻译】
+      // 第二种允许内部出现 ElevenLabs v3 的方括号 audio tags。
+      regex:/【\s*(?:发送语音|语音)[:：]\s*([\s\S]*?)】|\[\s*(?:发送语音|语音)[:：]\s*([^\]]+?)\]/g,
       parse(m){
-        const t=String(m[1]||"").trim();
+        const t=String(m[1]||m[2]||"").trim();
         if(t){
           const dur=Math.max(1,Math.min(60,Math.ceil(t.length/5)));
           return {type:"voice", content:"[语音:"+t+"]", data:{text:t, duration:dur}};
