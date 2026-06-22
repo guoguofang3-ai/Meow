@@ -2960,19 +2960,21 @@ body.multiselect-mode .msg{ cursor:pointer; }
           <img id="liveScreenImg" style="width:100%;height:100%;object-fit:cover;display:none">
           <div id="liveScreenPlaceholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:13px;text-align:center;padding:20px"></div>
           <!-- 顶部信息条 -->
-          <div style="position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:10px 12px;background:linear-gradient(180deg,rgba(0,0,0,.45),transparent)">
-            <button class="icon-btn" style="background:rgba(0,0,0,.3);color:#fff" onclick="exitLiveRoom()">‹</button>
+          <div style="position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:10px 12px;background:linear-gradient(180deg,rgba(0,0,0,.55),transparent);z-index:3">
             <img id="liveRoomAvatar" style="width:32px;height:32px;border-radius:50%;object-fit:cover">
             <div style="flex:1;min-width:0">
               <div id="liveRoomName" style="color:#fff;font-size:14px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.5)"></div>
               <div id="liveRoomTag" style="color:rgba(255,255,255,.85);font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.5)">🔴 私密直播中</div>
             </div>
             <div id="liveViewerCount" style="color:#fff;font-size:11px;background:rgba(0,0,0,.35);padding:3px 9px;border-radius:999px">👤 1</div>
+            <button onclick="exitLiveRoom()" style="background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:14px;padding:5px 12px;font-size:12px;cursor:pointer">退出</button>
           </div>
+          <!-- 镜头描写字幕层（淡入淡出） -->
+          <div id="liveSubtitleLayer" style="position:absolute;left:14px;right:14px;bottom:14px;display:flex;flex-direction:column;gap:6px;z-index:2;pointer-events:none"></div>
           <!-- 飘心/打赏特效层 -->
-          <div id="liveFxLayer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden"></div>
+          <div id="liveFxLayer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1"></div>
         </div>
-        <!-- 弹幕+消息流 -->
+        <!-- 主播台词+弹幕流 -->
         <div id="liveStream" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px"></div>
         <!-- 底部操作区 -->
         <div id="liveComposer" style="flex:0 0 auto;border-top:1px solid rgba(0,0,0,.07);padding:8px 10px;background:var(--bar-bg,rgba(255,255,255,.95))">
@@ -5842,31 +5844,12 @@ function renderMessageBody(m){
     if(d.status==="rejected") return `<div class="money-card reject-card"><div class="money-title">已拒绝代付</div><div class="money-amount">¥${escapeHtml(d.amount||"0.00")}</div></div>`;
     return `<div class="money-card role-transfer"><div class="money-title">请求代付</div><div class="money-amount">¥${escapeHtml(d.amount||"0.00")}</div><div class="money-note">${escapeHtml(d.note||"")}</div><div style="display:flex;gap:8px;margin-top:8px"><button class="card-action-btn" data-action="pay-role-delivery" data-id="${m.id}">帮他付</button><button class="card-action-btn" style="background:rgba(255,255,255,.3)" data-action="reject-role-delivery" data-id="${m.id}">拒绝</button></div></div>`;
   }
-  if(m.type==="shop_pay_done"){
-    const ok=d.result==="paid";
-    if(!d._applied){
-      const h=getHistory();
-      for(let i=h.length-1;i>=0;i--){ if(h[i].type==="shop_paylink" && (h[i].data?.status==="pending")){ h[i].data.status=ok?"role_paid":"rejected"; break; } }
-      d._applied=true; saveHistory(h);
-    }
-    return `<div class="money-card ${ok?"role-transfer":"reject-card"}" style="min-width:180px"><div class="money-title">🛍️ ${ok?"对方已帮你付款":"对方拒绝了付款"}</div></div>`;
-  }
   if(m.type==="shop_share"){
     const its=(d.items||[]);
     return `<div class="money-card" style="background:rgba(255,255,255,.92)!important;min-width:200px">
       <div class="money-title">🛍️ 商品分享</div>
       <div style="font-size:13px;line-height:1.7;margin:6px 0">${its.map(i=>`${i.emoji||"🛍️"} ${escapeHtml(i.name)} ×${i.qty}`).join("<br>")}</div>
       <div class="money-note">合计 ¥${Number(d.total||0).toFixed(2)}</div>
-    </div>`;
-  }
-  if(m.type==="shop_paylink"){
-    const its=(d.items||[]);
-    const paid=d.status==="role_paid", rej=d.status==="rejected";
-    return `<div class="money-card user-transfer" style="min-width:200px">
-      <div class="money-title">🛍️ 请你帮我付</div>
-      <div style="font-size:13px;line-height:1.7;margin:6px 0">${its.map(i=>`${i.emoji||"🛍️"} ${escapeHtml(i.name)} ×${i.qty}`).join("<br>")}</div>
-      <div class="money-amount">¥${Number(d.total||0).toFixed(2)}</div>
-      <div class="money-note">状态：${paid?"对方已付款":rej?"对方拒绝了":"等待对方付款"}</div>
     </div>`;
   }
   if(m.type==="live_invite"){
@@ -5882,7 +5865,7 @@ function renderMessageBody(m){
     return `<div class="money-card role-transfer"><div class="money-title">角色转账</div><div class="money-amount">¥${escapeHtml(d.amount||"0.00")}</div><div class="money-note">${escapeHtml(d.note||"")}</div>${d.status==="collected"?`<div class="money-note">状态：你已收款</div>`:`<button class="card-action-btn" data-action="collect-role-transfer" data-id="${m.id}">收款</button>`}</div>`;
   }
   if(m.type==="delivery"){
-    return `<div class="delivery-card"><div class="delivery-title">外卖代付链接</div><div class="delivery-amount">¥${escapeHtml(d.amount||"0.00")}</div><div class="delivery-note">${escapeHtml(d.item||"外卖订单")}</div><div class="delivery-note">状态：${d.status==="paid"?"已代付":d.status==="rejected"?"已拒绝":"等待对方处理"}</div>${d.status==="pending"?`<button class="card-action-btn" data-action="pay-delivery-manual" data-id="${m.id}">帮我付</button>`:""}</div>`;
+    return `<div class="delivery-card"><div class="delivery-title">${d.fromShop?"商城代付链接":"外卖代付链接"}</div><div class="delivery-amount">¥${escapeHtml(d.amount||"0.00")}</div><div class="delivery-note">${escapeHtml(d.item||(d.fromShop?"商城订单":"外卖订单"))}</div><div class="delivery-note">状态：${d.status==="paid"?"已代付":d.status==="rejected"?"已拒绝":"等待对方处理"}</div>${d.status==="pending"?`<button class="card-action-btn" data-action="pay-delivery-manual" data-id="${m.id}">帮我付</button>`:""}</div>`;
   }
   if(m.type==="paid") return `<div class="paid-card">我已帮忙代付<br><b>¥${escapeHtml(d.amount||"0.00")}</b></div>`;
   if(m.type==="received") return `<div class="received-card">已收款<br><b>¥${escapeHtml(d.amount||"0.00")}</b></div>`;
@@ -6026,7 +6009,6 @@ function stripInstructions(t){
     .replace(/[\[【]\s*(?:发送链接|链接)[:：]\s*[^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*(?:状态更新|主动转账|向user发起代付)[:：]\s*[^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*开播邀请\s*(?:[:：][^\]】]*)?[\]】]/g,"")
-    .replace(/[\[【]\s*商城(?:帮付|拒付)\s*[\]】]/g,"")
     .replace(/[\[【]\s*读取网页[:：]\s*[^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*(?:收款|拒收转账|帮忙代付|同意代付|拒绝代付)[^\]】]*[\]】]/g,"")
     .replace(/含义[:：]\s*.*/g,"")
@@ -6274,7 +6256,6 @@ function messageToAIContext(m){
   if(m.type==="role_transfer") return `[角色转账:${d.amount||""}|${d.note||""}|状态:${d.status||"pending"}]`;
   if(m.type==="live_invite") return `[你发起了直播邀请${d.note?"："+d.note:""}]`;
   if(m.type==="shop_share"){ const its=(d.items||[]).map(i=>`${i.name}×${i.qty}`).join("、"); return `[user分享了商品：${its}，合计¥${d.total}]`; }
-  if(m.type==="shop_paylink"){ const its=(d.items||[]).map(i=>`${i.name}×${i.qty}`).join("、"); return `[user请你帮忙付款：${its}，合计¥${d.total}，状态:${d.status||"pending"}。你可用[商城帮付]答应或[商城拒付]拒绝]`; }
   if(m.type==="received") return `[收款完成:${d.amount||""}|user已确认收款，本次转账流程已结束，不需要再发起任何转账]`;
   if(m.type==="paid") return `[代付完成:${d.amount||""}|${d.item||""}]`;
   if(m.type==="rejected") return `[拒绝:${m.content||""}]`;
@@ -6386,7 +6367,7 @@ async function callAI(api, history, onChunk, extraSystem){
   const messages=[
     {role:"system", content:system},
     ...(()=>{
-      const valid=history.filter(m=>["text","sticker","image_desc","voice","link","transfer","delivery","received","paid","rejected","role_transfer"].includes(m.type));
+      const valid=history.filter(m=>["text","sticker","image_desc","voice","link","transfer","delivery","received","paid","rejected","role_transfer","shop_share"].includes(m.type));
       // 按groupId合并同组气泡，groupId相同的角色回复合并成一条
       const grouped=[];
       // 找最近一张有真实图片的消息id
@@ -6564,9 +6545,8 @@ ${getStickerPromptList()}
 [拒绝代付]
 [向user发起代付: 金额|备注]
 [开播邀请]（当你想给user直播、或user让你直播、你们约好开播时使用。发出后user聊天里会出现一张可点击的直播邀请卡，user点进去就进了你的私密直播间。可写成 [开播邀请:一句邀请的话]。当你答应给user直播、或主动想直播给user看时就发这个）
-[商城帮付]（当user用商城发来「请你帮我付」的代付请求、你愿意付时使用，付完user那张卡会显示"对方已付款"）
-[商城拒付]（不愿意帮user付商城的钱时使用）
-当user只是「分享商品给你看」时，正常聊天评价即可，不需要付款指令。只有看到明确的「请你帮我付」代付请求才用[商城帮付]/[商城拒付]。
+注：当user从商城发来「代付」请求卡时（卡片显示具体商品和金额），跟饿了么代付一样处理——愿意付就用 [帮忙代付]，不愿意就用 [拒绝代付]。
+当user只是「分享商品给你看」时（卡片显示"商品分享"），正常聊天评价即可，不要用代付指令。
 
 【转账与代付区分——必须严格遵守】
 - [主动转账: 金额|备注]：角色主动给user发钱。用于：角色想给user钱、答应给user买东西、奖励user等场景。
@@ -6625,6 +6605,12 @@ user钱包余额：¥${w.toFixed(2)}`;
 [亲属卡充值: 金额]  例：[亲属卡充值: 2000]`;
   return info;
 })()}
+${(()=>{
+  const n = getCrossSceneNote(role.id);
+  if(!n || !n.summary) return "";
+  const tag = n.scene==="live"?"刚才你给user做了一场直播":n.scene==="story"?"刚才你和user在线下相处":"刚才你和user的一次互动";
+  return `\n【最近的跨场景活动 · 你应该记得】\n${tag}（${n.time||""}）：${n.summary}\n如果user提到相关话题，自然衔接；不要假装不知道。\n`;
+})()}
 
 【记忆写入规则】
 只在以下情况才在回复末尾加标记 [SAVE: 一句话摘要]，其他一律不加：
@@ -6675,7 +6661,7 @@ function exportChatMd(){
   const userName = getUserProfile().name || "我";
   const lines = [`# 与${role.name}的聊天记录\n`];
   for(const m of h){
-    if(!["text","sticker","image_desc","voice","link","transfer","delivery","received","paid","rejected","role_transfer"].includes(m.type)) continue;
+    if(!["text","sticker","image_desc","voice","link","transfer","delivery","received","paid","rejected","role_transfer","shop_share"].includes(m.type)) continue;
     const sender = m.sender==="user" ? userName : role.name;
     const time = m.time || "";
     const content = (m.content || m.desc || m.type).replace(/\n/g,"<br>");
@@ -7437,6 +7423,29 @@ function getStorySummary(){
 function saveStorySummary(s){
   Storage.set(Storage.roleKey("offlineStorySummary"), s);
 }
+
+// ===== 跨场景隐藏笔记（不可见，用于场景之间衔接） =====
+// 存储格式：crossSceneNote.<roleId> = { scene:"live"|"story", summary:"...", time:"..." }
+function getCrossSceneNote(roleId){
+  const id=roleId||Miao.state.currentRoleId;
+  return Storage.get("crossSceneNote."+id, null);
+}
+function saveCrossSceneNote(roleId, scene, summary){
+  Storage.set("crossSceneNote."+roleId, {scene, summary, time:nowTime(), ts:Date.now()});
+}
+// 通用摘要生成：传一段对话原文，返回摘要
+async function generateSceneSummary(sceneType, lines){
+  const api=Storage.get("api",{});
+  if(!api.apiUrl||!api.apiKey||!api.model) return "";
+  const sceneName = sceneType==="live"?"直播":"线下相处";
+  try{
+    return await callSimpleChatAPI(api,[
+      {role:"system",content:`你是场景摘要助手，用简洁中文总结刚才${sceneName}的主要内容、重要事件和情感变化，60-120字，不加标题不加前缀。`},
+      {role:"user",content:lines}
+    ],.5);
+  }catch(e){ return ""; }
+}
+
 function renderStory(){
   const box=$("#storyChat");
   if(!box) return;
@@ -8163,7 +8172,30 @@ async function startLive(roleId, fromWechat){
   await liveAITurn("__START__");
 }
 
-function exitLiveRoom(){ openLiveList(); }
+async function exitLiveRoom(){
+  // 有内容时生成摘要存进跨场景笔记
+  const roleId=Live.roleId;
+  const hist=Live.history.filter(m=>m.type==="host"||m.type==="shot"||m.type==="danmaku"||m.type==="gift");
+  if(roleId && hist.length>=3){
+    const role=getRoles().find(r=>r.id===roleId);
+    const lines=hist.slice(-30).map(m=>{
+      if(m.type==="host") return `${role?role.name:"主播"}说：${m.content}`;
+      if(m.type==="shot") return `（镜头：${m.content}）`;
+      if(m.type==="danmaku") return `user弹幕：${m.content}`;
+      if(m.type==="gift") return `user打赏：${m.content}`;
+      return "";
+    }).filter(Boolean).join("\n");
+    // 异步生成（不阻塞退出）
+    generateSceneSummary("live", lines).then(sum=>{
+      if(sum) saveCrossSceneNote(roleId, "live", sum);
+    });
+  }
+  // 清空字幕层
+  const layer=document.getElementById("liveSubtitleLayer");
+  if(layer) layer.innerHTML="";
+  Live.fromWechat=false;
+  openLiveList();
+}
 window.exitLiveRoom=exitLiveRoom;
 window.startLive=startLive;
 window.toggleLiveImg=function(roleId){
@@ -8187,22 +8219,36 @@ function liveAddMsg(m){
   if(!stream) return;
   const role=getRoles().find(r=>r.id===Live.roleId);
   let html="";
-  if(m.type==="host"){ // 主播说话
+  if(m.type==="host"){ // 主播台词——直播专属样式：透明白底+细描边+主播头像
     html=`<div style="display:flex;gap:8px;align-items:flex-start">
-      <img src="${escapeAttr(role.avatar||Miao.defaults.avatar)}" style="width:30px;height:30px;border-radius:50%;flex:0 0 auto;object-fit:cover">
-      <div style="background:rgba(255,255,255,.7);border-radius:4px 14px 14px 14px;padding:8px 12px;font-size:14px;max-width:80%">${escapeHtml(m.content)}</div>
+      <img src="${escapeAttr(role.avatar||Miao.defaults.avatar)}" style="width:30px;height:30px;border-radius:50%;flex:0 0 auto;object-fit:cover;opacity:.92">
+      <div style="background:rgba(255,255,255,.45);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.7);border-radius:4px 16px 16px 16px;padding:7px 13px;font-size:14px;max-width:80%;color:#3a3034;box-shadow:0 1px 4px rgba(0,0,0,.04)">${escapeHtml(m.content)}</div>
     </div>`;
-  } else if(m.type==="danmaku"){ // 弹幕（你发的）
+  } else if(m.type==="danmaku"){ // 弹幕——实心粉
     html=`<div style="align-self:flex-end;background:var(--accent,#e8a0be);color:#fff;border-radius:14px;padding:6px 12px;font-size:13px;max-width:80%">${escapeHtml(m.content)}</div>`;
   } else if(m.type==="gift"){ // 打赏
     html=`<div style="align-self:center;background:linear-gradient(135deg,#ffd66e,#ff9eb5);color:#fff;border-radius:999px;padding:6px 16px;font-size:13px;font-weight:700;box-shadow:0 2px 8px rgba(255,150,180,.3)">🎁 ${escapeHtml(m.content)}</div>`;
   } else if(m.type==="sys"){
     html=`<div style="align-self:center;color:#aaa;font-size:12px">${escapeHtml(m.content)}</div>`;
   }
+  if(!html) return;
   const div=document.createElement("div");
   div.innerHTML=html;
   stream.appendChild(div.firstElementChild);
   stream.scrollTop=stream.scrollHeight;
+}
+
+// 镜头描写——叠在画面上的半透明字幕，5秒淡出
+function addLiveSubtitle(text){
+  Live.history.push({type:"shot",content:text});
+  const layer=document.getElementById("liveSubtitleLayer");
+  if(!layer) return;
+  const div=document.createElement("div");
+  div.textContent=text;
+  div.style.cssText="background:rgba(0,0,0,.5);color:#fff;font-size:13px;line-height:1.5;padding:6px 12px;border-radius:8px;backdrop-filter:blur(4px);opacity:0;transition:opacity .5s ease;text-shadow:0 1px 2px rgba(0,0,0,.4);align-self:flex-start;max-width:92%;word-break:break-word";
+  layer.appendChild(div);
+  requestAnimationFrame(()=>{ div.style.opacity="1"; });
+  setTimeout(()=>{ div.style.opacity="0"; setTimeout(()=>div.remove(),600); }, 5000);
 }
 
 // AI 主播回合：传入触发（开场/弹幕/打赏），生成主播的反应
@@ -8212,55 +8258,84 @@ async function liveAITurn(trigger){
   const api=Storage.get("api",{});
   if(!api.apiUrl||!api.apiKey||!api.model){ liveAddMsg({type:"sys",content:"请先在API设置里配置"}); Live.busy=false; return; }
   const role=getRoles().find(r=>r.id===Live.roleId);
-  // 构建直播专用系统提示
-  const recent=Live.history.slice(-12).map(m=>{
-    if(m.type==="host") return `${role.name}：${m.content}`;
-    if(m.type==="danmaku") return `观众弹幕：${m.content}`;
-    if(m.type==="gift") return `观众打赏：${m.content}`;
+  // 直播间内的近期记录
+  const recent=Live.history.slice(-14).map(m=>{
+    if(m.type==="host") return `${role.name}（说）：${m.content}`;
+    if(m.type==="shot") return `（镜头）${m.content}`;
+    if(m.type==="danmaku") return `user弹幕：${m.content}`;
+    if(m.type==="gift") return `user打赏：${m.content}`;
     return "";
   }).filter(Boolean).join("\n");
+  // 微信最近10轮上下文（所有入口都带，不只fromWechat）
+  let wechatCtx="";
+  {
+    const all=getHistory().filter(m=>["text","sticker","voice"].includes(m.type));
+    let userTurns=0, startIdx=all.length;
+    for(let i=all.length-1;i>=0;i--){
+      if(all[i].sender==="user"){ userTurns++; if(userTurns>10){ startIdx=i+1; break; } }
+      startIdx=i;
+    }
+    const h=all.slice(startIdx).slice(-40);
+    if(h.length){
+      wechatCtx="\n【你们刚才在微信聊过的内容（背景，不必复述）】\n"+h.map(m=>`${m.sender==="user"?"user":role.name}：${m.content||""}`).join("\n");
+    }
+  }
   let userMsg;
   if(trigger==="__START__"){
-    // 互通但克制：取最近约10轮对话（按user发言切分，话多的角色也能带全一轮的多条回复）
-    let wechatCtx="";
-    if(Live.fromWechat){
-      const all=getHistory().filter(m=>["text","sticker","voice"].includes(m.type));
-      // 从尾部往前数，数到第10个user消息为止
-      let userTurns=0, startIdx=all.length;
-      for(let i=all.length-1;i>=0;i--){
-        if(all[i].sender==="user"){ userTurns++; if(userTurns>10){ startIdx=i+1; break; } }
-        startIdx=i;
-      }
-      const h=all.slice(startIdx).slice(-40); // 上限40条防极端
-      if(h.length){
-        wechatCtx="\n\n【你们刚才在微信聊的（你答应了给user直播）】\n"+h.map(m=>`${m.sender==="user"?"user":role.name}：${m.content||""}`).join("\n");
-      }
-    }
-    userMsg=`现在你要开一场只有user一个观众的私密直播。用第一人称开场，自然地开始直播。${wechatCtx}${Live.imgEnabled?"\n你可以用 [直播画面:画面描述] 来展示当前镜头画面（描述要具体、视觉化）。":""}`;
+    userMsg=`现在开始这场私密直播。${Live.fromWechat?"你和user在微信上约好了来直播，结合刚才聊的内容自然开场。":"主动开场，对着镜头自然开始直播。"}`;
   } else if(trigger.startsWith("__GIFT__")){
-    userMsg=`user刚打赏了你 ${trigger.replace("__GIFT__","")}。作为主播自然地回应这个打赏。`;
+    userMsg=`user刚打赏了你 ${trigger.replace("__GIFT__","")}。自然回应这次打赏。`;
   } else {
-    userMsg=`user发来弹幕："${trigger}"。作为正在直播的主播，自然回应。`;
+    userMsg=`user发来弹幕："${trigger}"。直接回应。`;
   }
   const sys=`${buildSystemPrompt(role)}
 
-【直播模式】
-你正在为user进行一场私密直播（只有user一个观众）。
-- 用第一人称、口语化，像真的在镜头前直播一样自然。
-- 回复简短、像直播说话，可以分多段（用双换行）。
-- 不要写旁白、不要描述动作括号，就是对着镜头说话。${Live.imgEnabled?"\n- 需要展示画面时用 [直播画面:具体的视觉描述]，系统会生成画面图。一次最多一个。":""}
-${recent?`\n【刚才的直播内容】\n${recent}`:""}`;
+【直播模式 — 严格格式协议】
+你正在为user做一场私密直播（只有user一个观众）。你**始终是${role.name}**，不是AI助手、不是旁白、不是第三人称叙述者。
+
+【输出格式 — 必须只用这两种标签，不许写其他东西】
+[镜头] 一句镜头里看到的画面/动作/表情描写（第三人称白描视角，不带"她说""他想"，纯客观画面）
+[说] 一句主播对着镜头说的话（第一人称口语，像真的在播）
+
+【硬规则】
+1. 每条 [镜头] 或 [说] **单独成行**，每行只放一句简短内容（一行控制在30字内最佳）。
+2. **动作和台词必须交替**——禁止连续两行以上的纯 [说]，也禁止连续两行以上的纯 [镜头]。说一两句就插一个动作镜头。
+3. 禁止第三人称小说式叙述（如"她笑了笑，看向镜头说"）——这种统统拆成 [镜头]她笑了笑+[说]台词。
+4. 禁止旁白、禁止解释自己的心情、禁止 markdown、禁止任何不在 [镜头]/[说] 标签里的文字。
+5. 一次回复总长度控制在 4-8 段（[镜头]+[说] 合计），不要长篇大论。${Live.imgEnabled?"\n6. 想展示具体画面时可加一段 [直播画面:画面的具体视觉描述]（最多一次/回合），系统会生成画面图。":""}
+
+【示例（直接照这种结构）】
+[镜头] 把镜头往脸上凑近了一点
+[说] 来啦来啦，今天就咱们俩
+[镜头] 视线往旁边瞟了瞟，没看镜头
+[说] 等等，我先把灯调暗一点
+
+${recent?`\n【刚才直播间发生的】\n${recent}`:""}${wechatCtx}`;
   try{
-    const raw=await callSimpleChatAPI(api,[{role:"system",content:sys},{role:"user",content:userMsg}], .8);
-    let text=cleanAIText(raw);
-    // 提取直播画面指令
+    const raw=await callSimpleChatAPI(api,[{role:"system",content:sys},{role:"user",content:userMsg}], .85);
+    let text=String(raw).trim();
+    // 提取并执行直播画面指令
     const imgMatch=text.match(/[\[【]\s*直播画面[:：]\s*([^\]】]+?)\s*[\]】]/);
     text=text.replace(/[\[【]\s*直播画面[:：]\s*[^\]】]*[\]】]/g,"").trim();
-    // 分段显示主播的话
-    const segs=text.split(/\n\n+/).map(s=>s.trim()).filter(Boolean);
-    for(const seg of segs){ liveAddMsg({type:"host",content:seg}); await sleep(400); }
-    // 有画面指令且开了生图，去生成
     if(imgMatch && Live.imgEnabled){ liveGenScreen(imgMatch[1].trim()); }
+    // 解析 [镜头] / [说]，按出现顺序派发
+    // 匹配每一段：标签 + 内容 直到下一个标签或结尾
+    const segRegex=/[\[【]\s*(镜头|说)\s*[\]】]\s*([^\[【]*?)(?=[\[【]\s*(?:镜头|说)\s*[\]】]|$)/g;
+    let segCount=0;
+    let mt;
+    while((mt=segRegex.exec(text))!==null){
+      const tag=mt[1], content=mt[2].trim();
+      if(!content) continue;
+      segCount++;
+      if(tag==="说"){ liveAddMsg({type:"host",content}); }
+      else { addLiveSubtitle(content); }
+      await sleep(380);
+    }
+    // 兜底：模型没按格式输出，把整段当一条主播话
+    if(segCount===0){
+      const fallback=text.replace(/[\[【][^\]】]+[\]】]/g,"").trim();
+      if(fallback) liveAddMsg({type:"host",content:fallback});
+    }
   }catch(e){
     liveAddMsg({type:"sys",content:"主播信号断了…（"+(e.message||e)+"）"});
   }
@@ -8355,6 +8430,11 @@ function getShopCart(){ return Storage.get("shopCart",{}); }
 function saveShopCart(c){ Storage.set("shopCart",c); }
 function getShopOrders(){ return Storage.get("shopOrders",[]); }
 function saveShopOrders(l){ Storage.set("shopOrders",l); }
+function updateShopOrderStatus(id,status){
+  const orders=getShopOrders();
+  const o=orders.find(x=>x.id===id);
+  if(o){ o.status=status; saveShopOrders(orders); }
+}
 
 function renderShop(){
   document.getElementById("shopMainView").style.display="flex";
@@ -8438,15 +8518,17 @@ window.shopSendToRole=function(orderId){
   renderShopOrders();
   toast("已发到微信，去聊天看看");
 };
-// 让角色付款：发一张代付请求卡到微信
+// 让角色付款：复用饿了么代付机制，发delivery类型卡到微信
 window.shopAskRolePay=function(orderId){
   const o=getShopOrders().find(x=>x.id===orderId); if(!o) return;
+  const itemStr=o.items.map(i=>i.name+"×"+i.qty).join("，");
   const h=getHistory();
-  h.push({id:uid("msg"),groupId:uid("usergrp"),sender:"user",type:"shop_paylink",content:"[商城代付]",data:{orderId:o.id,items:o.items,total:o.total,status:"pending"},read:false,createdAt:Date.now(),time:nowTime()});
+  h.push({id:uid("msg"),groupId:uid("usergrp"),sender:"user",type:"delivery",content:`[商城代付:${o.total}|${itemStr}]`,data:{amount:Number(o.total).toFixed(2),item:itemStr,status:"pending",orderId:o.id,fromShop:true},read:false,createdAt:Date.now(),time:nowTime()});
   saveHistory(h);
   o.status="sent"; saveShopOrders(getShopOrders().map(x=>x.id===orderId?o:x));
   renderShopOrders();
-  toast("已把代付请求发到微信");
+  openApp("wechat");
+  toast("已发送到微信");
 };
 
 // AI 生成商品
@@ -11030,13 +11112,19 @@ function parseAIReplyUnified(raw, groupId){
       }else if(cmd==="帮忙代付" || cmd==="同意代付"){
         if(pendingDelivery && pendingDelivery.data.status==="pending"){
           pendingDelivery.data.status="paid";
-          if(pendingDelivery.data.orderId) updateElemeOrderStatus(pendingDelivery.data.orderId,"paid");
+          if(pendingDelivery.data.orderId){
+            if(pendingDelivery.data.fromShop) updateShopOrderStatus(pendingDelivery.data.orderId,"role_paid");
+            else updateElemeOrderStatus(pendingDelivery.data.orderId,"paid");
+          }
           msg={type:"paid", content:"我已帮忙代付", data:{amount:pendingDelivery.data.amount, item:pendingDelivery.data.item}};
         }
       }else if(cmd==="拒绝代付"){
         if(pendingDelivery && pendingDelivery.data.status==="pending"){
           pendingDelivery.data.status="rejected";
-          if(pendingDelivery.data.orderId) updateElemeOrderStatus(pendingDelivery.data.orderId,"rejected");
+          if(pendingDelivery.data.orderId){
+            if(pendingDelivery.data.fromShop) updateShopOrderStatus(pendingDelivery.data.orderId,"rejected");
+            else updateElemeOrderStatus(pendingDelivery.data.orderId,"rejected");
+          }
           msg={type:"rejected", content:"已拒绝代付", data:{amount:pendingDelivery.data.amount, item:pendingDelivery.data.item}};
         }
       }
@@ -11145,14 +11233,6 @@ function parseAIReplyUnified(raw, groupId){
       }
     },
     {
-      regex:/[\[【]\s*商城帮付\s*[\]】]/g,
-      parse(m){ return {type:"shop_pay_done", content:"[商城帮付]", data:{result:"paid"}}; }
-    },
-    {
-      regex:/[\[【]\s*商城拒付\s*[\]】]/g,
-      parse(m){ return {type:"shop_pay_done", content:"[商城拒付]", data:{result:"rejected"}}; }
-    },
-    {
       regex:/[\[【]\s*开播邀请\s*(?:[:：]\s*([^\]】]*?))?\s*[\]】]/g,
       parse(m){
         const note=String(m[1]||"").trim();
@@ -11197,7 +11277,10 @@ function parseAIReplyUnified(raw, groupId){
       parse(m){
         if(pendingDelivery && pendingDelivery.data.status==="pending"){
           pendingDelivery.data.status="paid";
-          if(pendingDelivery.data.orderId) updateElemeOrderStatus(pendingDelivery.data.orderId,"paid");
+          if(pendingDelivery.data.orderId){
+            if(pendingDelivery.data.fromShop) updateShopOrderStatus(pendingDelivery.data.orderId,"role_paid");
+            else updateElemeOrderStatus(pendingDelivery.data.orderId,"paid");
+          }
           return {type:"paid", content:"我已帮忙代付", data:{amount:pendingDelivery.data.amount, item:pendingDelivery.data.item}};
         }
         return null;
@@ -11208,7 +11291,10 @@ function parseAIReplyUnified(raw, groupId){
       parse(m){
         if(pendingDelivery && pendingDelivery.data.status==="pending"){
           pendingDelivery.data.status="rejected";
-          if(pendingDelivery.data.orderId) updateElemeOrderStatus(pendingDelivery.data.orderId,"rejected");
+          if(pendingDelivery.data.orderId){
+            if(pendingDelivery.data.fromShop) updateShopOrderStatus(pendingDelivery.data.orderId,"rejected");
+            else updateElemeOrderStatus(pendingDelivery.data.orderId,"rejected");
+          }
           return {type:"rejected", content:"已拒绝代付", data:{amount:pendingDelivery.data.amount, item:pendingDelivery.data.item}};
         }
         return null;
@@ -11649,11 +11735,13 @@ const DATA_MODULES=[
   {id:"story", name:"线下剧情", pattern:/^offlineStory/},
   {id:"call", name:"通话记录", pattern:/^callHistory\./},
   {id:"eleme", name:"饿了么", keys:["elemeState","elemeOrders","elemeGeneratedStores"]},
+  {id:"shop", name:"商城", keys:["shopAIItems","shopCart","shopOrders"]},
+  {id:"live", name:"直播", pattern:/^live(On|Img)\./},
   {id:"memory", name:"长期记忆", pattern:/^(memories|relationState)\./},
   {id:"theme", name:"主题与图标", keys:["theme","themeV9","iconSettings"]},
   {id:"user", name:"user资料", keys:["userProfile"]},
   {id:"stickers", name:"表情包", keys:["stickers"]},
-  {id:"worldbook", name:"世界书", pattern:/^worldbook\./},
+  {id:"worldbook", name:"世界书", keys:["worldbook_global"], pattern:/^worldbook\./},
   {id:"greetings", name:"开场白", pattern:/^greetings\./}
 ];
 function allMiaoKeys(){
