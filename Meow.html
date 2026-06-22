@@ -10990,9 +10990,19 @@ function isFullNcmUrl(u){
 function isPreviewNcmUrl(u){
   return !!(u && u.url && u.code===200);
 }
+async function fetchNcmSongDetail(songId,debugLog){
+  if(!songId) return null;
+  try{
+    const json=await fetchJsonWithTimeout(musicUrl("/song/detail",{ids:String(songId)}));
+    return json?.songs?.[0]||null;
+  }catch(e){
+    if(debugLog) debugLog.push("id"+songId+" 封面详情失败:"+e.message);
+    return null;
+  }
+}
 function buildNcmResult(song,u,kind,debugLog,title,artist){
   const album=song.album?.name||song.al?.name||"";
-  const coverRaw=song.album?.picUrl||song.al?.picUrl||song.album?.artist?.img1v1Url||"";
+  const coverRaw=song.album?.picUrl||song.al?.picUrl||song.album?.artist?.img1v1Url||song.artists?.[0]?.img1v1Url||song.ar?.[0]?.img1v1Url||"";
   const coverUrl=coverRaw?coverRaw.replace(/\?.*$/,"")+"?param=300y300":"";
   const durSec=(Number(u.time)||Number(song.duration)||Number(song.dt)||0)/1000;
   return {
@@ -11140,11 +11150,15 @@ async function fetchMusicInfoFromNetease(title,artist){
       const state=`id${song.id} code=${u?.code} url=${u?.url?"有":"无"} time=${u?.time||0} trial=${u?.freeTrialInfo?"是":"否"}`;
       if(isFullNcmUrl(u)){
         debugLog.push(state+" → 完整版");
-        return buildNcmResult(song,u,"full",debugLog,title,artist);
+        const detail=await fetchNcmSongDetail(song.id,debugLog);
+        return buildNcmResult(detail||song,u,"full",debugLog,title,artist);
       }
       if(isPreviewNcmUrl(u)){
         debugLog.push(state+" → 试听");
-        if(!previewFallback) previewFallback=buildNcmResult(song,u,"preview",debugLog,title,artist);
+        if(!previewFallback){
+          const detail=await fetchNcmSongDetail(song.id,debugLog);
+          previewFallback=buildNcmResult(detail||song,u,"preview",debugLog,title,artist);
+        }
       }else{
         debugLog.push(state+" → 不可播");
       }
