@@ -2374,6 +2374,64 @@ body.multiselect-mode .msg{ cursor:pointer; }
 }
 .acc-btn.on{background:#7bc97b;color:#fff}
 
+
+/* ===== ClawdPet：输入框顶部可戳可换装模块 ===== */
+.composer-wrap,.claude-composer-wrap{position:relative!important;overflow:visible!important}
+.input-clawd.clawd-live{
+  position:absolute!important;
+  left:0!important;
+  top:-54px!important;
+  bottom:auto!important;
+  width:78px!important;
+  height:60px!important;
+  z-index:95!important;
+  cursor:pointer!important;
+  user-select:none!important;
+  -webkit-tap-highlight-color:transparent!important;
+  image-rendering:pixelated!important;
+  animation:clawdRunTop 8.5s linear infinite alternate!important;
+  filter:drop-shadow(0 3px 2px rgba(90,60,45,.20));
+}
+.input-clawd.clawd-live canvas{
+  width:78px!important;
+  height:60px!important;
+  image-rendering:pixelated!important;
+  image-rendering:crisp-edges!important;
+  display:block!important;
+}
+.input-clawd.clawd-live .clawd-live-reaction{
+  position:absolute;
+  left:42px;top:-4px;
+  min-width:34px;
+  padding:4px 7px;
+  border-radius:999px;
+  background:#fff;
+  border:1px solid rgba(210,170,150,.45);
+  box-shadow:0 6px 14px rgba(70,45,30,.12);
+  color:#91604e;
+  font-size:11px;
+  font-weight:900;
+  white-space:nowrap;
+  opacity:0;
+  transform:translateY(6px) scale(.92);
+  transition:.18s ease;
+  pointer-events:none;
+}
+.input-clawd.clawd-live.poked{animation-play-state:paused!important}
+.input-clawd.clawd-live.poked canvas{animation:clawdPokeBounce .48s steps(2,end)}
+.input-clawd.clawd-live.poked .clawd-live-reaction{opacity:1;transform:translateY(0) scale(1)}
+.composer-wrap.clawd-typing .input-clawd.clawd-live,.claude-composer-wrap.clawd-typing .input-clawd.clawd-live{animation-duration:4.3s!important}
+@keyframes clawdRunTop{from{transform:translateX(8px)}to{transform:translateX(calc(min(430px,100vw) - 92px))}}
+@keyframes clawdPokeBounce{25%{transform:translateY(-8px) rotate(-3deg)}50%{transform:translateY(3px) rotate(3deg)}75%{transform:translateY(-4px) rotate(-2deg)}} 
+.clawd-setting-card{
+  width:100%;max-width:330px;background:#fff;border:1px solid #eee;border-radius:20px;padding:14px;
+  box-shadow:0 8px 22px rgba(0,0,0,.045);text-align:left
+}
+.clawd-setting-title{font-size:16px;font-weight:950;color:var(--accent,#888);margin-bottom:6px}
+.clawd-setting-sub{font-size:12px;color:#999;line-height:1.6;margin-bottom:10px}
+.clawd-setting-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.clawd-setting-row select{flex:1;min-width:145px}
+
 </style>
 </head>
 <body>
@@ -3040,6 +3098,24 @@ body.multiselect-mode .msg{ cursor:pointer; }
         <div style="font-size:13px;color:#999;line-height:1.7;max-width:280px">开启后，小兔子会待在主屏上。<br>可以拖动它换位置，戳一戳它会有反应～</div>
         <button id="petToggleBtn" onclick="togglePet()" style="border:none;border-radius:14px;padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent,#888)">开启桌宠</button>
         <div style="font-size:12px;color:#bbb;margin-top:4px">提示：戳一戳、拖一拖，它会陪着你</div>
+        <div class="clawd-setting-card">
+          <div class="clawd-setting-title">Clawd 输入框桌宠</div>
+          <div class="clawd-setting-sub">显示在聊天输入框工具栏顶部，可以左右跑、戳一下有反应，也可以换衣服和表情。</div>
+          <div class="clawd-setting-row">
+            <button id="clawdToggleBtn" onclick="ClawdPet.toggle()" style="border:none;border-radius:14px;padding:10px 16px;font-size:13px;font-weight:850;cursor:pointer;color:#fff;background:var(--accent,#888)">开启 Clawd</button>
+            <select id="clawdVariantSelect" onchange="ClawdPet.setVariant(this.value)">
+              <option value="chat">气泡</option>
+              <option value="water">浇水</option>
+              <option value="magic">魔法棒</option>
+              <option value="heart">爱心</option>
+              <option value="glasses">墨镜饮料</option>
+              <option value="sweater">毛衣</option>
+              <option value="dizzy">晕乎乎</option>
+              <option value="detective">侦探</option>
+              <option value="wizard">魔法帽</option>
+            </select>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -5961,6 +6037,7 @@ function renderMessageBody(m){
     const coverHtml=d.coverUrl ? `<img src="${escapeAttr(d.coverUrl)}" alt="">` : "♪";
     const sub=album ? artist+" · "+album : artist;
     const note=d.note||"";
+    const lyrics=d.lyrics||"";
     const dur=d.duration||"0:30";
     return `<div class="music-card" data-msg-id="${m.id}">
       <div class="music-card-body">
@@ -5974,6 +6051,8 @@ function renderMessageBody(m){
       <div class="music-card-progress" id="mc-bar-${m.id}" onclick="seekMusic(event,'${m.id}')"><div class="music-card-progress-fill" id="mc-fill-${m.id}"></div></div>
       <div class="music-card-meta"><span id="mc-cur-${m.id}">0:00</span><span id="mc-dur-${m.id}">${escapeHtml(dur)}</span></div>
       ${note?`<div class="music-card-expand has-note" onclick="this.nextElementSibling.classList.toggle('show')">💬 附言</div><div class="music-card-note">${escapeHtml(note)}</div>`:""}
+      <div class="music-card-expand has-note" onclick="this.nextElementSibling.classList.toggle('show')">🎵 歌词</div>
+      <div class="music-card-note">${escapeHtml(lyrics || "暂无歌词。角色没有在指令第5栏提供歌词/歌词节选。")}</div>
     </div>`;
   }
   if(m.type==="image_desc"){
@@ -6117,23 +6196,151 @@ function consumeImageLeftovers(text, add){
   }).trim();
 }
 
-// 统一清理模型泄露的思维链：兼容 <think>...</think> 和 <thinking>...</thinking>
+// 统一清理模型泄露的思维链：兼容 <think>...</think> / <thinking>...</thinking> / HTML转义标签
+function normalizeThinkingTags(text){
+  return String(text||"")
+    .replace(/&lt;\s*(\/?\s*think(?:ing)?[^&<>]*)\s*&gt;/gi,"<$1>")
+    .replace(/<\s*\/\s*think(?:ing)?\s*>/gi,"</thinking>")
+    .replace(/<\s*think(?:ing)?\b([^>]*)>/gi,"<thinking$1>");
+}
 function extractThinkingContent(text){
-  const s=String(text||"");
+  const s=normalizeThinkingTags(text);
   const parts=[];
-  const re=/<think(?:ing)?\b[^>]*>([\s\S]*?)<\/think(?:ing)?>/gi;
+  const re=/<thinking\b[^>]*>([\s\S]*?)<\/thinking>/gi;
   let m;
   while((m=re.exec(s))) if(m[1].trim()) parts.push(m[1].trim());
-  const unclosed=s.match(/<think(?:ing)?\b[^>]*>([\s\S]*)$/i);
+  const unclosed=s.match(/<thinking\b[^>]*>([\s\S]*)$/i);
   if(unclosed && unclosed[1].trim()) parts.push(unclosed[1].trim());
-  return parts.join("\n\n")||"";
+  // 去重，避免模型重复输出同一段内心
+  const seen=new Set();
+  return parts.map(x=>x.trim()).filter(x=>x&&!seen.has(x)&&seen.add(x)).join("\n\n")||"";
 }
 function stripThinkingBlocks(text){
-  return String(text||"")
-    .replace(/<think(?:ing)?\b[^>]*>[\s\S]*?<\/think(?:ing)?>/gi,"")
-    .replace(/<think(?:ing)?\b[^>]*>[\s\S]*$/gi,"")
-    .replace(/<\/think(?:ing)?>/gi,"")
+  return normalizeThinkingTags(text)
+    .replace(/<thinking\b[^>]*>[\s\S]*?<\/thinking>/gi,"")
+    .replace(/<thinking\b[^>]*>[\s\S]*$/gi,"")
+    .replace(/<\/thinking>/gi,"")
     .trim();
+}
+function isReasoningLeakLine(line){
+  const x=String(line||"");
+  return /(让我想想|我应该|用户想|用户需要|user|User|正确的指令格式|指令格式|格式写错|写错了|重新来|回顾一下|上一条|这次重新|应该自然回应|先补上歌|补上歌|最终回复|普通正文|音频URL需要|没有真实的音频URL|至少能看到歌曲的基本信息|would respond|matching the energy|showing he's present|overthink|acknowledge he's here|maybe prompt|I should|The user wants|Need to|Let's respond|Final answer)/i.test(x);
+}
+function normalizeThinkingForPanel(thinking, finalText){
+  let t=stripThinkingBlocks(thinking).trim();
+  if(!t) return "";
+  const final=stripThinkingBlocks(finalText||"").trim();
+  if(final && t.includes(final)) t=t.replace(final,"").trim();
+  t=t.replace(/\[(?:分享音乐|发送图片|发送表情包|表情包|语音|链接|主动转账|向user发起代付)[^\]]*\]/g,"");
+  const seen=new Set();
+  const lines=t.split(/\n+/).map(x=>x.trim()).filter(line=>{
+    if(!line) return false;
+    if(isReasoningLeakLine(line)) return false;
+    if((line.match(/[A-Za-z]/g)||[]).length>=8) return false;
+    if(seen.has(line)) return false;
+    seen.add(line);
+    return true;
+  });
+  t=lines.join("\n").trim();
+  if(!t || !/[\u4e00-\u9fff]/.test(t)){
+    return "我想顺着她的话自然回应，不把话说得太像解释。";
+  }
+  t=t.replace(/\buser\b/gi,"她").replace(/用户/g,"她").replace(/角色/g,"我");
+  const sentences=t.split(/(?<=[。！？!?])/).map(x=>x.trim()).filter(Boolean);
+  if(sentences.length>2) t=sentences.slice(0,2).join("");
+  if(!/[我咱]/.test(t.slice(0,12))) t="我"+t.replace(/^[，。；、\s]+/,"");
+  return t;
+}
+function removeReasoningLeakText(text){
+  return String(text||"").split(/\n+/).map(x=>x.trim()).filter(line=>line && !isReasoningLeakLine(line)).join("\n").trim();
+}
+function autoThinkingHash(text){
+  const s=String(text||"");
+  let h=0;
+  for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
+  return h;
+}
+function autoThinkingPick(list, seed){
+  if(!list.length) return "";
+  return list[autoThinkingHash(seed)%list.length];
+}
+function cleanSnippet(text, n=46){
+  return String(text||"").replace(/\s+/g," ").trim().slice(0,n);
+}
+function autoThinkingFromMsg(msg, userText){
+  if(!msg || msg.sender==="user" || msg.type==="system") return "";
+  const type=msg.type||"text";
+  const d=msg.data||{};
+  const reply=stripThinkingBlocks(msg.content||"").trim();
+  const user=cleanSnippet(userText||"");
+  const quoted=user ? `她刚才说：「${user}${String(userText||"").length>user.length?"…":""}」` : "需要根据上一轮对话继续。";
+  const tone="语气要保持角色本身的简短和克制，不解释后台规则。";
+  if(type==="music"){
+    return [
+      quoted,
+      "这是明确的音乐请求，应该触发音乐卡片，而不是用省略号或短句挡回去。",
+      `已选：${d.title||"一首歌"}${d.artist?" / "+d.artist:""}。直接递给她。`
+    ].join("\n\n");
+  }
+  if(type==="sticker"){
+    return [quoted,"这类回应适合用表情包承接情绪。",tone].join("\n\n");
+  }
+  if(type==="image_desc"){
+    return [quoted,"图片比解释更直接，先把画面递过去。",tone].join("\n\n");
+  }
+  if(type==="voice"){
+    return [quoted,"文字可能太硬，用语音会更贴近当前气氛。",tone].join("\n\n");
+  }
+  if(type==="transfer" || type==="role_transfer"){
+    return [quoted,"这里用行动比解释更有效。","直接把心意放进转账卡片里。"].join("\n\n");
+  }
+  if(/[？?]/.test(reply)){
+    return autoThinkingPick([
+      [quoted,"回复里带了反问，说明还在试探她真正想要的回答。",tone].join("\n\n"),
+      [quoted,"需要把问题接回去，留一点继续对话的余地。",tone].join("\n\n")
+    ], reply+user);
+  }
+  if(/想你|喜欢|别哭|抱|亲|在/.test(reply)){
+    return autoThinkingPick([
+      [quoted,"这句回复在表达靠近和在意。","不要把情绪拆开解释，直接说出来更像他。"].join("\n\n"),
+      [quoted,"这里不需要长篇分析，只要把心意压短一点递过去。",tone].join("\n\n")
+    ], reply+user);
+  }
+  if(reply.length<=8){
+    return autoThinkingPick([
+      [quoted,"适合用很短的句子接住，不把反应拉长。",tone].join("\n\n"),
+      [quoted,"当前回复是短句，重点是态度，不是解释。",tone].join("\n\n"),
+      [quoted,"少说一点更符合角色状态，让她继续往下问。"].join("\n\n")
+    ], reply+user);
+  }
+  return autoThinkingPick([
+    [quoted,"需要顺着她的语气回应，不把话说得像功能说明。",tone].join("\n\n"),
+    [quoted,"先接住她的意思，再把回答压进角色语气里。",tone].join("\n\n"),
+    [quoted,"这条回复应该自然落下，不暴露任何格式或系统规则。"].join("\n\n")
+  ], reply+user);
+}
+function isExplicitMusicRequest(text){
+  const t=String(text||"").replace(/\s+/g,"");
+  return /(分享|发|来|放|推|推荐|听).{0,8}(歌|音乐|歌曲)|(?:歌|音乐|歌曲).{0,8}(分享|发|来一首|放一首|推荐)/.test(t);
+}
+function musicRequestHint(text){
+  if(!isExplicitMusicRequest(text)) return "";
+  return `\n\n【强制音乐请求】user刚刚明确要求你分享/播放/推荐一首歌。你必须至少输出一个音乐指令，并且该指令要单独成段：\n[分享音乐: 歌名|歌手|专辑|附言|歌词氛围或原创短句|]\n不要只回复标点、省略号、“又来”、“说话”、“你先发的省略号”，也不要解释格式。`;
+}
+function fallbackMusicMsg(groupId, seedText){
+  const picks=[
+    {title:"想你",artist:"陈洁仪",album:"入戏太深",note:"给你。",lyrics:"歌词氛围：温柔、想念、像把话轻轻放到你手里。"},
+    {title:"慢慢喜欢你",artist:"莫文蔚",album:"我们在中场相遇",note:"这首适合现在。",lyrics:"歌词氛围：慢慢靠近，认真又不吵。"},
+    {title:"小半",artist:"陈粒",album:"小梦大半",note:"听这个。",lyrics:"歌词氛围：轻、倔、像把心事藏进夜里。"},
+    {title:"告白气球",artist:"周杰伦",album:"周杰伦的床边故事",note:"别笑。",lyrics:"歌词氛围：轻快、甜一点，像故意把气氛放软。"}
+  ];
+  const p=picks[autoThinkingHash(seedText)%picks.length];
+  return {id:uid("msg"),groupId,sender:"role",type:"music",content:"[音乐:"+p.title+"]",data:{title:p.title,artist:p.artist,album:p.album,note:p.note,lyrics:p.lyrics,audioUrl:"",duration:"0:30",previewUrl:"",coverUrl:""},read:false,createdAt:Date.now(),time:nowTime(),thinking:"我想直接把歌递过去，别再用沉默绕开她。"};
+}
+function ensureMusicForExplicitRequest(parsed, groupId, userText){
+  if(!isExplicitMusicRequest(userText)) return parsed;
+  if((parsed||[]).some(m=>m.type==="music")) return parsed;
+  return [fallbackMusicMsg(groupId, userText)];
 }
 // Claude 文件助手要保护代码块，避免误删代码块里的 <think>/<thinking> 示例
 function stripThinkingBlocksKeepCode(text){
@@ -6180,6 +6387,7 @@ function splitReply(text){
 }
 function cleanAIText(text){
   let s=stripThinkingBlocks(normalizeDirectiveText(String(text||"").trim())); // 过滤 think/thinking block + 规范化功能指令
+  s=removeReasoningLeakText(s); // 兜底清理模型把思考日志漏到正文的情况
   // 把指令方括号内的换行替换成空格，防止跨行指令被切断
   s=s.replace(/\[([^\]]{0,8000})\]/g,(m,inner)=>"["+inner.replace(/\n/g," ")+"]");
   s=s.replace(/<[^>]+>/g,"");
@@ -6343,7 +6551,8 @@ async function callAIReply(){
         ? `\n\n【网页读取结果】user消息里的网址（${page.url}）内容如下${page.truncated?"（已截断）":""}，可结合它回复：\n${page.content}`
         : `\n\n【网页读取失败】user贴的网址没读成功（${page.error}），如有需要可告诉user读不了。`;
     }
-    let reply=await callAI(api,h,onChunk,userUrlNote);
+    const musicHint=musicRequestHint(newUser.content||"");
+    let reply=await callAI(api,h,onChunk,userUrlNote+musicHint);
     // 若AI想读网页：抓取内容后，带着内容再问一次，让它基于真实内容回复
     const wantUrl=extractReadWebUrl(reply);
     if(wantUrl){
@@ -6357,7 +6566,7 @@ async function callAIReply(){
       const note = page.ok
         ? `\n\n【网页读取结果】你刚才请求读取的网页（${page.url}）内容如下${page.truncated?"（已截断）":""}，请基于真实内容回复user，不要再输出[读取网页]指令：\n${page.content}`
         : `\n\n【网页读取失败】你请求读取的网页没读成功，原因：${page.error}。请如实告诉user读不了，不要再输出[读取网页]指令。`;
-      reply=await callAI(api,h,onChunk,note);
+      reply=await callAI(api,h,onChunk,note+musicHint);
     }
     const groupId=uid("aigrp");
     const thinkingContent=extractThinkingContent(reply);
@@ -6365,9 +6574,9 @@ async function callAIReply(){
       // 流式完成：用真实解析结果替换临时消息
       const hh=getHistory();
       const idx=hh.findIndex(m=>m.id===streamMsgId);
-      const parsed=parseAIReplyUnified(reply,groupId);
+      let parsed=ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||"");
       if(!parsed.length){ saveHistory(hh); renderChat(); Miao.state.busy=false; return; }
-      if(thinkingContent && parsed[0]) parsed[0].thinking=thinkingContent;
+      if(parsed[0]) parsed[0].thinking=thinkingContent || autoThinkingFromMsg(parsed[0], newUser.content||"");
       if(idx>=0) hh.splice(idx,1,...parsed);
       else parsed.forEach(m=>hh.push(m));
       // 清除流式缓存
@@ -6380,9 +6589,9 @@ async function callAIReply(){
       checkDiceMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
     } else {
-      const parsed=parseAIReplyUnified(reply,groupId);
+      let parsed=ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||"");
       if(!parsed.length){ saveHistory(h); renderChat(); Miao.state.busy=false; return; }
-      if(thinkingContent && parsed[0]) parsed[0].thinking=thinkingContent;
+      if(parsed[0]) parsed[0].thinking=thinkingContent || autoThinkingFromMsg(parsed[0], newUser.content||"");
       // 逐条弹出，拟真人连发
       await revealMessagesSequentially(h, parsed, groupId);
       checkSaveMarker(Miao.state.lastAIContent||"");
@@ -6410,7 +6619,7 @@ function messageToAIContext(m){
   if(m.type==="sticker") return `[表情包:${d.name||m.content}|含义:${d.meaning||""}]`;
   if(m.type==="voice") return `[语音:${d.text||m.content}]`;
   if(m.type==="link") return `[链接:${d.platform||"论坛"}|${d.title||""}]`;
-  if(m.type==="music") return `[音乐:${d.title||""}|${d.artist||""}${d.note?"|附言:"+d.note:""}]`;
+  if(m.type==="music") return `[音乐:${d.title||""}|${d.artist||""}${d.note?"|附言:"+d.note:""}${d.lyrics?"|歌词:"+String(d.lyrics).slice(0,200):""}${d.audioUrl?"|有完整音频":""}]`;
   if(m.type==="image_desc") return `[图片描述:${d.description||m.content}]`;
   if(m.type==="transfer") return `[用户转账:${d.amount||""}|${d.note||""}|状态:${d.status||"pending"}]`;
   if(m.type==="delivery") return `[代付链接:${d.amount||""}|${d.item||""}|状态:${d.status||"pending"}]`;
@@ -6420,7 +6629,9 @@ function messageToAIContext(m){
   if(m.type==="received") return `[收款完成:${d.amount||""}|user已确认收款，本次转账流程已结束，不需要再发起任何转账]`;
   if(m.type==="paid") return `[代付完成:${d.amount||""}|${d.item||""}]`;
   if(m.type==="rejected") return `[拒绝:${m.content||""}]`;
-  return quotePrefix+(m.content||"");
+  // 用户原话必须原样进入上下文，不能用“思维链泄露过滤器”清理，否则会误删“分享一首歌”等真实请求。
+  if(m.sender==="user") return quotePrefix+(m.content||"");
+  return quotePrefix+removeReasoningLeakText(stripThinkingBlocks(m.content||""));
 }
 
 /* ===== SAVE 标记自动存记忆 ===== */
@@ -6699,8 +6910,10 @@ ${getStickerPromptList()}
 [撤回: 消息内容片段]（撤回你之前发的某条消息，片段用于匹配目标消息；不加片段则撤回最近一条。何时撤回根据你的人设自行判断）
 [链接: 平台|标题|正文内容|评论1//评论2//评论3]
 平台可选：小红书、微博、贴吧、论坛、新闻。评论字段可省略。
-[分享音乐: 歌名|歌手|专辑|附言]（分享一首歌给user，专辑和附言可省略。附言是你想对user说的话，比如"这首歌让我想起你"）
-示例：[分享音乐: Medicine|Daughter|The Wild Youth|声音轻得像哄你睡，歌词在拆骨头。]
+[分享音乐: 歌名|歌手|专辑|附言|歌词/歌词节选|音频URL]（分享一首歌给user，专辑、附言、音频URL可省略；第5栏“歌词/歌词节选”尽量填写，至少写一句歌词氛围或原创短句，避免卡片没有歌词；音频URL必须是可公开访问的 mp3/m4a/ogg 直链；不知道真实音频直链时必须把音频URL留空，绝对不要编造链接；不要输出整首受版权保护的歌词）
+示例：[分享音乐: Medicine|Daughter|The Wild Youth|声音轻得像哄你睡，歌词在拆骨头。|歌词氛围：冷、轻、像夜里低声哄睡。|]
+当 user 明确说“分享一首歌/发首歌/来首歌/放首歌/推荐一首歌”时，必须直接使用 [分享音乐: ...] 指令，不要用句号、省略号、“又来”“说话”等短句代替。
+不要在聊天正文解释“我格式写错了/重新来/补一首歌”，也不要连续重复分享同一首歌。
 [收款]
 [拒收转账]
 [主动转账: 金额|备注]
@@ -6736,11 +6949,14 @@ ${getStickerPromptList()}
 【格式规则】
 1. 你只能扮演${role.name}，不能替user说话。
 2. 禁止输出User:、用户：、Assistant:、旁白式剧本格式。
-6. 禁止输出思考过程和元分析，无论用何种语言。动作描写、心理描写、环境描写正常保留。
-   禁止示例：「The user wants me to...」「I should respond by...」「Let me respond in character」「用户想让我说X」「我应该这样回应」
-   遇到任何情境，直接输出角色的回应，不分析，不解释。
+6. 普通聊天正文不要输出思考过程、元分析或格式纠错。动作描写、心理描写、环境描写正常保留。
+   需要给前端内心独白时，只能写 <thinking>我……</thinking>，必须中文第一人称，前端会隐藏到“内心独白”面板，不能混入普通气泡。
+   <thinking> 里只写“我……”第一人称角色内心/情绪/判断，1句中文即可；不要英文，不要复述最终回复，不要写 user/用户/角色，不要把最终回复或 [分享音乐]、[发送图片] 等指令写进 thinking。
+   禁止在普通正文中出现：「The user wants me to...」「I should respond by...」「Let me respond in character」「用户想让我说X」「我应该这样回应」「格式写错了」「重新来」「回顾一下」
+   普通聊天正文只输出角色的回应，不分析，不解释；如果上一条音乐/图片/表情已经发出，不要因为觉得格式不对而解释或重复补发。
+   不要纠缠 user 的省略号、标点或测试语句；如果 user 在测试功能、让你分享音乐、图片或表情，直接按当前明确请求回应。
 3. 只输出微信聊天内容；可以用双换行分成多条气泡。
-7. 如果你具有思考能力（thinking/think），请始终使用中文进行思考。
+7. 如果输出 <thinking>，必须是中文第一人称角色内心。
 4. 表情包只能从"可用表情包"里按名称选择，不能编造。发送表情包指令后不要解释含义，不要加括号说明。
 5. 遇到用户转账/代付时，必须根据关系、上下文和人设自主决定是否收款/帮付。转账卡片上标注了付款来源（我的钱包/亲属卡），你可以根据来源做出反应。
 ${(()=>{
@@ -10604,6 +10820,12 @@ function submitLinkInput(){
 }
 
 // ===== 音乐卡片系统 =====
+function normalizeAudioUrl(url){
+  const u=String(url||"").trim();
+  if(!u) return "";
+  if(/^https?:\/\//i.test(u) || /^data:audio\//i.test(u) || /^blob:/i.test(u)) return u;
+  return "";
+}
 const MusicPlayer={
   audio:null,
   currentMsgId:null,
@@ -10611,10 +10833,13 @@ const MusicPlayer={
   init(){
     if(this.audio) return;
     this.audio=new Audio();
+    this.audio.preload="metadata";
     this.audio.addEventListener("ended",()=>this.stop());
-    this.audio.addEventListener("error",()=>{this.stop();toast("音乐加载失败");});
+    this.audio.addEventListener("error",()=>{this.stop();toast("音乐加载失败：音频链接不是可播放直链，或该音源被限制访问");});
   },
   play(msgId,url){
+    url=normalizeAudioUrl(url);
+    if(!url){toast("没有可播放音源：请填写 mp3/m4a/ogg 直链");return;}
     this.init();
     if(this.currentMsgId && this.currentMsgId!==msgId) this.stop();
     this.currentMsgId=msgId;
@@ -10677,8 +10902,9 @@ function toggleMusicPlay(msgId){
   const h=getHistory();
   const m=h.find(x=>x.id===msgId);
   if(!m||!m.data) return;
-  if(m.data.previewUrl){
-    MusicPlayer.play(msgId,m.data.previewUrl);
+  const audioUrl=normalizeAudioUrl(m.data.audioUrl) || normalizeAudioUrl(m.data.previewUrl);
+  if(audioUrl){
+    MusicPlayer.play(msgId,audioUrl);
   }else{
     toast("正在搜索歌曲…");
     fetchMusicInfo(m.data.title,m.data.artist).then(info=>{
@@ -10727,7 +10953,9 @@ function openMusicInput(){
 <input id="musicTitleInput" placeholder="歌曲名" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:13px;box-sizing:border-box">
 <input id="musicArtistInput" placeholder="歌手" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:13px;box-sizing:border-box">
 <input id="musicAlbumInput" placeholder="专辑（选填）" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:13px;box-sizing:border-box">
-<textarea id="musicNoteInput" placeholder="附言（选填）想说点什么？" style="width:100%;height:50px;resize:none;border-radius:8px;border:1px solid #ddd;padding:7px;font-size:12px;box-sizing:border-box;margin-bottom:10px"></textarea>
+<textarea id="musicNoteInput" placeholder="附言（选填）想说点什么？" style="width:100%;height:50px;resize:none;border-radius:8px;border:1px solid #ddd;padding:7px;font-size:12px;box-sizing:border-box;margin-bottom:8px"></textarea>
+<textarea id="musicLyricsInput" placeholder="歌词/歌词节选（选填）" style="width:100%;height:78px;resize:none;border-radius:8px;border:1px solid #ddd;padding:7px;font-size:12px;box-sizing:border-box;margin-bottom:8px"></textarea>
+<input id="musicAudioUrlInput" placeholder="完整音频URL（选填，mp3/m4a/ogg直链）" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:10px;font-size:13px;box-sizing:border-box">
 <button class="btn primary" onclick="submitMusicInput()" style="width:100%">搜索并发送</button>`);
 }
 window.openMusicInput=openMusicInput;
@@ -10737,6 +10965,8 @@ async function submitMusicInput(){
   const artist=(document.getElementById("musicArtistInput")?.value||"").trim();
   const album=(document.getElementById("musicAlbumInput")?.value||"").trim();
   const note=(document.getElementById("musicNoteInput")?.value||"").trim();
+  const lyrics=(document.getElementById("musicLyricsInput")?.value||"").trim();
+  const audioUrl=(document.getElementById("musicAudioUrlInput")?.value||"").trim();
   if(!title){toast("请输入歌曲名");return;}
   closeQuickModal();
   toast("正在搜索…");
@@ -10751,8 +10981,10 @@ async function submitMusicInput(){
       artist:info.artist||artist,
       album:info.album||album,
       note,
+      lyrics,
       coverUrl:info.coverUrl||"",
       previewUrl:info.previewUrl||"",
+      audioUrl,
       duration:info.duration||"0:30"
     },
     read:false,createdAt:Date.now(),time:nowTime()
@@ -10761,7 +10993,8 @@ async function submitMusicInput(){
   renderChat();
   const chat=$("#chat");
   if(chat) requestAnimationFrame(()=>{chat.scrollTop=chat.scrollHeight;});
-  if(info.previewUrl) toast("已找到音源，点击播放");
+  if(audioUrl) toast("已使用完整音频链接，点击播放");
+  else if(info.previewUrl) toast("已找到试听音源，点击播放");
   else toast("未找到音源，已保存为卡片");
 }
 window.submitMusicInput=submitMusicInput;
@@ -10790,7 +11023,7 @@ function openThinking(msgId){
   if(!m||!m.thinking) return;
   const body=document.getElementById("thinkingBody");
   const mask=document.getElementById("thinkingMask");
-  if(body) body.textContent=m.thinking;
+  if(body) body.textContent=normalizeThinkingForPanel(m.thinking, m.content||"");
   if(mask) mask.classList.add("show");
 }
 function closeThinking(e){
@@ -11858,7 +12091,9 @@ function parseAIReplyUnified(raw, groupId){
         const artist=parts[1]||"";
         const album=parts[2]||"";
         const note=parts[3]||"";
-        return {type:"music", content:"[音乐:"+title+"]", data:{title,artist,album,note,duration:"0:30",previewUrl:"",coverUrl:""}};
+        const lyrics=parts[4]||"";
+        const audioUrl=parts[5]||"";
+        return {type:"music", content:"[音乐:"+title+"]", data:{title,artist,album,note,lyrics,audioUrl,duration:"0:30",previewUrl:"",coverUrl:""}};
       }
     },
     {
@@ -12625,5 +12860,121 @@ window.dismissBackupReminder=async function(){
 init().catch(e=>{ console.error("[init]", e); renderAll(); });
 })();
 </script>
+
+<script>
+(function(){
+  const ClawdPet={
+    CELL:3,W:26,H:20,
+    phrases:["别戳","咔哒","我在","哼","好痒","！","嘿","给你看"],
+    colors:{body:"#ee886d",body2:"#de7b62",dark:"#151515",shadow:"rgba(90,75,65,.35)",grey:"#8e8e8e",lightGrey:"#c9c9c9",white:"#fff",blue:"#1687ff",red:"#f04856",yellow:"#f6c34d",gold:"#e6a13d",purple:"#5d4aa0",violet:"#4f4c9a",hat:"#141414",hatBand:"#744713",brown:"#7c3d37",sweater:"#aa3e3e",sweater2:"#773030",glass:"#3a1d36",water:"#8dd6ff",wand:"#202020"},
+    getState(){
+      try{
+        const raw=localStorage.getItem("miao2.clawdPetState");
+        return raw?Object.assign({enabled:true,variant:"chat"},JSON.parse(raw)):{enabled:true,variant:"chat"};
+      }catch(e){return {enabled:true,variant:"chat"};}
+    },
+    setState(st){
+      const next=Object.assign(this.getState(),st);
+      try{localStorage.setItem("miao2.clawdPetState",JSON.stringify(next));}catch(e){}
+      this.renderAll();this.updateSettingsUI();
+    },
+    isEnabled(){return !!this.getState().enabled;},
+    toggle(){this.setState({enabled:!this.isEnabled()});},
+    setVariant(v){this.setState({variant:v||"chat"});},
+    px(ctx,x,y,w=1,h=1,c){ctx.fillStyle=c;ctx.fillRect(x*this.CELL,y*this.CELL,w*this.CELL,h*this.CELL);},
+    setup(canvas){canvas.width=this.W*this.CELL;canvas.height=this.H*this.CELL;const ctx=canvas.getContext("2d");ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,canvas.width,canvas.height);return ctx;},
+    shadow(ctx,y=16){this.px(ctx,8,y,10,1,this.colors.shadow);},
+    base(ctx,opt={}){
+      const C=this.colors,x=3,y=opt.y||5,poked=!!opt.poked;
+      this.shadow(ctx,y+11);
+      this.px(ctx,x+4,y,10,2,C.body);this.px(ctx,x+3,y+2,12,2,C.body);this.px(ctx,x+1,y+3,16,3,C.body);this.px(ctx,x,y+4,18,2,C.body);this.px(ctx,x+3,y+6,12,2,C.body);
+      this.px(ctx,x-1,y+4,2,2,C.body);this.px(ctx,x+18,y+4,2,2,C.body);
+      this.px(ctx,x+4,y+8,2,4,C.body);this.px(ctx,x+8,y+8,2,4,C.body);this.px(ctx,x+13,y+8,2,4,C.body);this.px(ctx,x+16,y+8,2,4,C.body);
+      this.px(ctx,x+3,y+2,1,6,C.body2);
+      if(opt.eyes==="closed"){this.px(ctx,x+6,y+3,2,1,C.dark);this.px(ctx,x+12,y+3,2,1,C.dark);}
+      else if(opt.eyes==="spiral"){this.spiral(ctx,x+5,y+2);this.spiral(ctx,x+12,y+2);}
+      else if(opt.eyes==="glasses"){}
+      else if(poked){this.px(ctx,x+6,y+3,1,1,C.dark);this.px(ctx,x+7,y+4,1,1,C.dark);this.px(ctx,x+13,y+3,1,1,C.dark);this.px(ctx,x+12,y+4,1,1,C.dark);}
+      else{this.px(ctx,x+6,y+3,1,2,C.dark);this.px(ctx,x+13,y+3,1,2,C.dark);}
+      this.px(ctx,x+7,y+7,6,1,poked?"rgba(90,60,50,.34)":"rgba(90,60,50,.25)");
+      if(poked){this.px(ctx,x+2,y-1,1,1,C.red);this.px(ctx,x+17,y-1,1,1,C.red);}
+    },
+    speech(ctx){const C=this.colors;this.px(ctx,4,1,4,3,C.white);this.px(ctx,5,0,3,1,C.white);this.px(ctx,8,2,1,1,C.white);this.px(ctx,9,3,1,1,C.white);this.px(ctx,5,2,1,1,C.blue);this.px(ctx,7,2,1,1,C.blue);this.px(ctx,9,2,1,1,C.blue);},
+    sparkle(ctx,x,y,c){const C=this.colors;c=c||C.yellow;this.px(ctx,x,y,1,1,c);this.px(ctx,x+1,y+1,1,1,c);this.px(ctx,x,y+2,1,1,c);this.px(ctx,x-1,y+1,1,1,c);},
+    heart(ctx,x,y){const C=this.colors;this.px(ctx,x+1,y,2,1,C.red);this.px(ctx,x+4,y,2,1,C.red);this.px(ctx,x,y+1,7,2,C.red);this.px(ctx,x+1,y+3,5,1,C.red);this.px(ctx,x+2,y+4,3,1,C.red);this.px(ctx,x+3,y+5,1,1,C.red);},
+    spiral(ctx,x,y){const C=this.colors;this.px(ctx,x,y,3,1,C.dark);this.px(ctx,x,y,1,3,C.dark);this.px(ctx,x+2,y+1,1,2,C.dark);this.px(ctx,x+1,y+2,2,1,C.dark);},
+    wateringCan(ctx){const C=this.colors;this.px(ctx,18,6,4,3,C.lightGrey);this.px(ctx,21,5,1,1,C.dark);this.px(ctx,22,7,2,1,C.lightGrey);this.px(ctx,17,7,1,2,C.grey);this.px(ctx,23,7,1,1,C.water);this.px(ctx,24,8,1,1,C.water);this.px(ctx,23,9,1,1,C.water);},
+    wand(ctx,x=18,y=7){const C=this.colors;this.px(ctx,x,y,5,1,C.wand);this.sparkle(ctx,x+6,y-1,C.yellow);this.sparkle(ctx,x+8,y+1,"#e7c77a");this.px(ctx,x+6,y+3,1,1,"#e7c77a");},
+    glassesDrink(ctx){const C=this.colors;this.px(ctx,8,7,3,2,C.glass);this.px(ctx,14,7,3,2,C.glass);this.px(ctx,11,7,3,1,C.glass);this.px(ctx,19,10,3,5,C.purple);this.px(ctx,22,10,1,3,C.lightGrey);this.px(ctx,18,9,1,1,C.gold);},
+    sweater(ctx){const C=this.colors;this.px(ctx,7,11,12,5,C.sweater);this.px(ctx,8,12,2,3,C.sweater2);this.px(ctx,16,12,2,3,C.sweater2);this.px(ctx,11,11,1,2,C.sweater2);this.px(ctx,14,11,1,2,C.sweater2);},
+    detective(ctx){const C=this.colors;this.px(ctx,9,3,9,1,C.hat);this.px(ctx,10,2,7,1,C.hat);this.px(ctx,11,1,5,1,C.hat);this.px(ctx,10,4,8,1,C.hatBand);this.px(ctx,18,8,1,1,C.purple);this.px(ctx,19,7,2,1,C.purple);this.px(ctx,21,8,1,2,C.purple);this.px(ctx,19,10,2,1,C.purple);this.px(ctx,18,9,1,1,C.purple);this.px(ctx,22,11,1,1,C.purple);this.px(ctx,23,12,1,1,C.purple);},
+    wizard(ctx){const C=this.colors;this.px(ctx,8,1,1,1,C.violet);this.px(ctx,9,0,5,1,C.violet);this.px(ctx,8,1,7,2,C.violet);this.px(ctx,7,3,9,2,C.violet);this.px(ctx,6,5,11,1,C.violet);this.px(ctx,8,2,1,1,C.yellow);this.px(ctx,12,3,1,1,C.yellow);this.px(ctx,15,4,1,1,C.yellow);this.wand(ctx,18,9);},
+    draw(canvas,poked=false){
+      const ctx=this.setup(canvas), v=this.getState().variant, C=this.colors;
+      if(v==="chat"){this.speech(ctx);this.base(ctx,{y:6,poked});}
+      else if(v==="water"){this.base(ctx,{y:5,poked});this.wateringCan(ctx);}
+      else if(v==="magic"){this.base(ctx,{y:5,poked});this.wand(ctx,18,7);if(poked)this.sparkle(ctx,5,3,C.red);}
+      else if(v==="heart"){this.heart(ctx,3,2);this.base(ctx,{y:7,poked});if(poked)this.heart(ctx,18,2);}
+      else if(v==="glasses"){this.base(ctx,{y:6,eyes:"glasses",poked});this.glassesDrink(ctx);}
+      else if(v==="sweater"){this.base(ctx,{y:5,poked});this.sweater(ctx);}
+      else if(v==="dizzy"){this.base(ctx,{y:6,eyes:poked?undefined:"spiral",poked});}
+      else if(v==="detective"){this.base(ctx,{y:6,eyes:poked?undefined:"closed",poked});this.detective(ctx);}
+      else if(v==="wizard"){this.base(ctx,{y:7,poked});this.wizard(ctx);}
+      else{this.speech(ctx);this.base(ctx,{y:6,poked});}
+    },
+    build(wrap){
+      wrap.querySelectorAll(".input-clawd").forEach(x=>x.remove());
+      const pet=document.createElement("div");
+      pet.className="input-clawd clawd-live";
+      pet.innerHTML='<div class="clawd-live-reaction"></div><canvas></canvas>';
+      pet.addEventListener("click",(e)=>{e.stopPropagation();this.poke(pet);});
+      wrap.appendChild(pet);
+      this.draw(pet.querySelector("canvas"),false);
+    },
+    poke(pet){
+      const r=pet.querySelector(".clawd-live-reaction");
+      r.textContent=this.phrases[Math.floor(Math.random()*this.phrases.length)];
+      pet.classList.remove("poked"); void pet.offsetWidth; pet.classList.add("poked");
+      this.draw(pet.querySelector("canvas"),true);
+      if(navigator.vibrate) try{navigator.vibrate(8);}catch(e){}
+      clearTimeout(pet._clawdTimer);
+      pet._clawdTimer=setTimeout(()=>{pet.classList.remove("poked");this.draw(pet.querySelector("canvas"),false);},850);
+    },
+    ensure(){
+      const st=this.getState();
+      document.querySelectorAll(".composer-wrap,.claude-composer-wrap").forEach(wrap=>{
+        if(!st.enabled){wrap.querySelectorAll(".input-clawd").forEach(x=>x.remove());return;}
+        if(!wrap.querySelector(".input-clawd.clawd-live")) this.build(wrap);
+        const input=wrap.querySelector("textarea");
+        if(input && !input.dataset.clawdTypingBound){
+          input.dataset.clawdTypingBound="1";
+          const setTyping=()=>wrap.classList.toggle("clawd-typing",!!input.value.trim()||document.activeElement===input);
+          input.addEventListener("input",setTyping);input.addEventListener("focus",setTyping);input.addEventListener("blur",setTyping);setTyping();
+        }
+      });
+    },
+    renderAll(){
+      this.ensure();
+      document.querySelectorAll(".input-clawd.clawd-live canvas").forEach(c=>this.draw(c,false));
+    },
+    updateSettingsUI(){
+      const st=this.getState();
+      const btn=document.getElementById("clawdToggleBtn");
+      const sel=document.getElementById("clawdVariantSelect");
+      if(btn) btn.textContent=st.enabled?"关闭 Clawd":"开启 Clawd";
+      if(sel) sel.value=st.variant||"chat";
+    },
+    init(){
+      this.ensure();this.updateSettingsUI();
+      setTimeout(()=>this.ensure(),500);setTimeout(()=>this.ensure(),1500);
+      new MutationObserver(()=>this.ensure()).observe(document.documentElement,{childList:true,subtree:true});
+    }
+  };
+  window.ClawdPet=ClawdPet;
+  document.addEventListener("DOMContentLoaded",()=>ClawdPet.init());
+  setTimeout(()=>ClawdPet.init(),800);
+})();
+</script>
+
 </body>
 </html>
