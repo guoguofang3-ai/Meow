@@ -12583,7 +12583,7 @@ function parseAIReplyUnified(raw, groupId){
       // 1) [语音: 普通内容]
       // 2) 【语音: [sigh] [low voice] English line / 中文：中文翻译】
       // 第二种允许内部出现 ElevenLabs v3 的方括号 audio tags。
-      regex:/【\s*(?:发送语音|语音)[:：]\s*([\s\S]*?)】|\[\s*(?:发送语音|语音)[:：]\s*([^\]]+?)\]/g,
+      regex:/【\s*(?:发送语音|语音)\s*[:：]?\s*([\s\S]*?)】|\[\s*(?:发送语音|语音)\s*[:：]\s*((?:\[[^\]]+\]|[^\]])+?)\]/g,
       parse(m){
         const t=String(m[1]||m[2]||"").trim();
         if(t){
