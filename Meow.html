@@ -11848,6 +11848,9 @@ function stripVoiceChineseTranslation(s){
   t=t.replace(/\s+(?:中文(?:翻译)?|翻译|Chinese|CN)\s*[:：][\s\S]*$/iu,"");
   // 兼容：English sentence. / 中文翻译 ；只有斜杠后明显是中文时才删，避免误删英文里的 /。
   t=t.replace(/\s*[\/／｜|]\s*([\s\S]*)$/u,(m,tail)=>containsCJK(tail)?"":m);
+  // 兼容没有写“中文：”的情况：English sentence. 我想你了。
+  // 如果中文前面已经有英文，就只保留中文前面的英文部分。
+  t=t.replace(/^([\s\S]*?[A-Za-z][\s\S]*?)\s*[㐀-鿿豈-﫿][\s\S]*$/u,(m,lead)=>lead.trim());
   return t.trim();
 }
 function getVoiceSpeakText(raw){
