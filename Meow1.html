@@ -2375,32 +2375,62 @@ body.multiselect-mode .msg{ cursor:pointer; }
 .acc-btn.on{background:#7bc97b;color:#fff}
 
 
-/* ===== Clawd v2：工具栏顶部小巧跑动像素版 ===== */
+/* ===== ClawdPet：输入框顶部可戳可换装模块 ===== */
 .composer-wrap,.claude-composer-wrap{position:relative!important;overflow:visible!important}
-.input-clawd.pixel-clawd-real{
-  --px:3px;
+.input-clawd.clawd-live{
   position:absolute!important;
   left:0!important;
-  top:-27px!important;
+  top:-54px!important;
   bottom:auto!important;
-  width:calc(var(--px) * 15)!important;
-  height:calc(var(--px) * 9)!important;
-  z-index:90!important;
-  pointer-events:none!important;
+  width:78px!important;
+  height:60px!important;
+  z-index:95!important;
+  cursor:pointer!important;
+  user-select:none!important;
+  -webkit-tap-highlight-color:transparent!important;
   image-rendering:pixelated!important;
-  transform-origin:50% 100%!important;
   animation:clawdRunTop 8.5s linear infinite alternate!important;
-  filter:drop-shadow(0 2px 2px rgba(0,0,0,.18));
+  filter:drop-shadow(0 3px 2px rgba(90,60,45,.20));
 }
-.input-clawd.pixel-clawd-real .clawd-sprite{position:absolute;left:0;top:0;width:calc(var(--px) * 15);height:calc(var(--px) * 9);animation:clawdTinyDance .48s steps(2,end) infinite}
-.input-clawd.pixel-clawd-real .clawd-cell{position:absolute;width:var(--px);height:var(--px);image-rendering:pixelated}
-.input-clawd.pixel-clawd-real .clawd-mouth{position:absolute;left:calc(var(--px) * 5);top:calc(var(--px) * 6);width:calc(var(--px) * 5);height:var(--px);background:#77706b;opacity:.42}
-.input-clawd.pixel-clawd-real .clawd-pop{position:absolute;left:calc(var(--px) * 1);top:calc(var(--px) * -2);width:calc(var(--px) * 4);height:calc(var(--px) * 3);opacity:.92;transform:scale(.72)}
-.input-clawd.pixel-clawd-real .clawd-pop i{position:absolute;width:var(--px);height:var(--px);background:#fff;box-shadow:var(--px) 0 0 #fff,calc(var(--px) * 2) 0 0 #fff,0 var(--px) 0 #fff,var(--px) var(--px) 0 #fff,calc(var(--px) * 2) var(--px) 0 #fff,calc(var(--px) * 3) var(--px) 0 #fff,var(--px) calc(var(--px) * 2) 0 #fff,calc(var(--px) * 2) calc(var(--px) * 2) 0 #fff,calc(var(--px) * 3) calc(var(--px) * 3) 0 #fff}
-.input-clawd.pixel-clawd-real .clawd-pop i:after{content:"";position:absolute;left:var(--px);top:var(--px);width:var(--px);height:var(--px);background:#1687ff;box-shadow:calc(var(--px) * 2) 0 0 #1687ff,calc(var(--px) * 4) 0 0 #1687ff}
-.composer-wrap.clawd-typing .input-clawd.pixel-clawd-real,.claude-composer-wrap.clawd-typing .input-clawd.pixel-clawd-real{animation-duration:4.2s!important}
-@keyframes clawdRunTop{from{transform:translateX(8px)}to{transform:translateX(calc(min(430px,100vw) - 68px))}}
-@keyframes clawdTinyDance{0%,100%{transform:translateY(0) scaleX(1)}50%{transform:translateY(-3px) scaleX(.98)}}
+.input-clawd.clawd-live canvas{
+  width:78px!important;
+  height:60px!important;
+  image-rendering:pixelated!important;
+  image-rendering:crisp-edges!important;
+  display:block!important;
+}
+.input-clawd.clawd-live .clawd-live-reaction{
+  position:absolute;
+  left:42px;top:-4px;
+  min-width:34px;
+  padding:4px 7px;
+  border-radius:999px;
+  background:#fff;
+  border:1px solid rgba(210,170,150,.45);
+  box-shadow:0 6px 14px rgba(70,45,30,.12);
+  color:#91604e;
+  font-size:11px;
+  font-weight:900;
+  white-space:nowrap;
+  opacity:0;
+  transform:translateY(6px) scale(.92);
+  transition:.18s ease;
+  pointer-events:none;
+}
+.input-clawd.clawd-live.poked{animation-play-state:paused!important}
+.input-clawd.clawd-live.poked canvas{animation:clawdPokeBounce .48s steps(2,end)}
+.input-clawd.clawd-live.poked .clawd-live-reaction{opacity:1;transform:translateY(0) scale(1)}
+.composer-wrap.clawd-typing .input-clawd.clawd-live,.claude-composer-wrap.clawd-typing .input-clawd.clawd-live{animation-duration:4.3s!important}
+@keyframes clawdRunTop{from{transform:translateX(8px)}to{transform:translateX(calc(min(430px,100vw) - 92px))}}
+@keyframes clawdPokeBounce{25%{transform:translateY(-8px) rotate(-3deg)}50%{transform:translateY(3px) rotate(3deg)}75%{transform:translateY(-4px) rotate(-2deg)}} 
+.clawd-setting-card{
+  width:100%;max-width:330px;background:#fff;border:1px solid #eee;border-radius:20px;padding:14px;
+  box-shadow:0 8px 22px rgba(0,0,0,.045);text-align:left
+}
+.clawd-setting-title{font-size:16px;font-weight:950;color:var(--accent,#888);margin-bottom:6px}
+.clawd-setting-sub{font-size:12px;color:#999;line-height:1.6;margin-bottom:10px}
+.clawd-setting-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.clawd-setting-row select{flex:1;min-width:145px}
 
 </style>
 </head>
@@ -3068,6 +3098,24 @@ body.multiselect-mode .msg{ cursor:pointer; }
         <div style="font-size:13px;color:#999;line-height:1.7;max-width:280px">开启后，小兔子会待在主屏上。<br>可以拖动它换位置，戳一戳它会有反应～</div>
         <button id="petToggleBtn" onclick="togglePet()" style="border:none;border-radius:14px;padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent,#888)">开启桌宠</button>
         <div style="font-size:12px;color:#bbb;margin-top:4px">提示：戳一戳、拖一拖，它会陪着你</div>
+        <div class="clawd-setting-card">
+          <div class="clawd-setting-title">Clawd 输入框桌宠</div>
+          <div class="clawd-setting-sub">显示在聊天输入框工具栏顶部，可以左右跑、戳一下有反应，也可以换衣服和表情。</div>
+          <div class="clawd-setting-row">
+            <button id="clawdToggleBtn" onclick="ClawdPet.toggle()" style="border:none;border-radius:14px;padding:10px 16px;font-size:13px;font-weight:850;cursor:pointer;color:#fff;background:var(--accent,#888)">开启 Clawd</button>
+            <select id="clawdVariantSelect" onchange="ClawdPet.setVariant(this.value)">
+              <option value="chat">气泡</option>
+              <option value="water">浇水</option>
+              <option value="magic">魔法棒</option>
+              <option value="heart">爱心</option>
+              <option value="glasses">墨镜饮料</option>
+              <option value="sweater">毛衣</option>
+              <option value="dizzy">晕乎乎</option>
+              <option value="detective">侦探</option>
+              <option value="wizard">魔法帽</option>
+            </select>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -12807,67 +12855,107 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
 
 <script>
 (function(){
-  const MATRIX=[
-    "000111111110000",
-    "000111111110000",
-    "0001B111B11000",
-    "111111111111110",
-    "111111111111110",
-    "000111111110000",
-    "000101001010000",
-    "000100000010000",
-    "000SSSSSSSS0000"
-  ];
-  const COLORS={ "1":"#ee886d", "B":"#111111", "S":"#8b8177" };
-  function buildPixelClawd(wrap){
-    wrap.querySelectorAll(".input-clawd").forEach(x=>x.remove());
-    const pet=document.createElement("div");
-    pet.className="input-clawd pixel-clawd-real";
-    pet.setAttribute("aria-hidden","true");
-    const sprite=document.createElement("div");
-    sprite.className="clawd-sprite";
-    MATRIX.forEach((row,y)=>{
-      [...row].forEach((c,x)=>{
-        if(!COLORS[c]) return;
-        const cell=document.createElement("i");
-        cell.className="clawd-cell";
-        cell.style.left=`calc(var(--px) * ${x})`;
-        cell.style.top=`calc(var(--px) * ${y})`;
-        cell.style.background=COLORS[c];
-        if(c==="S") cell.style.opacity=".42";
-        sprite.appendChild(cell);
+  const ClawdPet={
+    CELL:3,W:26,H:20,
+    phrases:["别戳","咔哒","我在","哼","好痒","！","嘿","给你看"],
+    colors:{body:"#ee886d",body2:"#de7b62",dark:"#151515",shadow:"rgba(90,75,65,.35)",grey:"#8e8e8e",lightGrey:"#c9c9c9",white:"#fff",blue:"#1687ff",red:"#f04856",yellow:"#f6c34d",gold:"#e6a13d",purple:"#5d4aa0",violet:"#4f4c9a",hat:"#141414",hatBand:"#744713",brown:"#7c3d37",sweater:"#aa3e3e",sweater2:"#773030",glass:"#3a1d36",water:"#8dd6ff",wand:"#202020"},
+    getState(){return Storage.get("clawdPetState",{enabled:true,variant:"chat"});},
+    setState(st){Storage.set("clawdPetState",Object.assign(this.getState(),st));this.renderAll();this.updateSettingsUI();},
+    isEnabled(){return !!this.getState().enabled;},
+    toggle(){this.setState({enabled:!this.isEnabled()});},
+    setVariant(v){this.setState({variant:v||"chat"});},
+    px(ctx,x,y,w=1,h=1,c){ctx.fillStyle=c;ctx.fillRect(x*this.CELL,y*this.CELL,w*this.CELL,h*this.CELL);},
+    setup(canvas){canvas.width=this.W*this.CELL;canvas.height=this.H*this.CELL;const ctx=canvas.getContext("2d");ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,canvas.width,canvas.height);return ctx;},
+    shadow(ctx,y=16){this.px(ctx,8,y,10,1,this.colors.shadow);},
+    base(ctx,opt={}){
+      const C=this.colors,x=3,y=opt.y||5,poked=!!opt.poked;
+      this.shadow(ctx,y+11);
+      this.px(ctx,x+4,y,10,2,C.body);this.px(ctx,x+3,y+2,12,2,C.body);this.px(ctx,x+1,y+3,16,3,C.body);this.px(ctx,x,y+4,18,2,C.body);this.px(ctx,x+3,y+6,12,2,C.body);
+      this.px(ctx,x-1,y+4,2,2,C.body);this.px(ctx,x+18,y+4,2,2,C.body);
+      this.px(ctx,x+4,y+8,2,4,C.body);this.px(ctx,x+8,y+8,2,4,C.body);this.px(ctx,x+13,y+8,2,4,C.body);this.px(ctx,x+16,y+8,2,4,C.body);
+      this.px(ctx,x+3,y+2,1,6,C.body2);
+      if(opt.eyes==="closed"){this.px(ctx,x+6,y+3,2,1,C.dark);this.px(ctx,x+12,y+3,2,1,C.dark);}
+      else if(opt.eyes==="spiral"){this.spiral(ctx,x+5,y+2);this.spiral(ctx,x+12,y+2);}
+      else if(opt.eyes==="glasses"){}
+      else if(poked){this.px(ctx,x+6,y+3,1,1,C.dark);this.px(ctx,x+7,y+4,1,1,C.dark);this.px(ctx,x+13,y+3,1,1,C.dark);this.px(ctx,x+12,y+4,1,1,C.dark);}
+      else{this.px(ctx,x+6,y+3,1,2,C.dark);this.px(ctx,x+13,y+3,1,2,C.dark);}
+      this.px(ctx,x+7,y+7,6,1,poked?"rgba(90,60,50,.34)":"rgba(90,60,50,.25)");
+      if(poked){this.px(ctx,x+2,y-1,1,1,C.red);this.px(ctx,x+17,y-1,1,1,C.red);}
+    },
+    speech(ctx){const C=this.colors;this.px(ctx,4,1,4,3,C.white);this.px(ctx,5,0,3,1,C.white);this.px(ctx,8,2,1,1,C.white);this.px(ctx,9,3,1,1,C.white);this.px(ctx,5,2,1,1,C.blue);this.px(ctx,7,2,1,1,C.blue);this.px(ctx,9,2,1,1,C.blue);},
+    sparkle(ctx,x,y,c){const C=this.colors;c=c||C.yellow;this.px(ctx,x,y,1,1,c);this.px(ctx,x+1,y+1,1,1,c);this.px(ctx,x,y+2,1,1,c);this.px(ctx,x-1,y+1,1,1,c);},
+    heart(ctx,x,y){const C=this.colors;this.px(ctx,x+1,y,2,1,C.red);this.px(ctx,x+4,y,2,1,C.red);this.px(ctx,x,y+1,7,2,C.red);this.px(ctx,x+1,y+3,5,1,C.red);this.px(ctx,x+2,y+4,3,1,C.red);this.px(ctx,x+3,y+5,1,1,C.red);},
+    spiral(ctx,x,y){const C=this.colors;this.px(ctx,x,y,3,1,C.dark);this.px(ctx,x,y,1,3,C.dark);this.px(ctx,x+2,y+1,1,2,C.dark);this.px(ctx,x+1,y+2,2,1,C.dark);},
+    wateringCan(ctx){const C=this.colors;this.px(ctx,18,6,4,3,C.lightGrey);this.px(ctx,21,5,1,1,C.dark);this.px(ctx,22,7,2,1,C.lightGrey);this.px(ctx,17,7,1,2,C.grey);this.px(ctx,23,7,1,1,C.water);this.px(ctx,24,8,1,1,C.water);this.px(ctx,23,9,1,1,C.water);},
+    wand(ctx,x=18,y=7){const C=this.colors;this.px(ctx,x,y,5,1,C.wand);this.sparkle(ctx,x+6,y-1,C.yellow);this.sparkle(ctx,x+8,y+1,"#e7c77a");this.px(ctx,x+6,y+3,1,1,"#e7c77a");},
+    glassesDrink(ctx){const C=this.colors;this.px(ctx,8,7,3,2,C.glass);this.px(ctx,14,7,3,2,C.glass);this.px(ctx,11,7,3,1,C.glass);this.px(ctx,19,10,3,5,C.purple);this.px(ctx,22,10,1,3,C.lightGrey);this.px(ctx,18,9,1,1,C.gold);},
+    sweater(ctx){const C=this.colors;this.px(ctx,7,11,12,5,C.sweater);this.px(ctx,8,12,2,3,C.sweater2);this.px(ctx,16,12,2,3,C.sweater2);this.px(ctx,11,11,1,2,C.sweater2);this.px(ctx,14,11,1,2,C.sweater2);},
+    detective(ctx){const C=this.colors;this.px(ctx,9,3,9,1,C.hat);this.px(ctx,10,2,7,1,C.hat);this.px(ctx,11,1,5,1,C.hat);this.px(ctx,10,4,8,1,C.hatBand);this.px(ctx,18,8,1,1,C.purple);this.px(ctx,19,7,2,1,C.purple);this.px(ctx,21,8,1,2,C.purple);this.px(ctx,19,10,2,1,C.purple);this.px(ctx,18,9,1,1,C.purple);this.px(ctx,22,11,1,1,C.purple);this.px(ctx,23,12,1,1,C.purple);},
+    wizard(ctx){const C=this.colors;this.px(ctx,8,1,1,1,C.violet);this.px(ctx,9,0,5,1,C.violet);this.px(ctx,8,1,7,2,C.violet);this.px(ctx,7,3,9,2,C.violet);this.px(ctx,6,5,11,1,C.violet);this.px(ctx,8,2,1,1,C.yellow);this.px(ctx,12,3,1,1,C.yellow);this.px(ctx,15,4,1,1,C.yellow);this.wand(ctx,18,9);},
+    draw(canvas,poked=false){
+      const ctx=this.setup(canvas), v=this.getState().variant, C=this.colors;
+      if(v==="chat"){this.speech(ctx);this.base(ctx,{y:6,poked});}
+      else if(v==="water"){this.base(ctx,{y:5,poked});this.wateringCan(ctx);}
+      else if(v==="magic"){this.base(ctx,{y:5,poked});this.wand(ctx,18,7);if(poked)this.sparkle(ctx,5,3,C.red);}
+      else if(v==="heart"){this.heart(ctx,3,2);this.base(ctx,{y:7,poked});if(poked)this.heart(ctx,18,2);}
+      else if(v==="glasses"){this.base(ctx,{y:6,eyes:"glasses",poked});this.glassesDrink(ctx);}
+      else if(v==="sweater"){this.base(ctx,{y:5,poked});this.sweater(ctx);}
+      else if(v==="dizzy"){this.base(ctx,{y:6,eyes:poked?undefined:"spiral",poked});}
+      else if(v==="detective"){this.base(ctx,{y:6,eyes:poked?undefined:"closed",poked});this.detective(ctx);}
+      else if(v==="wizard"){this.base(ctx,{y:7,poked});this.wizard(ctx);}
+      else{this.speech(ctx);this.base(ctx,{y:6,poked});}
+    },
+    build(wrap){
+      wrap.querySelectorAll(".input-clawd").forEach(x=>x.remove());
+      const pet=document.createElement("div");
+      pet.className="input-clawd clawd-live";
+      pet.innerHTML='<div class="clawd-live-reaction"></div><canvas></canvas>';
+      pet.addEventListener("click",(e)=>{e.stopPropagation();this.poke(pet);});
+      wrap.appendChild(pet);
+      this.draw(pet.querySelector("canvas"),false);
+    },
+    poke(pet){
+      const r=pet.querySelector(".clawd-live-reaction");
+      r.textContent=this.phrases[Math.floor(Math.random()*this.phrases.length)];
+      pet.classList.remove("poked"); void pet.offsetWidth; pet.classList.add("poked");
+      this.draw(pet.querySelector("canvas"),true);
+      if(navigator.vibrate) try{navigator.vibrate(8);}catch(e){}
+      clearTimeout(pet._clawdTimer);
+      pet._clawdTimer=setTimeout(()=>{pet.classList.remove("poked");this.draw(pet.querySelector("canvas"),false);},850);
+    },
+    ensure(){
+      const st=this.getState();
+      document.querySelectorAll(".composer-wrap,.claude-composer-wrap").forEach(wrap=>{
+        if(!st.enabled){wrap.querySelectorAll(".input-clawd").forEach(x=>x.remove());return;}
+        if(!wrap.querySelector(".input-clawd.clawd-live")) this.build(wrap);
+        const input=wrap.querySelector("textarea");
+        if(input && !input.dataset.clawdTypingBound){
+          input.dataset.clawdTypingBound="1";
+          const setTyping=()=>wrap.classList.toggle("clawd-typing",!!input.value.trim()||document.activeElement===input);
+          input.addEventListener("input",setTyping);input.addEventListener("focus",setTyping);input.addEventListener("blur",setTyping);setTyping();
+        }
       });
-    });
-    const mouth=document.createElement("i");
-    mouth.className="clawd-mouth";
-    const pop=document.createElement("div");
-    pop.className="clawd-pop";
-    pop.innerHTML="<i></i>";
-    pet.appendChild(pop);
-    pet.appendChild(sprite);
-    pet.appendChild(mouth);
-    wrap.appendChild(pet);
-  }
-  function ensureInputClawd(){
-    document.querySelectorAll(".composer-wrap,.claude-composer-wrap").forEach(wrap=>{
-      if(!wrap.querySelector(".input-clawd.pixel-clawd-real")) buildPixelClawd(wrap);
-      const input=wrap.querySelector("textarea");
-      if(input && !input.dataset.clawdTypingBound){
-        input.dataset.clawdTypingBound="1";
-        const setTyping=()=>wrap.classList.toggle("clawd-typing", !!input.value.trim() || document.activeElement===input);
-        input.addEventListener("input",setTyping);
-        input.addEventListener("focus",setTyping);
-        input.addEventListener("blur",setTyping);
-        setTyping();
-      }
-    });
-  }
-  window.ensureInputClawd=ensureInputClawd;
-  document.addEventListener("DOMContentLoaded",ensureInputClawd);
-  setTimeout(ensureInputClawd,300);
-  setTimeout(ensureInputClawd,1000);
-  setTimeout(ensureInputClawd,2200);
-  new MutationObserver(()=>ensureInputClawd()).observe(document.documentElement,{childList:true,subtree:true});
+    },
+    renderAll(){
+      this.ensure();
+      document.querySelectorAll(".input-clawd.clawd-live canvas").forEach(c=>this.draw(c,false));
+    },
+    updateSettingsUI(){
+      const st=this.getState();
+      const btn=document.getElementById("clawdToggleBtn");
+      const sel=document.getElementById("clawdVariantSelect");
+      if(btn) btn.textContent=st.enabled?"关闭 Clawd":"开启 Clawd";
+      if(sel) sel.value=st.variant||"chat";
+    },
+    init(){
+      this.ensure();this.updateSettingsUI();
+      setTimeout(()=>this.ensure(),500);setTimeout(()=>this.ensure(),1500);
+      new MutationObserver(()=>this.ensure()).observe(document.documentElement,{childList:true,subtree:true});
+    }
+  };
+  window.ClawdPet=ClawdPet;
+  document.addEventListener("DOMContentLoaded",()=>ClawdPet.init());
+  setTimeout(()=>ClawdPet.init(),800);
 })();
 </script>
 
