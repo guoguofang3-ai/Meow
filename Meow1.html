@@ -2673,6 +2673,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
             <option value="always">总是转成语音</option>
           </select>
           <div class="btn-row"><button class="btn" data-action="fetch-tts-models">拉取 TTS 模型</button></div>
+          <div class="status-box" id="ttsStatus"></div>
           <div class="model-list" id="ttsModelList"></div>
           <div class="rowline" style="margin-top:8px"><div><b>流式传输</b><div class="v3-sub">逐字输出，需要中转站支持 stream:true</div></div><button class="toggle" id="streamToggle" data-action="toggle-stream"></button></div>
           <div class="rowline" style="margin-top:8px"><div><b>消息提示音</b><div class="v3-sub">角色逐条发消息时播放提示音</div></div><button class="toggle" id="msgSoundToggle" data-action="toggle-msg-sound"></button></div>
@@ -4043,10 +4044,10 @@ function bindEvents(){
     if(action==="toggle-stream"){ Storage.set("streamEnabled",!Storage.get("streamEnabled",false)); renderApi(); }
     if(action==="toggle-msg-sound"){ Storage.set("msgSoundEnabled",!Storage.get("msgSoundEnabled",true)); renderApi(); playMessageSound(); }
     if(action==="test-api") testApi();
-    if(action==="fetch-models") fetchModels();
-    if(action==="select-model") selectModel(id);
-    if(action==="fetch-tts-models") fetchTTSModels();
-    if(action==="select-tts-model") selectTTSModel(id);
+    if(action==="fetch-models"){ fetchModels(); return; }
+    if(action==="select-model"){ selectModel(id); return; }
+    if(action==="fetch-tts-models"){ fetchTTSModels(); return; }
+    if(action==="select-tts-model"){ selectTTSModel(id); return; }
     if(action==="apply-theme") applyTheme(id, true);
     if(action==="apply-theme-preset") applyThemePreset(id);
     if(action==="apply-custom-theme") applyCustomThemeFromEditor();
@@ -7366,11 +7367,12 @@ async function testApi(){
   }
 }
 async function fetchModels(){
+  // 文字/聊天模型拉取逻辑：保持原版，只使用聊天 API 设置，不读取 ElevenLabs 配置。
   saveApiFromForm();
   const status=$("#apiStatus"), list=$("#modelList");
-  list.innerHTML="";
+  if(list) list.innerHTML="";
   status.className="status-box";
-  status.textContent="正在拉取模型...";
+  status.textContent="正在拉取文字模型...";
   try{
     const api=Storage.get("api",{});
     if(api.format==="bedrock") throw new Error("Bedrock 通道通常不支持 /v1/models，请手动填写模型名称");
@@ -7382,11 +7384,11 @@ async function fetchModels(){
     const models=(data.data||[]).map(x=>x.id).filter(Boolean);
     if(!models.length) throw new Error("没有读取到模型列表");
     status.className="status-box ok";
-    status.textContent=`已拉取 ${models.length} 个模型，点击可填入模型名称。`;
-    list.innerHTML=models.map(m=>`<button class="model-item" data-action="select-model" data-id="${escapeHtml(m)}">${escapeHtml(m)}</button>`).join("");
+    status.textContent=`已拉取 ${models.length} 个文字模型，点击可填入模型名称。`;
+    if(list) list.innerHTML=models.map(m=>`<button class="model-item" data-action="select-model" data-id="${escapeHtml(m)}">${escapeHtml(m)}</button>`).join("");
   }catch(err){
     status.className="status-box error";
-    status.textContent="拉取失败："+err.message;
+    status.textContent="文字模型拉取失败："+err.message;
   }
 }
 function selectModel(model){
@@ -7397,7 +7399,7 @@ function selectModel(model){
 }
 async function fetchTTSModels(){
   saveApiFromForm();
-  const status=$("#apiStatus"), list=document.getElementById("ttsModelList");
+  const status=document.getElementById("ttsStatus") || $("#apiStatus"), list=document.getElementById("ttsModelList");
   if(list) list.innerHTML="";
   status.className="status-box";
   status.textContent="正在拉取 ElevenLabs TTS 模型...";
