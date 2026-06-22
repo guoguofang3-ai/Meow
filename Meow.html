@@ -11061,42 +11061,58 @@ async function fetchMusicInfoFromNetease(title,artist){
   try{
     const kw=((title||"")+" "+(artist||"")).trim();
     if(!kw) return null;
-    const searchUrl=NCM_BASE+"/search?keywords="+encodeURIComponent(kw)+"&limit=5&realIP="+NCM_REAL_IP;
+    const searchUrl=NCM_BASE+"/search?keywords="+encodeURIComponent(kw)+"&limit=8&realIP="+NCM_REAL_IP;
     const sRes=await fetch(searchUrl);
     const sJson=await sRes.json();
     const songs=sJson?.result?.songs||[];
     if(!songs.length) return null;
 
-    // 优先选免费歌曲（fee===0），免费歌一般能拿到完整音源；
-    // 没有免费的就退而求其次用第一条（可能只拿到VIP试听片段）
-    const song=songs.find(s=>s.fee===0)||songs[0];
-    const songId=song.id;
+    // fee含义：0=免费 1=纯VIP付费 8=免费但限音质 4=购买专辑
+    // 真正完全播不了完整版的只有 fee===1（纯付费）和 fee===4（专辑购买）。
+    // 把这两种排到候选列表最后面，优先尝试其余的。
+    const ranked=[...songs].sort((a,b)=>{
+      const bad=f=>f===1||f===4;
+      return (bad(a.fee)?1:0)-(bad(b.fee)?1:0);
+    });
 
-    const urlReq=NCM_BASE+"/song/url/v1?id="+songId+"&level=standard&realIP="+NCM_REAL_IP;
-    const uRes=await fetch(urlReq);
-    const uJson=await uRes.json();
-    const u=uJson?.data?.[0];
+    // 依次尝试候选歌曲，直到拿到一条真正完整（无freeTrialInfo）的音源
+    let fallback=null;
+    for(const song of ranked.slice(0,5)){
+      const urlReq=NCM_BASE+"/song/url/v1?id="+song.id+"&level=standard&realIP="+NCM_REAL_IP;
+      const uRes=await fetch(urlReq);
+      const uJson=await uRes.json();
+      const u=uJson?.data?.[0];
+      if(!u||!u.url) continue;
 
-    const album=song.album?.name||"";
-    const coverRaw=song.album?.picUrl||song.album?.artist?.img1v1Url||"";
-    const coverUrl=coverRaw?coverRaw.replace(/\?.*$/,"")+"?param=300y300":"";
-    const durSec=(u?.time||song.duration||0)/1000;
-    const dur=durSec?fmtTime(durSec):"0:30";
+      const album=song.album?.name||"";
+      const coverRaw=song.album?.picUrl||song.album?.artist?.img1v1Url||"";
+      const coverUrl=coverRaw?coverRaw.replace(/\?.*$/,"")+"?param=300y300":"";
+      const durSec=(u.time||song.duration||0)/1000;
+      const dur=durSec?fmtTime(durSec):"0:30";
+      const artistName=(song.artists&&song.artists[0]&&song.artists[0].name)||artist;
 
-    const fullUrl=(u&&u.url&&!u.freeTrialInfo)?u.url:"";
-    const previewUrl=(u&&u.url&&u.freeTrialInfo)?u.url:"";
+      const result={
+        title:song.name||title,
+        artist:artistName,
+        album,
+        coverUrl,
+        duration:dur
+      };
 
-    if(!fullUrl&&!previewUrl) return null;
-
-    return {
-      title:song.name||title,
-      artist:(song.artists&&song.artists[0]&&song.artists[0].name)||artist,
-      album,
-      coverUrl,
-      audioUrl:fullUrl,
-      previewUrl,
-      duration:dur
-    };
+      if(!u.freeTrialInfo){
+        // 完整版，直接采用，不再继续尝试
+        result.audioUrl=u.url;
+        result.previewUrl="";
+        return result;
+      }
+      // 只是试听片段，先记下来当备选，继续找下一个候选看是否有完整版
+      if(!fallback){
+        result.audioUrl="";
+        result.previewUrl=u.url;
+        fallback=result;
+      }
+    }
+    return fallback;
   }catch(e){console.warn("fetchMusicInfoFromNetease",e);return null;}
 }
 
