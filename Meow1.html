@@ -2498,7 +2498,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
       <div class="thinking-mask" id="thinkingMask" onclick="closeThinking(event)">
         <div class="thinking-panel" onclick="event.stopPropagation()">
           <div class="thinking-panel-handle"></div>
-          <div class="thinking-panel-title">ThoughProcess</div>
+          <div class="thinking-panel-title">ThoughtProcess</div>
           <div class="thinking-panel-body" id="thinkingBody"></div>
         </div>
       </div>
@@ -6120,21 +6120,27 @@ function consumeImageLeftovers(text, add){
 }
 
 // 统一清理模型泄露的思维链：兼容 <think>...</think> 和 <thinking>...</thinking>
+function normalizeThinkingTags(text){
+  return String(text||"")
+    .replace(/&lt;\s*(\/?\s*think(?:ing)?[^&<>]*)\s*&gt;/gi,"<$1>")
+    .replace(/<\s*\/\s*think(?:ing)?\s*>/gi,"</thinking>")
+    .replace(/<\s*think(?:ing)?\b([^>]*)>/gi,"<thinking$1>");
+}
 function extractThinkingContent(text){
-  const s=String(text||"");
+  const s=normalizeThinkingTags(text);
   const parts=[];
-  const re=/<think(?:ing)?\b[^>]*>([\s\S]*?)<\/think(?:ing)?>/gi;
+  const re=/<thinking\b[^>]*>([\s\S]*?)<\/thinking>/gi;
   let m;
   while((m=re.exec(s))) if(m[1].trim()) parts.push(m[1].trim());
-  const unclosed=s.match(/<think(?:ing)?\b[^>]*>([\s\S]*)$/i);
+  const unclosed=s.match(/<thinking\b[^>]*>([\s\S]*)$/i);
   if(unclosed && unclosed[1].trim()) parts.push(unclosed[1].trim());
   return parts.join("\n\n")||"";
 }
 function stripThinkingBlocks(text){
-  return String(text||"")
-    .replace(/<think(?:ing)?\b[^>]*>[\s\S]*?<\/think(?:ing)?>/gi,"")
-    .replace(/<think(?:ing)?\b[^>]*>[\s\S]*$/gi,"")
-    .replace(/<\/think(?:ing)?>/gi,"")
+  return normalizeThinkingTags(text)
+    .replace(/<thinking\b[^>]*>[\s\S]*?<\/thinking>/gi,"")
+    .replace(/<thinking\b[^>]*>[\s\S]*$/gi,"")
+    .replace(/<\/thinking>/gi,"")
     .trim();
 }
 function normalizeThinkingForPanel(thinking, finalText){
@@ -6157,6 +6163,12 @@ function normalizeThinkingForPanel(thinking, finalText){
 function wrapAIThinking(thinking, content){
   const clean=normalizeThinkingForPanel(thinking, content);
   return clean ? `<thinking>${clean}</thinking>\n${content||""}` : (content||"");
+}
+function removeReasoningLeakText(text){
+  return String(text||"").split(/\n+/).map(x=>x.trim()).filter(line=>{
+    if(!line) return false;
+    return !/(让我想想|我应该|用户想|用户需要|正确的指令格式|音频URL需要|没有真实的音频URL|至少能看到歌曲的基本信息|I should|The user wants|Need to|Let's respond|Final answer)/i.test(line);
+  }).join("\n").trim();
 }
 // Claude 文件助手要保护代码块，避免误删代码块里的 <think>/<thinking> 示例
 function stripThinkingBlocksKeepCode(text){
@@ -6203,6 +6215,7 @@ function splitReply(text){
 }
 function cleanAIText(text){
   let s=stripThinkingBlocks(normalizeDirectiveText(String(text||"").trim())); // 过滤 think/thinking block + 规范化功能指令
+  s=removeReasoningLeakText(s); // 兜底清理模型把思考日志漏到正文的情况
   // 把指令方括号内的换行替换成空格，防止跨行指令被切断
   s=s.replace(/\[([^\]]{0,8000})\]/g,(m,inner)=>"["+inner.replace(/\n/g," ")+"]");
   s=s.replace(/<[^>]+>/g,"");
@@ -6731,7 +6744,7 @@ ${getStickerPromptList()}
 [撤回: 消息内容片段]（撤回你之前发的某条消息，片段用于匹配目标消息；不加片段则撤回最近一条。何时撤回根据你的人设自行判断）
 [链接: 平台|标题|正文内容|评论1//评论2//评论3]
 平台可选：小红书、微博、贴吧、论坛、新闻。评论字段可省略。
-[分享音乐: 歌名|歌手|专辑|附言|歌词/歌词节选|音频URL]（分享一首歌给user，专辑、附言、歌词、音频URL可省略。音频URL必须是可公开访问的 mp3/m4a/ogg 直链；附言是你想对user说的话；歌词字段用于展示用户提供的歌词、短句节选或你自写的原创歌词片段，不要输出整首受版权保护的歌词）
+[分享音乐: 歌名|歌手|专辑|附言|歌词/歌词节选|音频URL]（分享一首歌给user，专辑、附言、歌词、音频URL可省略。音频URL必须是可公开访问的 mp3/m4a/ogg 直链；不知道真实音频直链时必须把音频URL留空，绝对不要编造链接；附言是你想对user说的话；歌词字段用于展示用户提供的歌词、短句节选或你自写的原创歌词片段，不要输出整首受版权保护的歌词）
 示例：[分享音乐: Medicine|Daughter|The Wild Youth|声音轻得像哄你睡，歌词在拆骨头。|歌词氛围：冷、轻、像夜里低声哄睡。|https://example.com/music/medicine.mp3]
 [收款]
 [拒收转账]
@@ -6770,7 +6783,7 @@ ${getStickerPromptList()}
 2. 禁止输出User:、用户：、Assistant:、旁白式剧本格式。
 6. 不要把思考过程、元分析直接写进普通聊天正文。动作描写、心理描写、环境描写正常保留。
    如模型支持独立 thinking/reasoning 字段，请在该字段中用中文思考；如必须显式输出角色内心整理，请只放进 <thinking>...</thinking>，前端会隐藏到“思维过程”面板，不能混入普通气泡。
-   <thinking> 里只写角色内心/情绪/判断，1-3句中文即可；不要英文，不要复述最终回复，不要写“用户想让我……/我应该……”这种模型工作日志。
+   <thinking> 里只写角色内心/情绪/判断，1-3句中文即可；不要英文，不要复述最终回复，不要把 [分享音乐]、[发送图片] 等最终指令写进 thinking，不要写“用户想让我……/我应该……”这种模型工作日志。
    禁止在普通正文中出现：「The user wants me to...」「I should respond by...」「Let me respond in character」「用户想让我说X」「我应该这样回应」
    普通聊天正文只输出角色的回应，不分析，不解释。
 3. 只输出微信聊天内容；可以用双换行分成多条气泡。
@@ -10638,6 +10651,12 @@ function submitLinkInput(){
 }
 
 // ===== 音乐卡片系统 =====
+function normalizeAudioUrl(url){
+  const u=String(url||"").trim();
+  if(!u) return "";
+  if(/^https?:\/\//i.test(u) || /^data:audio\//i.test(u) || /^blob:/i.test(u)) return u;
+  return "";
+}
 const MusicPlayer={
   audio:null,
   currentMsgId:null,
@@ -10645,10 +10664,13 @@ const MusicPlayer={
   init(){
     if(this.audio) return;
     this.audio=new Audio();
+    this.audio.preload="metadata";
     this.audio.addEventListener("ended",()=>this.stop());
-    this.audio.addEventListener("error",()=>{this.stop();toast("音乐加载失败");});
+    this.audio.addEventListener("error",()=>{this.stop();toast("音乐加载失败：音频链接不是可播放直链，或该音源被限制访问");});
   },
   play(msgId,url){
+    url=normalizeAudioUrl(url);
+    if(!url){toast("没有可播放音源：请填写 mp3/m4a/ogg 直链");return;}
     this.init();
     if(this.currentMsgId && this.currentMsgId!==msgId) this.stop();
     this.currentMsgId=msgId;
@@ -10711,7 +10733,8 @@ function toggleMusicPlay(msgId){
   const h=getHistory();
   const m=h.find(x=>x.id===msgId);
   if(!m||!m.data) return;
-  const audioUrl=m.data.audioUrl || m.data.previewUrl;
+  // 先尝试完整音频直链；如果为空或无效，必须回退到原来的 iTunes previewUrl，避免破坏旧版可听的30秒试听
+  const audioUrl=normalizeAudioUrl(m.data.audioUrl) || normalizeAudioUrl(m.data.previewUrl);
   if(audioUrl){
     MusicPlayer.play(msgId,audioUrl);
   }else{
