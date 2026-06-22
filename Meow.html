@@ -6127,6 +6127,7 @@ function renderMessageBody(m){
     const coverHtml=d.coverUrl ? `<img src="${escapeAttr(d.coverUrl)}" alt="">` : "♪";
     const sub=album ? artist+" · "+album : artist;
     const note=d.note||"";
+    const debugLog=Array.isArray(d.debugLog)?d.debugLog.join("\n"):"";
     const lyrics=d.lyrics||"";
     const dur=d.duration||"0:30";
     return `<div class="music-card" data-msg-id="${m.id}">
@@ -6141,6 +6142,7 @@ function renderMessageBody(m){
       <div class="music-card-progress" id="mc-bar-${m.id}" onclick="seekMusic(event,'${m.id}')"><div class="music-card-progress-fill" id="mc-fill-${m.id}"></div></div>
       <div class="music-card-meta"><span id="mc-cur-${m.id}">0:00</span><span id="mc-dur-${m.id}">${escapeHtml(dur)}</span></div>
       ${note?`<div class="music-card-expand has-note" onclick="this.nextElementSibling.classList.toggle('show')">💬 附言</div><div class="music-card-note">${escapeHtml(note)}</div>`:""}
+      ${debugLog?`<div class="music-card-expand has-note" onclick="this.nextElementSibling.classList.toggle('show')">🧪 排查</div><div class="music-card-note">${escapeHtml(debugLog)}</div>`:""}
       <div class="music-card-expand has-note" onclick="this.nextElementSibling.classList.toggle('show')">🎵 歌词</div>
       <div class="music-card-note">${escapeHtml(lyrics || "暂无歌词。角色没有在指令第5栏提供歌词/歌词节选。")}</div>
     </div>`;
@@ -11086,7 +11088,8 @@ function toggleMusicPlay(msgId){
       coverUrl:info.coverUrl||m.data.coverUrl||"",
       duration:info.duration||m.data.duration||"0:30",
       album:info.album||m.data.album||"",
-      source:info.source||m.data.source||""
+      source:info.source||m.data.source||"",
+      debugLog:Array.isArray(info.debugLog)?info.debugLog:(m.data.debugLog||[])
     });
     const debug=compactMusicDebug(info);
     if(debug && !m.data.note) m.data.note=debug;
@@ -11180,7 +11183,7 @@ async function fetchMusicInfoFromItunes(title,artist){
 }
 
 function openMusicInput(){
-  openQuickModal("分享音乐",`<div style="font-size:12px;color:#777;margin-bottom:10px;line-height:1.5">输入歌曲名会自动搜索网易云完整版；找不到时只保留试听。手填音频直链优先。</div>
+  openQuickModal(`<div class="quick-modal-title">分享音乐</div><div style="font-size:12px;color:#777;margin-bottom:10px;line-height:1.5">输入歌曲名会自动搜索网易云完整版；找不到时只保留试听。手填音频直链优先。</div>
 <input id="musicTitleInput" placeholder="歌曲名" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:13px;box-sizing:border-box">
 <input id="musicArtistInput" placeholder="歌手" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:13px;box-sizing:border-box">
 <input id="musicAlbumInput" placeholder="专辑（选填）" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:13px;box-sizing:border-box">
@@ -11215,7 +11218,8 @@ async function submitMusicInput(){
       previewUrl:manualAudioUrl?"":(info.previewUrl||""),
       audioUrl:manualAudioUrl||info.audioUrl||"",
       duration:manualAudioUrl?(info.duration||""):(info.duration||"0:30"),
-      source:manualAudioUrl?"manual":(info.source||"")
+      source:manualAudioUrl?"manual":(info.source||""),
+      debugLog:Array.isArray(info.debugLog)?info.debugLog:[]
     },
     read:false,createdAt:Date.now(),time:nowTime()
   });
@@ -11240,6 +11244,7 @@ function hydrateAIMusicMsg(msgId,title,artist){
     if(info.duration) m.data.duration=info.duration;
     if(info.album&&!m.data.album) m.data.album=info.album;
     if(info.source&&!m.data.source) m.data.source=info.source;
+    if(Array.isArray(info.debugLog)) m.data.debugLog=info.debugLog;
     const debug=compactMusicDebug(info);
     if(debug&&!m.data.note) m.data.note=debug;
     saveHistory(h);renderChat();
