@@ -11153,11 +11153,13 @@ async function submitMusicInput(){
   const album=(document.getElementById("musicAlbumInput")?.value||"").trim();
   const note=(document.getElementById("musicNoteInput")?.value||"").trim();
   const lyrics=(document.getElementById("musicLyricsInput")?.value||"").trim();
-  const audioUrl=(document.getElementById("musicAudioUrlInput")?.value||"").trim();
+  const manualAudioUrl=(document.getElementById("musicAudioUrlInput")?.value||"").trim();
   if(!title){toast("请输入歌曲名");return;}
   closeQuickModal();
   toast("正在搜索…");
   const info=await fetchMusicInfo(title,artist);
+  // 手动填的直链优先级最高；其次是从网易云查到的完整音源；最后才是试听片段
+  const finalAudioUrl=manualAudioUrl||info.audioUrl||"";
   const msgId=uid("msg");
   const h=getHistory();
   h.push({
@@ -11171,7 +11173,7 @@ async function submitMusicInput(){
       lyrics,
       coverUrl:info.coverUrl||"",
       previewUrl:info.previewUrl||"",
-      audioUrl,
+      audioUrl:finalAudioUrl,
       duration:info.duration||"0:30"
     },
     read:false,createdAt:Date.now(),time:nowTime()
@@ -11180,7 +11182,8 @@ async function submitMusicInput(){
   renderChat();
   const chat=$("#chat");
   if(chat) requestAnimationFrame(()=>{chat.scrollTop=chat.scrollHeight;});
-  if(audioUrl) toast("已使用完整音频链接，点击播放");
+  if(manualAudioUrl) toast("已使用完整音频链接，点击播放");
+  else if(info.audioUrl) toast("已找到完整音源，点击播放");
   else if(info.previewUrl) toast("已找到试听音源，点击播放");
   else toast("未找到音源，已保存为卡片");
 }
