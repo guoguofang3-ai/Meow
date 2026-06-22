@@ -2433,7 +2433,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
 .input-clawd.clawd-live{
   position:absolute!important;
   left:0!important;
-  top:-32px!important;
+  top:-24px!important;
   bottom:auto!important;
   width:39px!important;
   height:30px!important;
@@ -2555,6 +2555,10 @@ body.multiselect-mode .msg{ cursor:pointer; }
 .lyrics-controls{position:absolute!important;left:0;right:0;bottom:0;padding:10px 24px 18px!important;color:var(--lyrics-muted)!important;justify-content:space-between!important;background:linear-gradient(180deg,transparent,var(--lyrics-bg));}
 .lyrics-controls .music-card-play{background:color-mix(in srgb,var(--lyrics-accent) 16%,transparent)!important;color:var(--lyrics-accent)!important;box-shadow:none!important;}
 
+
+/* 歌词弹层防跳动：头部固定，歌词只在正文容器内滚动 */
+.lyrics-head{flex:0 0 auto!important;}
+.lyrics-body{flex:1 1 auto!important;min-height:0!important;overscroll-behavior:contain;}
 </style>
 </head>
 <body>
@@ -6443,7 +6447,7 @@ function normalizeThinkingForPanel(thinking, finalText){
   if(!t || !/[\u4e00-\u9fff]/.test(t)) return "我先接住这句话，短一点回应。";
   t=t.replace(/\buser\b/gi,"她").replace(/用户/g,"她").replace(/角色/g,"我");
   const sentences=t.split(/(?<=[。！？!?])/).map(x=>x.trim()).filter(Boolean);
-  if(sentences.length>1) t=sentences.slice(0,1).join("");
+  if(sentences.length>2) t=sentences.slice(0,2).join("");
   return t.replace(/^[，。；、\s]+/,"");
 }
 function removeReasoningLeakText(text){
@@ -6515,7 +6519,7 @@ function isExplicitMusicRequest(text){
 }
 function musicRequestHint(text){
   if(!isExplicitMusicRequest(text)) return "";
-  return `\n\n【强制音乐请求】user刚刚明确要求你分享/播放/推荐一首歌。你必须至少输出一个音乐指令，并且该指令要单独成段：\n[分享音乐: 歌名|歌手|专辑|附言|歌词氛围或原创短句|]\n不要只回复标点、省略号、“又来”、“说话”、“你先发的省略号”，也不要解释格式。`;
+  return `\n\n【强制音乐请求】user刚刚明确要求你分享/播放/推荐一首歌。你必须至少输出一个音乐指令，并且该指令要单独成段：\n[分享音乐: 歌名|歌手|专辑|附言|歌词氛围/这首歌的感觉|]\n不要只回复标点、省略号、“又来”、“说话”、“你先发的省略号”，也不要解释格式。`;
 }
 function fallbackMusicMsg(groupId, seedText){
   const picks=[
@@ -6813,7 +6817,7 @@ function messageToAIContext(m){
   if(m.type==="link") return `[链接:${d.platform||"论坛"}|${d.title||""}]`;
   if(m.type==="music"){
     const cleanNote=String(d.note||"").replace(/\n*\[排查记录\][\s\S]*$/," ").trim();
-    return `[音乐:${d.title||""}|${d.artist||""}${cleanNote?"|附言:"+cleanNote:""}${d.lyrics?"|歌词:"+String(d.lyrics).slice(0,200):""}${d.audioUrl?"|有完整音频":""}]`;
+    return `[音乐:${d.title||""}|${d.artist||""}${cleanNote?"|附言:"+cleanNote:""}${d.lyrics?"|歌词氛围:"+String(d.lyrics).slice(0,200):""}${d.audioUrl?"|有完整音频":""}]`;
   }
   if(m.type==="image_desc") return `[图片描述:${d.description||m.content}]`;
   if(m.type==="transfer") return `[用户转账:${d.amount||""}|${d.note||""}|状态:${d.status||"pending"}]`;
@@ -7107,7 +7111,7 @@ ${getStickerPromptList()}
 [撤回: 消息内容片段]（撤回你之前发的某条消息，片段用于匹配目标消息；不加片段则撤回最近一条。何时撤回根据你的人设自行判断）
 [链接: 平台|标题|正文内容|评论1//评论2//评论3]
 平台可选：小红书、微博、贴吧、论坛、新闻。评论字段可省略。
-[分享音乐: 歌名|歌手|专辑|附言|歌词/歌词节选|音频URL]（分享一首歌给user，专辑、附言、音频URL可省略；第5栏“歌词/歌词节选”尽量填写，至少写一句歌词氛围或原创短句，避免卡片没有歌词；音频URL必须是可公开访问的 mp3/m4a/ogg 直链；不知道真实音频直链时必须把音频URL留空，绝对不要编造链接；不要输出整首受版权保护的歌词）
+[分享音乐: 歌名|歌手|专辑|附言|歌词氛围/这首歌的感觉|音频URL]（分享一首歌给user，专辑、附言、音频URL可省略；第5栏不要编真实歌词，只写这首歌的大概氛围、情绪、适合当前关系的理由，让你之后知道这首歌是什么感觉；音频URL必须是可公开访问的 mp3/m4a/ogg 直链；不知道真实音频直链时必须把音频URL留空，绝对不要编造链接；不要输出整首受版权保护的歌词）
 示例：[分享音乐: Medicine|Daughter|The Wild Youth|声音轻得像哄你睡，歌词在拆骨头。|歌词氛围：冷、轻、像夜里低声哄睡。|]
 当 user 明确说“分享一首歌/发首歌/来首歌/放首歌/推荐一首歌”时，必须直接使用 [分享音乐: ...] 指令，不要用句号、省略号、“又来”“说话”等短句代替。
 不要在聊天正文解释“我格式写错了/重新来/补一首歌”，也不要连续重复分享同一首歌。
@@ -7148,11 +7152,11 @@ ${getStickerPromptList()}
 2. 禁止输出User:、用户：、Assistant:、旁白式剧本格式。
 6. 普通聊天正文不要输出思考过程、元分析或格式纠错。动作描写、心理描写、环境描写正常保留。
    如果要给前端内心独白，只能写 <thinking>……</thinking>，前端会隐藏到 Thought process 面板，不能混入普通气泡。
-   <thinking> 不是推理日志，也不是“我应该怎么回复”的计划。它只写角色当下的一句私心/情绪/观察，像角色脑子里一闪而过的话，最好不超过30个中文字符。
+   <thinking> 不是推理日志，也不是“我应该怎么回复”的计划。它写角色当下的私心/情绪/观察，像角色脑子里一闪而过的话，1-2句即可，最好不超过60个中文字符。
    <thinking> 的风格必须跟角色本人一致：冷淡的人就短而克制，黏人的人就软一点，嘴硬的人可以别扭；不要使用“用户/角色/我应该/我先/适合/回应/当前关系/格式/指令/模型/前端/系统”等机械词。
    普通聊天正文只输出角色的回应，不分析，不解释；如果 user 在测试功能、让你分享音乐、图片或表情，直接按当前明确请求回应。
 3. 只输出微信聊天内容；可以用双换行分成多条气泡。
-7. 如果输出 <thinking>，只写一句角色内心，不要写后台规则。
+7. 如果输出 <thinking>，只写1-2句角色内心，不要写后台规则。
 8. 如果输出语音，优先使用全角外层格式，方便内部使用 ElevenLabs v3 audio tags：
    【语音: [softly] [low voice] I missed you.
 中文：我想你了。】
@@ -11341,7 +11345,7 @@ function openMusicInput(){
 <input id="musicArtistInput" placeholder="歌手" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:13px;box-sizing:border-box">
 <input id="musicAlbumInput" placeholder="专辑（选填）" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:13px;box-sizing:border-box">
 <textarea id="musicNoteInput" placeholder="附言（选填）想说点什么？" style="width:100%;height:50px;resize:none;border-radius:8px;border:1px solid #ddd;padding:7px;font-size:12px;box-sizing:border-box;margin-bottom:8px"></textarea>
-<textarea id="musicLyricsInput" placeholder="歌词/歌词节选（选填）" style="width:100%;height:78px;resize:none;border-radius:8px;border:1px solid #ddd;padding:7px;font-size:12px;box-sizing:border-box;margin-bottom:8px"></textarea>
+<textarea id="musicLyricsInput" placeholder="歌词氛围 / 这首歌的感觉（选填，不用写真歌词）" style="width:100%;height:78px;resize:none;border-radius:8px;border:1px solid #ddd;padding:7px;font-size:12px;box-sizing:border-box;margin-bottom:8px"></textarea>
 <input id="musicAudioUrlInput" placeholder="完整音频URL（选填，mp3/m4a/ogg直链）" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:10px;font-size:13px;box-sizing:border-box">
 <button class="btn primary" onclick="submitMusicInput()" style="width:100%">搜索并发送</button>`);
 }
@@ -11535,7 +11539,11 @@ function startLyricsSync(){
         LyricsUI.activeIndex=idx;
         document.querySelectorAll("#lyricsBody .lyric-line").forEach((el,i)=>el.classList.toggle("active",i===idx));
         const active=document.querySelector(`#lyricsBody .lyric-line[data-idx="${idx}"]`);
-        if(active) active.scrollIntoView({block:"center",behavior:"smooth"});
+        const body=document.getElementById("lyricsBody");
+        if(active && body){
+          const target=active.offsetTop - body.clientHeight/2 + active.offsetHeight/2;
+          body.scrollTo({top:Math.max(0,target),behavior:"smooth"});
+        }
       }
     }
     LyricsUI.rafId=requestAnimationFrame(tick);
