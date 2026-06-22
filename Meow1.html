@@ -2498,7 +2498,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
       <div class="thinking-mask" id="thinkingMask" onclick="closeThinking(event)">
         <div class="thinking-panel" onclick="event.stopPropagation()">
           <div class="thinking-panel-handle"></div>
-          <div class="thinking-panel-title">ThoughtProcess</div>
+          <div class="thinking-panel-title">内心独白</div>
           <div class="thinking-panel-body" id="thinkingBody"></div>
         </div>
       </div>
@@ -5975,7 +5975,8 @@ function renderMessageBody(m){
       <div class="music-card-progress" id="mc-bar-${m.id}" onclick="seekMusic(event,'${m.id}')"><div class="music-card-progress-fill" id="mc-fill-${m.id}"></div></div>
       <div class="music-card-meta"><span id="mc-cur-${m.id}">0:00</span><span id="mc-dur-${m.id}">${escapeHtml(dur)}</span></div>
       ${note?`<div class="music-card-expand has-note" onclick="this.nextElementSibling.classList.toggle('show')">💬 附言</div><div class="music-card-note">${escapeHtml(note)}</div>`:""}
-      ${lyrics?`<div class="music-card-expand has-note" onclick="this.nextElementSibling.classList.toggle('show')">🎵 歌词</div><div class="music-card-note">${escapeHtml(lyrics)}</div>`:""}
+      <div class="music-card-expand has-note" onclick="this.nextElementSibling.classList.toggle('show')">🎵 歌词</div>
+      <div class="music-card-note">${escapeHtml(lyrics || "暂无歌词。角色没有在指令第5栏提供歌词/歌词节选。")}</div>
     </div>`;
   }
   if(m.type==="image_desc"){
@@ -6143,21 +6144,24 @@ function stripThinkingBlocks(text){
     .replace(/<\/thinking>/gi,"")
     .trim();
 }
+function isReasoningLeakLine(line){
+  return /(让我想想|我应该|用户想|用户需要|user|User|正确的指令格式|指令格式|格式写错|写错了|重新来|回顾一下|上一条|这次重新|应该自然回应|先补上歌|补上歌|分享歌|分享一首歌|最终回复|普通正文|音频URL需要|没有真实的音频URL|至少能看到歌曲的基本信息|I should|The user wants|Need to|Let's respond|Final answer)/i.test(String(line||""));
+}
 function normalizeThinkingForPanel(thinking, finalText){
-  let t=String(thinking||"").trim();
+  let t=stripThinkingBlocks(thinking).trim();
   if(!t) return "";
   const final=stripThinkingBlocks(finalText||"").trim();
-  // 避免把最终回复又完整塞进思维面板
+  // 避免把最终回复或功能指令又完整塞进思维面板
   if(final && t.includes(final)) t=t.replace(final,"").trim();
-  // 清理常见英文元分析/计划句，避免面板里出现“模型工作日志”
-  t=t.split(/\n+/).map(x=>x.trim()).filter(line=>{
-    if(!line) return false;
-    return !/^(we need|i need|the user|user wants|i should|we should|let'?s|need to|the response|final answer|assistant should)\b/i.test(line);
-  }).join("\n").trim();
-  // 如果服务商返回的是英文 reasoning_content，不直接展示；思维面板只保留中文角色内心
-  if(t && !/[\u4e00-\u9fff]/.test(t)){
-    return "模型返回了非中文推理字段，已隐藏。请让角色使用 <thinking>中文角色内心</thinking>，或换支持中文 reasoning 的模型。";
+  t=t.replace(/\[(?:分享音乐|发送图片|发送表情包|表情包|语音|链接|主动转账|向user发起代付)[^\]]*\]/g,"");
+  t=t.split(/\n+/).map(x=>x.trim()).filter(line=>line && !isReasoningLeakLine(line)).join("\n").trim();
+  // 思维面板只显示角色第一人称内心；如果模型给的是工作日志，改成一句安全的第一人称内心
+  if(!t || !/[\u4e00-\u9fff]/.test(t)){
+    return "我想顺着她的话自然回应，不把话说得太像解释。";
   }
+  // 统一成第一人称口吻，避免出现 user/角色分离视角
+  t=t.replace(/\buser\b/gi,"她").replace(/用户/g,"她").replace(/角色/g,"我");
+  if(!/[我咱]/.test(t.slice(0,12))) t="我"+t.replace(/^[，。；、\s]+/,"");
   return t;
 }
 function wrapAIThinking(thinking, content){
@@ -6167,7 +6171,7 @@ function wrapAIThinking(thinking, content){
 function removeReasoningLeakText(text){
   return String(text||"").split(/\n+/).map(x=>x.trim()).filter(line=>{
     if(!line) return false;
-    return !/(让我想想|我应该|用户想|用户需要|正确的指令格式|音频URL需要|没有真实的音频URL|至少能看到歌曲的基本信息|I should|The user wants|Need to|Let's respond|Final answer)/i.test(line);
+    return !isReasoningLeakLine(line);
   }).join("\n").trim();
 }
 // Claude 文件助手要保护代码块，避免误删代码块里的 <think>/<thinking> 示例
@@ -6456,7 +6460,7 @@ function messageToAIContext(m){
   if(m.type==="received") return `[收款完成:${d.amount||""}|user已确认收款，本次转账流程已结束，不需要再发起任何转账]`;
   if(m.type==="paid") return `[代付完成:${d.amount||""}|${d.item||""}]`;
   if(m.type==="rejected") return `[拒绝:${m.content||""}]`;
-  return quotePrefix+(m.content||"");
+  return quotePrefix+removeReasoningLeakText(stripThinkingBlocks(m.content||""));
 }
 
 /* ===== SAVE 标记自动存记忆 ===== */
@@ -6744,8 +6748,9 @@ ${getStickerPromptList()}
 [撤回: 消息内容片段]（撤回你之前发的某条消息，片段用于匹配目标消息；不加片段则撤回最近一条。何时撤回根据你的人设自行判断）
 [链接: 平台|标题|正文内容|评论1//评论2//评论3]
 平台可选：小红书、微博、贴吧、论坛、新闻。评论字段可省略。
-[分享音乐: 歌名|歌手|专辑|附言|歌词/歌词节选|音频URL]（分享一首歌给user，专辑、附言、歌词、音频URL可省略。音频URL必须是可公开访问的 mp3/m4a/ogg 直链；不知道真实音频直链时必须把音频URL留空，绝对不要编造链接；附言是你想对user说的话；歌词字段用于展示用户提供的歌词、短句节选或你自写的原创歌词片段，不要输出整首受版权保护的歌词）
-示例：[分享音乐: Medicine|Daughter|The Wild Youth|声音轻得像哄你睡，歌词在拆骨头。|歌词氛围：冷、轻、像夜里低声哄睡。|https://example.com/music/medicine.mp3]
+[分享音乐: 歌名|歌手|专辑|附言|歌词/歌词节选|音频URL]（分享一首歌给user，专辑、附言、音频URL可省略；第5栏“歌词/歌词节选”尽量填写，至少写一句歌词氛围或原创短句，避免卡片没有歌词；音频URL必须是可公开访问的 mp3/m4a/ogg 直链；不知道真实音频直链时必须把音频URL留空，绝对不要编造链接；附言是你想对user说的话；歌词字段用于展示用户提供的歌词、短句节选或你自写的原创歌词片段，不要输出整首受版权保护的歌词）
+示例：[分享音乐: Medicine|Daughter|The Wild Youth|声音轻得像哄你睡，歌词在拆骨头。|歌词氛围：冷、轻、像夜里低声哄睡。|]
+不要在聊天正文解释“我格式写错了/重新来/补一首歌”，也不要连续重复分享同一首歌。
 [收款]
 [拒收转账]
 [主动转账: 金额|备注]
@@ -6783,9 +6788,10 @@ ${getStickerPromptList()}
 2. 禁止输出User:、用户：、Assistant:、旁白式剧本格式。
 6. 不要把思考过程、元分析直接写进普通聊天正文。动作描写、心理描写、环境描写正常保留。
    如模型支持独立 thinking/reasoning 字段，请在该字段中用中文思考；如必须显式输出角色内心整理，请只放进 <thinking>...</thinking>，前端会隐藏到“思维过程”面板，不能混入普通气泡。
-   <thinking> 里只写角色内心/情绪/判断，1-3句中文即可；不要英文，不要复述最终回复，不要把 [分享音乐]、[发送图片] 等最终指令写进 thinking，不要写“用户想让我……/我应该……”这种模型工作日志。
-   禁止在普通正文中出现：「The user wants me to...」「I should respond by...」「Let me respond in character」「用户想让我说X」「我应该这样回应」
-   普通聊天正文只输出角色的回应，不分析，不解释。
+   <thinking> 里只写“我……”第一人称角色内心/情绪/判断，1-2句中文即可；角色和内心独白视角必须是一体的。
+   <thinking> 里不要英文，不要复述最终回复，不要写 user/用户/角色，不要把 [分享音乐]、[发送图片] 等最终指令写进 thinking，不要写“用户想让我……/我应该……”这种模型工作日志。
+   禁止在普通正文中出现：「The user wants me to...」「I should respond by...」「Let me respond in character」「用户想让我说X」「我应该这样回应」「格式写错了」「重新来」「回顾一下」
+   普通聊天正文只输出角色的回应，不分析，不解释；如果上一条音乐/图片/表情已经发出，不要因为觉得格式不对而解释或重复补发。
 3. 只输出微信聊天内容；可以用双换行分成多条气泡。
 7. 如果你具有思考能力（thinking/think），请始终使用中文进行思考。
 4. 表情包只能从"可用表情包"里按名称选择，不能编造。发送表情包指令后不要解释含义，不要加括号说明。
