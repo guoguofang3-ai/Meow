@@ -1904,136 +1904,6 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 }
 
 
-/* ===== v7 通话记录可读性修复 ===== */
-.call-app{
-  display:flex;
-  flex-direction:column;
-}
-.call-hero{
-  flex:0 0 auto;
-  margin:6px 12px 8px!important;
-  padding:16px 14px!important;
-}
-.call-avatar{
-  width:70px!important;
-  height:70px!important;
-  margin:4px auto!important;
-}
-.call-name{
-  font-size:20px!important;
-}
-.call-timer{
-  font-size:28px!important;
-  margin:8px 0 4px!important;
-}
-.wave{
-  height:24px!important;
-  margin:4px 0!important;
-}
-.call-buttons{
-  margin-top:8px!important;
-}
-.call-round{
-  width:50px!important;
-  height:50px!important;
-}
-.call-log{
-  flex:1 1 auto!important;
-  min-height:34vh!important;
-  max-height:none!important;
-  padding:12px 14px 10px!important;
-  overflow:auto!important;
-}
-.call-line{
-  font-size:16px!important;
-  line-height:1.85!important;
-  padding:12px 13px!important;
-  border-radius:18px!important;
-  margin:10px 0!important;
-}
-.call-line .speaker{
-  font-size:15px!important;
-}
-.call-composer-wrap{
-  flex:0 0 auto!important;
-}
-
-
-/* ===== v7 通话页面二次修复：顶部压缩，输入框固定可见 ===== */
-.call-app{
-  display:flex!important;
-  flex-direction:column!important;
-  min-height:0!important;
-}
-.call-hero{
-  flex:0 0 auto!important;
-  margin:6px 12px 6px!important;
-  padding:12px 12px!important;
-  border-radius:24px!important;
-}
-.call-avatar{
-  width:54px!important;
-  height:54px!important;
-  margin:2px auto!important;
-  border-width:3px!important;
-}
-.call-name{
-  font-size:18px!important;
-  margin-top:4px!important;
-}
-.call-status{
-  font-size:12px!important;
-  margin-top:2px!important;
-}
-.call-timer{
-  font-size:24px!important;
-  margin:5px 0 2px!important;
-}
-.wave{
-  height:18px!important;
-  margin:2px 0!important;
-}
-.wave span:nth-child(1){height:8px!important}.wave span:nth-child(2){height:16px!important}.wave span:nth-child(3){height:11px!important}.wave span:nth-child(4){height:18px!important}.wave span:nth-child(5){height:9px!important}
-.call-buttons{
-  margin-top:6px!important;
-  gap:10px!important;
-}
-.call-round{
-  width:44px!important;
-  height:44px!important;
-  font-size:18px!important;
-}
-.call-log{
-  flex:1 1 auto!important;
-  min-height:30vh!important;
-  max-height:none!important;
-  padding:10px 14px 8px!important;
-  overflow:auto!important;
-}
-.call-line{
-  font-size:15px!important;
-  line-height:1.75!important;
-  padding:11px 12px!important;
-  border-radius:17px!important;
-  margin:8px 0!important;
-}
-.call-composer-wrap{
-  flex:0 0 auto!important;
-  margin:0 10px 8px!important;
-  position:relative!important;
-  z-index:5!important;
-}
-.call-toolbar{
-  padding-top:7px!important;
-}
-.call-composer{
-  padding:7px 10px 9px!important;
-}
-.call-composer textarea{
-  min-height:42px!important;
-  max-height:86px!important;
-}
-
 
 /* ===== v7 导航兜底修复：非 active App 不拦截点击 ===== */
 .app-screen:not(.active){
@@ -2050,166 +1920,6 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   pointer-events:none!important;
 }
 
-
-/* ===== 喵喵机 2.0 v8：饿了么完整点餐 ===== */
-.eleme-app{background:linear-gradient(160deg,#f4fbff,#eaf4ff)}
-.eleme-top{
-  padding:12px;
-  background:linear-gradient(135deg,#0aa8ff,#1e88ff);
-  color:#fff;
-  border-radius:0 0 26px 26px;
-  box-shadow:0 10px 24px rgba(20,130,255,.18);
-  flex:0 0 auto;
-}
-.eleme-search{
-  margin-top:8px;
-  display:flex;
-  gap:8px;
-}
-.eleme-search input{
-  border:0;
-  background:rgba(255,255,255,.96);
-  color:#111;
-}
-.eleme-store-list,.eleme-menu-list,.eleme-order-list{
-  padding:12px;
-  overflow:auto;
-  flex:1;
-  min-height:0;
-}
-.eleme-store-card,.eleme-food-card,.eleme-cart,.eleme-order-card{
-  background:#fff;
-  border:1px solid rgba(0,0,0,.05);
-  border-radius:20px;
-  padding:12px;
-  margin:10px 0;
-  box-shadow:0 8px 22px rgba(0,0,0,.055);
-}
-.eleme-store-card{
-  display:flex;
-  gap:10px;
-  align-items:center;
-}
-.eleme-store-logo{
-  width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,#dff4ff,#9ed8ff);
-  display:flex;align-items:center;justify-content:center;font-size:26px;flex:0 0 auto;
-}
-.eleme-store-name{font-weight:1000;font-size:16px}
-.eleme-store-meta{font-size:12px;color:#777;margin-top:3px;line-height:1.45}
-.eleme-food-card{
-  display:flex;
-  gap:10px;
-  align-items:center;
-}
-.food-pic{
-  width:58px;height:58px;border-radius:16px;background:#f1f5f9;
-  display:flex;align-items:center;justify-content:center;font-size:28px;flex:0 0 auto;
-}
-.food-info{flex:1;min-width:0}
-.food-name{font-weight:950;font-size:14px}
-.food-desc{font-size:11px;color:#777;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.food-price{font-weight:1000;color:#ff6a00;margin-top:6px}
-.qty-row{
-  display:flex;align-items:center;gap:7px;flex:0 0 auto;
-}
-.qty-btn{
-  width:28px;height:28px;border-radius:50%;border:0;background:#0aa8ff;color:#fff;font-weight:1000;font-size:16px;
-}
-.qty-num{min-width:18px;text-align:center;font-weight:900}
-.eleme-cart{
-  margin:0 12px 10px;
-  flex:0 0 auto;
-}
-.cart-head{
-  display:flex;justify-content:space-between;align-items:center;font-weight:1000;
-}
-.cart-items{
-  margin-top:8px;
-  max-height:120px;
-  overflow:auto;
-  font-size:12px;
-  color:#555;
-}
-.cart-line{
-  display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed #eee;
-}
-.cart-total{
-  margin-top:8px;
-  display:flex;justify-content:space-between;align-items:center;
-}
-.cart-total b{color:#ff6a00;font-size:18px}
-.eleme-bottom-actions{
-  display:flex;gap:8px;margin-top:10px;
-}
-.eleme-bottom-actions button{
-  flex:1;border:0;border-radius:999px;padding:10px 12px;font-weight:950;
-}
-.eleme-primary{background:#0aa8ff;color:#fff}
-.eleme-secondary{background:#eef6ff;color:#0a83d6}
-.eleme-danger{background:#ffe8e6;color:#c5221f}
-.eleme-tabs{
-  display:flex;gap:8px;padding:10px 12px 0;background:rgba(255,255,255,.72);backdrop-filter:blur(16px);flex:0 0 auto;
-}
-.eleme-tabs button{
-  flex:1;border:0;border-radius:999px;padding:9px 10px;font-size:12px;font-weight:900;background:#eef3f8;color:#555;
-}
-.eleme-tabs button.active{background:#0aa8ff;color:#fff}
-.eleme-checkout-row{
-  display:flex;justify-content:space-between;gap:10px;margin:8px 0;font-size:13px;
-}
-.eleme-pay-card{
-  background:linear-gradient(135deg,#ff9a3d,#ff6a00);
-  color:#fff;
-  border-radius:20px;
-  padding:14px;
-  margin-top:10px;
-  box-shadow:0 12px 26px rgba(255,106,0,.18);
-}
-.eleme-pay-card b{font-size:24px}
-.order-status{
-  display:inline-flex;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:900;background:#eef3f8;color:#555;
-}
-.order-status.paid{background:#ecfdf3;color:#067647}
-.order-status.rejected{background:#fff1f0;color:#b42318}
-.order-status.pending{background:#fff8e6;color:#b26b00}
-
-
-/* ===== v8.1 饿了么 AI 商品生成 ===== */
-.ai-store-badge{
-  display:inline-flex;
-  align-items:center;
-  gap:4px;
-  padding:3px 7px;
-  border-radius:999px;
-  background:linear-gradient(135deg,#e8f4ff,#f5eaff);
-  color:#0a83d6;
-  font-size:9px;
-  font-weight:900;
-  margin-left:6px;
-}
-.eleme-ai-hint{
-  margin:10px 12px 0;
-  padding:9px 11px;
-  border-radius:16px;
-  background:rgba(255,255,255,.72);
-  border:1px solid rgba(10,168,255,.16);
-  color:#426276;
-  font-size:12px;
-  line-height:1.55;
-}
-.eleme-search .ai-generate-btn{
-  border:0;
-  border-radius:15px;
-  padding:0 12px;
-  background:#fff;
-  color:#0a83d6;
-  font-weight:950;
-  white-space:nowrap;
-}
-.eleme-search .ai-generate-btn.loading{
-  opacity:.65;
-  pointer-events:none;
-}
 
 
 /* ===== 喵喵机 2.0 v9：完整美化中心 / 主题编辑器 ===== */
@@ -3521,6 +3231,38 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 @keyframes commandDoneIn{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media (max-width:440px){.command-task-layer{bottom:92px;padding:0 14px}.command-task-card{width:min(322px,calc(100vw - 44px))}.command-task-time{font-size:38px}.command-task-title{font-size:20px}}
 
+
+
+
+
+
+/* ===== UI clean v3：设置/API/美化/表情包/饿了么/通话/朋友圈统一整理 ===== */
+#settingsApp .content,#apiApp .content,#themeApp .content,#stickersApp .content,#elemeApp .content,#momentsApp .content{
+  background:linear-gradient(180deg,color-mix(in srgb,var(--bar-bg,#fff) 90%,#f7f3f6),color-mix(in srgb,#fff 96%,var(--bar-bg,#fff)))!important;
+}
+.api-modern-content,.settings-modern-content,.theme-modern-content,.sticker-modern-content{padding:16px 14px 110px!important}
+.api-modern-header,.settings-modern-header,.theme-modern-header{box-shadow:0 12px 30px rgba(38,31,22,.045)!important}
+.api-hero-card,.settings-hero-card,.theme-hero-card,.api-fold,.settings-card,.theme-section-card,#stickersApp .card{
+  border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)!important;
+  background:color-mix(in srgb,var(--bar-bg,#fff) 92%,transparent)!important;
+  border-radius:28px!important;
+  box-shadow:0 14px 34px rgba(38,31,22,.055)!important;
+  backdrop-filter:blur(18px) saturate(1.06);
+  -webkit-backdrop-filter:blur(18px) saturate(1.06);
+}
+.api-hero-card,.settings-hero-card,.theme-hero-card{padding:18px;margin-bottom:13px}.api-hero-kicker{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:color-mix(in srgb,var(--accent,#111827) 62%,#888);font-weight:900;margin-bottom:6px}.api-hero-title,.settings-hero-title,.theme-hero-title{font-size:23px;font-weight:1000;letter-spacing:-.03em;color:var(--bar-text,#111827)}.api-hero-sub,.settings-hero-sub,.settings-card-sub,.theme-hero-sub{font-size:12px;line-height:1.6;color:color-mix(in srgb,var(--bar-text,#111827) 54%,transparent);margin-top:6px}
+.api-fold{margin:11px 0;overflow:hidden}.api-fold summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px;cursor:pointer;font-weight:1000;color:var(--bar-text,#111827)}.api-fold summary::-webkit-details-marker{display:none}.api-fold summary span{font-size:16px;letter-spacing:-.01em}.api-fold summary small{font-size:10px;font-weight:900;padding:5px 9px;border-radius:999px;background:color-mix(in srgb,var(--accent,#111827) 9%,var(--bar-bg,#fff));color:color-mix(in srgb,var(--bar-text,#111827) 60%,transparent);white-space:nowrap}.api-fold summary:after{content:"";width:9px;height:9px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);opacity:.42;margin-left:2px;transition:transform .18s}.api-fold[open] summary{border-bottom:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent)}.api-fold[open] summary:after{transform:rotate(225deg);margin-top:6px}.api-fold-body{padding:14px 17px 18px}.api-fold[open]{overflow:visible!important}
+.api-fold-body label,#apiApp label,#themeApp label,#stickersApp label{font-size:12px;color:color-mix(in srgb,var(--bar-text,#111827) 70%,transparent);font-weight:950;margin:12px 0 7px}
+#apiApp input,#apiApp select,#settingsApp input,#themeApp textarea,#themeApp input[type="text"],#stickersApp input,#stickersApp textarea{border-radius:18px!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 10%,transparent)!important;background:color-mix(in srgb,#fff 88%,var(--bar-bg,#fff))!important;min-height:48px;padding:12px 14px!important;font-weight:720;box-shadow:inset 0 1px 0 rgba(255,255,255,.62)}
+#apiApp input:focus,#apiApp select:focus,#settingsApp input:focus,#themeApp textarea:focus,#themeApp input[type="text"]:focus,#stickersApp input:focus,#stickersApp textarea:focus{border-color:color-mix(in srgb,var(--accent,#111827) 45%,transparent)!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--accent,#111827) 10%,transparent)!important}.api-two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}.api-inline-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.api-check-row,#apiApp .rowline{display:flex!important;align-items:center;gap:10px;margin:12px 0!important;padding:12px 13px;border-radius:18px;background:color-mix(in srgb,var(--bar-bg,#fff) 78%,var(--accent,#111827) 4%);border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent)}.api-check-row input{width:20px!important;min-height:20px!important;padding:0!important;flex:0 0 auto}.api-sticky-actions,.api-primary-actions{position:static!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin:12px 0 0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important}.api-sticky-actions .btn,.api-primary-actions .btn{height:42px!important;min-height:42px!important;white-space:nowrap;padding:0 10px!important;border-radius:999px!important}.api-primary-actions{grid-template-columns:1.15fr 1fr 1fr!important}
+.settings-card,.theme-section-card{padding:18px!important;margin-top:13px!important}.settings-card-title{font-size:16px;font-weight:1000;letter-spacing:-.01em}.settings-action-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;margin-top:15px!important}.settings-action-grid .btn{grid-column:auto!important;min-width:0!important;height:52px!important;min-height:52px!important;padding:0 8px!important;white-space:nowrap;font-size:13px!important;border-radius:22px!important;display:flex;align-items:center;justify-content:center}.settings-action-grid .file-btn input{height:auto!important;min-height:0!important}.soft-device-card .acc-card{margin-top:12px;border-radius:22px;background:color-mix(in srgb,#fff 86%,var(--bar-bg,#fff));border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent);box-shadow:none}.soft-device-card .acc-btn{border-radius:999px;background:color-mix(in srgb,var(--accent,#111827) 10%,var(--bar-bg,#fff));color:var(--bar-text,#111827);border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent);font-weight:950}
+.theme-section-card .v3-section-title{font-size:18px!important;letter-spacing:-.02em}.theme-section-card .v3-sub{font-size:12px;line-height:1.6;color:color-mix(in srgb,var(--bar-text,#111827) 55%,transparent)}#themeApp .theme-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.theme-tile{border-radius:22px!important;padding:12px!important;background:color-mix(in srgb,#fff 86%,var(--bar-bg,#fff))!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)!important}.theme-tile.active{border-color:color-mix(in srgb,var(--accent,#111827) 45%,transparent)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent,#111827) 12%,transparent)!important}#themeApp .theme-demo{height:62px!important;border-radius:18px!important}#themeApp .theme-editor-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;margin-top:12px!important}.theme-field{border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)!important;border-radius:20px!important;padding:12px!important;background:color-mix(in srgb,#fff 86%,var(--bar-bg,#fff))!important;min-width:0!important}.theme-field label{font-size:12px!important;margin:0 0 8px!important}.theme-field input[type="color"]{height:44px!important;border-radius:16px!important;padding:4px!important}.theme-field input[type="range"]{height:36px!important;min-height:36px!important;padding:0!important}#themeApp textarea{min-height:72px!important;font-size:12px!important}#themeApp .btn-row{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:8px!important}#themeApp .btn-row .btn{min-height:44px!important;border-radius:20px!important;display:flex;align-items:center;justify-content:center;text-align:center}#themeApp .wall-grid{grid-template-columns:repeat(4,1fr)!important;gap:8px!important}.wall{height:54px!important;border-radius:17px!important}.chat-wallpaper-preview{height:88px!important;border-radius:22px!important}
+#stickersApp .sticker-form-card{padding:18px!important;margin:0 0 13px!important}.sticker-form-title{font-weight:1000;font-size:18px;letter-spacing:-.02em;margin-bottom:6px}.sticker-help{font-size:11px;color:color-mix(in srgb,var(--bar-text,#111827) 46%,transparent);line-height:1.45;margin:6px 0 12px}.sticker-hint{font-size:12px;color:color-mix(in srgb,var(--bar-text,#111827) 54%,transparent);line-height:1.5;margin-top:10px}.sticker-actions{display:grid;grid-template-columns:1fr 1.15fr;gap:8px;margin-top:8px}.sticker-actions .btn{height:46px!important;min-height:46px!important;border-radius:999px!important;display:flex;align-items:center;justify-content:center}.sticker-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;margin-top:12px!important}.sticker-card{border-radius:22px!important;padding:10px!important;min-width:0!important;background:color-mix(in srgb,#fff 90%,var(--bar-bg,#fff))!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)!important;box-shadow:0 10px 24px rgba(38,31,22,.055)!important}.sticker-card img{width:100%!important;aspect-ratio:1/1!important;height:auto!important;object-fit:contain!important;border-radius:16px!important;background:color-mix(in srgb,var(--bar-bg,#fff) 88%,#fff)}.sticker-card-name{font-size:13px!important}.sticker-card-meaning{font-size:11px!important}.quick-modal{max-width:360px!important;border-radius:26px!important;background:color-mix(in srgb,var(--bar-bg,#fff) 94%,transparent)!important}.quick-sticker-picker{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;max-height:360px!important;overflow-y:auto!important;overflow-x:hidden!important;padding:2px 4px 4px 0!important}.quick-sticker-option{min-width:0!important;border-radius:18px!important;padding:7px!important;background:#fff!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)!important}.quick-sticker-option img{width:100%!important;aspect-ratio:1/1!important;object-fit:contain!important;border-radius:14px!important}.quick-sticker-option div{font-size:11px!important;font-weight:900!important;text-align:center!important;color:var(--accent,#111827)!important}
+.eleme-app{background:linear-gradient(180deg,#fbfaf7,#f3f1ec)!important}.eleme-tabs{display:flex;gap:8px;padding:10px 14px;background:color-mix(in srgb,var(--bar-bg,#fff) 86%,transparent);backdrop-filter:blur(16px);flex:0 0 auto;border-bottom:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent)}.eleme-tabs button{flex:1;border:0;border-radius:999px;padding:10px 12px;font-size:13px;font-weight:1000;background:color-mix(in srgb,var(--bar-text,#111827) 7%,var(--bar-bg,#fff));color:color-mix(in srgb,var(--bar-text,#111827) 62%,transparent)}.eleme-tabs button.active{background:var(--accent,#111827);color:#fff}.eleme-top{padding:16px 14px 17px;background:linear-gradient(160deg,color-mix(in srgb,var(--accent,#111827) 13%,#fff),color-mix(in srgb,var(--bar-bg,#fff) 90%,#fff));color:var(--bar-text,#111827);border-radius:0 0 30px 30px;box-shadow:0 14px 32px rgba(38,31,22,.07);border-bottom:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent);flex:0 0 auto}.eleme-search{margin-top:12px;display:grid;grid-template-columns:1fr 72px 86px;gap:8px}.eleme-search input{border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent);background:rgba(255,255,255,.92);color:var(--bar-text,#111827);border-radius:20px;min-height:48px}.eleme-search .btn,.eleme-search .ai-generate-btn{border:0;border-radius:20px;font-weight:1000;background:color-mix(in srgb,var(--bar-text,#111827) 8%,var(--bar-bg,#fff));color:var(--bar-text,#111827)}.eleme-search .ai-generate-btn{background:var(--accent,#111827);color:#fff;padding:0 10px;white-space:nowrap}.eleme-store-list,.eleme-menu-list,.eleme-order-list{padding:14px;overflow:auto;flex:1;min-height:0}.eleme-store-card,.eleme-food-card,.eleme-cart,.eleme-order-card{background:color-mix(in srgb,#fff 92%,var(--bar-bg,#fff));border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent);border-radius:24px;padding:13px;margin:10px 0;box-shadow:0 10px 25px rgba(38,31,22,.055)}.eleme-store-card,.eleme-food-card{display:flex;gap:11px;align-items:center}.eleme-store-logo,.food-pic{width:56px;height:56px;border-radius:18px;background:color-mix(in srgb,var(--accent,#111827) 8%,#fff);color:var(--bar-text,#111827);display:flex;align-items:center;justify-content:center;flex:0 0 auto}.eleme-store-logo{font-size:0}.eleme-store-logo:before,.food-pic:before{content:"";width:28px;height:28px;display:block;background:currentColor;-webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 12h14c-.4 4-3 7-7 7s-6.6-3-7-7zM8 9c0-1.8 1-2.2 1-3.5M12 9c0-1.8 1-2.2 1-3.5M16 9c0-1.8 1-2.2 1-3.5" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') center/contain no-repeat;mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 12h14c-.4 4-3 7-7 7s-6.6-3-7-7zM8 9c0-1.8 1-2.2 1-3.5M12 9c0-1.8 1-2.2 1-3.5M16 9c0-1.8 1-2.2 1-3.5" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') center/contain no-repeat}.food-pic{font-size:0}.eleme-store-name{font-weight:1000;font-size:16px}.eleme-store-meta,.food-desc{font-size:12px;color:color-mix(in srgb,var(--bar-text,#111827) 54%,transparent);line-height:1.45}.food-price,.cart-total b{font-weight:1000;color:color-mix(in srgb,var(--accent,#111827) 78%,#d88551)}.qty-btn{width:28px;height:28px;border-radius:50%;border:0;background:var(--accent,#111827);color:#fff;font-weight:1000;font-size:16px}.eleme-cart{margin:0 14px 10px;flex:0 0 auto}.eleme-primary{background:var(--accent,#111827);color:#fff}.eleme-secondary{background:color-mix(in srgb,var(--accent,#111827) 9%,#fff);color:var(--bar-text,#111827)}.eleme-danger{background:#fff1f0;color:#b42318}.eleme-pay-card{background:linear-gradient(135deg,color-mix(in srgb,var(--accent,#111827) 78%,#d88551),color-mix(in srgb,var(--accent,#111827) 62%,#fff));color:#fff;border-radius:22px;padding:14px;margin-top:10px;box-shadow:0 12px 26px rgba(38,31,22,.16)}.ai-store-badge{background:color-mix(in srgb,var(--accent,#111827) 8%,#fff);color:var(--accent,#111827);border-radius:999px}.eleme-ai-hint{margin:10px 14px 0;padding:9px 11px;border-radius:16px;background:rgba(255,255,255,.72);border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent);color:color-mix(in srgb,var(--bar-text,#111827) 58%,transparent);font-size:12px;line-height:1.55}
+.call-app{display:flex!important;flex-direction:column!important;min-height:0!important;background:linear-gradient(180deg,#fbfaf7,#f4f2ee)!important}.call-hero{flex:0 0 auto!important;margin:10px 14px 8px!important;padding:16px 14px!important;border-radius:30px!important;background:color-mix(in srgb,var(--bar-bg,#fff) 90%,transparent)!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)!important;box-shadow:0 14px 34px rgba(38,31,22,.06)!important;text-align:center}.call-avatar{width:68px!important;height:68px!important;border-radius:24px!important;margin:2px auto 8px!important;border:0!important;box-shadow:0 8px 18px rgba(38,31,22,.09)}.call-name{font-size:20px!important;font-weight:1000!important;margin-top:4px!important}.call-status{font-size:12px!important;color:color-mix(in srgb,var(--bar-text,#111827) 54%,transparent)!important;margin-top:2px!important}.call-timer{font-size:30px!important;line-height:1.05!important;font-weight:520!important;margin:8px 0 4px!important;font-variant-numeric:tabular-nums!important}.wave{height:22px!important;margin:3px 0!important}.wave span{width:4px!important;background:var(--accent,#111827)!important}.call-buttons{gap:12px!important;justify-content:center!important;margin-top:8px!important}.call-round{width:48px!important;height:48px!important;border-radius:18px!important;font-size:16px!important;font-weight:1000!important}.call-log{flex:1 1 auto!important;min-height:30vh!important;max-height:none!important;padding:10px 14px 8px!important;overflow:auto!important}.call-line{font-size:14px!important;line-height:1.7!important;padding:11px 12px!important;border-radius:18px!important;margin:8px 0!important;background:color-mix(in srgb,#fff 92%,var(--bar-bg,#fff))!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent)!important}.call-line .speaker{font-size:13px!important;font-weight:1000!important}.call-composer-wrap{flex:0 0 auto!important;margin:0 14px 10px!important;border-radius:28px!important;background:color-mix(in srgb,var(--bar-bg,#fff) 90%,transparent)!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)!important;box-shadow:0 -8px 24px rgba(38,31,22,.06)!important;position:relative!important;z-index:5!important}.call-toolbar{padding:9px 10px 0!important}.call-composer{padding:8px 10px 10px!important;display:flex!important;gap:8px!important;align-items:center!important}.call-composer textarea{min-height:40px!important;height:40px!important;max-height:78px!important;border-radius:18px!important;padding:9px 12px!important;font-size:15px!important;background:#fff!important}.call-send{width:42px!important;height:42px!important;border-radius:18px!important;font-size:0!important;display:flex!important;align-items:center!important;justify-content:center!important;background:var(--accent,#111827)!important;color:#fff!important}.call-send svg{width:19px;height:19px;stroke:currentColor}
+.moments-app{background:linear-gradient(180deg,#fbfaf7,#f2f0ea)!important}.moments-app .content{padding:0 14px 110px!important;background:transparent!important}.moments-cover{height:104px!important;border-radius:0 0 30px 30px!important;margin:0 -14px 42px!important;background:linear-gradient(135deg,color-mix(in srgb,var(--accent,#111827) 18%,#f8f6f1),color-mix(in srgb,var(--bar-bg,#fff) 92%,#fff))!important;box-shadow:0 12px 28px rgba(38,31,22,.065)!important}.moments-cover:after{left:18px!important;bottom:18px!important;font-size:26px!important;text-shadow:0 2px 10px rgba(0,0,0,.12)!important}.moments-cover-avatar{right:18px!important;bottom:-30px!important;width:64px!important;height:64px!important;border-radius:24px!important;border:4px solid #fff!important;box-shadow:0 10px 24px rgba(38,31,22,.12)}.moments-nav{margin:0 0 10px!important}.moments-nav-title{font-size:18px!important;font-weight:1000!important;letter-spacing:-.02em}.moments-feed-tip{background:color-mix(in srgb,#fff 88%,var(--bar-bg,#fff))!important;border-radius:18px!important}.moment-card,.moment-role-home-head,.auto-moment-card{background:color-mix(in srgb,#fff 92%,var(--bar-bg,#fff))!important;border-radius:24px!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent)!important;box-shadow:0 10px 24px rgba(38,31,22,.055)!important}.moment-card{padding:13px!important}.moment-content{font-size:calc(14px * var(--font-scale,1))!important;line-height:1.62!important}.moment-actions button,.moment-comment-input button{background:color-mix(in srgb,var(--bar-text,#111827) 7%,var(--bar-bg,#fff))!important;color:var(--bar-text,#111827)!important}.moment-actions button.active,.moment-comment-input button{background:var(--accent,#111827)!important;color:#fff!important}.moment-comment-area{background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff))!important;border-radius:18px!important}.moment-comment,.moment-reply{border-radius:14px!important}#autoMomentSettingsBox{display:none}#autoMomentSettingsBox.show{display:block}.auto-moment-card{margin:0 0 12px!important;padding:14px!important}.auto-moment-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.auto-moment-field{border-radius:18px!important;background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff))!important}.auto-moment-field input,.auto-moment-field select{min-height:44px!important;border-radius:16px!important}.auto-moment-card .btn-row{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}.auto-moment-card .btn{min-height:42px!important;border-radius:999px!important}
+@media(max-width:390px){.api-two-col,.api-sticky-actions,.api-primary-actions,.settings-action-grid,#themeApp .theme-editor-grid,.sticker-actions,.auto-moment-grid{grid-template-columns:1fr!important}#themeApp .theme-grid,.sticker-list{grid-template-columns:1fr!important}.quick-sticker-picker{grid-template-columns:repeat(2,minmax(0,1fr))!important}.eleme-search{grid-template-columns:1fr 62px 76px}.eleme-search .btn,.eleme-search .ai-generate-btn{font-size:12px;padding:0 6px}.settings-action-grid .btn{height:46px!important;min-height:46px!important}#themeApp .wall-grid{grid-template-columns:repeat(3,1fr)!important}}
+
 </style>
 <script>window.MIAO_BUILD="ArtifactStoreV1";</script>
 </head>
@@ -3727,72 +3469,108 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
     </section>
 
     <section class="app-screen" id="apiApp">
-      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">API 设置</div><button class="icon-btn" data-action="save-api">✓</button></div>
-      <div class="content">
-        <div class="card">
-          <label>API 地址</label><input id="apiUrlInput" placeholder="https://api.example.com/v1/chat/completions">
-          <label>API Key</label><input id="apiKeyInput" placeholder="sk-..." type="password">
-          <label>模型名称</label><input id="modelInput" placeholder="gpt-4o-mini">
-          <label>API 格式</label><select id="apiFormatInput"><option value="openai">OpenAI 兼容</option><option value="bedrock">Bedrock</option></select>
-          <div class="v3-section-title" style="margin-top:14px">生图设置（仅 Claude 助手用）</div>
-          <div class="v3-sub" style="margin-bottom:6px">聊天时 AI 可发真实图片。地址留空则用上面的聊天地址；密钥和模型按你的生图分组单独填。</div>
-          <label>生图 API 地址（可留空，默认用聊天地址）</label><input id="imgApiUrlInput" placeholder="https://api.example.com/v1/chat/completions">
-          <label>生图密钥（专门的分组密钥）</label><input id="imgApiKeyInput" placeholder="sk-..." type="password">
-          <label>生图模型名称</label><input id="imgModelInput" placeholder="gpt-image-2">
-          <div class="v3-section-title" style="margin-top:14px">语音 / TTS 设置（ElevenLabs）</div>
-          <div class="v3-sub" style="margin-bottom:6px">用于之后把角色文字回复生成真实语音气泡。先填密钥和 Voice ID；不影响当前聊天 API。</div>
-          <label>ElevenLabs API Key</label><input id="ttsApiKeyInput" placeholder="xi-api-key / sk_..." type="password">
-          <label>Voice ID</label><input id="ttsVoiceIdInput" placeholder="例如：21m00Tcm4TlvDq8ikWAM">
-          <label>TTS 模型名称</label><input id="ttsModelInput" placeholder="eleven_v3">
-          <div class="v3-sub" style="margin-top:4px">不知道填什么就用默认：eleven_v3（语气标签更明显）</div>
-          <label>角色语音回复模式</label>
-          <select id="ttsModeInput">
-            <option value="off">关闭真实语音（只保留文字语音）</option>
-            <option value="explicit">只在角色输出 [语音: ...] 时生成</option>
-            <option value="occasional">偶尔自动语音</option>
-            <option value="always">总是转成语音</option>
-          </select>
-          <div class="btn-row"><button class="btn" data-action="fetch-tts-models">拉取 TTS 模型</button></div>
-          <div class="status-box" id="ttsStatus"></div>
-          <div class="model-list" id="ttsModelList"></div>
-          <div class="v3-section-title" style="margin-top:14px">手机活动查询</div>
-          <div class="v3-sub" style="margin-bottom:6px">聊天需要时查询 iOS 快捷指令上报的最近 App 打开记录。默认只在命中相关话术时才提供工具，避免拖慢普通回复。</div>
-          <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px">
-            <input type="checkbox" id="phoneActivityEnabled"> 开启手机活动查询工具
-          </label>
-          <label>活动服务地址</label><input id="phoneActivityUrlInput" placeholder="https://your-app.zeabur.app">
-          <label>REPORT_TOKEN</label><input id="phoneActivityTokenInput" placeholder="Bearer token" type="password">
-          <label>查询冷却时间（分钟）</label><input id="phoneActivityCooldownInput" type="number" min="0" step="1" placeholder="5">
-          <div class="v3-sub" style="margin-top:4px">只有在“我回来了 / 我刚才在干嘛 / 查查我有没有偷玩”等场景才会给模型这个工具；0 表示不冷却。</div>
-          <label>ThoughtProcess 生成模式</label>
-          <select id="thoughtModeInput">
-            <option value="balanced">平衡：先显示本地内心，后台再用第 2 次 API 润色（推荐）</option>
-            <option value="local">省钱：只调用 1 次聊天 API，内心用本地角色模板</option>
-            <option value="precise">精准：回复 API + 内心 API 都完成后再显示</option>
-            <option value="ondemand">按需：先不生成，点 ThoughtProcess 图标时再补</option>
-            <option value="off">关闭：不生成 ThoughtProcess</option>
-          </select>
-          <div class="v3-sub" style="margin-top:4px">省钱模式最便宜；平衡模式不挡聊天速度但会多一次后台调用；精准模式最慢；按需模式只有点开图标时才补第 2 次 API。</div>
-          <div class="rowline" style="margin-top:8px"><div><b>流式传输</b><div class="v3-sub">逐字输出，需要中转站支持 stream:true</div></div><button class="toggle" id="streamToggle" data-action="toggle-stream"></button></div>
-          <div class="rowline" style="margin-top:8px"><div><b>消息提示音</b><div class="v3-sub">角色逐条发消息时播放提示音</div></div><button class="toggle" id="msgSoundToggle" data-action="toggle-msg-sound"></button></div>
-          <div class="btn-row"><button class="btn primary" data-action="save-api">保存设置</button><button class="btn" data-action="test-api">测试连接</button><button class="btn" data-action="fetch-models">拉取模型</button></div>
-          <div class="status-box" id="apiStatus"></div>
-          <div class="model-list" id="modelList"></div>
+      <div class="header api-modern-header"><button class="icon-btn" data-action="go-home" data-miao-icon="back" aria-label="返回"></button><div class="header-title">API 设置</div><button class="icon-btn" data-action="save-api" data-miao-icon="check" aria-label="保存"></button></div>
+      <div class="content api-modern-content">
+        <div class="api-hero-card">
+          <div class="api-hero-kicker">Model Gateway</div>
+          <div class="api-hero-title">连接你的模型</div>
+          <div class="api-hero-sub">聊天、生图、语音和轻工具分区保存；字段 ID 保持不变，不影响原有调用。</div>
+        </div>
+
+        <details class="api-fold" open>
+          <summary><span>聊天 API</span><small>必填</small></summary>
+          <div class="api-fold-body">
+            <label>API 地址</label><input id="apiUrlInput" placeholder="https://api.example.com/v1/chat/completions">
+            <label>API Key</label><input id="apiKeyInput" placeholder="sk-..." type="password">
+            <div class="api-two-col">
+              <div><label>模型名称</label><input id="modelInput" placeholder="gpt-4o-mini"></div>
+              <div><label>API 格式</label><select id="apiFormatInput"><option value="openai">OpenAI 兼容</option><option value="bedrock">Bedrock</option></select></div>
+            </div>
+            <div class="api-inline-actions api-primary-actions"><button class="btn primary" data-action="save-api">保存设置</button><button class="btn" data-action="test-api">测试连接</button><button class="btn" data-action="fetch-models">拉取模型</button></div>
+            <div class="status-box" id="apiStatus"></div>
+            <div class="model-list" id="modelList"></div>
+          </div>
+        </details>
+
+        <details class="api-fold">
+          <summary><span>生图设置</span><small>Claude 助手</small></summary>
+          <div class="api-fold-body">
+            <div class="v3-sub">聊天时 AI 可发真实图片。地址留空则用上面的聊天地址；密钥和模型按你的生图分组单独填。</div>
+            <label>生图 API 地址（可留空，默认用聊天地址）</label><input id="imgApiUrlInput" placeholder="https://api.example.com/v1/chat/completions">
+            <label>生图密钥（专门的分组密钥）</label><input id="imgApiKeyInput" placeholder="sk-..." type="password">
+            <label>生图模型名称</label><input id="imgModelInput" placeholder="gpt-image-2">
+          </div>
+        </details>
+
+        <details class="api-fold">
+          <summary><span>语音 / TTS</span><small>ElevenLabs</small></summary>
+          <div class="api-fold-body">
+            <div class="v3-sub">用于之后把角色文字回复生成真实语音气泡。先填密钥和 Voice ID；不影响当前聊天 API。</div>
+            <label>ElevenLabs API Key</label><input id="ttsApiKeyInput" placeholder="xi-api-key / sk_..." type="password">
+            <label>Voice ID</label><input id="ttsVoiceIdInput" placeholder="例如：21m00Tcm4TlvDq8ikWAM">
+            <label>TTS 模型名称</label><input id="ttsModelInput" placeholder="eleven_v3">
+            <div class="v3-sub" style="margin-top:4px">不知道填什么就用默认：eleven_v3（语气标签更明显）</div>
+            <label>角色语音回复模式</label>
+            <select id="ttsModeInput">
+              <option value="off">关闭真实语音（只保留文字语音）</option>
+              <option value="explicit">只在角色输出 [语音: ...] 时生成</option>
+              <option value="occasional">偶尔自动语音</option>
+              <option value="always">总是转成语音</option>
+            </select>
+            <div class="api-inline-actions"><button class="btn" data-action="fetch-tts-models">拉取 TTS 模型</button></div>
+            <div class="status-box" id="ttsStatus"></div>
+            <div class="model-list" id="ttsModelList"></div>
+          </div>
+        </details>
+
+        <details class="api-fold">
+          <summary><span>手机活动查询</span><small>可选工具</small></summary>
+          <div class="api-fold-body">
+            <div class="v3-sub">聊天需要时查询 iOS 快捷指令上报的最近 App 打开记录。默认只在命中相关话术时才提供工具，避免拖慢普通回复。</div>
+            <label class="api-check-row"><input type="checkbox" id="phoneActivityEnabled"> <span>开启手机活动查询工具</span></label>
+            <label>活动服务地址</label><input id="phoneActivityUrlInput" placeholder="https://your-app.zeabur.app">
+            <label>REPORT_TOKEN</label><input id="phoneActivityTokenInput" placeholder="Bearer token" type="password">
+            <label>查询冷却时间（分钟）</label><input id="phoneActivityCooldownInput" type="number" min="0" step="1" placeholder="5">
+            <div class="v3-sub" style="margin-top:4px">只有在“我回来了 / 我刚才在干嘛 / 查查我有没有偷玩”等场景才会给模型这个工具；0 表示不冷却。</div>
+          </div>
+        </details>
+
+        <details class="api-fold">
+          <summary><span>回复体验</span><small>速度 / 提示音</small></summary>
+          <div class="api-fold-body">
+            <label>ThoughtProcess 生成模式</label>
+            <select id="thoughtModeInput">
+              <option value="balanced">平衡：先显示本地内心，后台再用第 2 次 API 润色（推荐）</option>
+              <option value="local">省钱：只调用 1 次聊天 API，内心用本地角色模板</option>
+              <option value="precise">精准：回复 API + 内心 API 都完成后再显示</option>
+              <option value="ondemand">按需：先不生成，点 ThoughtProcess 图标时再补</option>
+              <option value="off">关闭：不生成 ThoughtProcess</option>
+            </select>
+            <div class="v3-sub" style="margin-top:4px">省钱模式最便宜；平衡模式不挡聊天速度但会多一次后台调用；精准模式最慢；按需模式只有点开图标时才补第 2 次 API。</div>
+            <div class="rowline"><div><b>流式传输</b><div class="v3-sub">逐字输出，需要中转站支持 stream:true</div></div><button class="toggle" id="streamToggle" data-action="toggle-stream"></button></div>
+            <div class="rowline"><div><b>消息提示音</b><div class="v3-sub">角色逐条发消息时播放提示音</div></div><button class="toggle" id="msgSoundToggle" data-action="toggle-msg-sound"></button></div>
+          </div>
+        </details>
+
+        <div class="api-sticky-actions">
+          <button class="btn primary" data-action="save-api">保存设置</button>
+          <button class="btn" data-action="test-api">测试连接</button>
+          <button class="btn" data-action="fetch-models">拉取模型</button>
         </div>
       </div>
     </section>
 
-    
     <section class="app-screen" id="themeApp">
-      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">美化中心</div><button class="icon-btn" data-action="export-theme">⇩</button></div>
-      <div class="content">
-        <div class="card">
+      <div class="header theme-modern-header"><button class="icon-btn" data-action="go-home" data-miao-icon="back" aria-label="返回"></button><div class="header-title">美化中心</div><button class="icon-btn" data-action="export-theme" data-miao-icon="data" aria-label="导出主题"></button></div>
+      <div class="content theme-modern-content">
+        <div class="theme-hero-card"><div class="theme-hero-title">外观工作台</div><div class="theme-hero-sub">先选主题，再微调颜色、字体、壁纸和图标。高级 CSS 收在后面，不会打乱基础设置。</div></div>
+        <div class="card theme-section-card theme-preset-card">
           <div class="v3-section-title">内置主题</div>
           <div class="v3-sub">主题会统一覆盖锁屏、主屏、Dock、微信、朋友圈、Claude、饿了么、剧情、通话、按钮、卡片和气泡。</div>
           <div class="theme-preset-grid" id="themePresetGrid"></div>
         </div>
 
-        <div class="card">
+        <div class="card theme-section-card theme-editor-card">
           <div class="v3-section-title">主题编辑器</div>
           <div class="theme-editor-grid">
             <div class="theme-field"><label>主色</label><input id="themeAccentInput" type="color"></div>
@@ -3834,21 +3612,21 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
           </div>
         </div>
 
-        <div class="card">
+        <div class="card theme-section-card theme-icon-card">
           <div class="v3-section-title">App 图标管理</div>
           <div class="v3-sub">可修改主屏显示名称和图标 emoji / 字母。不会改动 App 功能。</div>
           <div id="iconManagerGrid" class="icon-manager-grid"></div>
           <div class="btn-row"><button class="btn primary" data-action="save-icons">保存图标</button><button class="btn" data-action="reset-icons">恢复默认图标</button></div>
         </div>
 
-        <div class="card">
+        <div class="card theme-section-card theme-wall-card">
           <div class="v3-section-title">锁屏/主屏壁纸</div>
           <div class="wall-grid" id="wallGrid"></div>
           <div class="btn-row"><label class="btn file-btn">上传当前锁屏/主屏壁纸<input type="file" accept="image/*" id="wallpaperInput"></label><button class="btn danger" data-action="clear-wallpaper">清除壁纸</button></div>
           <div style="font-size:12px;color:#777;line-height:1.5;margin-top:8px">锁屏/主屏壁纸只影响锁屏和主屏，不会污染微信聊天背景。</div>
         </div>
 
-        <div class="card">
+        <div class="card theme-section-card theme-chatwall-card">
           <div class="v3-section-title">聊天背景图</div>
           <div class="v3-sub">按当前角色独立保存，只影响微信聊天区域。优先级高于主题里的微信背景 CSS。</div>
           <div id="chatWallpaperPreview" class="chat-wallpaper-preview"></div>
@@ -3982,7 +3760,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
     </section>
 
     <section class="app-screen call-app" id="callApp">
-      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">语音通话</div><button class="icon-btn" data-action="clear-call-history">🧹</button></div>
+      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">语音通话</div><button class="icon-btn" data-action="clear-call-history" data-miao-icon="broom" aria-label="清空通话"></button></div>
       <div class="call-hero">
         <img class="call-avatar" id="callAvatar" alt="">
         <div class="call-name" id="callName">角色</div>
@@ -3999,7 +3777,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
         <div class="call-toolbar"><button class="chip-btn" data-action="clear-call-history">清空通话记录</button></div>
         <div class="call-composer">
           <textarea id="callInput" placeholder="通话中输入你说的话..." rows="1"></textarea>
-          <button class="call-send" data-action="send-call-line">➤</button>
+          <button class="call-send" data-action="send-call-line" data-miao-icon="send" aria-label="发送"></button>
         </div>
       </div>
       <div class="home-indicator"></div>
@@ -4089,8 +3867,8 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
     </div>
 
     <section class="app-screen moments-app" id="momentsApp">
-      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">朋友圈</div><button class="icon-btn" data-action="open-moment-create">＋</button></div>
-      <div class="content" style="background:#f5f6f8">
+      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">朋友圈</div><div class="header-actions"><button class="icon-btn" data-action="toggle-moment-settings" data-miao-icon="settings" aria-label="朋友圈设置"></button><button class="icon-btn" data-action="open-moment-create" data-miao-icon="plus" aria-label="发布朋友圈"></button></div></div>
+      <div class="content">
         <div class="moments-cover" id="momentsCover">
           <img class="moments-cover-avatar" id="momentsCoverAvatar" alt="">
         </div>
@@ -4147,17 +3925,17 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
     </section>
 
     <section class="app-screen" id="stickersApp">
-      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">表情包</div><button class="icon-btn" data-action="open-sticker-add">＋</button></div>
-      <div class="content">
-        <div class="card">
-          <div style="font-weight:950">上传表情包</div>
-          <label>名称</label><input id="stickerNameInput" placeholder="例如：生气猫猫">
-          <label>含义 / 使用场景</label><textarea id="stickerMeaningInput" placeholder="例如：傲娇、生气、嘴硬但在意"></textarea>
-          <label>图片URL（可选，填URL则不需要上传图片）</label>
-          <input id="stickerUrlInput" placeholder="https://i.imgur.com/xxx.jpg">
-          <div style="font-size:11px;color:#aaa;margin-top:-4px;margin-bottom:6px">填URL不占用本地存储，推荐使用 imgbb.com 等图床</div>
-          <div class="btn-row"><label class="btn file-btn">选择图片<input type="file" accept="image/*" id="stickerFileInput"></label><button class="btn primary" data-action="save-sticker">保存表情包</button></div>
-          <div style="font-size:12px;color:#777;line-height:1.5;margin-top:8px">AI 只能调用这里已上传并命名的表情包，不能自己编造。</div>
+      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">表情包</div><button class="icon-btn" data-action="open-sticker-add" data-miao-icon="plus" aria-label="添加表情包"></button></div>
+      <div class="content sticker-modern-content">
+        <div class="card sticker-form-card">
+          <div class="sticker-form-title">上传表情包</div>
+          <label>名称</label><input id="stickerNameInput" placeholder="生气猫猫">
+          <label>含义 / 使用场景</label><textarea id="stickerMeaningInput" placeholder="傲娇、生气、嘴硬但在意"></textarea>
+          <label>图片 URL（可选）</label>
+          <input id="stickerUrlInput" placeholder="https://.../cat.jpg">
+          <div class="sticker-help">URL 不占本地存储；本地图片会压缩保存。</div>
+          <div class="sticker-actions"><label class="btn file-btn">选择图片<input type="file" accept="image/*" id="stickerFileInput"></label><button class="btn primary" data-action="save-sticker">保存表情包</button></div>
+          <div class="sticker-hint">AI 只能调用已上传并命名的表情包。</div>
         </div>
         <div id="stickerList"></div>
       </div>
@@ -4383,32 +4161,33 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
     </section>
 
     <section class="app-screen" id="settingsApp">
-      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">设置</div><button class="icon-btn" data-action="export-data">⇩</button></div>
-      <div class="content">
-        <div class="card">
-          <div style="font-weight:950">数据</div>
-          <div class="btn-row">
+      <div class="header settings-modern-header"><button class="icon-btn" data-action="go-home" data-miao-icon="back" aria-label="返回"></button><div class="header-title">设置</div><button class="icon-btn" data-action="export-data" data-miao-icon="data" aria-label="导出"></button></div>
+      <div class="content settings-modern-content">
+        <div class="settings-hero-card">
+          <div class="settings-hero-title">本地资料</div>
+          <div class="settings-hero-sub">导出、导入和清空都只影响喵喵机本地数据。</div>
+          <div class="settings-action-grid">
             <button class="btn" data-action="export-data">导出数据</button>
             <label class="btn file-btn">导入数据<input type="file" accept="application/json,.json" id="importInput"></label>
             <button class="btn danger" data-action="clear-all">清空全部</button>
           </div>
         </div>
-      
-        
-<div class="card">
-  <div style="font-size:12px;color:#aaa;margin-bottom:8px">⚙ 外接配件</div>
-  <div class="acc-card" id="accCard">
-    <span class="acc-dot" id="accDot"></span>
-    <div class="acc-info">
-      <div class="acc-name" id="accName">未连接</div>
-      <div class="acc-sub" id="accSub">轻触连接</div>
-    </div>
-    <button class="acc-btn" id="accBtn" onclick="window.BLE.toggle()">连接</button>
-  </div>
-</div>
 
-<div class="app-signature">喵喵机 · 雨泪</div>
-</div>
+        <div class="settings-card soft-device-card">
+          <div class="settings-card-title">外接配件</div>
+          <div class="settings-card-sub">连接后可在角色需要时调用，不连接也不影响普通聊天。</div>
+          <div class="acc-card" id="accCard">
+            <span class="acc-dot" id="accDot"></span>
+            <div class="acc-info">
+              <div class="acc-name" id="accName">未连接</div>
+              <div class="acc-sub" id="accSub">轻触连接</div>
+            </div>
+            <button class="acc-btn" id="accBtn" onclick="window.BLE.toggle()">连接</button>
+          </div>
+        </div>
+
+        <div class="app-signature">喵喵机 · 雨泪</div>
+      </div>
     </section>
 
 
@@ -4825,7 +4604,7 @@ function completeCommandTask(id){
   const task=list.find(t=>t.id===id)||getActiveCommandTask();
   if(!task) return;
   task.status="done"; task.completed_at=Date.now(); task.started_at=task.started_at||task.created_at||Date.now();
-  saveCommandTasks(list); pushCommandFeedback(task,"done"); showCommandDonePill();
+  saveCommandTasks(list); pushCommandFeedback(task,"done"); showCommandDonePill(); renderCommandTaskLayer(); startCommandTaskTicker();
 }
 function cancelCommandTask(id){
   const list=getCommandTasks();
@@ -4836,11 +4615,10 @@ function cancelCommandTask(id){
 }
 function showCommandDonePill(){
   const layer=document.getElementById("commandTaskLayer"); if(!layer) return;
-  stopCommandTaskTicker();
   clearTimeout(commandTaskDoneTimer);
-  layer.className="command-task-layer";
+  layer.classList.remove("hidden");
   layer.innerHTML=`<div class="command-task-done-pill">${miaoIcon("check")}<span>已完成</span></div>`;
-  commandTaskDoneTimer=setTimeout(()=>{ renderCommandTaskLayer(); startCommandTaskTicker(); },1200);
+  commandTaskDoneTimer=setTimeout(()=>renderCommandTaskLayer(),1200);
 }
 function renderCommandTaskLayer(){
   const layer=document.getElementById("commandTaskLayer");
@@ -4910,34 +4688,6 @@ function extractCommandTaskDirectives(text,source){
     if(count>=3) break;
   }
   return count;
-}
-
-function maybeHandleCommandTaskUserSignal(text){
-  const task=getActiveCommandTask();
-  if(!task) return "";
-  const raw=String(text||"").trim();
-  if(!raw || raw.length>64) return "";
-  const compact=raw.replace(/[\s，。！？!?.~～、…、,.;；：:「」『』（）()【】\[\]"'“”‘’]+/g,"").toLowerCase();
-  if(!compact) return "";
-  // 明显还没完成/只是答应去做：不要误判
-  if(/(还没|没有|没好|没做|没完成|没喝|没弄完|没搞完|未完成|等一下|等会|等等|待会|一会儿|马上|正在|还在|先去|我去|这就去|等我)/.test(compact)) return "";
-  // 取消类短句
-  if(/^(取消任务|取消这个|取消|算了|不做了|不做|别管了|先不做|不弄了|放弃|跳过)$/.test(compact)){
-    cancelCommandTask(task.id);
-    return "cancelled";
-  }
-  // 疑问句一般不是完成反馈：例如“好了么”“做完了吗”
-  if(/[吗嘛么呢]$/.test(compact) || /[?？]$/.test(raw)) return "";
-  const title=String(task.title||"").replace(/[\s，。！？!?.~～、…、,.;；：:「」『』（）()【】\[\]"'“”‘’]+/g,"").toLowerCase();
-  const commonDone=/^(好了|好啦|好喽|好咯|好嘞|完成|完成了|完成啦|做完|做完了|做完啦|弄好|弄好了|弄完|弄完了|搞定|搞定了|搞好了|已完成|结束了|ok|okay|done|finished)$/;
-  const verbDone=/(已经|刚刚|刚才|我|都)?(做|弄|搞|收拾|整理|写|读|背|看|听|喝|吃|洗|刷|拿|放|关|开|发|提交|保存|下载|上传|跑|测|测试|检查|改|修|伸|站|坐|走|运动|休息)(完|好了|好啦|好了|完了|完啦|过了|了)$/;
-  const naturalDone=/(喝完了?|吃完了?|洗完了?|写完了?|读完了?|看完了?|收拾好了?|整理好了?|保存好了?|提交了?|发了?|发完了?|改好了?|修好了?|测试完了?|伸完了?|站起来了?|坐下了?|走完了?|运动完了?|休息完了?|搞定了?|弄好了?|做完了?)/;
-  const titleRelatedDone = title && title.length>=2 && compact.length<=42 && (compact.includes(title.slice(0,Math.min(4,title.length))) || [...title].some(ch=>/[\u4e00-\u9fa5]/.test(ch) && compact.includes(ch))) && /(了|完|好|搞定|完成|ok|done)$/.test(compact);
-  if(commonDone.test(compact) || verbDone.test(compact) || naturalDone.test(compact) || titleRelatedDone){
-    completeCommandTask(task.id);
-    return "done";
-  }
-  return "";
 }
 function buildCommandTaskContext(){
   const active=getCommandTasks().filter(t=>t && (t.status==="pending"||t.status==="running")).slice(0,3);
@@ -5408,6 +5158,7 @@ function bindEvents(){
     if(action==="open-greetings") openApp("greetings");
     if(action==="open-moments") openApp("moments");
     if(action==="open-moment-create") openMomentCreateModal();
+    if(action==="toggle-moment-settings") toggleMomentSettingsPanel();
     if(action==="save-moment-post") saveMomentPostFromModal();
     if(action==="ai-create-moment") aiCreateMoment();
     if(action==="like-moment") likeMoment(id);
@@ -7178,7 +6929,6 @@ function sendMessage(){
     msg.quoteSender=Miao.state.quoteSender;
   }
   h.push(msg);
-  maybeHandleCommandTaskUserSignal(text);
   if(isBlocked()){
     msg.blockedFail=true; // 永久标记：被拉黑期间发送失败，解除后仍显示感叹号
     h.push({id:uid("msg"), groupId:uid("sysgrp"), sender:"system", type:"system", content:"消息已发出，但被对方拒收了。", createdAt:Date.now()+1, time:nowTime()});
@@ -10791,7 +10541,6 @@ async function sendClaudeMessage(){
   if(!text) return;
   const h=getClaudeHistory();
   h.push({id:uid("cmsg"), sender:"user", type:"text", content:text, createdAt:Date.now(), time:nowTime()});
-  maybeHandleCommandTaskUserSignal(text);
   saveClaudeHistory(h);
   input.value="";
   renderClaude();
@@ -12168,6 +11917,14 @@ function saveAutoMomentSettings(s, roleId){
   const role=currentRole();
   Storage.set(autoMomentKey(roleId || role.id), s);
 }
+function getMomentSettingsOpen(){
+  return !!Storage.get("momentsSettingsOpen.v1", false);
+}
+function toggleMomentSettingsPanel(){
+  Storage.set("momentsSettingsOpen.v1", !getMomentSettingsOpen());
+  renderMoments();
+}
+
 function renderAutoMomentSettings(){
   const box=$("#autoMomentSettingsBox");
   if(!box) return;
@@ -12357,6 +12114,8 @@ function showRoleMoments(roleId){
 }
 function renderMoments(){
   renderAutoMomentSettings();
+  const settingsBox=$("#autoMomentSettingsBox");
+  if(settingsBox) settingsBox.classList.toggle("show", getMomentSettingsOpen());
   const box=$("#momentsList");
   if(!box) return;
   const user=getUserProfile();
