@@ -10905,6 +10905,7 @@ function cleanPlainOutputBody(body){
 function normalizeClaudePlainOutputsToCode(text, history){
   const s=String(text||"").trim();
   if(!s || /```/.test(s)) return s;
+  // 1. 显式标头匹配（原有逻辑）
   const headerRe=/^\s*(?:#{1,6}\s*)?((?:docx?|word|文档|txt|文本|md|markdown|html|json))\s*(?:文件|内容|版本|如下|草稿)?\s*[:：]\s*/gim;
   const ms=[...s.matchAll(headerRe)];
   if(ms.length){
@@ -10924,12 +10925,20 @@ function normalizeClaudePlainOutputsToCode(text, history){
     if(tail) out += tail;
     return out.trim();
   }
+  // 2. 用户消息意图匹配（放宽版）
   const lastUser=(history||[]).slice().reverse().find(m=>m&&m.sender==="user");
   const ask=String(lastUser?.content||"");
-  const wantsDoc=/\b(docx?|word|txt)\b|文档|文本文件|生成文件|做成文件|输出文件|保存成/i.test(ask);
+  const wantsDoc=/\b(docx?|word|txt)\b|文档|文本文件|生成文件|做成文件|输出文件|保存成|写一?个文件|给我写|帮我写|写成|弄成文件/i.test(ask);
   if(wantsDoc && s.length>18){
     const lang=/\b(docx?|word)\b|文档/.test(ask) ? "doc" : "txt";
     return "```"+lang+"\n"+cleanPlainOutputBody(s)+"\n```";
+  }
+  // 3. 新增：模型输出看起来像独立文件（非对话性质）
+  //    如果回复不像对话（没有称呼/语气词开头），且长度 > 50，且用户请求暗示要"作品"类输出
+  const wantsCreation=/写[一个]*|生成|创作|编写|拟[一个]*|草拟|起草|做[一个]*|弄[一个]*|来[一个]*|出[一个]*|整[一个]*/.test(ask)
+    && /信|文|稿|诗|词|歌|故事|剧本|通知|公告|简历|自荐|推荐信|邀请|贺|祝|说明书|方案|计划|总结|报告|日记|情书|小作文|惊喜|卡片|便签|留言/.test(ask);
+  if(wantsCreation && s.length>50 && !/^(好的|当然|没问题|嗯|哈|可以|我来|以下|这是)/i.test(s)){
+    return "```txt\n"+cleanPlainOutputBody(s)+"\n```";
   }
   return s;
 }
@@ -10973,6 +10982,7 @@ async function callClaudeReply(){
       } else {
         if(textBuf2.trim()){ claudeBubbles.push({type:"text",content:textBuf2.trim()}); textBuf2=""; }
         claudeBubbles.push({type:"code",content:p.code,lang:p.lang});
+        console.log("[ClaudeReply] 检测到 code block:", p.lang, "长度:", (p.code||"").length);
       }
     });
     if(textBuf2.trim()) claudeBubbles.push({type:"text",content:textBuf2.trim()});
@@ -11026,7 +11036,9 @@ async function callClaudeReply(){
         const lang=b.lang||"txt";
         const code=b.content||b.code||"";
         const t=nowTime();
-        saveClaudeArtifactRecord({lang,code,title:guessClaudeOutputTitle(lang,code),msgId:mid,createdAt:now2+i,time:t,origin:"generation"});
+        console.log("[ClaudeReply] 保存 artifact:", lang, "code长度:", code.length, "msgId:", mid);
+        const savedKey=saveClaudeArtifactRecord({lang,code,title:guessClaudeOutputTitle(lang,code),msgId:mid,createdAt:now2+i,time:t,origin:"generation"});
+        console.log("[ClaudeReply] artifact key:", savedKey||"(空/失败)");
         h.push({id:mid,sender:"assistant",type:"text",content:"```"+lang+"\n"+code+"\n```",createdAt:now2+i,time:t});
       } else if(b.content){
         h.push({id:uid("cmsg"),sender:"assistant",type:"text",content:b.content,createdAt:now2+i,time:nowTime()});
@@ -11380,18 +11392,48 @@ function stableArtifactKey(lang, code, msgId){
   return "reg_"+h.toString(36);
 }
 function claudeArtifactStoreGet(){
-  try{ return Storage.get("claudeArtifactStore", []) || []; }
-  catch(e){ return []; }
+  try{
+    const result = Storage.get("claudeArtifactStore", []) || [];
+    return result;
+  }
+  catch(e){ console.error("[ArtifactStore] claudeArtifactStoreGet 异常!", e); return []; }
 }
 function claudeArtifactStoreSave(list){
-  try{ Storage.set("claudeArtifactStore", (list||[]).slice(0,300)); }catch(e){}
+  try{
+    const arr=(list||[]).slice(0,300);
+    Storage.set("claudeArtifactStore", arr);
+    console.log("[ArtifactStore] 已保存, 条目数:", arr.length);
+  }catch(e){ console.error("[ArtifactStore] claudeArtifactStoreSave 异常!", e); }
 }
+window.debugArtifacts = function(){
+  var store = claudeArtifactStoreGet();
+  var reg; try{ reg=Storage.get("claudeArtifactRegistry", []) || []; }catch(e){ reg=[]; }
+  var hiddenRaw; try{ hiddenRaw=Storage.get("claudeArtifactsHidden",""); }catch(e){ hiddenRaw=""; }
+  var hiddenArr = hiddenRaw ? (typeof hiddenRaw==="string" ? hiddenRaw.split(",").filter(Boolean) : Array.from(hiddenRaw||[])) : [];
+  var pinnedRaw; try{ pinnedRaw=Storage.get("claudeArtifactsPinned",""); }catch(e){ pinnedRaw=""; }
+  var pinnedArr = pinnedRaw ? (typeof pinnedRaw==="string" ? pinnedRaw.split(",").filter(Boolean) : Array.from(pinnedRaw||[])) : [];
+  var result = {
+    store_count: store.length,
+    store_items: store.slice(0,20).map(function(r){ return {key:r&&r.key, lang:r&&r.lang, title:r&&r.title, origin:r&&r.origin, msgId:r&&r.msgId, codeLen:String(r&&r.code||"").length}; }),
+    registry_count: reg.length,
+    hidden_count: hiddenArr.length,
+    hidden_sample: hiddenArr.slice(0,10),
+    pinned_count: pinnedArr.length,
+    cache_status: Storage._cache !== null ? "loaded" : "fallback_localStorage",
+    currentClaudeKey: typeof claudeKey==="function" ? claudeKey() : "unknown"
+  };
+  console.log("%c[debugArtifacts] 文件柜诊断", "color:#0af;font-weight:bold", result);
+  if(store.length) console.table(result.store_items);
+  else console.warn("[debugArtifacts] store 为空！文件从未写入或写入失败。");
+  if(hiddenArr.length) console.warn("[debugArtifacts] hidden set 非空，可能误隐藏:", hiddenArr.slice(0,5));
+  return result;
+};
 function saveClaudeArtifactRecord(opts){
   try{
     opts=opts||{};
     const l=claudeOutputLang(opts.lang||"txt");
     const body=String(opts.code||opts.content||"");
-    if(!body.trim()) return "";
+    if(!body.trim()){ console.warn("[ArtifactStore] 跳过空内容", opts.lang, opts.origin); return ""; }
     const msgId=opts.msgId||"";
     const key=opts.key || stableArtifactKey(l, body, msgId);
     const rec={
@@ -11407,16 +11449,22 @@ function saveClaudeArtifactRecord(opts){
     };
     const list=claudeArtifactStoreGet();
     const old=list.find(x=>x && x.key===key);
-    if(old) Object.assign(old, rec); else list.unshift(rec);
+    if(old){ Object.assign(old, rec); console.log("[ArtifactStore] 更新已有记录", key, l, rec.title); }
+    else { list.unshift(rec); console.log("[ArtifactStore] 新增记录", key, l, rec.title, "当前store长度:", list.length); }
     claudeArtifactStoreSave(list);
+    // 验证写入是否成功
+    const verify=claudeArtifactStoreGet();
+    const found=verify.find(x=>x && x.key===key);
+    if(!found) console.error("[ArtifactStore] ⚠️ 写入后验证失败！key=", key, "store长度:", verify.length);
+    else console.log("[ArtifactStore] ✓ 写入验证通过", key);
     try{
       const reg=Storage.get("claudeArtifactRegistry", []) || [];
       const oldReg=reg.find(x=>x && x.key===key);
       if(oldReg) Object.assign(oldReg, rec); else reg.unshift(rec);
       Storage.set("claudeArtifactRegistry", reg.slice(0,160));
-    }catch(e){}
+    }catch(e){ console.warn("[ArtifactStore] registry写入失败", e); }
     return key;
-  }catch(e){ return ""; }
+  }catch(e){ console.error("[ArtifactStore] saveClaudeArtifactRecord 异常!", e, opts); return ""; }
 }
 function registerClaudeOutputArtifact(lang, code, title, msgId){
   return saveClaudeArtifactRecord({lang,code,title,msgId,origin:"render"});
@@ -16423,6 +16471,7 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     var list=[]; if(typeof parseCodeBlocks!=="function") return list;
     var rows=getAllClaudeArtifactHistories();
     var hidden=hiddenSet(), pinned=pinnedSet();
+    var _debugFromStore=0, _debugFromHistory=0, _debugFromRegistry=0, _debugHiddenSkip=0;
     try{
       if(typeof Storage!=="undefined"){
         var store=Storage.get("claudeArtifactStore",[])||[];
@@ -16431,11 +16480,12 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
           var lang=langNorm(r.lang), code=String(r.code||"");
           var id="store_"+(r.key||hash((r.msgId||idx)+"|"+lang+"|"+code.slice(0,120)));
           var isHidden=hidden.has(id), isPinned=pinned.has(id);
-          if(isHidden && !includeHidden) return;
+          if(isHidden && !includeHidden){ _debugHiddenSkip++; return; }
           list.push({id:id,msgId:r.msgId||"",sourceKey:r.sourceKey||"store",lang:lang,kind:kindOf(lang),code:code,title:r.title||titleOf(code,lang,list.length),time:r.time||"",createdAt:r.createdAt||0,hidden:isHidden,pinned:isPinned,size:code.length,store:true});
+          _debugFromStore++;
         });
       }
-    }catch(e){}
+    }catch(e){ console.error("[collectArtifacts] store读取异常", e); }
     for(var i=0;i<rows.length;i++){
       var msg=rows[i].msg, h=rows[i].history||[];
       if(!msg || msg.sender!=="assistant" || msg.type!=="text") continue;
@@ -16446,8 +16496,9 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
         var lang=langNorm(p.lang), code=p.code||"";
         var id="a_"+hash((rows[i].key||"current")+"|"+(msg.id||i)+"|"+j+"|"+lang+"|"+code.slice(0,120));
         var isHidden=hidden.has(id), isPinned=pinned.has(id);
-        if(isHidden && !includeHidden) continue;
+        if(isHidden && !includeHidden){ _debugHiddenSkip++; continue; }
         list.push({id:id,msgId:msg.id,sourceKey:rows[i].key,lang:lang,kind:kindOf(lang),code:code,title:titleOf(code,lang,list.length),time:msg.time||"",createdAt:msg.createdAt||0,hidden:isHidden,pinned:isPinned,size:code.length});
+        _debugFromHistory++;
       }
     }
     try{
@@ -16457,11 +16508,12 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
           if(!r || !r.code || !goodLang(r.lang)) return;
           var id="registry_"+(r.key||hash((r.msgId||idx)+"|"+String(r.code).slice(0,120)));
           var isHidden=hidden.has(id), isPinned=pinned.has(id);
-          if(isHidden && !includeHidden) return;
+          if(isHidden && !includeHidden){ _debugHiddenSkip++; return; }
           list.push({id:id,msgId:r.msgId||"",sourceKey:r.sourceKey||"registry",lang:langNorm(r.lang),kind:kindOf(r.lang),code:r.code||"",title:r.title||titleOf(r.code,r.lang,list.length),time:r.time||"",createdAt:r.createdAt||0,hidden:isHidden,pinned:isPinned,size:String(r.code||"").length,registry:true});
+          _debugFromRegistry++;
         });
       }
-    }catch(e){}
+    }catch(e){ console.error("[collectArtifacts] registry读取异常", e); }
     var uniq={}, dedup=[];
     list.forEach(function(a){
       var sig=a.lang+"|"+String(a.code||"").slice(0,180);
@@ -16477,6 +16529,7 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
       if(a.pinned!==b.pinned) return a.pinned?-1:1;
       return (Number(b.createdAt||0)-Number(a.createdAt||0)) || String(b.time||"").localeCompare(String(a.time||""));
     });
+    console.log("[collectArtifacts] 汇总: store="+_debugFromStore+" history="+_debugFromHistory+" registry="+_debugFromRegistry+" hiddenSkip="+_debugHiddenSkip+" 去重前="+list.length+" 去重后="+dedup.length);
     return dedup;
   }
   function artifacts(){ return collectArtifacts(false); }
