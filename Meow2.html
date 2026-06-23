@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>o MiaoYUTwT o</title>
+<title>o MiaoYUTwT o - ArtifactsStorageFIX</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3378,7 +3378,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 .claude-ops-toggle{border:0;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:950;background:color-mix(in srgb,var(--accent,#111827) 8%,rgba(255,255,255,.72));color:var(--bar-text,#111827);}
 
 </style>
-<script>window.MIAO_BUILD="ArtifactsDisplayFIX";</script>
+<script>window.MIAO_BUILD="ArtifactStoreV1";</script>
 </head>
 <body>
 <div class="phone-shell">
@@ -4492,6 +4492,7 @@ const Storage = {
 
   roleKey(kind, roleId=Miao.state.currentRoleId){ return kind+"."+roleId; }
 };
+window.MiaoAppStorage = Storage;
 
 function uid(prefix="id"){ return prefix+"_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8); }
 function nowTime(){ return new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",hour12:false}); }
@@ -16441,8 +16442,9 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     var names={html:"HTML 页面",svg:"SVG 图像",jsx:"React 组件",css:"样式文件",js:"脚本文件",ts:"TS 文件",tsx:"TSX 组件",vue:"Vue 组件",svelte:"Svelte 组件",json:"JSON 数据",md:"Markdown 文档",txt:"文本文件",doc:"Word 文档"};
     return (names[langNorm(lang)]||"Code")+" "+(n+1);
   }
-  function getStoreArray(key){ try{ if(typeof Storage!=="undefined") return Storage.get(key,[])||[]; }catch(e){} try{return JSON.parse(localStorage.getItem("miao2."+key)||"[]")||[];}catch(e){return [];} }
-  function setStoreArray(key, arr){ try{ if(typeof Storage!=="undefined") return Storage.set(key,arr||[]); }catch(e){} try{localStorage.setItem("miao2."+key,JSON.stringify(arr||[]));}catch(e){} }
+  function appStorage(){ try{ if(window.MiaoAppStorage && typeof window.MiaoAppStorage.get==="function") return window.MiaoAppStorage; }catch(e){} try{ if(typeof Storage!=="undefined" && Storage && typeof Storage.get==="function") return Storage; }catch(e){} return null; }
+  function getStoreArray(key){ try{ var S=appStorage(); if(S) return S.get(key,[])||[]; }catch(e){ console.warn("[Artifacts] getStoreArray Storage失败",key,e); } try{return JSON.parse(localStorage.getItem("miao2."+key)||"[]")||[];}catch(e){return [];} }
+  function setStoreArray(key, arr){ try{ var S=appStorage(); if(S) return S.set(key,arr||[]); }catch(e){ console.warn("[Artifacts] setStoreArray Storage失败",key,e); } try{localStorage.setItem("miao2."+key,JSON.stringify(arr||[]));}catch(e){} }
   function hiddenSet(){ return new Set(getStoreArray("claudeArtifactsHidden")); }
   function pinnedSet(){ return new Set(getStoreArray("claudeArtifactsPinned")); }
   function saveSet(key,set){ setStoreArray(key, Array.from(set||[])); }
@@ -16462,7 +16464,7 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     try{
       if(typeof Storage!=="undefined" && typeof allMiaoKeys==="function"){
         var keys=allMiaoKeys().filter(function(k){ return k==="claudeHistory.tool" || /^claudeHistory\.role\./.test(k); });
-        keys.forEach(function(k){ add(k, Storage.get(k,[])||[]); });
+        keys.forEach(function(k){ add(k, getStoreArray(k)||[]); });
       }
     }catch(e){}
     return rows;
@@ -16475,9 +16477,8 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     var _debugFromStore=0, _debugFromHistory=0, _debugFromRegistry=0, _debugHiddenSkip=0;
     if(!canScanHistory) console.warn("[collectArtifacts] parseCodeBlocks 不可见，跳过历史扫描，但仍读取 claudeArtifactStore");
     try{
-      if(typeof Storage!=="undefined"){
-        var store=Storage.get("claudeArtifactStore",[])||[];
-        store.forEach(function(r,idx){
+      var store=getStoreArray("claudeArtifactStore")||[];
+      store.forEach(function(r,idx){
           if(!r || !r.code || !goodLang(r.lang)) return;
           var lang=langNorm(r.lang), code=String(r.code||"");
           var id="store_"+(r.key||hash((r.msgId||idx)+"|"+lang+"|"+code.slice(0,120)));
@@ -16486,7 +16487,6 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
           list.push({id:id,msgId:r.msgId||"",sourceKey:r.sourceKey||"store",lang:lang,kind:kindOf(lang),code:code,title:r.title||titleOf(code,lang,list.length),time:r.time||"",createdAt:r.createdAt||0,hidden:isHidden,pinned:isPinned,size:code.length,store:true});
           _debugFromStore++;
         });
-      }
     }catch(e){ console.error("[collectArtifacts] store读取异常", e); }
     for(var i=0;i<rows.length;i++){
       var msg=rows[i].msg, h=rows[i].history||[];
@@ -16504,9 +16504,8 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
       }
     }
     try{
-      if(typeof Storage!=="undefined"){
-        var reg=Storage.get("claudeArtifactRegistry",[])||[];
-        reg.forEach(function(r,idx){
+      var reg=getStoreArray("claudeArtifactRegistry")||[];
+      reg.forEach(function(r,idx){
           if(!r || !r.code || !goodLang(r.lang)) return;
           var id="registry_"+(r.key||hash((r.msgId||idx)+"|"+String(r.code).slice(0,120)));
           var isHidden=hidden.has(id), isPinned=pinned.has(id);
@@ -16514,7 +16513,6 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
           list.push({id:id,msgId:r.msgId||"",sourceKey:r.sourceKey||"registry",lang:langNorm(r.lang),kind:kindOf(r.lang),code:r.code||"",title:r.title||titleOf(r.code,r.lang,list.length),time:r.time||"",createdAt:r.createdAt||0,hidden:isHidden,pinned:isPinned,size:String(r.code||"").length,registry:true});
           _debugFromRegistry++;
         });
-      }
     }catch(e){ console.error("[collectArtifacts] registry读取异常", e); }
     var uniq={}, dedup=[];
     list.forEach(function(a){
