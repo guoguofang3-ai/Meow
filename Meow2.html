@@ -1609,6 +1609,18 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .artifact-actions{display:flex;gap:10px;align-items:center;justify-content:flex-end}.artifact-round{width:42px;height:42px;border-radius:50%;border:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.62);color:rgba(0,0,0,.45);font-size:21px;font-weight:900}
 .artifacts-empty{padding:38px 18px;text-align:center;color:rgba(0,0,0,.5);font-size:13px;line-height:1.7}
 .artifacts-download-all{flex:0 0 auto;margin:8px 28px 24px;height:56px;border:0;border-radius:999px;background:var(--accent,#111827);color:#fff;font-size:17px;font-weight:800;letter-spacing:.2px;box-shadow:0 14px 30px rgba(0,0,0,.12)}
+.artifacts-toolbar{display:flex;gap:8px;overflow:auto;padding:4px 18px 10px;flex:0 0 auto}
+.artifacts-chip{border:0;border-radius:999px;padding:8px 12px;background:rgba(0,0,0,.055);color:var(--bar-text,#111827);font-size:12px;font-weight:850;white-space:nowrap}
+.artifacts-chip.active{background:var(--accent,#111827);color:#fff}
+.artifact-group{display:grid;gap:10px}
+.artifact-group-title{font-size:12px;font-weight:950;color:rgba(0,0,0,.42);letter-spacing:.06em;text-transform:uppercase;padding:2px 4px}
+.artifact-more{font-size:12px;color:#999;padding:3px 6px}
+.artifact-actions{display:flex;gap:6px;align-items:center}
+.artifact-round.danger{color:#b42318;background:#fff1f0}
+.artifact-round.pinned{background:color-mix(in srgb,var(--accent) 14%,#fff);color:var(--accent)}
+.artifacts-mini-actions{display:flex;gap:8px;padding:0 28px 8px;flex:0 0 auto}
+.artifacts-mini-actions .btn{flex:1;background:rgba(0,0,0,.055)}
+
 
 /* Claude 页面 UI v2：输入区靠近微信，Clawd 独立跑道，图标手绘化 */
 .claude-head-actions .icon-btn{color:var(--bar-text,#111827);background:color-mix(in srgb,var(--accent,#111827) 7%,rgba(255,255,255,.62));}
@@ -3366,7 +3378,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 .claude-ops-toggle{border:0;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:950;background:color-mix(in srgb,var(--accent,#111827) 8%,rgba(255,255,255,.72));color:var(--bar-text,#111827);}
 
 </style>
-<script>window.MIAO_BUILD="RC4";</script>
+<script>window.MIAO_BUILD="ArtifactsCabinetV3";</script>
 </head>
 <body>
 <div class="phone-shell">
@@ -9750,7 +9762,8 @@ function inferClaudeToolPolicy(history=getClaudeHistory()){
     text,
     file: !!(wantsFile || fileMode || (claudeHasActiveFile(history)&&/这个|它|上面|刚才|继续|再改|预览|检查|看看|看下|分析|总结|哪里|为什么|怎么/i.test(compact))),
     history: !!wantsHistory,
-    memory: !!wantsMemory,
+    // 记忆工具属于轻工具：默认常开。模型不需要时不会调用，但需要写记忆时不会再误以为没有 write_memory。
+    memory: true,
     device: !!wantsDevice,
     explicit: !!explicitTool
   };
@@ -9764,7 +9777,7 @@ function buildClaudeToolUsePrompt(policy={}){
   if(policy.history) lines.push("- search_history(query, limit)：搜索本 Claude 会话的历史聊天记录");
   if(policy.memory){
     const memScope=getClaudeMode()==="tool" ? "工具 Claude 独立长期记忆" : "当前角色 Claude / 当前角色长期记忆";
-    lines.push(`- write_memory(category, title, content)：写入${memScope}，重复标题自动跳过`);
+    lines.push(`- write_memory(category, title, content)：写入${memScope}，重复标题自动跳过；本工具本轮真实可用，不要说没有写入记忆工具`);
     lines.push(`- read_memory(category?, query?, limit?)：读取${memScope}`);
     lines.push("- read_diary(query?, category?, limit?)：读取 user 的私人日记；日记是 user 资料，不等于 Claude 记忆");
   }
@@ -11355,10 +11368,33 @@ function renderClaudeOutputFileBubble(id,lang,code,title,msgId){
     </div>
   </div></div>`;
 }
+function stableArtifactKey(lang, code, msgId){
+  let s=String(claudeOutputLang(lang)||"txt")+"|"+String(msgId||"")+"|"+String(code||"").slice(0,500);
+  let h=2166136261;
+  for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=(h*16777619)>>>0; }
+  return "reg_"+h.toString(36);
+}
+function registerClaudeOutputArtifact(lang, code, title, msgId){
+  try{
+    const l=claudeOutputLang(lang);
+    const body=String(code||"");
+    if(!body.trim()) return "";
+    const key=stableArtifactKey(l, body, msgId);
+    const list=Storage.get("claudeArtifactRegistry", []);
+    const old=list.find(x=>x.key===key);
+    const rec={key, lang:l, code:body, title:title||guessClaudeOutputTitle(l,body), msgId:msgId||"", sourceKey:(typeof claudeKey==="function"?claudeKey():"current"), createdAt:Date.now(), time:nowTime()};
+    // 只持久化可视化输出；超大内容若本来就在历史代码块里，Artifacts 会从历史派生。这里限制 500KB，避免注册表膨胀。
+    if(body.length>500000) return key;
+    if(old) Object.assign(old, rec); else list.unshift(rec);
+    Storage.set("claudeArtifactRegistry", list.slice(0,160));
+    return key;
+  }catch(e){ return ""; }
+}
 function storeClaudeCode(lang,code,title,msgId){
   const id=uid("code");
   Miao.state.claudeCodes=Miao.state.claudeCodes||{};
   Miao.state.claudeCodes[id]={lang:claudeOutputLang(lang),code,title:title||guessClaudeOutputTitle(lang,code),msgId:msgId||""};
+  registerClaudeOutputArtifact(lang,code,title,msgId);
   return id;
 }
 async function copyClaudeCode(id){
@@ -16058,7 +16094,7 @@ function renderDataDashboard(){
   const size=moduleSize(keys);
   const roles=getRoles().length;
   const msgs=keys.filter(k=>k.startsWith("wechatHistory.")).reduce((n,k)=>n+(Storage.get(k,[])||[]).length,0);
-  box.innerHTML=`<div class="data-stat">本地数据<b>${formatSizeChars(size)}</b></div><div class="data-stat">数据键<b>${keys.length}</b></div><div class="data-stat">角色数量<b>${roles}</b></div><div class="data-stat">微信消息<b>${msgs}</b></div><div class="data-stat">构建版本<b>${escapeHtml(window.MIAO_BUILD||"RC4")}</b></div>`;
+  box.innerHTML=`<div class="data-stat">本地数据<b>${formatSizeChars(size)}</b></div><div class="data-stat">数据键<b>${keys.length}</b></div><div class="data-stat">角色数量<b>${roles}</b></div><div class="data-stat">微信消息<b>${msgs}</b></div><div class="data-stat">构建版本<b>${escapeHtml(window.MIAO_BUILD||"ArtifactsCabinetV3")}</b></div>`;
 }
 function renderModuleManager(){
   const box=$("#moduleManagerList"); if(!box) return;
@@ -16218,7 +16254,7 @@ function exportData(){
   // 优先从IndexedDB导出（不受5MB限制），降级用localStorage
   if(typeof MeowStorage !== "undefined"){
     MeowStorage.exportAll().then(allData=>{
-      const data={miao2Meta:{app:"喵喵机",build:window.MIAO_BUILD||"RC4",exportedAt:new Date().toISOString(),format:"miao2-full"},miao2:{}};
+      const data={miao2Meta:{app:"喵喵机",build:window.MIAO_BUILD||"ArtifactsCabinetV3",exportedAt:new Date().toISOString(),format:"miao2-full"},miao2:{}};
       Object.keys(allData).filter(k=>k.startsWith(Storage.prefix)).forEach(k=>{
         data.miao2[k.slice(Storage.prefix.length)] = allData[k];
       });
@@ -16237,7 +16273,7 @@ function exportData(){
   }
 }
 function _exportFromLocalStorage(){
-  const data={miao2Meta:{app:"喵喵机",build:window.MIAO_BUILD||"RC4",exportedAt:new Date().toISOString(),format:"miao2-full"},miao2:{}};
+  const data={miao2Meta:{app:"喵喵机",build:window.MIAO_BUILD||"ArtifactsCabinetV3",exportedAt:new Date().toISOString(),format:"miao2-full"},miao2:{}};
   Object.keys(localStorage).filter(k=>k.startsWith(Storage.prefix)).forEach(k=>{
     data.miao2[k.slice(Storage.prefix.length)] = Storage.get(k.slice(Storage.prefix.length), null);
   });
@@ -16312,57 +16348,120 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
   function htmlEscape(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]||c;}); }
   function attrEscape(s){ return htmlEscape(s).replace(/`/g,"&#96;"); }
   function cleanName(s){ return String(s||"artifact").replace(/[\\/:*?"<>|]/g," ").replace(/[\r\n\t]+/g," ").replace(/\s+/g," ").trim().slice(0,80)||"artifact"; }
-  function langNorm(lang){ lang=String(lang||"code").toLowerCase(); if(lang==="react") return "jsx"; if(lang==="javascript") return "js"; if(lang==="typescript") return "ts"; return lang||"code"; }
-  function goodLang(lang){ lang=langNorm(lang); return /^(html|svg|jsx|css|js|ts|tsx|vue|svelte|json|md|markdown|txt|text|doc|docx|word)$/.test(lang); }
-  function extFor(lang){ lang=langNorm(lang); var m={html:"html",svg:"svg",jsx:"jsx",css:"css",js:"js",ts:"ts",tsx:"tsx",vue:"vue",svelte:"svelte",json:"json",md:"md",markdown:"md",txt:"txt",text:"txt",doc:"doc",docx:"doc",word:"doc"}; return m[lang]||"txt"; }
+  function langNorm(lang){ lang=String(lang||"code").toLowerCase(); if(lang==="react") return "jsx"; if(lang==="javascript") return "js"; if(lang==="typescript") return "ts"; if(lang==="markdown") return "md"; if(lang==="text") return "txt"; if(lang==="word"||lang==="docx") return "doc"; return lang||"code"; }
+  function goodLang(lang){ lang=langNorm(lang); return /^(html|svg|jsx|css|js|ts|tsx|vue|svelte|json|md|txt|doc)$/.test(lang); }
+  function extFor(lang){ lang=langNorm(lang); var m={html:"html",svg:"svg",jsx:"jsx",css:"css",js:"js",ts:"ts",tsx:"tsx",vue:"vue",svelte:"svelte",json:"json",md:"md",txt:"txt",doc:"doc"}; return m[lang]||"txt"; }
+  function kindOf(lang){ lang=langNorm(lang); if(lang==="html") return "web"; if(lang==="svg") return "image"; if(lang==="json") return "data"; if(lang==="md"||lang==="txt"||lang==="doc") return "doc"; return "code"; }
+  function labelOfKind(k){ return {doc:"文档",web:"网页",data:"数据",image:"图像",code:"代码"}[k]||"文件"; }
   function titleOf(code,lang,n){
     var s=String(code||"");
     var m=s.match(/<title[^>]*>([^<]{1,80})<\/title>/i); if(m) return m[1];
-    m=s.match(/<(h1|h2)[^>]*>([^<]{1,80})<\/\1>/i); if(m) return m[2];
-    var names={html:"HTML 页面",svg:"SVG 图像",jsx:"React 组件",css:"样式文件",js:"脚本文件",ts:"TS 文件",tsx:"TSX 组件",vue:"Vue 组件",svelte:"Svelte 组件",json:"JSON 数据",md:"Markdown 文档",markdown:"Markdown 文档",txt:"文本文件",text:"文本文件",doc:"Word 文档",docx:"Word 文档",word:"Word 文档"};
+    m=s.match(/<(h1|h2)[^>]*>([^<]{1,80})<\/\1>/i); if(m) return m[2].replace(/<[^>]+>/g,"");
+    m=s.match(/^#\s+(.{1,70})/m); if(m) return m[1].trim();
+    var names={html:"HTML 页面",svg:"SVG 图像",jsx:"React 组件",css:"样式文件",js:"脚本文件",ts:"TS 文件",tsx:"TSX 组件",vue:"Vue 组件",svelte:"Svelte 组件",json:"JSON 数据",md:"Markdown 文档",txt:"文本文件",doc:"Word 文档"};
     return (names[langNorm(lang)]||"Code")+" "+(n+1);
   }
-  function artifacts(){
-    var list=[];
-    if(typeof getClaudeHistory!=="function" || typeof parseCodeBlocks!=="function") return list;
-    var h=getClaudeHistory()||[];
-    for(var i=0;i<h.length;i++){
-      var msg=h[i];
-      if(!msg || msg.sender!=="assistant" || msg.type!=="text") continue;
-      var parts=parseCodeBlocks(msg.content||"");
-      var local=0;
-      for(var j=0;j<parts.length;j++){
-        var p=parts[j];
-        if(!p || p.kind!=="code" || !goodLang(p.lang)) continue;
-        var lang=langNorm(p.lang);
-        list.push({id:msg.id+"_"+j,msgId:msg.id,lang:lang,code:p.code||"",title:titleOf(p.code,lang,list.length),time:msg.time||""});
-        local++;
+  function getStoreArray(key){ try{ if(typeof Storage!=="undefined") return Storage.get(key,[])||[]; }catch(e){} try{return JSON.parse(localStorage.getItem("miao2."+key)||"[]")||[];}catch(e){return [];} }
+  function setStoreArray(key, arr){ try{ if(typeof Storage!=="undefined") return Storage.set(key,arr||[]); }catch(e){} try{localStorage.setItem("miao2."+key,JSON.stringify(arr||[]));}catch(e){} }
+  function hiddenSet(){ return new Set(getStoreArray("claudeArtifactsHidden")); }
+  function pinnedSet(){ return new Set(getStoreArray("claudeArtifactsPinned")); }
+  function saveSet(key,set){ setStoreArray(key, Array.from(set||[])); }
+  function hash(s){ var h=2166136261; s=String(s||""); for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=(h*16777619)>>>0; } return h.toString(36); }
+  function getAllClaudeArtifactHistories(){
+    var rows=[], seen={};
+    function add(key, arr){
+      if(!Array.isArray(arr)) return;
+      for(var i=0;i<arr.length;i++){
+        var m=arr[i]; if(!m) continue;
+        var sig=(m.id||i)+":"+String(m.content||"").slice(0,80);
+        if(seen[sig]) continue; seen[sig]=1;
+        rows.push({key:key||"current", msg:m, history:arr});
       }
     }
-    list.reverse();
-    return list;
+    try{ if(typeof getClaudeHistory==="function") add("current", getClaudeHistory()||[]); }catch(e){}
+    try{
+      if(typeof Storage!=="undefined" && typeof allMiaoKeys==="function"){
+        var keys=allMiaoKeys().filter(function(k){ return k==="claudeHistory.tool" || /^claudeHistory\.role\./.test(k); });
+        keys.forEach(function(k){ add(k, Storage.get(k,[])||[]); });
+      }
+    }catch(e){}
+    return rows;
   }
-  function byId(id){ var a=artifacts(); for(var i=0;i<a.length;i++){ if(a[i].id===id) return a[i]; } return null; }
+  function collectArtifacts(includeHidden){
+    var list=[]; if(typeof parseCodeBlocks!=="function") return list;
+    var rows=getAllClaudeArtifactHistories();
+    var hidden=hiddenSet(), pinned=pinnedSet();
+    for(var i=0;i<rows.length;i++){
+      var msg=rows[i].msg, h=rows[i].history||[];
+      if(!msg || msg.sender!=="assistant" || msg.type!=="text") continue;
+      var src=(typeof normalizeClaudePlainOutputsToCode==="function") ? normalizeClaudePlainOutputsToCode(msg.content||"", h) : (msg.content||"");
+      var parts=parseCodeBlocks(src);
+      for(var j=0;j<parts.length;j++){
+        var p=parts[j]; if(!p || p.kind!=="code" || !goodLang(p.lang)) continue;
+        var lang=langNorm(p.lang), code=p.code||"";
+        var id="a_"+hash((rows[i].key||"current")+"|"+(msg.id||i)+"|"+j+"|"+lang+"|"+code.slice(0,120));
+        var isHidden=hidden.has(id), isPinned=pinned.has(id);
+        if(isHidden && !includeHidden) continue;
+        list.push({id:id,msgId:msg.id,sourceKey:rows[i].key,lang:lang,kind:kindOf(lang),code:code,title:titleOf(code,lang,list.length),time:msg.time||"",hidden:isHidden,pinned:isPinned,size:code.length});
+      }
+    }
+    try{
+      if(typeof Storage!=="undefined"){
+        var reg=Storage.get("claudeArtifactRegistry",[])||[];
+        reg.forEach(function(r,idx){
+          if(!r || !r.code || !goodLang(r.lang)) return;
+          var id="registry_"+(r.key||hash((r.msgId||idx)+"|"+String(r.code).slice(0,120)));
+          var isHidden=hidden.has(id), isPinned=pinned.has(id);
+          if(isHidden && !includeHidden) return;
+          list.push({id:id,msgId:r.msgId||"",sourceKey:r.sourceKey||"registry",lang:langNorm(r.lang),kind:kindOf(r.lang),code:r.code||"",title:r.title||titleOf(r.code,r.lang,list.length),time:r.time||"",hidden:isHidden,pinned:isPinned,size:String(r.code||"").length,registry:true});
+        });
+      }
+    }catch(e){}
+    var uniq={}, dedup=[];
+    list.forEach(function(a){ var sig=a.lang+"|"+a.msgId+"|"+String(a.code||"").slice(0,100); if(uniq[sig]) return; uniq[sig]=1; dedup.push(a); });
+    dedup.sort(function(a,b){ if(a.pinned!==b.pinned) return a.pinned?-1:1; return (b.time||"").localeCompare(a.time||""); });
+    return dedup;
+  }
+  function artifacts(){ return collectArtifacts(false); }
+  function byId(id){ var a=collectArtifacts(true); for(var i=0;i<a.length;i++){ if(a[i].id===id) return a[i]; } return null; }
+  function sizeText(n){ return n>1024*1024?(n/1024/1024).toFixed(1)+"MB":(n>1024?(n/1024).toFixed(1)+"KB":n+"B"); }
+  function iconOf(a){ if(a.lang==="json") return "{}"; if(a.lang==="html") return "‹›"; if(a.lang==="md") return "#"; if(a.lang==="doc") return "□"; if(a.lang==="svg") return "◎"; return "⌘"; }
+  function renderCard(a){
+    var pin=a.pinned?"取消固定":"固定";
+    return '<div class="artifact-card" data-artifact-action="preview" data-id="'+attrEscape(a.id)+'"><div class="artifact-icon">'+htmlEscape(iconOf(a))+'</div><div class="artifact-info"><div class="artifact-name">'+htmlEscape(a.title)+'</div><div class="artifact-meta">'+htmlEscape(labelOfKind(a.kind))+' · '+htmlEscape(extFor(a.lang).toUpperCase())+' · '+htmlEscape(sizeText(a.size))+(a.pinned?' · 已固定':'')+'</div></div><div class="artifact-actions"><button class="artifact-round '+(a.pinned?'pinned':'')+'" data-artifact-action="pin" data-id="'+attrEscape(a.id)+'" title="'+pin+'">★</button><button class="artifact-round" data-artifact-action="download" data-id="'+attrEscape(a.id)+'" title="下载">↓</button><button class="artifact-round danger" data-artifact-action="hide" data-id="'+attrEscape(a.id)+'" title="从文件柜移除">×</button></div></div>';
+  }
   function render(){
     var box=document.getElementById("artifactsList"); if(!box) return;
-    var arr=artifacts();
-    var all=document.querySelector(".artifacts-download-all"); if(all) all.style.display=arr.length?"block":"none";
-    if(!arr.length){ box.innerHTML='<div class="artifacts-empty">还没有 Artifacts。Claude 回复里出现 HTML / JSON / Markdown / SVG / JS 代码块后，会自动收进这里。</div>'; return; }
-    var html="";
-    for(var i=0;i<arr.length;i++){
-      var a=arr[i], size=a.code.length>1024?(a.code.length/1024).toFixed(1)+"KB":a.code.length+"B";
-      html+='<div class="artifact-card" data-artifact-action="preview" data-id="'+attrEscape(a.id)+'"><div class="artifact-icon">‹›</div><div class="artifact-info"><div class="artifact-name">'+htmlEscape(a.title)+'</div><div class="artifact-meta">File · '+htmlEscape(extFor(a.lang).toUpperCase())+' · '+htmlEscape(size)+'</div></div><div class="artifact-actions"><button class="artifact-round" data-artifact-action="download" data-id="'+attrEscape(a.id)+'" title="下载">↓</button></div></div>';
-    }
+    var all=collectArtifacts(true), arr=collectArtifacts(false);
+    var hiddenCount=all.filter(function(x){return x.hidden;}).length;
+    var filter=(window.MiaoArtifacts&&window.MiaoArtifacts.filter)||"all";
+    var visible=filter==="all"?arr:arr.filter(function(a){return a.kind===filter;});
+    var dl=document.querySelector(".artifacts-download-all"); if(dl) dl.style.display=arr.length?"block":"none";
+    var chips=['all','doc','web','data','image','code'].map(function(k){ var name=k==='all'?'全部':labelOfKind(k); var count=k==='all'?arr.length:arr.filter(function(a){return a.kind===k;}).length; return '<button class="artifacts-chip '+(filter===k?'active':'')+'" data-artifact-action="filter" data-kind="'+k+'">'+name+' '+count+'</button>'; }).join('');
+    var mini='<div class="artifacts-toolbar">'+chips+'</div><div class="artifacts-mini-actions"><button class="btn" data-artifact-action="clear-unpinned">清理未固定输出</button><button class="btn" data-artifact-action="restore-hidden">恢复隐藏 '+hiddenCount+'</button></div>';
+    if(!visible.length){ box.innerHTML=mini+'<div class="artifacts-empty">还没有可显示的 Artifacts。Claude 回复里出现 HTML / JSON / Markdown / TXT / DOC / SVG / JS 后，会自动收进这里。</div>'; return; }
+    var order=['doc','web','data','image','code'], html=mini;
+    order.forEach(function(kind){
+      var group=visible.filter(function(a){return a.kind===kind;}); if(!group.length) return;
+      html+='<div class="artifact-group"><div class="artifact-group-title">'+htmlEscape(labelOfKind(kind))+'</div>';
+      group.slice(0,20).forEach(function(a){ html+=renderCard(a); });
+      if(group.length>20) html+='<div class="artifact-more">还有 '+(group.length-20)+' 个更早输出，已折叠以避免卡顿。</div>';
+      html+='</div>';
+    });
     box.innerHTML=html;
   }
   function open(){ render(); var m=document.getElementById("artifactsMask"); if(m) m.classList.add("show"); }
   function close(){ var m=document.getElementById("artifactsMask"); if(m) m.classList.remove("show"); }
   function blobDownload(name,content,type){ var b=new Blob([content],{type:type||"text/plain;charset=utf-8"}); var url=URL.createObjectURL(b); var a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click(); setTimeout(function(){try{document.body.removeChild(a);}catch(e){} URL.revokeObjectURL(url);},100); }
   function preview(id){ var a=byId(id); if(!a) return; close(); var lang=langNorm(a.lang); if(lang==="svg" && typeof openPreview==="function") openPreview("Artifact · "+a.title,'<div class="svg-preview">'+a.code+'</div>'); else if((lang==="html" || lang==="jsx" || lang==="tsx") && typeof openPreviewIframe==="function") openPreviewIframe("Artifact · "+a.title, lang==="html"?a.code:buildReactPreview(a.code)); else if(typeof openPreview==="function"){ var display=a.code; if(lang==="json"){ try{ display=JSON.stringify(JSON.parse(a.code),null,2); }catch(e){} } openPreview("Artifact · "+a.title,'<div class="text-preview">'+htmlEscape(display)+'</div>'); } }
-  function download(id){ var a=byId(id); if(!a) return; var ext=extFor(a.lang); var type=ext==="html"?"text/html;charset=utf-8":(ext==="svg"?"image/svg+xml;charset=utf-8":(ext==="json"?"application/json;charset=utf-8":"text/plain;charset=utf-8")); blobDownload(cleanName(a.title)+"."+ext,a.code,type); if(typeof toast==="function") toast("Artifact 已下载"); }
-  function downloadAll(){ var arr=artifacts(); if(!arr.length){ if(typeof toast==="function") toast("没有可下载的 Artifacts"); return; } var pack={_type:"miaoClaudeArtifacts",exportedAt:(new Date()).toISOString(),artifacts:[]}; for(var i=0;i<arr.length;i++){ pack.artifacts.push({title:arr[i].title,lang:arr[i].lang,filename:cleanName(arr[i].title)+"."+extFor(arr[i].lang),code:arr[i].code,time:arr[i].time}); } blobDownload("claude_artifacts_"+(new Date()).toISOString().slice(0,10)+".json",JSON.stringify(pack,null,2),"application/json;charset=utf-8"); if(typeof toast==="function") toast("Artifacts 已打包下载"); }
-  document.addEventListener("click",function(e){ var b=e.target.closest&&e.target.closest("[data-artifact-action]"); if(!b) return; var act=b.getAttribute("data-artifact-action"); var id=b.getAttribute("data-id")||""; e.preventDefault(); e.stopPropagation(); if(act==="open") open(); else if(act==="close") close(); else if(act==="preview") preview(id); else if(act==="download") download(id); else if(act==="download-all") downloadAll(); },true);
-  window.MiaoArtifacts={open:open,close:close,render:render,artifacts:artifacts};
+  function download(id){ var a=byId(id); if(!a) return; var ext=extFor(a.lang); var type=ext==="html"?"text/html;charset=utf-8":(ext==="svg"?"image/svg+xml;charset=utf-8":(ext==="json"?"application/json;charset=utf-8":(ext==="doc"?"application/msword;charset=utf-8":"text/plain;charset=utf-8"))); blobDownload(cleanName(a.title)+"."+ext,a.code,type); if(typeof toast==="function") toast("Artifact 已下载"); }
+  function hide(id){ var h=hiddenSet(); h.add(id); saveSet("claudeArtifactsHidden",h); render(); if(typeof toast==="function") toast("已从 Artifacts 移除，不删除聊天记录"); }
+  function pin(id){ var p=pinnedSet(); if(p.has(id)) p.delete(id); else p.add(id); saveSet("claudeArtifactsPinned",p); render(); }
+  function clearUnpinned(){ var all=collectArtifacts(true), h=hiddenSet(), p=pinnedSet(), n=0; all.forEach(function(a){ if(!p.has(a.id) && !h.has(a.id)){ h.add(a.id); n++; } }); saveSet("claudeArtifactsHidden",h); render(); if(typeof toast==="function") toast(n?"已清理 "+n+" 个未固定输出":"没有可清理的输出"); }
+  function restoreHidden(){ saveSet("claudeArtifactsHidden",new Set()); render(); if(typeof toast==="function") toast("已恢复隐藏的 Artifacts"); }
+  function downloadAll(){ var arr=artifacts(); if(!arr.length){ if(typeof toast==="function") toast("没有可下载的 Artifacts"); return; } var pack={_type:"miaoClaudeArtifacts",exportedAt:(new Date()).toISOString(),artifacts:[]}; for(var i=0;i<arr.length;i++){ pack.artifacts.push({title:arr[i].title,lang:arr[i].lang,filename:cleanName(arr[i].title)+"."+extFor(arr[i].lang),code:arr[i].code,time:arr[i].time,sourceKey:arr[i].sourceKey}); } blobDownload("claude_artifacts_"+(new Date()).toISOString().slice(0,10)+".json",JSON.stringify(pack,null,2),"application/json;charset=utf-8"); if(typeof toast==="function") toast("Artifacts 已打包下载"); }
+  document.addEventListener("click",function(e){ var b=e.target.closest&&e.target.closest("[data-artifact-action]"); if(!b) return; var act=b.getAttribute("data-artifact-action"); var id=b.getAttribute("data-id")||""; e.preventDefault(); e.stopPropagation(); if(act==="open") open(); else if(act==="close") close(); else if(act==="filter"){ window.MiaoArtifacts=window.MiaoArtifacts||{}; window.MiaoArtifacts.filter=b.getAttribute("data-kind")||"all"; render(); } else if(act==="preview") preview(id); else if(act==="download") download(id); else if(act==="hide") hide(id); else if(act==="pin") pin(id); else if(act==="clear-unpinned") clearUnpinned(); else if(act==="restore-hidden") restoreHidden(); else if(act==="download-all") downloadAll(); },true);
+  window.MiaoArtifacts={open:open,close:close,render:render,artifacts:artifacts,filter:"all"};
 })();
 </script>
 
