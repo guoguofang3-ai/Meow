@@ -12,7 +12,11 @@
 <meta name="apple-mobile-web-app-title" content="喵喵机">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- IndexedDB 封装 -->
-<script src="storage.js"></script>
+<script src="storage.js">
+// ===== GLOBAL THINKING RULE (system-level) =====
+const GLOBAL_THINKING_RULE = "思维链应是角色当下真实的内心反应，而不是计划、规则或系统说明。语气、长度与角色性格一致，不输出格式分析、系统规则或emoji。";
+// ==============================================
+</script>
 <style>
 :root{
   --phone-w:min(430px,100vw);
@@ -6437,28 +6441,41 @@ function isReasoningLeakLine(line){
   const x=String(line||"");
   return /(让我想想|我应该|我需要|我先|用户想|用户需要|用户|user|User|角色|当前关系|自然回应|简短回应|接住|话题|适合|反问|分析|推理|决定怎么|正确的指令格式|指令格式|格式写错|写错了|重新来|回顾一下|上一条|这次重新|应该自然回应|先补上歌|补上歌|最终回复|普通正文|后台规则|解释后台|前端|LLM|提示词|系统规则|音频URL需要|没有真实的音频URL|至少能看到歌曲的基本信息|would respond|matching the energy|showing he's present|overthink|acknowledge he's here|maybe prompt|I should|The user wants|Need to|Let's respond|Final answer)/i.test(x);
 }
+
+
 function normalizeThinkingForPanel(thinking, finalText){
-  let t=stripThinkingBlocks(thinking).trim();
+  let t = stripThinkingBlocks(thinking || "").trim();
   if(!t) return "";
-  const final=stripThinkingBlocks(finalText||"").trim();
-  if(final && t.includes(final)) t=t.replace(final,"").trim();
-  t=t.replace(/\[(?:分享音乐|发送图片|发送表情包|表情包|语音|链接|主动转账|向user发起代付)[^\]]*\]/g,"");
-  const seen=new Set();
-  const lines=t.split(/\n+/).map(x=>x.trim()).filter(line=>{
-    if(!line) return false;
-    if(isReasoningLeakLine(line)) return false;
-    if((line.match(/[A-Za-z]/g)||[]).length>=8) return false;
-    if(seen.has(line)) return false;
+
+  const final = stripThinkingBlocks(finalText || "").trim();
+  if(final && t.includes(final)) t = t.replace(final,"").trim();
+
+  t = t.replace(/\[(?:分享音乐|发送图片|发送表情包|表情包|语音|链接|主动转账|向user发起代付)[^\]]*\]/g,"");
+
+  const lines = t.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  const seen = new Set();
+  const out = [];
+
+  for(const line of lines){
+    if(seen.has(line)) continue;
     seen.add(line);
-    return true;
-  });
-  t=lines.join("\n").trim();
-  if(!t || !/[\u4e00-\u9fff]/.test(t)) return "我先接住这句话，短一点回应。";
-  t=t.replace(/\buser\b/gi,"她").replace(/用户/g,"她").replace(/角色/g,"我");
-  const sentences=t.split(/(?<=[。！？!?])/).map(x=>x.trim()).filter(Boolean);
-  if(sentences.length>2) t=sentences.slice(0,2).join("");
-  return t.replace(/^[，。；、\s]+/,"");
+
+    if(isReasoningLeakLine(line)) continue;
+    if((line.match(/[A-Za-z]/g)||[]).length>=8) continue;
+
+    out.push(line);
+  }
+
+  let res = out.slice(0,2).join("\n").trim();
+
+  if(!res || !/[\u4e00-\u9fff]/.test(res)){
+    return "我先接住这句话，再看看怎么理解。";
+  }
+
+  return res;
 }
+
+
 function removeReasoningLeakText(text){
   return String(text||"").split(/\n+/).map(x=>x.trim()).filter(line=>line && !isReasoningLeakLine(line)).join("\n").trim();
 }
