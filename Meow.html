@@ -2814,6 +2814,15 @@ body.multiselect-mode .msg{ cursor:pointer; }
           <label>REPORT_TOKEN</label><input id="phoneActivityTokenInput" placeholder="Bearer token" type="password">
           <label>查询冷却时间（分钟）</label><input id="phoneActivityCooldownInput" type="number" min="0" step="1" placeholder="5">
           <div class="v3-sub" style="margin-top:4px">只有在“我回来了 / 我刚才在干嘛 / 查查我有没有偷玩”等场景才会给模型这个工具；0 表示不冷却。</div>
+          <label>ThoughtProcess 生成模式</label>
+          <select id="thoughtModeInput">
+            <option value="balanced">平衡：先显示本地内心，后台再用第 2 次 API 润色（推荐）</option>
+            <option value="local">省钱：只调用 1 次聊天 API，内心用本地角色模板</option>
+            <option value="manual">按需：先用本地内心，点开 ThoughtProcess 时才调用第 2 次 API</option>
+            <option value="precise">精准：回复 API + 内心 API 都完成后再显示</option>
+            <option value="off">关闭：不生成 ThoughtProcess</option>
+          </select>
+          <div class="v3-sub" style="margin-top:4px">省钱模式最便宜；按需模式只有你真的点开内心时才补一次 API；平衡模式不挡聊天速度但会多一次后台调用；精准模式最慢但内心最贴正式回复。</div>
           <div class="rowline" style="margin-top:8px"><div><b>流式传输</b><div class="v3-sub">逐字输出，需要中转站支持 stream:true</div></div><button class="toggle" id="streamToggle" data-action="toggle-stream"></button></div>
           <div class="rowline" style="margin-top:8px"><div><b>消息提示音</b><div class="v3-sub">角色逐条发消息时播放提示音</div></div><button class="toggle" id="msgSoundToggle" data-action="toggle-msg-sound"></button></div>
           <div class="btn-row"><button class="btn primary" data-action="save-api">保存设置</button><button class="btn" data-action="test-api">测试连接</button><button class="btn" data-action="fetch-models">拉取模型</button></div>
@@ -6774,12 +6783,12 @@ async function attachThoughtProcessToParsed(api, parsed, ctx){
   const target=[...parsed].reverse().find(m=>m && m.sender==="role" && m.type!=="system");
   if(!target) return parsed;
   const thought=await buildThoughtProcessForParsed(api, parsed, ctx||{});
-  if(thought) target.thinking=thought;
+  if(thought){ target.thinking=thought; target.thinkingAI=true; }
   return parsed;
 }
 
 function getThoughtMode(){
-  return Storage.get("thoughtMode", "balanced"); // balanced | local | precise | off
+  return Storage.get("thoughtMode", "balanced"); // balanced | local | manual | precise | off
 }
 function getThoughtTarget(parsed){
   return [...(parsed||[])].reverse().find(m=>m && m.sender==="role" && m.type!=="system") || null;
@@ -6789,7 +6798,7 @@ function attachFallbackThoughtProcessToParsed(parsed, ctx){
   if(!target) return parsed;
   const role=currentRole();
   const thought=fallbackThoughtTextV2(role, ctx?.newUser?.content||"", parsed);
-  if(thought) target.thinking=thought;
+  if(thought){ target.thinking=thought; target.thinkingAI=false; }
   return parsed;
 }
 function updateThoughtInHistory(roleId, targetId, thought, attempt=0){
@@ -6803,6 +6812,7 @@ function updateThoughtInHistory(roleId, targetId, thought, attempt=0){
     return;
   }
   m.thinking=thought;
+  m.thinkingAI=true;
   saveHistoryByRoleId(roleId, h);
   if(Miao.state.currentRoleId===roleId){
     renderChat();
@@ -6833,10 +6843,61 @@ async function prepareThoughtProcessForParsed(api, parsed, ctx){
   const mode=getThoughtMode();
   if(mode==="off") return parsed;
   if(mode==="precise") return await attachThoughtProcessToParsed(api, parsed, ctx);
-  // local / balanced 都先给一个即时本地内心，正式回复不等待第二次API
+  // local / manual / balanced 都先给一个即时本地内心，正式回复不等待第二次API
   attachFallbackThoughtProcessToParsed(parsed, ctx||{});
   if(mode==="balanced") scheduleThoughtProcessRefresh(api, parsed, ctx||{});
   return parsed;
+}
+function findUserBeforeMessage(history, msg){
+  const idx=(history||[]).findIndex(x=>x.id===msg?.id);
+  for(let i=idx-1;i>=0;i--){
+    if(history[i]?.sender==="user") return history[i];
+  }
+  return null;
+}
+async function refreshThoughtForMessageOnDemand(msgId){
+  if(!msgId) return;
+  if(!Miao.state.thoughtLoading) Miao.state.thoughtLoading={};
+  if(Miao.state.thoughtLoading[msgId]) return;
+  const api=Storage.get("api",{});
+  if(!api.apiUrl || !api.apiKey || !api.model) return;
+  Miao.state.thoughtLoading[msgId]=true;
+  const mask=document.getElementById("thinkingMask");
+  const body=document.getElementById("thinkingBody");
+  const showLoading=()=>{
+    const h=getHistory();
+    const m=h.find(x=>x.id===msgId);
+    if(body && mask?.classList.contains("show") && m){
+      body.textContent=normalizeThinkingForPanel(m.thinking||"", m.content||"") + "\n\n（正在补生成更细的内心…）";
+    }
+  };
+  try{
+    showLoading();
+    const h=getHistory();
+    const m=h.find(x=>x.id===msgId);
+    if(!m) return;
+    const parsed=(m.groupId ? h.filter(x=>x.groupId===m.groupId && x.sender==="role" && x.type!=="system") : [m]);
+    const newUser=findUserBeforeMessage(h, m);
+    let text=await callThoughtAI(api, currentRole(), newUser, parsed);
+    text=sanitizeThoughtTextV2(text, parsed);
+    if(!text) return;
+    const hh=getHistory();
+    const mm=hh.find(x=>x.id===msgId);
+    if(!mm) return;
+    mm.thinking=text;
+    mm.thinkingAI=true;
+    saveHistory(hh);
+    renderChat();
+    if(body && mask?.classList.contains("show")) body.textContent=normalizeThinkingForPanel(text, mm.content||"");
+  }catch(e){
+    const h=getHistory();
+    const m=h.find(x=>x.id===msgId);
+    if(body && mask?.classList.contains("show") && m){
+      body.textContent=normalizeThinkingForPanel(m.thinking||"", m.content||"") + "\n\n（补生成失败，已保留本地内心）";
+    }
+  }finally{
+    delete Miao.state.thoughtLoading[msgId];
+  }
 }
 // Claude 文件助手要保护代码块，避免误删代码块里的 <think>/<thinking> 示例
 function stripThinkingBlocksKeepCode(text){
@@ -7791,6 +7852,7 @@ function renderApi(){
   const _tv=document.getElementById("ttsVoiceIdInput"); if(_tv) _tv.value=ttsCfg.voiceId||"";
   const _tm=document.getElementById("ttsModelInput"); if(_tm) _tm.value=ttsCfg.model||"eleven_v3";
   const _tmode=document.getElementById("ttsModeInput"); if(_tmode) _tmode.value=ttsCfg.mode||"explicit";
+  const _thoughtMode=document.getElementById("thoughtModeInput"); if(_thoughtMode) _thoughtMode.value=Storage.get("thoughtMode","balanced");
   const pa=Storage.get("phoneActivity",{});
   const _pae=document.getElementById("phoneActivityEnabled"); if(_pae) _pae.checked=!!pa.enabled;
   const _pau=document.getElementById("phoneActivityUrlInput"); if(_pau) _pau.value=pa.baseUrl||"";
@@ -7806,6 +7868,8 @@ function saveApiFromForm(){
   Storage.set("ttsApi", { provider:"elevenlabs", apiKey:(tk?tk.value.trim():""), voiceId:(tv?tv.value.trim():""), model:(tm?tm.value.trim():"eleven_v3")||"eleven_v3", mode:(tmode?tmode.value:"explicit")||"explicit" });
   const pae=document.getElementById("phoneActivityEnabled"), pau=document.getElementById("phoneActivityUrlInput"), pat=document.getElementById("phoneActivityTokenInput"), pac=document.getElementById("phoneActivityCooldownInput");
   Storage.set("phoneActivity", { enabled:!!(pae&&pae.checked), baseUrl:(pau?pau.value.trim():"").replace(/\/+$/,""), token:(pat?pat.value.trim():""), cooldownMinutes:Math.max(0, parseInt(pac&&pac.value)||5) });
+  const thoughtModeEl=document.getElementById("thoughtModeInput");
+  Storage.set("thoughtMode", (thoughtModeEl&&thoughtModeEl.value) || "balanced");
   toast("API 设置已保存");
 }
 async function testApi(){
@@ -11877,6 +11941,9 @@ function openThinking(msgId){
   const mask=document.getElementById("thinkingMask");
   if(body) body.textContent=normalizeThinkingForPanel(m.thinking, m.content||"");
   if(mask) mask.classList.add("show");
+  if(getThoughtMode()==="manual" && !m.thinkingAI){
+    refreshThoughtForMessageOnDemand(msgId);
+  }
 }
 function closeThinking(e){
   if(e&&e.target!==e.currentTarget) return;
