@@ -3043,6 +3043,44 @@ body.keyboard-open .claude-chat{overscroll-behavior:contain;}
 body.keyboard-open .composer textarea,
 body.keyboard-open .claude-composer textarea{max-height:86px!important;}
 
+/* ===== 真机/PWA 顶部融合 v2：不重复显示时间栏，只保留安全区色块 ===== */
+@media (max-width: 900px){
+  body.miao-real-mobile .dynamic-island{display:none!important;}
+  body.miao-real-mobile .app-screen>.statusbar{
+    display:flex!important;
+    height:calc(env(safe-area-inset-top) + 2px)!important;
+    min-height:18px!important;
+    padding:0!important;
+    flex:0 0 auto!important;
+    background:var(--bar-bg,rgba(255,255,255,.92))!important;
+    color:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+    pointer-events:none!important;
+  }
+  body.miao-real-mobile .app-screen>.statusbar>*{visibility:hidden!important;}
+  body.miao-real-mobile .app-screen.wechat .wechat-head{
+    margin-top:0!important;
+    padding-top:8px!important;
+    padding-bottom:10px!important;
+  }
+  body.miao-real-mobile .header{
+    padding-top:8px!important;
+    padding-bottom:10px!important;
+  }
+  body.miao-real-mobile .home-screen>.statusbar{
+    height:calc(env(safe-area-inset-top) + 2px)!important;
+    min-height:18px!important;
+    padding:0!important;
+    color:transparent!important;
+  }
+  body.miao-real-mobile .home-screen>.statusbar>*{visibility:hidden!important;}
+  body.miao-real-mobile .home-top{padding-top:10px!important;}
+  body.miao-real-mobile .lock-screen{padding-top:calc(env(safe-area-inset-top) + 18px)!important;}
+  body.miao-real-mobile .chat{padding-top:12px!important;}
+}
+
+
 
 
 /* ===== Clawd size polish v1：微信/Claude 小宠物固定尺寸与位置 ===== */
@@ -3644,6 +3682,18 @@ body.keyboard-open .claude-composer textarea{max-height:86px!important;}
             <div class="v3-sub" style="margin-top:4px">浏览器/手机系统会负责位置授权；授权后工具可直接读当前位置。缓存时间用于减少反复定位造成的等待。</div>
           </div>
         </details>
+        <details class="api-fold">
+          <summary><span>角色主动消息</span><small>前台定时</small></summary>
+          <div class="api-fold-body">
+            <div class="v3-sub">网页/PWA 只有在页面还活着或重新回到前台时才能稳定运行；锁屏或彻底杀后台后的真推送需要后端/系统推送。这里修的是前台与回到前台后的主动消息。</div>
+            <label class="api-check-row"><input type="checkbox" id="proactiveEnabled"> <span>开启角色主动发微信消息</span></label>
+            <label>user 多久不回后触发（分钟）</label><input id="proactiveIntervalInput" type="number" min="5" step="5" placeholder="120">
+            <label>每天最多主动消息数</label><input id="proactiveMaxPerDayInput" type="number" min="0" step="1" placeholder="2">
+            <div class="api-inline-actions"><button class="btn" data-action="test-proactive">立即测试主动消息</button></div>
+            <div class="v3-sub" style="margin-top:4px">测试按钮会直接让当前角色后台生成一条微信消息，方便确认 API 与可视化是否正常。</div>
+          </div>
+        </details>
+
         <details class="api-fold">
           <summary><span>回复体验</span><small>速度 / 提示音</small></summary>
           <div class="api-fold-body">
@@ -5396,6 +5446,7 @@ function bindEvents(){
     if(action==="toggle-stream"){ Storage.set("streamEnabled",!Storage.get("streamEnabled",false)); renderApi(); }
     if(action==="toggle-msg-sound"){ Storage.set("msgSoundEnabled",!Storage.get("msgSoundEnabled",true)); renderApi(); playMessageSound(); }
     if(action==="test-api") testApi();
+    if(action==="test-proactive"){ testProactiveMessage(); return; }
     if(action==="fetch-models"){ fetchModels(); return; }
     if(action==="select-model"){ selectModel(id); return; }
     if(action==="fetch-tts-models"){ fetchTTSModels(); return; }
@@ -5558,6 +5609,20 @@ function bindEvents(){
     if(cfg) cfg.style.display = this.checked ? "flex" : "none";
   });
 
+
+// 真机/PWA 顶部省空间：手机上不再重复显示网页仿真状态栏
+(function(){
+  function applyRealMobileChrome(){
+    try{
+      const coarse = (navigator.maxTouchPoints||0)>0 || (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+      const narrow = Math.min(window.innerWidth||9999, window.screen?.width||9999) <= 900;
+      document.body.classList.toggle("miao-real-mobile", !!(coarse && narrow));
+    }catch(e){}
+  }
+  applyRealMobileChrome();
+  window.addEventListener("resize", applyRealMobileChrome, {passive:true});
+  window.addEventListener("orientationchange", ()=>setTimeout(applyRealMobileChrome,120), {passive:true});
+})();
 
 // iOS/PWA 键盘适配：动态使用 visualViewport 高度，避免候选栏/键盘把输入框盖住
 (function(){
@@ -6957,78 +7022,102 @@ const DeskPet = {
 };
 
 /* ===== 微信主动发消息系统 ===== */
+function getProactiveConfig(){
+  const cfg=Storage.get("proactiveMsg", {});
+  return {
+    enabled: cfg.enabled !== false,
+    intervalMinutes: Math.max(5, parseInt(cfg.intervalMinutes)||120),
+    maxPerDay: Math.max(0, parseInt(cfg.maxPerDay)||2)
+  };
+}
 const ProactiveMsg = {
   timer: null,
-  INTERVAL: 2 * 60 * 60 * 1000, // 2小时没动静才触发
-  MAX_PER_DAY: 2, // 一天最多2次
-
+  MIN_TIMER: 30 * 1000,
   todayKey(){ const d=new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; },
+  roleDailyKey(){ return "proactiveDaily_"+(Miao.state.currentRoleId||"default"); },
   getTodayCount(){
-    const rec=Storage.get("proactiveDaily", {date:"", count:0});
+    const rec=Storage.get(this.roleDailyKey(), {date:"", count:0});
     if(rec.date!==this.todayKey()) return 0;
     return rec.count||0;
   },
   bumpTodayCount(){
     const today=this.todayKey();
-    const rec=Storage.get("proactiveDaily", {date:"", count:0});
+    const rec=Storage.get(this.roleDailyKey(), {date:"", count:0});
     const count=(rec.date===today?(rec.count||0):0)+1;
-    Storage.set("proactiveDaily", {date:today, count});
+    Storage.set(this.roleDailyKey(), {date:today, count});
   },
-
+  lastUserAt(){
+    const h=getHistory();
+    const m=[...h].reverse().find(x=>x && x.sender==="user" && !x.blockedFail);
+    return m ? (Number(m.createdAt)||0) : 0;
+  },
+  dueAt(){
+    const cfg=getProactiveConfig();
+    const last=this.lastUserAt();
+    if(!last) return 0;
+    return last + cfg.intervalMinutes*60*1000;
+  },
   reset(){
     clearTimeout(this.timer);
-    // 今天次数用完就不再排定时器
-    if(this.getTodayCount() >= this.MAX_PER_DAY) return;
-    this.timer = setTimeout(()=>this.trigger(), this.INTERVAL);
+    const cfg=getProactiveConfig();
+    if(!cfg.enabled || cfg.maxPerDay<=0 || this.getTodayCount()>=cfg.maxPerDay) return;
+    const due=this.dueAt();
+    if(!due) return;
+    const delay=Math.max(this.MIN_TIMER, due-Date.now());
+    this.timer=setTimeout(()=>this.trigger(), delay);
   },
-
-  stop(){
-    clearTimeout(this.timer);
-    this.timer = null;
+  stop(){ clearTimeout(this.timer); this.timer=null; },
+  checkResume(){
+    const cfg=getProactiveConfig();
+    if(!cfg.enabled || cfg.maxPerDay<=0 || this.getTodayCount()>=cfg.maxPerDay) return;
+    const due=this.dueAt();
+    if(due && Date.now()>=due && !Miao.state.busy){
+      clearTimeout(this.timer);
+      this.timer=setTimeout(()=>this.trigger(), 1200);
+    }else this.reset();
   },
-
-  async trigger(){
-    // 当天次数用完，停
-    if(this.getTodayCount() >= this.MAX_PER_DAY){ return; }
+  async trigger(opts){
+    const force=!!(opts&&opts.force);
+    const cfg=getProactiveConfig();
+    if(!force && (!cfg.enabled || cfg.maxPerDay<=0 || this.getTodayCount()>=cfg.maxPerDay)){ this.reset(); return; }
+    if(!force){
+      const due=this.dueAt();
+      if(!due || Date.now()<due){ this.reset(); return; }
+    }
     const role = currentRole();
-    if(!role) return;
+    if(!role){ this.reset(); return; }
     if(Miao.state.busy) { this.reset(); return; }
     try{
       const api = Storage.get("api", {});
-      if(!api.apiUrl || !api.apiKey || !api.model) return;
+      if(!api.apiUrl || !api.apiKey || !api.model){ this.reset(); return; }
       const h = getHistory();
-      if(!h.length) return; // 没聊过就不主动发
-      const extraSystem = "\n\n【系统提示：主动发消息】以上是你和user之前的微信聊天记录（消息已按发送者区分：role=user 是user发的，role=assistant 是你这个角色发的）。现在的情况是：user已经超过2小时没有回复你了。请你以角色身份，根据你们的关系和之前聊的内容，主动给user发一条全新的微信消息——可以是关心、想念、催一下、撒娇、问问他在干嘛、或开启一个新话题。要求：1) 绝对不要重复或复述你之前已经发过的话；2) 直接输出消息正文，不要解释、不要占位符、不要英文指令；3) 像真人发微信那样自然。";
+      if(!h.length){ this.reset(); return; }
+      const intervalText = cfg.intervalMinutes>=60 && cfg.intervalMinutes%60===0 ? `${cfg.intervalMinutes/60}小时` : `${cfg.intervalMinutes}分钟`;
+      const extraSystem = `\n\n【系统提示：主动发消息】以上是你和user之前的微信聊天记录（消息已按发送者区分：role=user 是user发的，role=assistant 是你这个角色发的）。现在的情况是：user已经超过${intervalText}没有回复你了。请你以角色身份，根据你们的关系和之前聊的内容，主动给user发一条全新的微信消息——可以是关心、想念、催一下、撒娇、问问他在干嘛、或开启一个新话题。要求：1) 绝对不要重复或复述你之前已经发过的话；2) 直接输出消息正文，不要解释、不要占位符、不要英文指令；3) 像真人发微信那样自然。`;
       const reply = await callAI(api, h, undefined, extraSystem);
-      if(!reply || !reply.trim()) return;
+      if(!reply || !reply.trim()){ this.reset(); return; }
       const groupId = uid("aigrp");
       const parsed = applyAutoVoiceMode(parseAIReplyUnified(reply, groupId), "");
-      if(!parsed.length) return;
-      // 防重复：与历史最近一条AI文字消息完全相同则丢弃
+      if(!parsed.length){ this.reset(); return; }
       const newH = getHistory();
-      const lastAiText = [...newH].reverse().find(m=>m.sender==="assistant" && m.type==="text");
+      const lastAiText = [...newH].reverse().find(m=>(m.sender==="assistant"||m.sender==="role") && m.type==="text");
       const firstNewText = parsed.find(m=>m.type==="text");
-      if(lastAiText && firstNewText && lastAiText.content.trim()===firstNewText.content.trim()){
+      if(lastAiText && firstNewText && String(lastAiText.content||"").trim()===String(firstNewText.content||"").trim()){
         this.reset(); return;
       }
       parsed.forEach(m=>newH.push(m));
       saveHistory(newH);
       parsed.filter(m=>m.type==="music"&&m.data&&!m.data.audioUrl&&!m.data.previewUrl).forEach(m=>hydrateAIMusicMsg(m.id,m.data.title,m.data.artist));
       parsed.filter(m=>m.type==="voice"&&m.sender==="role").forEach(m=>hydrateRoleVoiceTTS(m.id, Miao.state.currentRoleId));
-      this.bumpTodayCount(); // 成功发了一次，计数+1
-      // 发完后，如果今天还没用完次数，再排下一次（间隔2小时）
+      this.bumpTodayCount();
       this.reset();
-      // 在微信页就逐条弹，不在就直接存+提示
       if(Miao.state.currentApp === "wechat"){
         renderChat();
         const chat=$("#chat"); if(chat) requestAnimationFrame(()=>{ chat.scrollTop=chat.scrollHeight; });
-      }
-      // 红点 + toast 提示
-      if(Miao.state.currentApp !== "wechat"){
+      }else{
         const badge = document.getElementById("wechatBadge");
         if(badge) badge.style.display = "block";
         const roleName = role.name || "角色";
-        // 取第一条文字消息当通知预览
         const preview = (parsed.find(m=>m.type==="text")||{}).content || "发来一条消息";
         sendSystemNotification("有人想你了", preview, role.avatar);
         showProactiveToast(`${roleName} 发来了消息`, ()=>{
@@ -7038,9 +7127,17 @@ const ProactiveMsg = {
       }
     } catch(e){
       console.error("主动发消息失败", e);
+      this.reset();
     }
   }
 };
+function testProactiveMessage(){
+  saveApiFromForm();
+  toast("正在测试主动消息…");
+  ProactiveMsg.trigger({force:true});
+}
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) ProactiveMsg.checkResume(); });
+window.addEventListener("focus",()=>ProactiveMsg.checkResume());
 
 // ===== 系统通知（iOS PWA 加到主屏后可推送到通知栏）=====
 function ensureNotifyPermission(){
@@ -9332,6 +9429,10 @@ function renderApi(){
   const _pau=document.getElementById("phoneActivityUrlInput"); if(_pau) _pau.value=pa.baseUrl||"";
   const _pat=document.getElementById("phoneActivityTokenInput"); if(_pat) _pat.value=pa.token||"";
   const _pac=document.getElementById("phoneActivityCooldownInput"); if(_pac) _pac.value=String(pa.cooldownMinutes ?? 5);
+  const pm=Storage.get("proactiveMsg",{});
+  const _pme=document.getElementById("proactiveEnabled"); if(_pme) _pme.checked=pm.enabled!==false;
+  const _pmi=document.getElementById("proactiveIntervalInput"); if(_pmi) _pmi.value=String(pm.intervalMinutes ?? 120);
+  const _pmm=document.getElementById("proactiveMaxPerDayInput"); if(_pmm) _pmm.value=String(pm.maxPerDay ?? 2);
   const gw=Storage.get("geoWeather",{});
   const _gww=document.getElementById("geoWeatherWechatEnabled"); if(_gww) _gww.checked=!!gw.wechatEnabled;
   const _gwc=document.getElementById("geoWeatherClaudeEnabled"); if(_gwc) _gwc.checked=!!gw.claudeEnabled;
@@ -9350,6 +9451,9 @@ function saveApiFromForm(){
   Storage.set("ttsApi", { provider:"elevenlabs", apiKey:(tk?tk.value.trim():""), voiceId:(tv?tv.value.trim():""), model:(tm?tm.value.trim():"eleven_v3")||"eleven_v3", mode:(tmode?tmode.value:"explicit")||"explicit" });
   const pae=document.getElementById("phoneActivityEnabled"), pau=document.getElementById("phoneActivityUrlInput"), pat=document.getElementById("phoneActivityTokenInput"), pac=document.getElementById("phoneActivityCooldownInput");
   Storage.set("phoneActivity", { enabled:!!(pae&&pae.checked), baseUrl:(pau?pau.value.trim():"").replace(/\/+$/,""), token:(pat?pat.value.trim():""), cooldownMinutes:Math.max(0, parseInt(pac&&pac.value)||5) });
+  const pme=document.getElementById("proactiveEnabled"), pmi=document.getElementById("proactiveIntervalInput"), pmm=document.getElementById("proactiveMaxPerDayInput");
+  Storage.set("proactiveMsg", { enabled:pme?!!pme.checked:true, intervalMinutes:Math.max(5, parseInt(pmi&&pmi.value)||120), maxPerDay:Math.max(0, parseInt(pmm&&pmm.value)||2) });
+  try{ ProactiveMsg.reset(); }catch(e){}
   const gww=document.getElementById("geoWeatherWechatEnabled"), gwc=document.getElementById("geoWeatherClaudeEnabled"), gwt=document.getElementById("geoWeatherWeatherEnabled"), gwl=document.getElementById("geoWeatherLocationEnabled"), gwa=document.getElementById("geoWeatherAutoEnabled"), gwp=document.getElementById("geoWeatherPrecisionInput"), gwm=document.getElementById("geoWeatherMaxAgeInput");
   Storage.set("geoWeather", { wechatEnabled:!!(gww&&gww.checked), claudeEnabled:!!(gwc&&gwc.checked), weatherEnabled:!!(gwt&&gwt.checked), locationEnabled:!!(gwl&&gwl.checked), autoEnabled:gwa?!!gwa.checked:true, precision:(gwp&&gwp.value)||"exact", maxAgeMinutes:Math.max(0, parseInt(gwm&&gwm.value)||5) });
   const thoughtModeEl=document.getElementById("thoughtModeInput");
