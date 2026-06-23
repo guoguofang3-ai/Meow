@@ -1634,18 +1634,21 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   backdrop-filter:blur(var(--miao-blur,18px)) saturate(1.22)!important;
   -webkit-backdrop-filter:blur(var(--miao-blur,18px)) saturate(1.22)!important;
 }
-.claude-clawd-track{height:52px;position:relative;pointer-events:none;overflow:visible;margin:0 12px -2px;}
-.claude-composer-wrap .input-clawd.clawd-live{
-  top:2px!important;
-  width:54px!important;
-  height:54px!important;
+.claude-clawd-track{height:34px;position:relative;pointer-events:none;overflow:visible;margin:0 12px -12px;}
+.claude-clawd-track .input-clawd.clawd-live{
+  left:50%!important;
+  top:-28px!important;
+  width:66px!important;
+  height:66px!important;
   z-index:98!important;
+  pointer-events:auto!important;
+  transform:translateX(-50%)!important;
+  animation:none!important;
   filter:drop-shadow(0 4px 6px rgba(70,45,30,.18));
-  animation:clawdRunTopClaude 9s linear infinite alternate!important;
 }
-.claude-composer-wrap .input-clawd.clawd-live .clawd-svg-slot{width:54px!important;height:54px!important;}
-.claude-composer-wrap .input-clawd.clawd-live .clawd-live-reaction{display:none!important;}
-@keyframes clawdRunTopClaude{from{transform:translateX(8px)}to{transform:translateX(calc(min(430px,100vw) - 74px))}}
+.claude-clawd-track .input-clawd.clawd-live .clawd-svg-slot{width:66px!important;height:66px!important;}
+.claude-clawd-track .input-clawd.clawd-live .clawd-live-reaction{display:none!important;}
+@keyframes clawdRunTopClaude{from{transform:translateX(-50%)}to{transform:translateX(-50%)}}
 .claude-toolbar{
   padding:5px 10px 0!important;
   gap:8px!important;
@@ -3170,7 +3173,8 @@ body.multiselect-mode .msg{ cursor:pointer; }
   user-select:none!important;
   -webkit-tap-highlight-color:transparent!important;
   image-rendering:pixelated!important;
-  animation:clawdRunTop 8.5s linear infinite alternate!important;
+  transform:translateX(8px)!important;
+  animation:none!important;
   filter:drop-shadow(0 4px 5px rgba(70,45,30,.20));
 }
 .input-clawd.clawd-live .clawd-svg-slot{
@@ -3209,7 +3213,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
 .input-clawd.clawd-live.poked .clawd-svg-slot{animation:clawdPokeBounce .48s steps(2,end)}
 .input-clawd.clawd-live.poked .clawd-live-reaction{opacity:1;transform:translateY(0) scale(1)}
 .input-clawd.clawd-live.hopping .clawd-svg-slot{animation:clawdTinyHop .72s steps(3,end)}
-.composer-wrap.clawd-typing .input-clawd.clawd-live,.claude-composer-wrap.clawd-typing .input-clawd.clawd-live{animation-duration:4.3s!important}
+.composer-wrap.clawd-typing .input-clawd.clawd-live,.claude-composer-wrap.clawd-typing .input-clawd.clawd-live{animation:none!important}
 @keyframes clawdRunTop{from{transform:translateX(8px)}to{transform:translateX(calc(min(430px,100vw) - 80px))}}
 @keyframes clawdPokeBounce{25%{transform:translateY(-4px) rotate(-3deg) scale(1.05)}50%{transform:translateY(2px) rotate(3deg) scale(.96)}75%{transform:translateY(-2px) rotate(-2deg) scale(1.02)}}
 @keyframes clawdTinyHop{0%,100%{transform:translateY(0) rotate(0) scale(1)}25%{transform:translateY(-8px) rotate(-4deg) scale(1.03)}50%{transform:translateY(-13px) rotate(3deg) scale(1.02)}75%{transform:translateY(-4px) rotate(-2deg) scale(1)}} 
@@ -3315,14 +3319,14 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 .composer-wrap,.claude-composer-wrap{padding-bottom:env(safe-area-inset-bottom)!important;}
 
 
-/* ===== Clawd size polish v1：微信/Claude 小宠物略放大，Claude 跑道收窄 ===== */
-.composer-wrap .input-clawd.clawd-live{width:72px!important;height:72px!important;top:-57px!important;}
+/* ===== Clawd size polish v1：微信/Claude 小宠物固定尺寸与位置 ===== */
+.composer-wrap .input-clawd.clawd-live{width:72px!important;height:72px!important;top:-57px!important;transform:translateX(8px)!important;animation:none!important;}
 .composer-wrap .input-clawd.clawd-live .clawd-svg-slot{width:72px!important;height:72px!important;}
-.claude-clawd-track{height:42px!important;margin:0 12px -8px!important;overflow:visible!important;}
-.claude-composer-wrap .input-clawd.clawd-live{width:60px!important;height:60px!important;top:-4px!important;}
-.claude-composer-wrap .input-clawd.clawd-live .clawd-svg-slot{width:60px!important;height:60px!important;}
-@keyframes clawdRunTop{from{transform:translateX(8px)}to{transform:translateX(calc(min(430px,100vw) - 88px))}}
-@keyframes clawdRunTopClaude{from{transform:translateX(8px)}to{transform:translateX(calc(min(430px,100vw) - 82px))}}
+.claude-clawd-track{height:34px!important;margin:0 12px -12px!important;overflow:visible!important;position:relative!important;pointer-events:none!important;}
+.claude-clawd-track .input-clawd.clawd-live{left:50%!important;top:-28px!important;width:66px!important;height:66px!important;transform:translateX(-50%)!important;animation:none!important;pointer-events:auto!important;}
+.claude-clawd-track .input-clawd.clawd-live .clawd-svg-slot{width:66px!important;height:66px!important;}
+@keyframes clawdRunTop{from{transform:translateX(8px)}to{transform:translateX(8px)}}
+@keyframes clawdRunTopClaude{from{transform:translateX(-50%)}to{transform:translateX(-50%)}}
 
 
 /* ===== Memory 感受页 v1：关系天气 / 最近想起 ===== */
@@ -3899,7 +3903,6 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
       </div>
       <div class="claude-chat" id="claudeChat"></div>
       <div class="claude-composer-wrap">
-        <div class="claude-clawd-track" aria-hidden="true"></div>
         <div class="claude-toolbar">
           <label class="chip-btn file-btn">上传文件<input type="file" id="claudeFileInput" multiple accept=".txt,.md,.html,.json,.png,.jpg,.jpeg,.webp,.svg,.css,.js,.jsx,.ts,.tsx,.py,.vue,.svelte,.csv,.xml,.yaml,.yml,.log,.doc,.docx,image/*"></label>
           <button class="chip-btn" data-action="claude-multiselect">多选删除</button>
@@ -3907,6 +3910,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
           <label class="chip-btn file-btn">导入记录<input type="file" accept="application/json,.json" id="claudeImportInput"></label>
           <button class="chip-btn" data-action="clear-claude">清空会话</button>
         </div>
+        <div class="claude-clawd-track" aria-hidden="true"></div>
         <div class="claude-composer">
           <textarea id="claudeInput" placeholder="Message…" rows="1"></textarea>
           <button class="claude-invoke" data-action="invoke-claude" title="召唤 Claude 回复">✦</button>
@@ -16625,11 +16629,12 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     },
     build(wrap){
       wrap.querySelectorAll(".input-clawd").forEach(x=>x.remove());
+      const host=wrap.querySelector(".claude-clawd-track")||wrap;
       const pet=document.createElement("div");
       pet.className="input-clawd clawd-live";
       pet.innerHTML='<div class="clawd-live-reaction"></div><div class="clawd-svg-slot"></div>';
       pet.addEventListener("click",(e)=>{e.stopPropagation();this.poke(pet);});
-      wrap.appendChild(pet);
+      host.appendChild(pet);
       this.renderPet(pet);
     },
     poke(pet){
@@ -16669,11 +16674,10 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     randomHop(){
       const pets=[...document.querySelectorAll(".input-clawd.clawd-live")].filter(p=>!p.classList.contains("poked"));
       if(!pets.length) return;
-      pets.forEach(p=>{
-        p.classList.remove("hopping"); void p.offsetWidth; p.classList.add("hopping");
-        clearTimeout(p._clawdHopTimer);
-        p._clawdHopTimer=setTimeout(()=>p.classList.remove("hopping"),820);
-      });
+      const p=pets[Math.floor(Math.random()*pets.length)];
+      p.classList.remove("hopping"); void p.offsetWidth; p.classList.add("hopping");
+      clearTimeout(p._clawdHopTimer);
+      p._clawdHopTimer=setTimeout(()=>p.classList.remove("hopping"),820);
     },
     startIdleHop(){
       if(this._hopStarted) return;
@@ -16683,7 +16687,7 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
         this._hopLoopTimer=setTimeout(()=>{
           if(this.isEnabled()) this.randomHop();
           loop();
-        },9000+Math.random()*12000);
+        },18000+Math.random()*22000);
       };
       loop();
     },
