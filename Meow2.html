@@ -3378,7 +3378,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 .claude-ops-toggle{border:0;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:950;background:color-mix(in srgb,var(--accent,#111827) 8%,rgba(255,255,255,.72));color:var(--bar-text,#111827);}
 
 </style>
-<script>window.MIAO_BUILD="ArtifactStoreV1";</script>
+<script>window.MIAO_BUILD="ArtifactsDisplayFIX";</script>
 </head>
 <body>
 <div class="phone-shell">
@@ -16468,10 +16468,12 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     return rows;
   }
   function collectArtifacts(includeHidden){
-    var list=[]; if(typeof parseCodeBlocks!=="function") return list;
-    var rows=getAllClaudeArtifactHistories();
+    var list=[];
     var hidden=hiddenSet(), pinned=pinnedSet();
+    var canScanHistory=(typeof parseCodeBlocks==="function");
+    var rows=canScanHistory ? getAllClaudeArtifactHistories() : [];
     var _debugFromStore=0, _debugFromHistory=0, _debugFromRegistry=0, _debugHiddenSkip=0;
+    if(!canScanHistory) console.warn("[collectArtifacts] parseCodeBlocks 不可见，跳过历史扫描，但仍读取 claudeArtifactStore");
     try{
       if(typeof Storage!=="undefined"){
         var store=Storage.get("claudeArtifactStore",[])||[];
