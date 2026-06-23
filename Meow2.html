@@ -9992,7 +9992,7 @@ function renderClaudeBody(m){
     }
     return `<div class="claude-img-card img-loading"><span class="img-spinner"></span>图片生成中…</div>`;
   }
-  const raw=(typeof normalizeClaudePlainOutputsToCode==="function") ? normalizeClaudePlainOutputsToCode(m.content||"", getClaudeHistory()) : (m.content||"");
+  const raw=m.content||"";
 
   // 先处理表情包指令，替换成气泡HTML
   const stickerHtml=(txt)=>{
@@ -11152,7 +11152,6 @@ function buildRoleClaudePrompt(policy={}){
 注意：角色 Claude 与工具 Claude 是两个独立存在；你不共享工具 Claude 的会话、文件、长期记忆或关系状态。
 user 可能请求你写代码、处理文件、生成 HTML/SVG/React。你是否愿意帮忙，要符合当前角色人设和关系。
 如果愿意输出代码，请用 Markdown 代码块，例如 \`\`\`html、\`\`\`svg、\`\`\`jsx。
-如果 user 要你做 txt/doc/文档文件，请把完整正文放进一个代码块：\`\`\`txt 或 \`\`\`doc；不要只写“txt内容：”。
 回复时可以根据性格自由决定是否用双换行拆成多条气泡，但代码块必须保持完整不拆分。
 Claude App 没有微信状态栏；不要输出 [状态更新: ...]，也不要使用微信专用的转账、代付、引用、拉黑、开播等卡片指令，除非 user 正在明确要求你整理这些格式本身。
 
@@ -16330,8 +16329,7 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     for(var i=0;i<h.length;i++){
       var msg=h[i];
       if(!msg || msg.sender!=="assistant" || msg.type!=="text") continue;
-      var src=(typeof normalizeClaudePlainOutputsToCode==="function") ? normalizeClaudePlainOutputsToCode(msg.content||"", h) : (msg.content||"");
-      var parts=parseCodeBlocks(src);
+      var parts=parseCodeBlocks(msg.content||"");
       var local=0;
       for(var j=0;j<parts.length;j++){
         var p=parts[j];
