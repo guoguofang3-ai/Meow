@@ -4335,6 +4335,10 @@ function hydrateMiaoIcons(root){
     if(!el.getAttribute("aria-label")) el.setAttribute("aria-label", el.getAttribute("title")||name);
   });
 }
+try{
+  window.miaoIcon=miaoIcon;
+  window.hydrateMiaoIcons=hydrateMiaoIcons;
+}catch(e){}
 
 const Miao = {
   version:"2.0-base",
@@ -16688,6 +16692,15 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
 (function(){
   function htmlEscape(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]||c;}); }
   function attrEscape(s){ return htmlEscape(s).replace(/`/g,"&#96;"); }
+  function artifactIcon(name, cls){
+    try{ if(typeof window.miaoIcon==="function") return window.miaoIcon(name,cls); }catch(e){}
+    var paths={
+      check:'<path d="M5 12.5l4.2 4L19 7"/>',
+      receipt:'<path d="M7 4h10v16l-2-1.2-2 1.2-2-1.2-2 1.2-2-1.2z"/><path d="M9 8h6M9 12h6M9 16h4"/>'
+    };
+    var key=paths[name]?name:"check";
+    return '<svg class="'+attrEscape(cls||"miao-svg-icon")+'" viewBox="0 0 24 24" aria-hidden="true">'+paths[key]+'</svg>';
+  }
   function cleanName(s){ return String(s||"artifact").replace(/[\\/:*?"<>|]/g," ").replace(/[\r\n\t]+/g," ").replace(/\s+/g," ").trim().slice(0,80)||"artifact"; }
   function langNorm(lang){ lang=String(lang||"code").toLowerCase(); if(lang==="react") return "jsx"; if(lang==="javascript") return "js"; if(lang==="typescript") return "ts"; if(lang==="markdown") return "md"; if(lang==="text") return "txt"; if(lang==="word"||lang==="docx") return "doc"; return lang||"code"; }
   function goodLang(lang){ lang=langNorm(lang); return /^(html|svg|jsx|css|js|ts|tsx|vue|svelte|json|md|txt|doc)$/.test(lang); }
@@ -16798,7 +16811,7 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
   function iconOf(a){ if(a.lang==="json") return "{}"; if(a.lang==="html") return "‹›"; if(a.lang==="md") return "#"; if(a.lang==="doc") return "□"; if(a.lang==="svg") return "◎"; return "⌘"; }
   function renderCard(a){
     var pin=a.pinned?"取消固定":"固定";
-    return '<div class="artifact-card" data-artifact-action="preview" data-id="'+attrEscape(a.id)+'"><div class="artifact-icon">'+htmlEscape(iconOf(a))+'</div><div class="artifact-info"><div class="artifact-name">'+htmlEscape(a.title)+'</div><div class="artifact-meta">'+htmlEscape(labelOfKind(a.kind))+' · '+htmlEscape(extFor(a.lang).toUpperCase())+' · '+htmlEscape(sizeText(a.size))+(a.pinned?' · 已固定':'')+'</div></div><div class="artifact-actions"><button class="artifact-round '+(a.pinned?'pinned':'')+'" data-artifact-action="pin" data-id="'+attrEscape(a.id)+'" title="'+pin+'">'+miaoIcon("check","miao-mini-icon")+'</button><button class="artifact-round" data-miao-icon="receipt" data-artifact-action="download" data-id="'+attrEscape(a.id)+'" title="下载">↓</button><button class="artifact-round danger" data-artifact-action="hide" data-id="'+attrEscape(a.id)+'" title="从文件柜移除">×</button></div></div>';
+    return '<div class="artifact-card" data-artifact-action="preview" data-id="'+attrEscape(a.id)+'"><div class="artifact-icon">'+htmlEscape(iconOf(a))+'</div><div class="artifact-info"><div class="artifact-name">'+htmlEscape(a.title)+'</div><div class="artifact-meta">'+htmlEscape(labelOfKind(a.kind))+' · '+htmlEscape(extFor(a.lang).toUpperCase())+' · '+htmlEscape(sizeText(a.size))+(a.pinned?' · 已固定':'')+'</div></div><div class="artifact-actions"><button class="artifact-round '+(a.pinned?'pinned':'')+'" data-artifact-action="pin" data-id="'+attrEscape(a.id)+'" title="'+pin+'">'+artifactIcon("check","miao-mini-icon")+'</button><button class="artifact-round" data-artifact-action="download" data-id="'+attrEscape(a.id)+'" title="下载">'+artifactIcon("receipt","miao-mini-icon")+'</button><button class="artifact-round danger" data-artifact-action="hide" data-id="'+attrEscape(a.id)+'" title="从文件柜移除">×</button></div></div>';
   }
   function render(){
     var box=document.getElementById("artifactsList"); if(!box) return;
