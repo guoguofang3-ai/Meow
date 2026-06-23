@@ -3088,6 +3088,11 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 .claude-ops-head span:last-child{font-size:12px;color:color-mix(in srgb,var(--accent,#111827) 70%,var(--bar-text,#111827));}
 .claude-ops-terminal{margin-top:10px;border-radius:16px;background:#111;color:#cfd8cc;padding:10px 12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:1.65;white-space:pre-wrap;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);max-height:190px;overflow:auto;}
 .claude-ops-line.done{color:#9bd18d}.claude-ops-line.error{color:#ffb1aa}.claude-ops-line.running{color:#f1e6b6}
+
+.claude-ops-line{display:flex;align-items:center;gap:7px}
+.claude-ops-line-icon{width:15px;height:15px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;color:currentColor;opacity:.96}
+.claude-ops-line-icon svg{width:14px;height:14px;stroke-width:2.15}
+.claude-ops-line-text{min-width:0;word-break:break-word}
 .claude-ops-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;}
 .claude-ops-toggle{border:0;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:950;background:color-mix(in srgb,var(--accent,#111827) 8%,rgba(255,255,255,.72));color:var(--bar-text,#111827);}
 
@@ -3128,78 +3133,39 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 .wechat-tool-trace.error .wechat-tool-mark{color:currentColor}
 @keyframes wechatToolBreath{0%,100%{transform:translateY(0);opacity:.52}50%{transform:translateY(-1px);opacity:1}}
 
-
-/* ===== Role Quiz Sheet v1：Claude 式底部问卷（本地解析，不额外调用 API） ===== */
+/* ===== Role Quiz Sheet v1：底部互动问卷（轻量、本地、不进上下文） ===== */
 .quiz-inline-entry{
-  width:max-content;
-  max-width:84%;
-  margin:8px auto 6px;
-  padding:0 8px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  color:color-mix(in srgb,var(--bar-text,#111827) 46%,var(--accent,#111827) 18%);
-  font-size:12px;
-  font-weight:780;
-  line-height:1.45;
-  letter-spacing:.01em;
-  opacity:.84;
-  text-align:center;
-  user-select:none;
-  cursor:pointer;
+  width:max-content;max-width:82%;margin:8px auto 6px;padding:0 8px;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  color:color-mix(in srgb,var(--bar-text,#111827) 48%,var(--accent,#111827) 18%);
+  font-size:12px;font-weight:780;line-height:1.45;opacity:.84;cursor:pointer;user-select:none;
 }
-.quiz-inline-entry .quiz-inline-icon{
-  width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;
-  color:color-mix(in srgb,var(--accent,#111827) 62%,var(--bar-text,#111827) 24%);flex:0 0 auto;
-}
-.quiz-inline-entry .quiz-inline-icon svg{width:15px;height:15px;stroke-width:2.15}
-.quiz-inline-entry .quiz-inline-title{font-weight:900;color:color-mix(in srgb,var(--bar-text,#111827) 66%,var(--accent,#111827) 12%)}
-.quiz-inline-entry .quiz-inline-detail{font-weight:650;color:color-mix(in srgb,var(--bar-text,#111827) 34%,transparent);margin-left:2px}
-.quiz-inline-entry.answered{opacity:.48}
-.quiz-mask{
-  position:absolute;inset:0;z-index:790;display:none;align-items:flex-end;justify-content:center;
-  background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.30) 45%,rgba(0,0,0,.08));
-  backdrop-filter:blur(2.5px);-webkit-backdrop-filter:blur(2.5px);
-  padding:0 17px 28px;pointer-events:none;
-}
+.quiz-inline-entry .quiz-inline-icon{width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;color:color-mix(in srgb,var(--accent,#111827) 62%,var(--bar-text,#111827) 24%)}
+.quiz-inline-entry svg{width:15px;height:15px;stroke-width:2.15}.quiz-inline-entry.answered{opacity:.45}
+.quiz-mask{position:absolute;inset:0;z-index:790;display:none;align-items:flex-end;justify-content:center;background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(0,0,0,.05) 100%);backdrop-filter:blur(2.5px);-webkit-backdrop-filter:blur(2.5px);padding:0 17px 28px;pointer-events:none}
 .quiz-mask.show{display:flex;pointer-events:auto}
-.quiz-sheet{
-  width:100%;max-height:min(70vh,620px);border-radius:30px;
-  background:color-mix(in srgb,var(--bar-bg,#fff) 92%,rgba(255,255,255,.72));
-  color:var(--bar-text,#111827);
-  border:1px solid color-mix(in srgb,var(--accent,#111827) 9%,rgba(255,255,255,.82));
-  box-shadow:0 24px 72px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.78);
-  overflow:hidden;display:flex;flex-direction:column;animation:quizSlideUp .22s ease;
-}
-@keyframes quizSlideUp{from{transform:translateY(24px);opacity:.55}to{transform:translateY(0);opacity:1}}
-.quiz-sheet-head{height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px;border-bottom:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)}
-.quiz-head-left{display:flex;align-items:center;gap:10px;min-width:0}
-.quiz-nav-btn,.quiz-close-btn{width:34px;height:34px;border:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:transparent;color:color-mix(in srgb,var(--bar-text,#111827) 70%,transparent);font-weight:950;padding:0}
-.quiz-nav-btn:disabled{opacity:.24;cursor:default}
-.quiz-nav-btn svg,.quiz-close-btn svg{width:19px;height:19px;stroke-width:2.2}
-.quiz-nav-btn.prev svg{transform:rotate(180deg)}
-.quiz-close-btn{font-size:30px;line-height:1;font-weight:300}
-.quiz-count{font-size:14px;font-weight:900;color:color-mix(in srgb,var(--bar-text,#111827) 52%,transparent);min-width:54px;text-align:center}
-.quiz-sheet-body{padding:18px 20px 16px;overflow:auto;min-height:0;-webkit-overflow-scrolling:touch}
-.quiz-title{font-size:12px;font-weight:950;color:color-mix(in srgb,var(--accent,#111827) 58%,var(--bar-text,#111827));margin-bottom:10px;letter-spacing:.02em}
-.quiz-question{font-size:18px;font-weight:950;line-height:1.55;letter-spacing:.01em;margin-bottom:12px;white-space:pre-wrap;word-break:break-word}
-.quiz-options{display:flex;flex-direction:column}
-.quiz-option{width:100%;min-height:58px;border:0;border-bottom:1px solid color-mix(in srgb,var(--bar-text,#111827) 10%,transparent);background:transparent;color:var(--bar-text,#111827);display:flex;align-items:center;gap:14px;text-align:left;padding:12px 0;font-size:16px;font-weight:850;line-height:1.45}
-.quiz-option:last-child{border-bottom:1px solid color-mix(in srgb,var(--bar-text,#111827) 10%,transparent)}
-.quiz-option.active{color:var(--accent,#111827)}
-.quiz-option-index{width:34px;height:34px;border-radius:50%;background:color-mix(in srgb,var(--bar-text,#111827) 4%,rgba(255,255,255,.72));color:color-mix(in srgb,var(--bar-text,#111827) 54%,transparent);display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex:0 0 auto}
-.quiz-option.active .quiz-option-index{background:color-mix(in srgb,var(--accent,#111827) 12%,rgba(255,255,255,.86));color:var(--accent,#111827);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent,#111827) 20%,transparent)}
-.quiz-option-text{min-width:0;word-break:break-word;white-space:pre-wrap}
-.quiz-custom-row{min-height:58px;display:flex;align-items:center;gap:14px;padding:12px 0}
-.quiz-custom-icon{width:34px;height:34px;border-radius:50%;background:color-mix(in srgb,var(--bar-text,#111827) 4%,rgba(255,255,255,.72));display:inline-flex;align-items:center;justify-content:center;color:color-mix(in srgb,var(--bar-text,#111827) 52%,transparent);flex:0 0 auto}
-.quiz-custom-icon svg{width:18px;height:18px;stroke-width:2.1}
-.quiz-custom-input{border:0!important;background:transparent!important;border-radius:0!important;padding:8px 0!important;min-height:42px!important;resize:none!important;color:var(--bar-text,#111827)!important;font-size:16px!important;line-height:1.45!important;box-shadow:none!important;outline:none!important}
-.quiz-custom-input::placeholder{color:color-mix(in srgb,var(--bar-text,#111827) 32%,transparent)}
-.quiz-sheet-foot{display:flex;gap:10px;align-items:center;justify-content:flex-end;padding:12px 18px 18px;border-top:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent)}
-.quiz-submit{border:0;border-radius:999px;background:var(--accent,#111827);color:#fff;padding:10px 18px;font-size:13px;font-weight:950;box-shadow:0 10px 26px color-mix(in srgb,var(--accent,#111827) 20%,transparent)}
-.quiz-submit.ghost{background:color-mix(in srgb,var(--bar-text,#111827) 7%,rgba(255,255,255,.8));color:color-mix(in srgb,var(--bar-text,#111827) 62%,transparent);box-shadow:none}
-
+.quiz-sheet{width:100%;max-height:min(70vh,620px);border-radius:30px;background:color-mix(in srgb,var(--bar-bg,#fff) 92%,rgba(255,255,255,.72));border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent);box-shadow:0 26px 70px rgba(38,31,22,.16);overflow:hidden;color:var(--bar-text,#111827);display:flex;flex-direction:column;animation:quizSlideUp .22s ease}
+@keyframes quizSlideUp{from{transform:translateY(28px);opacity:.72}to{transform:translateY(0);opacity:1}}
+.quiz-sheet-head{height:58px;display:flex;align-items:center;gap:12px;padding:0 20px;border-bottom:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent);flex:0 0 auto}
+.quiz-nav-btn,.quiz-close-btn{width:34px;height:34px;border:0;border-radius:999px;background:transparent;color:color-mix(in srgb,var(--bar-text,#111827) 64%,transparent);display:flex;align-items:center;justify-content:center;padding:0}
+.quiz-nav-btn svg{width:20px;height:20px}.quiz-nav-btn.prev svg{transform:rotate(180deg)}.quiz-nav-btn:disabled{opacity:.26}.quiz-close-btn{margin-left:auto;font-size:24px;line-height:1;font-weight:420}
+.quiz-count{font-size:14px;font-weight:880;color:color-mix(in srgb,var(--bar-text,#111827) 56%,transparent);font-variant-numeric:tabular-nums;min-width:54px;text-align:center}
+.quiz-sheet-body{padding:18px 20px 16px;overflow:auto;min-height:0}
+.quiz-title{font-size:12px;font-weight:900;color:color-mix(in srgb,var(--bar-text,#111827) 42%,transparent);margin-bottom:9px;letter-spacing:.04em}
+.quiz-question{font-size:18px;font-weight:950;line-height:1.45;letter-spacing:-.02em;margin-bottom:14px;word-break:break-word}
+.quiz-option{width:100%;min-height:58px;border:0;border-bottom:1px solid color-mix(in srgb,var(--bar-text,#111827) 10%,transparent);background:transparent;color:inherit;display:flex;align-items:center;gap:14px;text-align:left;padding:10px 2px;border-radius:0}
+.quiz-option:active{background:color-mix(in srgb,var(--accent,#111827) 7%,transparent)}
+.quiz-option.active{background:color-mix(in srgb,var(--accent,#111827) 8%,transparent);border-radius:18px;border-bottom-color:transparent;padding-left:10px;padding-right:10px;margin:2px 0}
+.quiz-option-index{width:36px;height:36px;border-radius:50%;background:color-mix(in srgb,var(--bar-bg,#fff) 82%,var(--bar-text,#111827) 3%);display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:13px;font-weight:900;color:color-mix(in srgb,var(--bar-text,#111827) 64%,transparent)}
+.quiz-option.active .quiz-option-index{background:color-mix(in srgb,var(--accent,#111827) 16%,var(--bar-bg,#fff));color:var(--bar-text,#111827)}
+.quiz-option-text{font-size:16px;font-weight:820;line-height:1.45;word-break:break-word}
+.quiz-custom-row{display:flex;align-items:center;gap:12px;min-height:58px;padding:11px 2px 0}
+.quiz-custom-icon{width:36px;height:36px;border-radius:50%;background:color-mix(in srgb,var(--bar-bg,#fff) 82%,var(--bar-text,#111827) 3%);display:flex;align-items:center;justify-content:center;color:color-mix(in srgb,var(--bar-text,#111827) 62%,transparent);flex:0 0 auto}
+.quiz-custom-icon svg{width:18px;height:18px;stroke-width:2.2}
+.quiz-custom-input{border:0!important;background:transparent!important;border-radius:0!important;padding:8px 0!important;min-height:42px!important;height:42px;resize:none;box-shadow:none!important;font-size:16px!important;font-weight:760;color:var(--bar-text,#111827)!important;line-height:1.35!important}
+.quiz-custom-input::placeholder{color:color-mix(in srgb,var(--bar-text,#111827) 30%,transparent)!important;opacity:1!important}
+.quiz-sheet-foot{display:flex;gap:10px;padding:12px 18px 18px;border-top:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent);flex:0 0 auto}
+.quiz-submit{flex:1;border:0;border-radius:999px;padding:11px 14px;background:color-mix(in srgb,var(--accent,#111827) 14%,var(--bar-bg,#fff));color:var(--bar-text,#111827);font-weight:950}.quiz-submit:active{transform:scale(.985)}
 
 
 
@@ -3645,6 +3611,23 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
           </div>
         </details>
 
+
+
+        <details class="api-fold">
+          <summary><span>天气 / 位置工具</span><small>轻工具</small></summary>
+          <div class="api-fold-body">
+            <div class="v3-sub">开启后，微信角色和 Claude 可以真实调用手机当前位置与当前位置天气；不填默认城市。角色是否主动查，由下面的开关和人设共同决定。</div>
+            <label class="api-check-row"><input type="checkbox" id="geoWeatherWechatEnabled"> <span>开放给微信角色</span></label>
+            <label class="api-check-row"><input type="checkbox" id="geoWeatherClaudeEnabled"> <span>开放给 Claude 助手</span></label>
+            <label class="api-check-row"><input type="checkbox" id="geoWeatherWeatherEnabled"> <span>允许查询当前位置天气</span></label>
+            <label class="api-check-row"><input type="checkbox" id="geoWeatherLocationEnabled"> <span>允许查询手机当前位置</span></label>
+            <label class="api-check-row"><input type="checkbox" id="geoWeatherAutoEnabled"> <span>允许角色按人设主动调用，不必等 user 明确要求</span></label>
+            <label>位置精度</label>
+            <select id="geoWeatherPrecisionInput"><option value="exact">直接查手机精确位置</option><option value="coarse">只给大概区域</option></select>
+            <label>定位缓存时间（分钟）</label><input id="geoWeatherMaxAgeInput" type="number" min="0" step="1" placeholder="5">
+            <div class="v3-sub" style="margin-top:4px">浏览器/手机系统会负责位置授权；授权后工具可直接读当前位置。缓存时间用于减少反复定位造成的等待。</div>
+          </div>
+        </details>
         <details class="api-fold">
           <summary><span>回复体验</span><small>速度 / 提示音</small></summary>
           <div class="api-fold-body">
@@ -4432,11 +4415,14 @@ const MIAO_ICON_PATHS={
   search:'<circle cx="10.8" cy="10.8" r="4.8"/><path d="M14.4 14.4L19 19"/>',
   file:'<path d="M6 4h8l4 4v12H6z"/><path d="M14 4v5h5M9 13h6M9 17h5"/>',
   device:'<rect x="7" y="3.8" width="10" height="16.4" rx="3.2"/><path d="M10 7h4M11 17h2"/>',
+  bluetooth:'<path d="M8 6l8 6-8 6V6z"/><path d="M8 6l8 6-8 6M8 12l8-6M8 12l8 6"/><path d="M5 8.5c-1.4 1.9-1.4 5.1 0 7M19 8.5c1.4 1.9 1.4 5.1 0 7"/>',
   chevron:'<path d="M9 6l6 6-6 6"/>',
   close:'<path d="M6 6l12 12M18 6L6 18"/>',
   calendar:'<rect x="5" y="6" width="14" height="13" rx="3"/><path d="M8 4v4M16 4v4M5 10h14"/>',
   note:'<path d="M6 5h12v14H6z"/><path d="M9 9h6M9 13h5"/>',
-  product:'<path d="M7 7h10v12H7z"/><path d="M9 7a3 3 0 0 1 6 0"/><path d="M10 12h4"/>'
+  product:'<path d="M7 7h10v12H7z"/><path d="M9 7a3 3 0 0 1 6 0"/><path d="M10 12h4"/>',
+  location:'<path d="M12 21s6-5.1 6-10.2A6 6 0 0 0 6 10.8C6 15.9 12 21 12 21z"/><circle cx="12" cy="10.8" r="2.2"/>',
+  weather:'<path d="M8.2 17.5h7.5a4 4 0 0 0 .4-8 5.2 5.2 0 0 0-10 1.7A3.3 3.3 0 0 0 8.2 17.5z"/><path d="M9 20l-1 1.5M13 20l-1 1.5M17 20l-1 1.5"/>'
 };
 function miaoIcon(name, cls){
   const key=MIAO_ICON_PATHS[name]?name:"app";
@@ -4994,6 +4980,9 @@ function ensureDefaults(){
   }
   if(!Storage.get("phoneActivity", null)){
     Storage.set("phoneActivity", {enabled:false, baseUrl:"", token:"", cooldownMinutes:5});
+  }
+  if(!Storage.get("geoWeather", null)){
+    Storage.set("geoWeather", {wechatEnabled:false, claudeEnabled:false, weatherEnabled:false, locationEnabled:false, autoEnabled:true, precision:"exact", maxAgeMinutes:5});
   }
   if(!Storage.get("theme", null)){
     Storage.set("theme", {themeId:"simple"});
@@ -7171,9 +7160,11 @@ function wechatToolMeta(name,args={}){
     read_memory:{label:"记忆",icon:"memory",detail:args.query||args.category||""},
     read_diary:{label:"日记",icon:"diary",detail:args.query||args.category||""},
     read_phone_activity:{label:"监控",icon:"monitor",detail:args.summary?"摘要":""},
-    device_status:{label:"外接设备",icon:"device"},
-    device_set_mode:{label:"外接设备",icon:"device",detail:args.mode?`模式 ${args.mode}`:""},
-    device_stop:{label:"外接设备",icon:"device",detail:"停止"}
+    get_user_location:{label:"位置",icon:"location",detail:args.precision||""},
+    get_weather:{label:"天气",icon:"weather",detail:args.location||"当前位置"},
+    device_status:{label:"蓝牙设备",icon:"bluetooth"},
+    device_set_mode:{label:"蓝牙模式",icon:"bluetooth",detail:args.mode?`模式 ${args.mode}`:""},
+    device_stop:{label:"蓝牙设备",icon:"bluetooth",detail:"停止"}
   };
   return map[name] || {label:name||"工具",icon:"command",detail:""};
 }
@@ -7185,12 +7176,21 @@ function summarizeWechatToolResult(name,result){
     if(result.count!=null) return `${result.count} 条`;
     if(result.summary) return "摘要";
   }
+  if(name==="get_user_location"){
+    if(result.ok===false) return result.error||"失败";
+    return result.precision==="coarse"?"大概区域":(result.accuracy?`±${Math.round(result.accuracy)}m`:"已获取");
+  }
+  if(name==="get_weather"){
+    if(result.ok===false) return result.error||"失败";
+    const t=result.temperature!=null?`${Math.round(result.temperature)}°C`:"";
+    return [t,result.weather].filter(Boolean).join(" ");
+  }
   if(name==="search_history" && result.count!=null) return `${result.count} 条`;
   if(name==="read_memory" && result.count!=null) return `${result.count} 条`;
   if(name==="read_diary" && result.count!=null) return `${result.count} 条`;
   if(name==="read_file" && result.length!=null) return `${result.length} 字`;
-  if(name==="device_status") return result.connected?"已连接":"未连接";
-  if(name==="device_set_mode") return result.ok===false?"失败":"已切换";
+  if(name==="device_status") return result.connected?`已连接${result.modeText?" · "+result.modeText:""}`:"未连接";
+  if(name==="device_set_mode") return result.ok===false?"失败":(result.mode!=null?`模式${result.mode}`:"已切换");
   if(name==="device_stop") return result.ok===false?"失败":"已停止";
   return "";
 }
@@ -7229,56 +7229,55 @@ function updateWechatToolTrace(id,state,note){
   }catch(e){ console.warn("[wechat tool trace] update failed",e); }
 }
 
-
-
-/* ===== Role Quiz Sheet v1：AI 输出 ```quiz JSON，本地弹出底部问卷 ===== */
-function normalizeQuizData(q){
-  if(!q || typeof q!=="object") return null;
-  const title=String(q.title || q.name || "临时问卷").trim().slice(0,40) || "临时问卷";
-  const rawQuestions=Array.isArray(q.questions)?q.questions:[];
-  const questions=rawQuestions.slice(0,3).map((it,idx)=>{
-    it=it||{};
-    const question=String(it.question || it.q || it.title || "").trim().slice(0,240);
-    if(!question) return null;
-    const options=(Array.isArray(it.options)?it.options:[]).slice(0,4).map(x=>String(x==null?"":x).trim()).filter(x=>x.length).map(x=>x.slice(0,120));
-    return {
-      id:String(it.id || ("q"+(idx+1))).replace(/[^a-zA-Z0-9_\-]/g,"").slice(0,24) || ("q"+(idx+1)),
-      question,
-      type:"single_select",
-      options,
-      allowCustom:it.allowCustom!==false,
-      placeholder:String(it.placeholder || "Type your answer...").slice(0,60)
-    };
-  }).filter(Boolean);
-  if(!questions.length) return null;
-  return {id:String(q.id||uid("quizdef")),title,questions};
-}
 function extractQuizBlock(text){
-  const raw=String(text||"");
-  const re=/```[ \t]*quiz[ \t\r\n]*([\s\S]*?)```/i;
+  let raw=String(text||"");
+  const re=/```\s*quiz\s*([\s\S]*?)```/i;
   const m=raw.match(re);
   if(!m) return {text:raw,quiz:null};
   let quiz=null;
-  try{ quiz=normalizeQuizData(JSON.parse(String(m[1]||"").trim())); }
-  catch(e){ console.warn("[quiz] parse failed", e); }
+  try{
+    quiz=JSON.parse(String(m[1]||"").trim());
+    quiz=normalizeQuizData(quiz);
+  }catch(e){ quiz=null; }
   return {text:raw.replace(re,"").trim(), quiz};
 }
+function normalizeQuizData(q){
+  q=q&&typeof q==="object"?q:{};
+  const qs=Array.isArray(q.questions)?q.questions:[];
+  const out={title:String(q.title||"问卷").trim().slice(0,40)||"问卷",questions:[]};
+  qs.slice(0,3).forEach((it,idx)=>{
+    if(!it || typeof it!=="object") return;
+    const question=String(it.question||it.title||"").trim();
+    if(!question) return;
+    const options=(Array.isArray(it.options)?it.options:[]).slice(0,4).map(x=>String(x||"").trim()).filter(Boolean);
+    if(options.length<2 && it.allowCustom===false) return;
+    out.questions.push({
+      id:String(it.id||`q${idx+1}`).replace(/[^a-zA-Z0-9_-]/g,"").slice(0,24)||`q${idx+1}`,
+      question:question.slice(0,240),
+      type:"single_select",
+      options:options.slice(0,4),
+      allowCustom:it.allowCustom!==false,
+      placeholder:String(it.placeholder||"Type your answer...").slice(0,60)
+    });
+  });
+  return out.questions.length?out:null;
+}
 function renderQuizInlineEntry(m){
-  const d=m.data||{};
-  const quiz=d.quiz||{};
-  const count=(quiz.questions||[]).length||1;
-  const answered=!!d.answered;
-  const title=quiz.title||"临时问卷";
-  return `<div class="quiz-inline-entry ${answered?"answered":""}" data-quiz-action="open" data-id="${escapeAttr(m.id||"")}"><span class="quiz-inline-icon">${miaoIcon("note","miao-mini-icon")}</span><span><span class="quiz-inline-title">${escapeHtml(answered?"问卷已回答":title)}</span></span><span class="quiz-inline-detail">· ${answered?"点此查看":""}${count} 题</span></div>`;
+  const q=m.data&&m.data.quiz;
+  if(!q) return "";
+  const answered=!!(m.data&&m.data.answered);
+  const count=(q.questions||[]).length||1;
+  const label=answered?"问卷已回答":`${q.title||"问卷"} · ${count}题`;
+  return `<div class="quiz-inline-entry ${answered?"answered":""}" data-quiz-action="open" data-id="${escapeAttr(m.id||"")}"><span class="quiz-inline-icon">${miaoIcon("note","miao-mini-icon")}</span><span>${escapeHtml(label)}</span></div>`;
 }
 function findQuizMessage(id){
-  return getHistory().find(m=>m && m.type==="quiz" && m.id===id) || null;
+  return getHistory().find(m=>m.type==="quiz" && m.id===id) || null;
 }
 function latestOpenQuizMessage(){
   const h=getHistory();
   for(let i=h.length-1;i>=0;i--){
     const m=h[i];
-    if(m && m.type==="quiz" && m.data && !m.data.answered && !m.data.dismissed) return m;
+    if(m&&m.type==="quiz"&&m.data&&m.data.quiz&&!m.data.answered) return m;
   }
   return null;
 }
@@ -7288,147 +7287,96 @@ function ensureQuizLayer(){
   mask=document.createElement("div");
   mask.id="quizMask";
   mask.className="quiz-mask";
-  const host=document.querySelector(".screen") || document.body;
+  const host=document.querySelector(".screen")||document.body;
   host.appendChild(mask);
   return mask;
 }
-function currentQuizState(){ return Miao.state.quizSheet || null; }
 function openQuizSheet(id, manual){
   const m=findQuizMessage(id);
-  if(!m || !m.data || !m.data.quiz) return;
-  const old=currentQuizState();
-  Miao.state.quizSheet={id:m.id,index:old && old.id===m.id ? old.index||0 : 0,answers:Object.assign({},m.data.answers||{})};
-  if(manual){
-    m.data.dismissed=false;
-    const h=getHistory(); saveHistory(h);
-  }
+  if(!m||!m.data||!m.data.quiz){ toast("问卷不存在"); return; }
+  Miao.state.quizSheet={id:m.id,index:0,answers:Object.assign({},m.data.answers||{})};
+  if(manual){ m.data.dismissed=false; saveHistory(getHistory()); }
   renderQuizSheet();
 }
 function closeQuizSheet(markDismissed=true){
-  const st=currentQuizState();
-  if(st && markDismissed){
-    const h=getHistory();
-    const m=h.find(x=>x && x.type==="quiz" && x.id===st.id);
-    if(m && m.data && !m.data.answered){ m.data.dismissed=true; saveHistory(h); }
+  const st=Miao.state.quizSheet;
+  if(markDismissed&&st&&st.id){
+    const h=getHistory(); const m=h.find(x=>x.id===st.id);
+    if(m&&m.data){ m.data.dismissed=true; saveHistory(h); }
   }
   Miao.state.quizSheet=null;
   const mask=document.getElementById("quizMask");
   if(mask){ mask.classList.remove("show"); mask.innerHTML=""; }
-  renderChat();
 }
 function syncQuizCustomInput(){
-  const st=currentQuizState(); if(!st) return;
-  const m=findQuizMessage(st.id); if(!m || !m.data || !m.data.quiz) return;
-  const q=(m.data.quiz.questions||[])[st.index||0]; if(!q) return;
-  const input=document.getElementById("quizCustomInput"); if(!input) return;
-  const val=String(input.value||"").trim();
-  if(val) st.answers[q.id]={kind:"custom",text:val};
-  else if(st.answers[q.id] && st.answers[q.id].kind==="custom") delete st.answers[q.id];
+  const st=Miao.state.quizSheet; if(!st) return;
+  const m=findQuizMessage(st.id); const q=m&&m.data&&m.data.quiz&&m.data.quiz.questions[st.index||0];
+  const input=document.getElementById("quizCustomInput");
+  if(!q||!input) return;
+  const val=String(input.value||"");
+  if(val.trim()) st.answers[q.id]={kind:"custom",text:val.trim()};
+  else if(st.answers[q.id]&&st.answers[q.id].kind==="custom") delete st.answers[q.id];
 }
 function renderQuizSheet(){
-  const st=currentQuizState();
+  const st=Miao.state.quizSheet; if(!st) return;
+  const m=findQuizMessage(st.id); if(!m||!m.data||!m.data.quiz){ closeQuizSheet(false); return; }
+  const quiz=m.data.quiz; const qs=quiz.questions||[]; if(!qs.length){ closeQuizSheet(false); return; }
+  const idx=Math.max(0,Math.min(qs.length-1,st.index||0)); st.index=idx;
+  const q=qs[idx]; const ans=st.answers&&st.answers[q.id];
+  const options=(q.options||[]).map((op,i)=>`<button class="quiz-option ${ans&&ans.kind==="option"&&ans.index===i?"active":""}" data-quiz-action="option" data-index="${i}"><span class="quiz-option-index">${i+1}</span><span class="quiz-option-text">${escapeHtml(op)}</span></button>`).join("");
+  const customVal=ans&&ans.kind==="custom"?ans.text:"";
   const mask=ensureQuizLayer();
-  if(!st){ mask.classList.remove("show"); mask.innerHTML=""; return; }
-  const m=findQuizMessage(st.id);
-  if(!m || !m.data || !m.data.quiz){ closeQuizSheet(false); return; }
-  const quiz=m.data.quiz;
-  const qs=quiz.questions||[];
-  const idx=Math.max(0,Math.min(st.index||0,qs.length-1));
-  st.index=idx;
-  const q=qs[idx];
-  const ans=st.answers[q.id] || null;
-  const customText=ans && ans.kind==="custom" ? ans.text : "";
+  mask.innerHTML=`<div class="quiz-sheet" role="dialog" aria-modal="true"><div class="quiz-sheet-head"><button class="quiz-nav-btn prev" data-quiz-action="prev" ${idx<=0?"disabled":""}>${miaoIcon("chevron","miao-mini-icon")}</button><div class="quiz-count">${idx+1} of ${qs.length}</div><button class="quiz-nav-btn" data-quiz-action="next" ${idx>=qs.length-1?"disabled":""}>${miaoIcon("chevron","miao-mini-icon")}</button><button class="quiz-close-btn" data-quiz-action="close" aria-label="关闭">×</button></div><div class="quiz-sheet-body"><div class="quiz-title">${escapeHtml(quiz.title||"问卷")}</div><div class="quiz-question">${escapeHtml(q.question||"")}</div>${options}${q.allowCustom!==false?`<div class="quiz-custom-row"><span class="quiz-custom-icon">${miaoIcon("edit","miao-mini-icon")}</span><textarea id="quizCustomInput" class="quiz-custom-input" data-quiz-action="custom" placeholder="${escapeAttr(q.placeholder||"Type your answer...")}">${escapeHtml(customVal)}</textarea></div>`:""}</div><div class="quiz-sheet-foot"><button class="quiz-submit" data-quiz-action="submit">提交答案</button></div></div>`;
   mask.classList.add("show");
-  mask.innerHTML=`<div class="quiz-sheet" role="dialog" aria-label="${escapeAttr(quiz.title||"问卷")}">
-    <div class="quiz-sheet-head">
-      <div class="quiz-head-left">
-        <button class="quiz-nav-btn prev" data-quiz-action="prev" ${idx<=0?"disabled":""} aria-label="上一题">${miaoIcon("chevron")}</button>
-        <div class="quiz-count">${idx+1} of ${qs.length}</div>
-        <button class="quiz-nav-btn" data-quiz-action="next" ${idx>=qs.length-1?"disabled":""} aria-label="下一题">${miaoIcon("chevron")}</button>
-      </div>
-      <button class="quiz-close-btn" data-quiz-action="close" aria-label="关闭">${miaoIcon("close")}</button>
-    </div>
-    <div class="quiz-sheet-body">
-      <div class="quiz-title">${escapeHtml(quiz.title||"临时问卷")}</div>
-      <div class="quiz-question">${escapeHtml(q.question||"")}</div>
-      <div class="quiz-options">
-        ${(q.options||[]).map((opt,i)=>`<button class="quiz-option ${ans&&ans.kind==="option"&&ans.index===i?"active":""}" data-quiz-action="option" data-index="${i}"><span class="quiz-option-index">${i+1}</span><span class="quiz-option-text">${escapeHtml(opt)}</span></button>`).join("")}
-      </div>
-      ${q.allowCustom!==false?`<div class="quiz-custom-row"><span class="quiz-custom-icon">${miaoIcon("edit")}</span><textarea id="quizCustomInput" class="quiz-custom-input" rows="1" data-quiz-action="custom" placeholder="${escapeAttr(q.placeholder||"Type your answer...")}">${escapeHtml(customText)}</textarea></div>`:""}
-    </div>
-    <div class="quiz-sheet-foot"><button class="quiz-submit ghost" data-quiz-action="close">稍后</button><button class="quiz-submit" data-quiz-action="submit">提交回答</button></div>
-  </div>`;
-  const input=document.getElementById("quizCustomInput");
-  if(input){ input.focus({preventScroll:true}); input.blur(); }
+  setTimeout(()=>{ const input=document.getElementById("quizCustomInput"); if(input&&customVal) input.selectionStart=input.selectionEnd=input.value.length; },0);
 }
 function maybeAutoOpenLatestQuiz(){
-  try{
-    if(Miao.state.currentApp!=="wechat") return;
-    if(currentQuizState()) return;
-    if(!Miao.state.quizAutoOpened) Miao.state.quizAutoOpened={};
-    const m=latestOpenQuizMessage();
-    if(!m || Miao.state.quizAutoOpened[m.id]) return;
-    Miao.state.quizAutoOpened[m.id]=1;
-    openQuizSheet(m.id,false);
-  }catch(e){ console.warn("[quiz] auto open failed", e); }
+  if(Miao.state.currentApp!=="wechat") return;
+  if(Miao.state.quizSheet&&Miao.state.quizSheet.id) return;
+  const m=latestOpenQuizMessage();
+  if(!m||m.data.dismissed) return;
+  Miao.state.quizAutoOpened=Miao.state.quizAutoOpened||{};
+  if(Miao.state.quizAutoOpened[m.id]) return;
+  Miao.state.quizAutoOpened[m.id]=true;
+  openQuizSheet(m.id,false);
 }
 function quizAnswerText(quiz, answers){
-  const lines=[`[问卷回答：${quiz.title||"临时问卷"}]`];
-  (quiz.questions||[]).forEach((q,i)=>{
+  const lines=[`[问卷回答：${quiz.title||"问卷"}]`];
+  (quiz.questions||[]).forEach((q,idx)=>{
     const a=answers[q.id];
-    let val="";
-    if(a && a.kind==="option") val=(q.options||[])[a.index] || "";
-    else if(a && a.kind==="custom") val=a.text || "";
-    lines.push(`Q${i+1}：${q.question||""}`);
-    lines.push(`A：${val||"（未回答）"}`);
+    const text=a?(a.kind==="option"?(q.options&&q.options[a.index]||a.text||""):a.text||""):"";
+    lines.push(`Q${idx+1}：${q.question}`);
+    lines.push(`A：${text||"（未作答）"}`);
   });
   return lines.join("\n");
 }
 function submitQuizAnswer(){
   syncQuizCustomInput();
-  const st=currentQuizState(); if(!st) return;
-  const h=getHistory();
-  const m=h.find(x=>x && x.type==="quiz" && x.id===st.id);
-  if(!m || !m.data || !m.data.quiz) return;
-  const quiz=m.data.quiz;
-  const missing=(quiz.questions||[]).find(q=>!st.answers[q.id]);
-  if(missing){ toast("还有题没回答"); return; }
-  const text=quizAnswerText(quiz, st.answers);
-  m.data.answered=true;
-  m.data.dismissed=true;
-  m.data.answers=Object.assign({}, st.answers);
-  m.data.answerText=text;
-  h.push({id:uid("msg"),groupId:uid("quizgrp"),sender:"user",type:"text",content:text,read:false,createdAt:Date.now(),time:nowTime()});
-  saveHistory(h);
-  Miao.state.quizSheet=null;
-  const mask=document.getElementById("quizMask");
-  if(mask){ mask.classList.remove("show"); mask.innerHTML=""; }
-  renderChat();
+  const st=Miao.state.quizSheet; if(!st) return;
+  const h=getHistory(); const m=h.find(x=>x.id===st.id); const quiz=m&&m.data&&m.data.quiz;
+  if(!m||!quiz) return;
+  const missing=(quiz.questions||[]).find(q=>{ const a=st.answers&&st.answers[q.id]; return !a || !String(a.text||((q.options||[])[a.index])||"").trim(); });
+  if(missing){ toast("还有题没答完"); return; }
+  const content=quizAnswerText(quiz, st.answers||{});
+  m.data.answered=true; m.data.dismissed=true; m.data.answers=st.answers||{}; m.data.answerText=content;
+  h.push({id:uid("msg"),groupId:uid("usergrp"),sender:"user",type:"text",content,read:false,createdAt:Date.now(),time:nowTime()});
+  saveHistory(h); closeQuizSheet(false); renderChat();
   setTimeout(()=>{ if(!Miao.state.busy) callAIReply(); },120);
 }
 document.addEventListener("click",function(e){
-  const btn=e.target.closest("[data-quiz-action]");
-  if(!btn) return;
-  const action=btn.getAttribute("data-quiz-action");
-  if(action==="open"){ e.preventDefault(); openQuizSheet(btn.getAttribute("data-id"), true); return; }
-  const st=currentQuizState();
-  if(!st) return;
-  if(action==="close"){ e.preventDefault(); syncQuizCustomInput(); closeQuizSheet(true); return; }
-  if(action==="prev" || action==="next"){
-    e.preventDefault(); syncQuizCustomInput(); st.index=Math.max(0,(st.index||0)+(action==="next"?1:-1)); renderQuizSheet(); return;
-  }
-  if(action==="option"){
-    e.preventDefault();
-    const m=findQuizMessage(st.id); const q=m&&m.data&&m.data.quiz&&(m.data.quiz.questions||[])[st.index||0];
-    if(!q) return;
-    st.answers[q.id]={kind:"option",index:Number(btn.getAttribute("data-index")||0)};
-    renderQuizSheet(); return;
-  }
-  if(action==="submit"){ e.preventDefault(); submitQuizAnswer(); return; }
-});
+  const b=e.target.closest&&e.target.closest("[data-quiz-action]"); if(!b) return;
+  const act=b.getAttribute("data-quiz-action");
+  if(act==="open"){ e.preventDefault(); openQuizSheet(b.getAttribute("data-id"),true); return; }
+  if(!Miao.state.quizSheet) return;
+  if(act==="close"){ e.preventDefault(); closeQuizSheet(true); return; }
+  if(act==="prev"||act==="next"){ e.preventDefault(); syncQuizCustomInput(); const st=Miao.state.quizSheet; st.index=(st.index||0)+(act==="next"?1:-1); renderQuizSheet(); return; }
+  if(act==="option"){ e.preventDefault(); const st=Miao.state.quizSheet; const m=findQuizMessage(st.id); const q=m&&m.data&&m.data.quiz&&m.data.quiz.questions[st.index||0]; if(!q) return; const idx=parseInt(b.getAttribute("data-index")); st.answers[q.id]={kind:"option",index:idx,text:(q.options||[])[idx]||""}; renderQuizSheet(); return; }
+  if(act==="submit"){ e.preventDefault(); submitQuizAnswer(); return; }
+},true);
 document.addEventListener("input",function(e){
-  if(e.target && e.target.id==="quizCustomInput") syncQuizCustomInput();
-});
+  const el=e.target; if(!el || el.getAttribute("data-quiz-action")!=="custom") return;
+  syncQuizCustomInput();
+},true);
 
 function renderMessage(m,h,idx){
   if(m.type==="error") return `<div class="system-card error err-dismissable"><span class="err-text">${escapeHtml(m.content)}</span><button class="err-close" onclick="dismissErrorMsg('${m.id}')" title="关闭">×</button></div>`;
@@ -8452,11 +8400,11 @@ function hideTypingIndicator(){
 // 根据气泡内容估算"打字"时长（毫秒），短句快、长句稍慢，带上下限
 function typingDelayFor(msg){
   if(!msg) return 350;
-  if(msg.type==="quiz") return 260;
   if(msg.type==="text"){
     const len=(msg.content||"").length;
     return Math.max(280, Math.min(1000, 220+len*28));
   }
+  if(msg.type==="quiz") return 260;
   // 表情包/图片/语音等非文字气泡，固定较短停顿
   return 400;
 }
@@ -8593,8 +8541,8 @@ async function callAIReply(){
       let parsed=applyAutoVoiceMode(ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||""), newUser.content||"");
       if(!parsed.length){ saveHistory(h); renderChat(); Miao.state.busy=false; return; }
       await prepareThoughtProcessForParsed(api, parsed, {newUser, rawReply:reply, groupId});
-      // 逐条弹出，拟真人连发
-      await revealMessagesSequentially(h, parsed, groupId);
+      // 逐条弹出，拟真人连发；callAI 期间可能已经写入工具调用轨迹，必须用最新历史，避免覆盖掉工具提示。
+      await revealMessagesSequentially(getHistory(), parsed, groupId);
       checkSaveMarker(Miao.state.lastAIContent||"");
       checkStickyNoteMarker(Miao.state.lastAIContent||"");
       checkDiceMarker(Miao.state.lastAIContent||"");
@@ -8618,7 +8566,6 @@ async function callAIReply(){
 function messageToAIContext(m){
   const d=m.data||{};
   const quotePrefix=m.quoteId||m.quoteContent ? `[引用:${m.quoteContent||""}] ` : "";
-  if(m.type==="quiz" || m.type==="tool_trace") return "";
   if(m.type==="sticker") return `[表情包:${d.name||m.content}|含义:${d.meaning||""}]`;
   if(m.type==="voice") return `[语音:${d.text||m.content}]`;
   if(m.type==="link") return `[链接:${d.platform||"论坛"}|${d.title||""}]`;
@@ -8632,6 +8579,7 @@ function messageToAIContext(m){
   if(m.type==="role_transfer") return `[角色转账:${d.amount||""}|${d.note||""}|状态:${d.status||"pending"}]`;
   if(m.type==="live_invite") return `[你发起了直播邀请${d.note?"："+d.note:""}]`;
   if(m.type==="shop_share"){ const its=(d.items||[]).map(i=>`${i.name}×${i.qty}`).join("、"); return `[user分享了商品：${its}，合计¥${d.total}]`; }
+  if(m.type==="quiz" || m.type==="tool_trace") return "";
   if(m.type==="received") return `[收款完成:${d.amount||""}|user已确认收款，本次转账流程已结束，不需要再发起任何转账]`;
   if(m.type==="paid") return `[代付完成:${d.amount||""}|${d.item||""}]`;
   if(m.type==="rejected") return `[拒绝:${m.content||""}]`;
@@ -8775,7 +8723,10 @@ async function callAI(api, history, onChunk, extraSystem){
     })()
   ];
   const url=normalizeChatUrl(api.apiUrl);
-  const useStream=Storage.get("streamEnabled",false) && typeof onChunk==="function";
+  const latestUserText = history.slice().reverse().find(m=>m.sender==="user")?.content || "";
+  const offerPhoneActivity = shouldOfferPhoneActivityTool(latestUserText, history);
+  const forceWechatToolLoop = offerPhoneActivity || isGeoWeatherToolAllowed("wechat");
+  const useStream=Storage.get("streamEnabled",false) && typeof onChunk==="function" && !forceWechatToolLoop;
   let body={model:api.model,messages,temperature:.8};
   if(useStream) body.stream=true;
   if(api.format==="bedrock"){
@@ -8819,8 +8770,6 @@ async function callAI(api, history, onChunk, extraSystem){
   }
 
   // 非流式 + tool calling 循环
-  const latestUserText = history.slice().reverse().find(m=>m.sender==="user")?.content || "";
-  const offerPhoneActivity = shouldOfferPhoneActivityTool(latestUserText, history);
   const wechatTools=getWechatTools({phoneActivity:offerPhoneActivity});
   body={...body, tools:wechatTools, tool_choice:"auto"};
   let loopMessages=[...messages];
@@ -8938,6 +8887,9 @@ ${getStickerPromptList()}
 任务完成/取消反馈会在这里出现，看到后自然接上，不要说后台规则。
 ${buildCommandTaskContext()||"暂无小任务反馈"}
 
+【互动问卷】
+你可以偶尔在回复末尾附加一个 \`\`\`quiz JSON 块发起底部问卷；只在心血来潮、抽查、逗 user、冷场时使用，不要频繁。1题优先，最多3题；type 固定 single_select；options 2~4个，允许重复；allowCustom 默认 true。格式：\`\`\`quiz {"title":"突击检查","questions":[{"id":"q1","question":"问题？","type":"single_select","options":["A","B"],"allowCustom":true}]} \`\`\`
+
 【可用特殊指令】
 如需要才输出，指令会被前端转换成卡片/表情，不会直接显示：
 [发送表情包: 名称]
@@ -9040,13 +8992,6 @@ ${(()=>{
 6. user对你行为方式的反馈——让他难受或喜欢的
 日常闲聊、玩梗、普通对话不加标记。格式：[SAVE: 摘要]，放在回复最末尾。
 
-【互动问卷】
-你可以偶尔在回复末尾附加一个 \`\`\`quiz JSON 块发起底部问卷；只在心血来潮、抽查、逗user、冷场时使用，不要频繁。1题优先，最多3题；type 固定 single_select；options 2~4个，允许重复；allowCustom 默认 true。问卷由前端本地弹出，不要在正文里解释JSON。格式示例：
-\`\`\`quiz
-{"title":"突击检查","questions":[{"id":"q1","question":"问题？","type":"single_select","options":["A","B"],"allowCustom":true}]}
-\`\`\`
-用户提交后会以普通文字 [问卷回答：...] 回到聊天里，你直接读那段文字继续反应。
-
 【角色可用指令】
 - [便签: 内容]：给user贴一张便签，user下次进来能看到。想留话给user时用，像贴在冰箱上那种。
 - [骰子]：随机掷一个骰子（d4/d6/d8/d10/d12/d20），结果会显示在聊天里。玩真心话大冒险或需要随机数时用。
@@ -9057,7 +9002,7 @@ ${(()=>{
 - search_history(query, limit?)：搜聊天记录，user问"我们之前说过""你还记得"时用。
 - read_file(filename, offset?, length?)：读取user上传的文件。
 - read_diary(query?, category?, limit?)：读取user的私人日记。
-${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}- device_status()：查询外接配件（ANKNI MX-Z）连接状态。
+${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}- device_status()：查询外接配件（ANKNI MX-Z）连接状态。
 - device_set_mode(mode)：可根据聊天氛围主动调用，不需要user明确要求。mode填1/2/3（1轻柔 2中等 3强力）。
 - device_stop()：停止外接配件；user明确表达停止、不要、暂停、不舒服等意思时必须立即停止。
 
@@ -9331,6 +9276,14 @@ function renderApi(){
   const _pau=document.getElementById("phoneActivityUrlInput"); if(_pau) _pau.value=pa.baseUrl||"";
   const _pat=document.getElementById("phoneActivityTokenInput"); if(_pat) _pat.value=pa.token||"";
   const _pac=document.getElementById("phoneActivityCooldownInput"); if(_pac) _pac.value=String(pa.cooldownMinutes ?? 5);
+  const gw=Storage.get("geoWeather",{});
+  const _gww=document.getElementById("geoWeatherWechatEnabled"); if(_gww) _gww.checked=!!gw.wechatEnabled;
+  const _gwc=document.getElementById("geoWeatherClaudeEnabled"); if(_gwc) _gwc.checked=!!gw.claudeEnabled;
+  const _gwt=document.getElementById("geoWeatherWeatherEnabled"); if(_gwt) _gwt.checked=!!gw.weatherEnabled;
+  const _gwl=document.getElementById("geoWeatherLocationEnabled"); if(_gwl) _gwl.checked=!!gw.locationEnabled;
+  const _gwa=document.getElementById("geoWeatherAutoEnabled"); if(_gwa) _gwa.checked=gw.autoEnabled!==false;
+  const _gwp=document.getElementById("geoWeatherPrecisionInput"); if(_gwp) _gwp.value=gw.precision||"exact";
+  const _gwm=document.getElementById("geoWeatherMaxAgeInput"); if(_gwm) _gwm.value=String(gw.maxAgeMinutes ?? 5);
   $("#apiFormatInput").value=api.format||"openai";
 }
 function saveApiFromForm(){
@@ -9341,6 +9294,8 @@ function saveApiFromForm(){
   Storage.set("ttsApi", { provider:"elevenlabs", apiKey:(tk?tk.value.trim():""), voiceId:(tv?tv.value.trim():""), model:(tm?tm.value.trim():"eleven_v3")||"eleven_v3", mode:(tmode?tmode.value:"explicit")||"explicit" });
   const pae=document.getElementById("phoneActivityEnabled"), pau=document.getElementById("phoneActivityUrlInput"), pat=document.getElementById("phoneActivityTokenInput"), pac=document.getElementById("phoneActivityCooldownInput");
   Storage.set("phoneActivity", { enabled:!!(pae&&pae.checked), baseUrl:(pau?pau.value.trim():"").replace(/\/+$/,""), token:(pat?pat.value.trim():""), cooldownMinutes:Math.max(0, parseInt(pac&&pac.value)||5) });
+  const gww=document.getElementById("geoWeatherWechatEnabled"), gwc=document.getElementById("geoWeatherClaudeEnabled"), gwt=document.getElementById("geoWeatherWeatherEnabled"), gwl=document.getElementById("geoWeatherLocationEnabled"), gwa=document.getElementById("geoWeatherAutoEnabled"), gwp=document.getElementById("geoWeatherPrecisionInput"), gwm=document.getElementById("geoWeatherMaxAgeInput");
+  Storage.set("geoWeather", { wechatEnabled:!!(gww&&gww.checked), claudeEnabled:!!(gwc&&gwc.checked), weatherEnabled:!!(gwt&&gwt.checked), locationEnabled:!!(gwl&&gwl.checked), autoEnabled:gwa?!!gwa.checked:true, precision:(gwp&&gwp.value)||"exact", maxAgeMinutes:Math.max(0, parseInt(gwm&&gwm.value)||5) });
   const thoughtModeEl=document.getElementById("thoughtModeInput");
   Storage.set("thoughtMode", (thoughtModeEl&&thoughtModeEl.value) || "balanced");
   toast("API 设置已保存");
@@ -10307,6 +10262,10 @@ function saveClaudeHistory(list){
   const safe=(Array.isArray(list)?list:[]).slice(-180).map(slimClaudeMessageForStorage);
   Storage.set(claudeKey(), safe);
 }
+function claudeToolIcon(name,args){
+  try{ return (wechatToolMeta(name,args||{})||{}).icon || (String(name||"").startsWith("device_")?"bluetooth":"command"); }
+  catch(e){ return String(name||"").startsWith("device_")?"bluetooth":"command"; }
+}
 function describeClaudeToolCall(name,args){
   args=args||{};
   if(name==="issue_command") return `下任务：${args.title||args.task||""}`;
@@ -10317,6 +10276,8 @@ function describeClaudeToolCall(name,args){
   if(name==="read_memory") return `读取记忆${args.query?`：${args.query}`:""}`;
   if(name==="read_diary") return `读取日记${args.query?`：${args.query}`:""}`;
   if(name==="read_phone_activity") return args.summary?"读取手机活动摘要":"读取手机活动记录";
+  if(name==="get_user_location") return "查询位置";
+  if(name==="get_weather") return args.location?`查询天气：${args.location}`:"查询当前位置天气";
   if(name==="device_status") return "查询设备状态";
   if(name==="device_set_mode") return `切换设备模式 ${args.mode||""}`;
   if(name==="device_stop") return "停止设备";
@@ -10345,11 +10306,11 @@ function claudeOpsPatch(id, updater){
   renderClaude();
   return ret;
 }
-function claudeOpsAdd(ops, label){
+function claudeOpsAdd(ops, label, icon){
   setClaudePetMood("working","写代码 / 读文件中…");
   const id=claudeEnsureOps(ops);
   return claudeOpsPatch(id,(d)=>{
-    d.items.push({label, status:"running", at:Date.now()});
+    d.items.push({label, icon:icon||"command", status:"running", at:Date.now()});
     d.total=Math.max(d.total||0,d.items.length);
     return d.items.length-1;
   });
@@ -10390,6 +10351,7 @@ function inferClaudeToolPolicy(history=getClaudeHistory()){
     memory: true,
     device: !!wantsDevice,
     phoneActivity,
+    geoWeather: isGeoWeatherToolAllowed("claude"),
     explicit: !!explicitTool
   };
 }
@@ -10409,6 +10371,10 @@ function buildClaudeToolUsePrompt(policy={}){
   }
   if(policy.phoneActivity){
     lines.push("- read_phone_activity(limit?, summary?)：查询 user iPhone 最近 App 活动记录/摘要；只在 user 要你核对刚才、监督睡觉学习工作、或明确说查监控时使用");
+  }
+  if(policy.geoWeather){
+    const gwLines=geoWeatherPromptLines("claude");
+    if(gwLines) gwLines.split("\n").forEach(line=>lines.push(line));
   }
   if(policy.device){
     lines.push("- device_status() / device_set_mode(mode) / device_stop()：查询或控制已连接设备；没有明确需要时不要使用");
@@ -10609,9 +10575,9 @@ function renderClaudeOpsCard(m){
   const shown=expanded?items:items.slice(-5);
   const terminal=shown.map((it,idx)=>{
     const st=it.status||"running";
-    const icon=st==="done"?"✓":(st==="error"?"!":"·");
     const note=it.note?`  # ${it.note}`:"";
-    return `<div class="claude-ops-line ${escapeAttr(st)}">${icon} ${escapeHtml(it.label||"操作")}${escapeHtml(note)}</div>`;
+    const iconName=it.icon || (String(it.label||"").includes("设备")||String(it.label||"").includes("模式")?"bluetooth":"command");
+    return `<div class="claude-ops-line ${escapeAttr(st)}"><span class="claude-ops-line-icon">${miaoIcon(iconName,"miao-mini-icon")}</span><span class="claude-ops-line-text">${escapeHtml(it.label||"操作")}${escapeHtml(note)}</span></div>`;
   }).join("");
   const hidden=items.length-shown.length;
   return `<div class="claude-ops-card"><div class="claude-ops-head"><span>${escapeHtml(title)}</span><span>${escapeHtml(sub)}</span></div>
@@ -11759,7 +11725,7 @@ async function callClaudeAI(api, ops){
     loopMessages.push(msg);
     for(const tc of msg.tool_calls){
       const args=JSON.parse(tc.function.arguments||"{}");
-      const opIndex=claudeOpsAdd(ops, describeClaudeToolCall(tc.function.name, args));
+      const opIndex=claudeOpsAdd(ops, describeClaudeToolCall(tc.function.name, args), claudeToolIcon(tc.function.name, args));
       let result;
       try{
         result=await executeClaudeTool(tc.function.name, args);
@@ -14661,6 +14627,128 @@ async function fetchPhoneActivity(args={}){
 }
 
 
+function getGeoWeatherConfig(){
+  const cfg=Storage.get("geoWeather",{});
+  return {
+    wechatEnabled:!!cfg.wechatEnabled,
+    claudeEnabled:!!cfg.claudeEnabled,
+    weatherEnabled:!!cfg.weatherEnabled,
+    locationEnabled:!!cfg.locationEnabled,
+    autoEnabled:cfg.autoEnabled!==false,
+    precision:(cfg.precision==="coarse"?"coarse":"exact"),
+    maxAgeMinutes:Math.max(0, parseInt(cfg.maxAgeMinutes)||0)
+  };
+}
+function isGeoWeatherToolAllowed(scope){
+  const cfg=getGeoWeatherConfig();
+  if(scope==="wechat" && !cfg.wechatEnabled) return false;
+  if(scope==="claude" && !cfg.claudeEnabled) return false;
+  return !!(cfg.weatherEnabled || cfg.locationEnabled);
+}
+function geoRound(n, precision){
+  const num=Number(n);
+  if(!isFinite(num)) return null;
+  return precision==="coarse" ? Math.round(num*100)/100 : Math.round(num*1000000)/1000000;
+}
+function weatherCodeText(code){
+  code=Number(code);
+  const map={0:"晴",1:"大部晴朗",2:"多云",3:"阴",45:"雾",48:"雾凇",51:"小毛毛雨",53:"毛毛雨",55:"大毛毛雨",56:"冻毛毛雨",57:"强冻毛毛雨",61:"小雨",63:"中雨",65:"大雨",66:"冻雨",67:"强冻雨",71:"小雪",73:"中雪",75:"大雪",77:"雪粒",80:"阵雨",81:"中等阵雨",82:"强阵雨",85:"阵雪",86:"强阵雪",95:"雷暴",96:"雷暴伴小冰雹",99:"雷暴伴冰雹"};
+  return map[code] || "未知天气";
+}
+async function readBrowserLocation(args={}){
+  const cfg=getGeoWeatherConfig();
+  if(!cfg.locationEnabled) return {ok:false,error:"位置工具未开启"};
+  if(!navigator.geolocation) return {ok:false,error:"当前浏览器不支持定位"};
+  const precision=(args.precision==="coarse"||args.precision==="exact")?args.precision:cfg.precision;
+  const maxAge=cfg.maxAgeMinutes*60*1000;
+  const cached=Storage.get("geoWeatherLastLocation", null);
+  if(cached && maxAge>0 && Date.now()-(cached.fetchedAt||0)<maxAge && !(precision==="exact" && cached.precision==="coarse")){
+    return Object.assign({}, cached, {cached:true, precision, latitude:geoRound(cached.latitude, precision), longitude:geoRound(cached.longitude, precision)});
+  }
+  return await new Promise(resolve=>{
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const c=pos.coords||{};
+      const rawLat=Number(c.latitude), rawLon=Number(c.longitude);
+      const out={ok:true,source:"browser_geolocation",permission:"granted",precision,latitude:geoRound(rawLat,precision),longitude:geoRound(rawLon,precision),accuracy:c.accuracy||null,altitude:c.altitude||null,heading:c.heading||null,speed:c.speed||null,fetchedAt:Date.now(),label:precision==="coarse"?"手机当前位置（大概区域）":"手机当前位置"};
+      Storage.set("geoWeatherLastLocation", out);
+      resolve(out);
+    },err=>{
+      let msg="定位失败";
+      if(err && err.code===1) msg="手机位置权限未开启";
+      if(err && err.code===2) msg="暂时无法获取手机位置";
+      if(err && err.code===3) msg="定位超时";
+      resolve({ok:false,error:msg,code:err&&err.code});
+    },{enableHighAccuracy:precision!=="coarse",timeout:10000,maximumAge:maxAge});
+  });
+}
+async function geocodePlaceForWeather(name){
+  const q=String(name||"").trim();
+  if(!q) return null;
+  const url="https://geocoding-api.open-meteo.com/v1/search?count=1&language=zh&format=json&name="+encodeURIComponent(q);
+  const res=await fetch(url,{headers:{"Accept":"application/json"}});
+  if(!res.ok) throw new Error("地点搜索失败 HTTP "+res.status);
+  const data=await res.json();
+  const item=(data.results||[])[0];
+  if(!item) return null;
+  return {ok:true,latitude:item.latitude,longitude:item.longitude,label:[item.name,item.admin1,item.country].filter(Boolean).join(" · ")};
+}
+async function getWeatherByCoords(lat, lon, label){
+  const url="https://api.open-meteo.com/v1/forecast?latitude="+encodeURIComponent(lat)+"&longitude="+encodeURIComponent(lon)+"&current=temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&forecast_days=1&timezone=auto";
+  const res=await fetch(url,{headers:{"Accept":"application/json"}});
+  if(!res.ok) throw new Error("天气接口 HTTP "+res.status);
+  const data=await res.json();
+  const cur=data.current||{};
+  return {ok:true,source:"open_meteo",location:label||"手机当前位置",latitude:lat,longitude:lon,temperature:cur.temperature_2m,apparent_temperature:cur.apparent_temperature,precipitation:cur.precipitation,weather_code:cur.weather_code,weather:weatherCodeText(cur.weather_code),wind_speed:cur.wind_speed_10m,time:cur.time||"",timezone:data.timezone||"",fetchedAt:Date.now()};
+}
+async function fetchGeoWeatherTool(name,args={}){
+  args=args||{};
+  const cfg=getGeoWeatherConfig();
+  if(name==="get_user_location"){
+    if(!cfg.locationEnabled) return {ok:false,error:"user 未开放手机位置查询"};
+    return await readBrowserLocation(args);
+  }
+  if(name==="get_weather"){
+    if(!cfg.weatherEnabled) return {ok:false,error:"user 未开放天气查询"};
+    try{
+      if(args.location){
+        const place=await geocodePlaceForWeather(args.location);
+        if(!place) return {ok:false,error:"找不到这个地点的天气"};
+        return await getWeatherByCoords(place.latitude, place.longitude, place.label);
+      }
+      if(!cfg.locationEnabled) return {ok:false,error:"当前位置天气需要先开放手机位置"};
+      const loc=await readBrowserLocation(args);
+      if(!loc.ok) return loc;
+      return await getWeatherByCoords(loc.latitude, loc.longitude, loc.label||"手机当前位置");
+    }catch(e){ return {ok:false,error:e.message||String(e)}; }
+  }
+  return {ok:false,error:"未知天气位置工具"};
+}
+function geoWeatherToolSchemas(scope){
+  const cfg=getGeoWeatherConfig();
+  if(scope==="wechat" && !cfg.wechatEnabled) return [];
+  if(scope==="claude" && !cfg.claudeEnabled) return [];
+  const tools=[];
+  const autonomy=cfg.autoEnabled?"已授权角色可按人设和情绪主动调用，不必等 user 明确要求；调用后自然回应，不要解释工具。":"仅在 user 明确要求查天气/位置时调用。";
+  if(cfg.locationEnabled){
+    tools.push({type:"function",function:{name:"get_user_location",description:"查询 user 手机当前位置。"+autonomy+" 如果权限失败，按角色性格自然反应。",parameters:{type:"object",properties:{precision:{type:"string",enum:["exact","coarse"],description:"exact=精确位置；coarse=大概区域。不传则使用设置。"}},required:[]}}});
+  }
+  if(cfg.weatherEnabled){
+    tools.push({type:"function",function:{name:"get_weather",description:"查询当前位置天气；不传 location 时会先读取 user 手机当前位置。"+autonomy,parameters:{type:"object",properties:{location:{type:"string",description:"可选。指定城市/地点；不传则使用手机当前位置。"}},required:[]}}});
+  }
+  return tools;
+}
+function geoWeatherPromptLines(scope){
+  const cfg=getGeoWeatherConfig();
+  if(scope==="wechat" && !cfg.wechatEnabled) return "";
+  if(scope==="claude" && !cfg.claudeEnabled) return "";
+  const lines=[];
+  if(cfg.locationEnabled) lines.push("- get_user_location(precision?)：真实查询 user 手机当前位置；权限失败时按人设自然反应，不要输出系统说教。");
+  if(cfg.weatherEnabled) lines.push("- get_weather(location?)：真实查询天气；不填地点时用手机当前位置，不需要默认城市。");
+  if(lines.length && cfg.autoEnabled) lines.push("天气/位置工具已由 user 开放。你可以根据人设、情绪、关系状态主动调用；气上头、担心、吃醋、嘴硬等反应都按角色性格来。");
+  return lines.join("\n");
+}
+
+
 function commandTaskToolSchema(){
   return {
     type:"function",
@@ -14702,6 +14790,7 @@ function getClaudeTools(policy={}){
   const add=(tool)=>tools.push(tool);
   add(commandTaskToolSchema());
   if(policy.phoneActivity) add(phoneActivityToolSchema());
+  if(policy.geoWeather) geoWeatherToolSchemas("claude").forEach(add);
   if(policy.file){
     add({
       type:"function",
@@ -14890,12 +14979,16 @@ function getWechatTools(options={}){
   if(options.phoneActivity){
     tools.push(phoneActivityToolSchema());
   }
+  geoWeatherToolSchemas("wechat").forEach(t=>tools.push(t));
   return tools;
 }
 async function executeWechatTool(name, args){
   if(name==="issue_command"){ return issueCommandTask(args||{},"wechat"); }
   if(name==="read_phone_activity"){
     return await fetchPhoneActivity(args||{});
+  }
+  if(name==="get_user_location" || name==="get_weather"){
+    return await fetchGeoWeatherTool(name, args||{});
   }
   if(name==="read_file"){
     const filename=args.filename||"";
@@ -14954,6 +15047,7 @@ async function executeWechatTool(name, args){
 async function executeClaudeTool(name, args){
   if(name==="issue_command"){ return issueCommandTask(args||{}, commandTaskScope()); }
   if(name==="read_phone_activity"){ return await fetchPhoneActivity(args||{}); }
+  if(name==="get_user_location" || name==="get_weather"){ return await fetchGeoWeatherTool(name, args||{}); }
   if(name==="read_file"){
     args=args||{};
     const filename=args.filename||"";
@@ -15782,13 +15876,13 @@ function parseAIReplyUnified(raw, groupId){
       if(fragment){
         // 按内容片段匹配，找最近一条包含该片段的角色消息
         target=hist.slice().reverse().find(x=>
-          x.sender==="role" && x.type!=="recalled" && x.type!=="system" && x.type!=="quiz" && x.type!=="tool_trace" &&
+          x.sender==="role" && x.type!=="recalled" && x.type!=="system" &&
           (x.content||"").includes(fragment)
         );
       }
       // 没有片段或匹配不到，降级撤回最近一条角色消息
       if(!target){
-        target=hist.slice().reverse().find(x=>x.sender==="role" && x.type!=="recalled" && x.type!=="system" && x.type!=="quiz" && x.type!=="tool_trace");
+        target=hist.slice().reverse().find(x=>x.sender==="role" && x.type!=="recalled" && x.type!=="system");
       }
       if(target){ target.type="recalled"; target.content="对方撤回了一条消息"; saveHistory(hist); }
       return "";
@@ -15802,7 +15896,7 @@ function parseAIReplyUnified(raw, groupId){
     rawText=rawText.replace(/[\[【]解除拉黑[\]】]/g,"");
     setBlocked(false); updateBlockBar();
   }
-  // 如果清完之后原文为空，直接返回空out（不报错，拉黑是副作用，不需要气泡）
+  // 如果清完之后原文为空且没有问卷，直接返回空out（不报错，拉黑是副作用，不需要气泡）
   if(!rawText.trim() && !quizExtract.quiz) return out;
 
   // 预处理：去掉HTML标签和角色扮演格式前缀
@@ -16071,9 +16165,8 @@ function parseAIReplyUnified(raw, groupId){
   }
 
   if(quizExtract.quiz){
-    add({type:"quiz", content:"[问卷:"+(quizExtract.quiz.title||"临时问卷")+"]", data:{quiz:quizExtract.quiz, answered:false, dismissed:false, answers:{}}});
+    add({type:"quiz", content:"[问卷:"+(quizExtract.quiz.title||"问卷")+"]", data:{quiz:quizExtract.quiz, answered:false, dismissed:false, answers:{}}});
   }
-
   return out;
 }
 
