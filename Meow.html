@@ -7009,6 +7009,7 @@ async function callAI(api, history, onChunk, extraSystem){
     const reader=res.body.getReader();
     const decoder=new TextDecoder();
     let full="";
+    let thinkingFull="";
     while(true){
       const{done,value}=await reader.read();
       if(done) break;
@@ -7020,13 +7021,24 @@ async function callAI(api, history, onChunk, extraSystem){
         if(d==="[DONE]") break;
         try{
           const j=JSON.parse(d);
+          // OpenAI兼容格式：正文
           const delta=j.choices?.[0]?.delta?.content||"";
           if(delta){ full+=delta; onChunk(full); }
+          // OpenAI兼容代理：thinking可能在reasoning_content字段
+          const reasoning=j.choices?.[0]?.delta?.reasoning_content||j.choices?.[0]?.delta?.reasoning||"";
+          if(reasoning) thinkingFull+=reasoning;
+          // Claude原生流式格式：content_block_delta with thinking_delta
+          if(j.type==="content_block_delta"){
+            if(j.delta?.type==="thinking_delta" && j.delta?.thinking) thinkingFull+=j.delta.thinking;
+            if(j.delta?.type==="text_delta" && j.delta?.text){ full+=j.delta.text; onChunk(full); }
+          }
         }catch(e){}
       }
     }
-    Miao.state.lastAIContent=full;
-    return full;
+    // 把accumulated thinking拼成<thinking>标签，让后续extractThinkingContent统一处理
+    const result=(thinkingFull?"<thinking>"+thinkingFull+"</thinking>\n":"")+full;
+    Miao.state.lastAIContent=result;
+    return result;
   }
 
   // 非流式 + tool calling 循环
@@ -7052,7 +7064,18 @@ async function callAI(api, history, onChunk, extraSystem){
     Miao.state.lastAIRaw=text.slice(0,600);
     // 没有tool_calls，返回普通文字
     if(!msg.tool_calls || msg.tool_calls.length===0){
-      const content=msg.content || (Array.isArray(data.content) ? data.content.filter(b=>b.type==="text").map(b=>b.text).join("") : null) || data.output_text || "";
+      // 从Claude extended thinking响应中提取thinking块
+      let thinkingPrefix="";
+      if(Array.isArray(data.content)){
+        const thinkBlocks=data.content.filter(b=>b.type==="thinking").map(b=>b.thinking||b.text||"").filter(Boolean);
+        if(thinkBlocks.length) thinkingPrefix="<thinking>"+thinkBlocks.join("\n")+"</thinking>\n";
+      }
+      // 某些OpenAI兼容代理会把thinking放在reasoning_content字段
+      if(!thinkingPrefix && msg.reasoning_content){
+        thinkingPrefix="<thinking>"+msg.reasoning_content+"</thinking>\n";
+      }
+      const textContent=msg.content || (Array.isArray(data.content) ? data.content.filter(b=>b.type==="text").map(b=>b.text).join("") : null) || data.output_text || "";
+      const content=thinkingPrefix+textContent;
       Miao.state.lastAIContent=content;
       return content;
     }
