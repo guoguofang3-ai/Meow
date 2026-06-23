@@ -668,6 +668,34 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   line-height:1.55;
   white-space:pre-wrap;
 }
+.wechat-real-image-card{
+  max-width:220px;
+  border-radius:18px;
+  overflow:hidden;
+  background:rgba(255,255,255,.92);
+  border:1px solid rgba(0,0,0,.06);
+  box-shadow:0 8px 22px rgba(0,0,0,.08);
+}
+.wechat-real-image-card img{
+  display:block;
+  width:100%;
+  max-height:260px;
+  object-fit:cover;
+  background:#f3f4f6;
+}
+.wechat-real-image-caption{
+  padding:7px 9px;
+  font-size:calc(11px * var(--font-scale,1));
+  line-height:1.4;
+  color:#777;
+  white-space:pre-wrap;
+  background:rgba(255,255,255,.9);
+}
+.wechat-real-image-note{
+  font-size:10px;
+  color:#aaa;
+  margin-top:2px;
+}
 .money-card,.delivery-card,.paid-card,.received-card,.reject-card{
   min-width:198px;
   max-width:245px;
@@ -1388,6 +1416,49 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .claude-composer{padding:8px 10px 10px;display:flex;gap:8px;align-items:flex-end}
 .claude-composer textarea{flex:1;resize:none;border:1px solid rgba(0,0,0,.08);border-radius:20px;padding:11px 13px;min-height:44px;max-height:100px;background:#fff;font-size:16px}
 .claude-send{width:44px;height:44px;border:0;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;flex:0 0 auto}
+.claude-composer .claude-send{background:rgba(0,0,0,.055);color:var(--accent);font-weight:950}
+.claude-summon{width:44px;height:44px;border:0;border-radius:50%;background:var(--accent);color:#fff;font-size:18px;font-weight:950;flex:0 0 auto;box-shadow:0 8px 18px color-mix(in srgb,var(--accent) 24%,transparent)}
+.claude-summon:active,.claude-composer .claude-send:active{transform:scale(.94)}
+.claude-artifacts-mask{
+  position:absolute;inset:0;z-index:815;display:none;align-items:flex-end;justify-content:center;
+  background:rgba(0,0,0,.28);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.claude-artifacts-mask.show{display:flex}
+.claude-artifacts-panel{
+  width:100%;max-height:76%;border-radius:30px 30px 0 0;
+  background:var(--bar-bg,rgba(255,255,255,.94));color:var(--bar-text,#111827);
+  box-shadow:0 -18px 54px rgba(0,0,0,.22);padding:10px 16px 18px;
+  display:flex;flex-direction:column;overflow:hidden;animation:thinkSlideUp .24s ease;
+}
+.claude-artifacts-handle{width:42px;height:5px;border-radius:999px;background:rgba(0,0,0,.12);margin:0 auto 12px;flex:0 0 auto}
+.claude-artifacts-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex:0 0 auto}
+.claude-artifacts-title{font-size:22px;font-weight:1000;letter-spacing:-.4px}
+.claude-artifacts-close{width:42px;height:42px;border:0;border-radius:50%;background:rgba(0,0,0,.055);font-size:22px;color:var(--bar-text,#111827)}
+.claude-artifacts-list{flex:1;min-height:0;overflow:auto;display:grid;gap:12px;padding:2px 0 14px}
+.claude-artifact-card{
+  display:grid;grid-template-columns:62px 1fr auto;gap:12px;align-items:center;
+  min-height:78px;border-radius:22px;padding:12px;background:rgba(255,255,255,.72);
+  border:1px solid rgba(255,255,255,.58);box-shadow:0 8px 24px rgba(0,0,0,.055);
+}
+.claude-artifact-icon{
+  width:54px;height:54px;border-radius:16px;background:color-mix(in srgb,var(--accent) 88%,#000 12%);
+  color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:1000;
+  transform:rotate(-2deg);box-shadow:0 8px 18px color-mix(in srgb,var(--accent) 22%,transparent);
+}
+.claude-artifact-info{min-width:0}
+.claude-artifact-name{font-size:16px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.claude-artifact-meta{font-size:12px;color:rgba(0,0,0,.42);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.claude-artifact-actions{display:flex;gap:8px;align-items:center}
+.claude-artifact-actions button{
+  width:42px;height:42px;border:0;border-radius:50%;background:rgba(0,0,0,.045);
+  color:var(--accent);font-size:18px;font-weight:950;display:flex;align-items:center;justify-content:center;
+}
+.claude-artifacts-empty{padding:26px 12px;text-align:center;color:#888;font-size:13px;line-height:1.65}
+.claude-artifacts-footer{flex:0 0 auto;padding-top:6px}
+.claude-artifacts-download-all{
+  width:100%;height:54px;border:0;border-radius:999px;background:var(--accent);color:#fff;
+  font-size:16px;font-weight:950;box-shadow:0 10px 24px color-mix(in srgb,var(--accent) 24%,transparent);
+}
 .preview-mask{
   position:absolute;inset:0;z-index:820;display:none;background:rgba(0,0,0,.35);backdrop-filter:blur(10px);padding:22px;
 }
@@ -2157,6 +2228,42 @@ body{font-size:calc(14px * var(--font-scale));}
   background:#eef0f5;
 }
 .memory-actions button.danger{background:#ffe8e6;color:#c5221f}
+.memory-mind-hero{
+  border-radius:28px;padding:18px 16px;margin:4px 0 14px;
+  background:linear-gradient(160deg,rgba(255,255,255,.82),rgba(255,255,255,.48));
+  border:1px solid rgba(255,255,255,.72);box-shadow:0 12px 34px rgba(0,0,0,.07);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:var(--text,#111827);
+}
+.memory-mind-title{font-size:22px;font-weight:1000;letter-spacing:-.6px;font-style:italic}
+.memory-mind-sub{font-size:12px;color:rgba(0,0,0,.42);margin-top:4px;font-style:italic}
+.memory-search{margin-top:14px;position:relative}
+.memory-search input{height:40px;border:0;border-radius:14px;background:rgba(255,255,255,.68);box-shadow:inset 0 0 0 1px rgba(0,0,0,.035);font-size:13px}
+.memory-stat-row{display:flex;gap:3px;margin-top:13px}
+.memory-stat-seg{height:7px;border-radius:999px;flex:1;background:color-mix(in srgb,var(--accent) 20%,#fff)}
+.memory-stat-seg.hot{background:color-mix(in srgb,var(--accent) 58%,#fff)}
+.memory-mind-line{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:11px;color:rgba(0,0,0,.45)}
+.memory-feature-card{margin-top:14px;border-radius:20px;padding:13px;background:rgba(255,255,255,.74);border:1px solid rgba(0,0,0,.04);box-shadow:0 10px 22px rgba(0,0,0,.045)}
+.memory-feature-kicker{font-size:11px;color:var(--accent);font-weight:950;margin-bottom:5px}
+.memory-feature-title{font-size:17px;font-weight:1000;line-height:1.45;font-style:italic}
+.memory-direction{margin-top:14px}
+.memory-direction-title{font-size:11px;color:rgba(0,0,0,.48);font-weight:950;margin-bottom:8px}
+.memory-direction-row{display:grid;grid-template-columns:58px 1fr 28px;gap:8px;align-items:center;margin:7px 0;font-size:11px;color:rgba(0,0,0,.55)}
+.memory-direction-bar{height:7px;border-radius:999px;background:rgba(0,0,0,.06);overflow:hidden}
+.memory-direction-bar span{display:block;height:100%;border-radius:999px;background:color-mix(in srgb,var(--accent) 52%,#fff)}
+.memory-section-title{display:flex;align-items:center;gap:8px;margin:16px 2px 8px;font-size:12px;color:rgba(0,0,0,.45);font-weight:950}
+.memory-section-title:before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.memory-mind-card{
+  position:relative;overflow:hidden;background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.72);
+  border-radius:22px;padding:13px;margin:10px 0;box-shadow:0 10px 26px rgba(0,0,0,.055);
+}
+.memory-mind-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:color-mix(in srgb,var(--accent) 36%,#fff);opacity:.72}
+.memory-mind-card.important:before{background:var(--accent);opacity:1}
+.memory-mind-card.locked{box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 26%,transparent),0 10px 26px rgba(0,0,0,.055)}
+.memory-mind-card .memory-title{font-size:15px;font-style:italic;line-height:1.45}
+.memory-mind-card .memory-content{font-size:13px;color:rgba(0,0,0,.68);line-height:1.7;max-height:116px;overflow:hidden}
+.memory-mini-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.memory-mini-tag{font-size:9px;padding:3px 7px;border-radius:999px;background:rgba(0,0,0,.045);color:rgba(0,0,0,.48);font-weight:850}
+.memory-empty-mind{padding:24px 10px;text-align:center;color:#888;font-size:13px;line-height:1.7}
 /* 多选操作栏 */
 #multiSelectBar.show{ display:flex !important; }
 #claudeMultiBar.show{ display:flex !important; }
@@ -3086,7 +3193,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
       <div class="header">
         <button class="icon-btn" data-action="go-home">‹</button>
         <div class="header-title">Claude 文件助手</div>
-        <button class="icon-btn" data-action="clear-claude">🧹</button>
+        <div class="header-actions"><button class="icon-btn" data-action="open-claude-artifacts">▣</button><button class="icon-btn" data-action="clear-claude">🧹</button></div>
       </div>
       <div class="claude-modebar">
         <button data-action="set-claude-mode" data-id="role" id="claudeModeRole">角色 Claude</button>
@@ -3103,8 +3210,9 @@ body.multiselect-mode .msg{ cursor:pointer; }
           <button class="chip-btn" data-action="clear-claude">清空会话</button>
         </div>
         <div class="claude-composer">
-          <textarea id="claudeInput" placeholder="让 Claude 帮你处理文件、写前端、解释代码..." rows="1"></textarea>
-          <button class="claude-send" data-action="send-claude">➤</button>
+          <textarea id="claudeInput" placeholder="先发多条消息或文件，点 ✦ 召 Claude 一次性回复..." rows="1"></textarea>
+          <button class="claude-send" data-action="send-claude" title="发送到队列">➤</button>
+          <button class="claude-summon" data-action="summon-claude" title="召 Claude 回复">✦</button>
         </div>
       </div>
       <div id="claudeMultiBar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bar-bg,rgba(255,255,255,.95));backdrop-filter:blur(18px);border-top:1px solid rgba(0,0,0,.07);padding:12px 20px;z-index:200;align-items:center;justify-content:space-between;">
@@ -3116,6 +3224,18 @@ body.multiselect-mode .msg{ cursor:pointer; }
       </div>
       <div class="home-indicator"></div>
     </section>
+
+    <div class="claude-artifacts-mask" id="claudeArtifactsMask">
+      <div class="claude-artifacts-panel">
+        <div class="claude-artifacts-handle"></div>
+        <div class="claude-artifacts-head">
+          <div class="claude-artifacts-title">Artifacts</div>
+          <button class="claude-artifacts-close" data-action="close-claude-artifacts">×</button>
+        </div>
+        <div class="claude-artifacts-list" id="claudeArtifactsList"></div>
+        <div class="claude-artifacts-footer"><button class="claude-artifacts-download-all" data-action="download-all-claude-artifacts">↓ Download all</button></div>
+      </div>
+    </div>
 
     <div class="preview-mask" id="previewMask">
       <div class="preview-panel">
@@ -3212,11 +3332,11 @@ body.multiselect-mode .msg{ cursor:pointer; }
     </section>
 
     <section class="app-screen memory-app" id="memoryApp">
-      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">长期记忆</div><button class="icon-btn" data-action="open-memory-entry">＋</button></div>
+      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">Mind</div><button class="icon-btn" data-action="open-memory-entry">＋</button></div>
       <div class="memory-tabs">
-        <button id="memoryTabList" data-action="set-memory-tab" data-id="list">记忆库</button>
-        <button id="memoryTabExtract" data-action="set-memory-tab" data-id="extract">提取</button>
-        <button id="memoryTabRelation" data-action="set-memory-tab" data-id="relation">关系</button>
+        <button id="memoryTabList" data-action="set-memory-tab" data-id="list">地层</button>
+        <button id="memoryTabExtract" data-action="set-memory-tab" data-id="extract">拾取</button>
+        <button id="memoryTabRelation" data-action="set-memory-tab" data-id="relation">感受</button>
       </div>
       <div id="memoryListView" style="display:flex;flex-direction:column;min-height:0;flex:1">
         <div class="memory-list" id="memoryList"></div>
@@ -4086,12 +4206,20 @@ function bindEvents(){
     if(action==="set-claude-mode") setClaudeMode(id);
     if(action==="toggle-claude-file-mode") toggleClaudeFileMode();
     if(action==="send-claude") sendClaudeMessage();
+    if(action==="summon-claude") callClaudeReply();
     if(action==="retry-img") retryImageGen(id);
     if(action==="clear-claude") clearClaude();
     if(action==="claude-multiselect") enterClaudeMulti();
     if(action==="claude-export") exportClaudeHistory();
+    if(action==="open-claude-artifacts") openClaudeArtifacts();
+    if(action==="close-claude-artifacts") closeClaudeArtifacts();
+    if(action==="download-claude-artifact") downloadClaudeArtifact(id);
+    if(action==="preview-claude-artifact") previewClaudeArtifact(id);
+    if(action==="send-claude-artifact") sendClaudeArtifactAsFile(id);
+    if(action==="download-all-claude-artifacts") downloadAllClaudeArtifacts();
     if(action==="delete-claude-msg") deleteClaudeMessage(id);
     if(action==="open-file-preview") openClaudeFilePreview(id);
+    if(action==="open-wechat-image") openWechatImagePreview(id);
     if(action==="copy-code") copyClaudeCode(id);
     if(action==="preview-code") previewClaudeCode(id);
     if(action==="close-preview") closePreview();
@@ -6309,6 +6437,14 @@ function renderMessageBody(m){
     </div>`;
   }
   if(m.type==="image_desc"){
+    if(d.hasRealImage){
+      const img=(window.wechatImageMap&&window.wechatImageMap[m.id]) || d.thumbUrl || d.dataUrl || "";
+      const desc=String(d.description||"").trim();
+      if(img){
+        return `<div class="wechat-real-image-card" data-action="open-wechat-image" data-id="${m.id}"><img src="${escapeAttr(img)}" alt="${escapeAttr(desc||d.imageName||"图片")}">${desc?`<div class="wechat-real-image-caption">${escapeHtml(desc)}${d.imageCleared?`<div class="wechat-real-image-note">原图已自动清理，仅保留缩略图</div>`:""}</div>`:""}</div>`;
+      }
+      return `<div class="image-desc-card"><div class="image-desc-title">🖼 图片已清理</div><div class="image-desc-text">${escapeHtml(desc||m.content||"这张图片的原图已清理，仅保留文字说明。")}</div></div>`;
+    }
     return `<div class="image-desc-card"><div class="image-desc-title">🖼 图片描述</div><div class="image-desc-text">${escapeHtml(d.description||m.content||"")}</div></div>`;
   }
   if(m.type==="transfer"){
@@ -7264,6 +7400,7 @@ function extractBareUrl(text){
 async function callAI(api, history, onChunk, extraSystem){
   const role=currentRole();
   const system=buildSystemPrompt(role) + (extraSystem||"");
+  let realWechatImageToConsume=null;
   const messages=[
     {role:"system", content:system},
     ...(()=>{
@@ -7271,7 +7408,8 @@ async function callAI(api, history, onChunk, extraSystem){
       // 按groupId合并同组气泡，groupId相同的角色回复合并成一条
       const grouped=[];
       // 找最近一张有真实图片的消息id
-      const lastRealImgId=valid.slice().reverse().find(m=>m.type==="image_desc"&&m.data?.hasRealImage)?.id||null;
+      const lastRealImgId=valid.slice().reverse().find(m=>m.type==="image_desc"&&m.data?.hasRealImage&&!m.data?.imageCleared)?.id||null;
+      realWechatImageToConsume=lastRealImgId;
       for(const m of valid){
         const apiRole=m.sender==="user"?"user":"assistant";
         const last=grouped[grouped.length-1];
@@ -7334,6 +7472,7 @@ async function callAI(api, history, onChunk, extraSystem){
     }
     const result=full;
     Miao.state.lastAIContent=result;
+    markWechatImageConsumed(realWechatImageToConsume);
     return result;
   }
 
@@ -7364,6 +7503,7 @@ async function callAI(api, history, onChunk, extraSystem){
       const textContent=msg.content || (Array.isArray(data.content) ? data.content.filter(b=>b.type==="text").map(b=>b.text).join("") : null) || data.output_text || "";
       const content=textContent;
       Miao.state.lastAIContent=content;
+      markWechatImageConsumed(realWechatImageToConsume);
       return content;
     }
     // 有tool_calls，执行工具
@@ -7376,6 +7516,7 @@ async function callAI(api, history, onChunk, extraSystem){
     }
   }
   Miao.state.lastAIContent="";
+  markWechatImageConsumed(realWechatImageToConsume);
   return "[工具调用超过上限，未获得最终回复]";
 }
 function buildSystemPrompt(role){
@@ -9326,7 +9467,7 @@ async function sendClaudeMessage(){
   renderStory();
   renderCall();
   renderContextSettings();
-  await callClaudeReply();
+  toast("已发送，点 ✦ 召 Claude 回复");
 }
 // ===== Claude 助手生图（独立配置：地址可空默认聊天地址，密钥/模型单独）=====
 // 压缩base64图片（降到最大边768px，jpeg 0.75），大幅省空间
@@ -10239,6 +10380,131 @@ function previewClaudeCode(id){
   if(lang==="svg") openPreview("SVG 预览", `<div class="svg-preview">${c.code}</div>`);
   else if(lang==="jsx" || lang==="react") openPreviewIframe("React 预览", buildReactPreview(c.code));
   else openPreviewIframe("HTML 预览", c.code);
+}
+function getClaudeArtifactExt(lang){
+  lang=String(lang||"html").toLowerCase();
+  if(lang==="svg") return "svg";
+  if(lang==="jsx"||lang==="react") return "jsx";
+  if(lang==="css") return "css";
+  if(lang==="js"||lang==="javascript") return "js";
+  return "html";
+}
+function getClaudeArtifactMime(lang){
+  const ext=getClaudeArtifactExt(lang);
+  if(ext==="svg") return "image/svg+xml";
+  if(ext==="css") return "text/css;charset=utf-8";
+  if(ext==="js"||ext==="jsx") return "text/javascript;charset=utf-8";
+  return "text/html;charset=utf-8";
+}
+function sanitizeArtifactFilename(name, ext){
+  name=String(name||"artifact").replace(new RegExp('[\\/:*?"<>|\\n\\r]+','g')," ").trim().slice(0,48) || "artifact";
+  ext=ext||"html";
+  return name.toLowerCase().endsWith("."+ext) ? name : `${name}.${ext}`;
+}
+function extractClaudeArtifactTitle(code, lang, fallback){
+  const s=String(code||"");
+  const title=s.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/<[^>]+>/g,"").trim();
+  if(title) return title.slice(0,48);
+  const h=s.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]?.replace(/<[^>]+>/g,"").trim();
+  if(h) return h.slice(0,48);
+  const comment=s.match(new RegExp('(?:<!--|//|#)\\s*([^\\n<]{2,48})'))?.[1]?.trim();
+  if(comment) return comment.slice(0,48);
+  return String(fallback||`${String(lang||"HTML").toUpperCase()} 作品`).replace(/\s+/g," ").trim().slice(0,32) || "HTML 作品";
+}
+function getClaudeArtifacts(){
+  const h=getClaudeHistory();
+  const items=[];
+  for(let i=0;i<h.length;i++){
+    const m=h[i];
+    if(!m || m.sender!=="assistant" || m.type!=="text") continue;
+    const blocks=parseCodeBlocks(m.content||"").filter(p=>p.kind==="code");
+    if(!blocks.length) continue;
+    const prevUser=h.slice(0,i).reverse().find(x=>x.sender==="user" && x.type==="text")?.content||"";
+    blocks.forEach((b,idx)=>{
+      const lang=String(b.lang||"html").toLowerCase();
+      const previewable=["html","svg","jsx","react"].includes(lang);
+      const downloadable=["html","svg","jsx","react","css","js","javascript"].includes(lang) || !lang;
+      if(!downloadable) return;
+      const ext=getClaudeArtifactExt(lang);
+      const title=extractClaudeArtifactTitle(b.code, lang||ext, prevUser||`Artifact ${items.length+1}`);
+      items.push({id:`${m.id}__${idx}`, msgId:m.id, index:idx, title, lang:lang||ext, ext, code:b.code||"", createdAt:m.createdAt||0, time:m.time||"", previewable});
+    });
+  }
+  return items.reverse();
+}
+function findClaudeArtifact(id){
+  return getClaudeArtifacts().find(a=>a.id===id)||null;
+}
+function renderClaudeArtifacts(){
+  const box=document.getElementById("claudeArtifactsList");
+  if(!box) return;
+  const items=getClaudeArtifacts();
+  if(!items.length){
+    box.innerHTML=`<div class="claude-artifacts-empty">还没有可保存的代码作品。Claude 输出 html / svg / jsx 后，会自动出现在这里。</div>`;
+    return;
+  }
+  box.innerHTML=items.map(a=>`<div class="claude-artifact-card" data-id="${escapeAttr(a.id)}">
+    <div class="claude-artifact-icon">&lt;&gt;</div>
+    <div class="claude-artifact-info" data-action="preview-claude-artifact" data-id="${escapeAttr(a.id)}">
+      <div class="claude-artifact-name">${escapeHtml(a.title)}</div>
+      <div class="claude-artifact-meta">Code · ${escapeHtml(String(a.ext||"html").toUpperCase())}${a.time?` · ${escapeHtml(a.time)}`:""}</div>
+    </div>
+    <div class="claude-artifact-actions">
+      <button title="保存" data-action="download-claude-artifact" data-id="${escapeAttr(a.id)}">↓</button>
+      <button title="发给 Claude 继续改" data-action="send-claude-artifact" data-id="${escapeAttr(a.id)}">➤</button>
+    </div>
+  </div>`).join("");
+}
+function openClaudeArtifacts(){
+  renderClaudeArtifacts();
+  document.getElementById("claudeArtifactsMask")?.classList.add("show");
+}
+function closeClaudeArtifacts(){
+  document.getElementById("claudeArtifactsMask")?.classList.remove("show");
+}
+function downloadTextFile(filename, text, mime){
+  const blob=new Blob([text||""],{type:mime||"text/plain;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ try{document.body.removeChild(a);}catch(e){} URL.revokeObjectURL(url); },120);
+}
+function downloadClaudeArtifact(id){
+  const a=findClaudeArtifact(id);
+  if(!a){ toast("没有找到这个 Artifact"); return; }
+  downloadTextFile(sanitizeArtifactFilename(a.title,a.ext), a.code, getClaudeArtifactMime(a.lang));
+}
+function downloadAllClaudeArtifacts(){
+  const items=getClaudeArtifacts();
+  if(!items.length){ toast("没有可下载的 Artifact"); return; }
+  const payload={_type:"miaoClaudeArtifacts", exportedAt:Date.now(), items:items.map(a=>({title:a.title,lang:a.lang,ext:a.ext,code:a.code,time:a.time}))};
+  downloadTextFile(`claude_artifacts_${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(payload,null,2), "application/json;charset=utf-8");
+  toast(`已打包 ${items.length} 个 Artifact`);
+}
+function previewClaudeArtifact(id){
+  const a=findClaudeArtifact(id);
+  if(!a){ toast("没有找到这个 Artifact"); return; }
+  const lang=String(a.lang||"").toLowerCase();
+  if(lang==="svg") openPreview("SVG 预览", `<div class="svg-preview">${a.code}</div>`);
+  else if(lang==="jsx" || lang==="react") openPreviewIframe("React 预览", buildReactPreview(a.code));
+  else if(lang==="html" || !lang) openPreviewIframe("HTML 预览", a.code);
+  else openPreview("代码预览", `<div class="text-preview">${escapeHtml(a.code)}</div>`);
+}
+async function sendClaudeArtifactAsFile(id){
+  const a=findClaudeArtifact(id);
+  if(!a){ toast("没有找到这个 Artifact"); return; }
+  const fileId=uid("cmsg");
+  const fileKey="claude_artifact_"+fileId;
+  const fileName=sanitizeArtifactFilename(a.title,a.ext);
+  const chunks=String(a.code||"").match(/[\s\S]{1,262144}/g)||[String(a.code||"")];
+  await putStoredFileRecord({name:fileKey, displayName:fileName, kind:"document", type:a.ext, size:new Blob([a.code||""]).size, text:a.code||"", chunks, total:String(a.code||"").length, words:countWords(a.code||""), sample:String(a.code||"").slice(0,5000), savedAt:Date.now(), mode:getClaudeMode(), source:"artifact"});
+  const h=getClaudeHistory();
+  h.push({id:fileId, sender:"user", type:"file", content:`[发送Artifact:${fileName}]`, data:{kind:"document", name:fileName, fileKey, type:a.ext, size:new Blob([a.code||""]).size, words:countWords(a.code||""), totalChars:String(a.code||"").length, chunks:chunks.length, preview:String(a.code||"").slice(0,1200), large:false, sourceArtifactId:id}, createdAt:Date.now(), time:nowTime()});
+  saveClaudeHistory(h);
+  closeClaudeArtifacts();
+  renderClaude(); renderStory(); renderCall(); renderContextSettings();
+  toast("已作为文件发给 Claude，可继续修改");
 }
 function buildReactPreview(code){
   return `<!doctype html><html><head><meta charset="utf-8"><script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"><\/script><script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"><\/script><script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;padding:18px;background:#fff}<\/style></head><body><div id="root"></div><script type="text/babel">${code}\n\nif (typeof App !== 'undefined') { ReactDOM.createRoot(document.getElementById('root')).render(<App/>); }<\/script></body></html>`;
@@ -13449,6 +13715,32 @@ function clearPlayedRoleVoiceCache(manual){
 }
 window.clearPlayedRoleVoiceCache=clearPlayedRoleVoiceCache;
 
+function getWechatImageDisplayUrl(msgId, data){
+  data=data||{};
+  return (window.wechatImageMap&&window.wechatImageMap[msgId]) || data.thumbUrl || data.dataUrl || "";
+}
+function markWechatImageConsumed(msgId){
+  if(!msgId) return;
+  try{ if(window.wechatImageMap) delete window.wechatImageMap[msgId]; }catch(e){}
+  try{
+    const h=getHistory();
+    const m=h.find(x=>x.id===msgId && x.type==="image_desc");
+    if(m && m.data){
+      m.data.imageCleared=true;
+      m.data.hasRealImage=true;
+      saveHistory(h);
+      if(Miao.state.currentApp==="wechat") renderChat();
+    }
+  }catch(e){}
+}
+function openWechatImagePreview(id){
+  const m=getHistory().find(x=>x.id===id && x.type==="image_desc");
+  if(!m) return;
+  const img=getWechatImageDisplayUrl(id, m.data||{});
+  if(!img){ toast("图片原图已清理，只剩文字说明"); return; }
+  const title=(m.data&&m.data.imageCleared)?"图片预览（缩略图）":"图片预览";
+  openPreview(title, `<div class="svg-preview"><img src="${escapeAttr(img)}" style="max-width:100%;border-radius:16px"></div>`);
+}
 function openImageDescModalOriginal(){
   openQuickModal(`<div class="quick-modal-title">发送图片</div>
     <label>上传图片（可选，模型可直接看到）</label>
@@ -13498,13 +13790,14 @@ function submitImageDesc(){
   if(f){
     // 读取base64存入内存Map，不存localStorage
     const reader=new FileReader();
-    reader.onload=e=>{
-      const dataUrl=e.target.result;
+    reader.onload=async e=>{
+      const dataUrl=String(e.target.result||"");
+      const thumbUrl=(typeof compressImageDataUrl==="function") ? await compressImageDataUrl(dataUrl, 280, .72) : dataUrl;
       if(!window.wechatImageMap) window.wechatImageMap={};
       window.wechatImageMap[msgId]=dataUrl;
       const h=getHistory();
       const finalDesc=desc||(f.name||"图片");
-      h.push({id:msgId, groupId:uid("usergrp"), sender:"user", type:"image_desc", content:`[图片描述:${finalDesc}]`, data:{description:finalDesc, hasRealImage:true}, read:false, createdAt:Date.now(), time:nowTime()});
+      h.push({id:msgId, groupId:uid("usergrp"), sender:"user", type:"image_desc", content:`[图片描述:${finalDesc}]`, data:{description:finalDesc, hasRealImage:true, imageCleared:false, imageName:f.name||"图片", imageType:f.type||"image", imageSize:f.size||0, thumbUrl}, read:false, createdAt:Date.now(), time:nowTime()});
       saveHistory(h);
       afterUserSpecialMessageSent();
     };
@@ -14094,23 +14387,54 @@ function deleteDiary(id){
   renderDiary();
 }
 
+function setMemorySearch(v){
+  Miao.state.memorySearch=String(v||"");
+  renderMemoryList();
+}
+function getMemoryTypeCounts(items){
+  const map={};
+  items.forEach(x=>{ const t=x.m?.type||"普通记忆"; map[t]=(map[t]||0)+1; });
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
+}
+function renderMemoryHero(all, visible){
+  const roleName=currentRole().name||"Non";
+  const important=all.filter(x=>x.m.important).length;
+  const locked=all.filter(x=>x.m.locked).length;
+  const latest=all.slice().sort((a,b)=>(b.m.createdAt||0)-(a.m.createdAt||0))[0]?.m;
+  const feature=all.find(x=>x.m.important)?.m || latest;
+  const counts=getMemoryTypeCounts(all);
+  const max=Math.max(1,...counts.map(x=>x[1]));
+  const segCount=Math.min(9,Math.max(5,all.length||5));
+  const segs=Array.from({length:segCount}).map((_,i)=>`<span class="memory-stat-seg ${i<Math.min(segCount,important+1)?"hot":""}"></span>`).join("");
+  return `<div class="memory-mind-hero">
+    <div class="memory-mind-title">${escapeHtml(roleName)} 的内心</div>
+    <div class="memory-mind-sub">会自己记，也会自己忘。</div>
+    <div class="memory-search"><input id="memorySearchInput" placeholder="找 想起什么…" value="${escapeAttr(Miao.state.memorySearch||"")}"></div>
+    <div class="memory-stat-row">${segs}</div>
+    <div class="memory-mind-line"><span>此刻地表 · 今天</span><span>${visible.length} / ${all.length} 条记忆 · ${important} 重要 · ${locked} 禁止遗忘</span></div>
+    ${feature?`<div class="memory-feature-card"><div class="memory-feature-kicker">最要紧的一件事</div><div class="memory-feature-title">${escapeHtml(feature.title||feature.content||"未命名记忆")}</div></div>`:""}
+    ${counts.length?`<div class="memory-direction"><div class="memory-direction-title">想要的方向</div>${counts.map(([k,v])=>`<div class="memory-direction-row"><span>${escapeHtml(k)}</span><div class="memory-direction-bar"><span style="width:${Math.max(8,Math.round(v/max*100))}%"></span></div><b>${v}</b></div>`).join("")}</div>`:""}
+  </div>`;
+}
 function renderMemoryList(){
   const box=$("#memoryList");
   if(!box) return;
   const roleMem=getMemories();
   const toolMem=getToolMemories();
-  if(!roleMem.length && !toolMem.length){
-    box.innerHTML=`<div class="moment-empty">还没有长期记忆。可以手动新增，也可以从微信 / 通话 / 剧情 / Claude 中提取。</div>`;
-    return;
-  }
-
-  function renderMemCard(m, isToolScope){
-    return `<div class="memory-card ${m.important?"important":""}">
+  const query=String(Miao.state.memorySearch||"").trim().toLowerCase();
+  const roleName=currentRole().name||"角色";
+  const all=[...roleMem.map(m=>({m,scope:"role"})), ...toolMem.map(m=>({m,scope:"tool"}))]
+    .sort((a,b)=>(b.m.important?1:0)-(a.m.important?1:0) || (b.m.createdAt||0)-(a.m.createdAt||0));
+  const visible=query ? all.filter(x=>`${x.m.title||""} ${x.m.type||""} ${x.m.content||""} ${x.m.source||""}`.toLowerCase().includes(query)) : all;
+  function renderMemCard(x){
+    const m=x.m, isToolScope=x.scope==="tool";
+    return `<div class="memory-mind-card ${m.important?"important":""} ${m.locked?"locked":""}">
       <div class="memory-top">
-        <div><div class="memory-title">${escapeHtml(m.title||"未命名记忆")}</div><div class="memory-meta">${escapeHtml(m.type||"普通记忆")} · ${escapeHtml(m.source||"手动")} · ${escapeHtml(m.time||"")}</div></div>
+        <div style="min-width:0"><div class="memory-title">${escapeHtml(m.title||"未命名记忆")}</div><div class="memory-meta">${escapeHtml(m.type||"普通记忆")} · ${escapeHtml(m.source||"手动")} · ${escapeHtml(m.time||"")}</div></div>
         <span class="memory-badge">${m.locked?"禁止遗忘":m.important?"重要":"普通"}</span>
       </div>
       <div class="memory-content">${escapeHtml(m.content||"")}</div>
+      <div class="memory-mini-tags"><span class="memory-mini-tag">${isToolScope?"工具Claude":"角色"}</span>${m.important?`<span class="memory-mini-tag">打钉</span>`:""}${m.locked?`<span class="memory-mini-tag">不遗忘</span>`:""}</div>
       <div class="memory-actions">
         <button data-action="open-memory-entry" data-id="${m.id}" data-scope="${isToolScope?"tool":"role"}">编辑</button>
         <button data-action="toggle-memory-important" data-id="${m.id}" data-scope="${isToolScope?"tool":"role"}">${m.important?"取消重要":"设为重要"}</button>
@@ -14119,33 +14443,21 @@ function renderMemoryList(){
       </div>
     </div>`;
   }
-
-  const roleExpanded=Miao.state.memFolderRole!==false;
-  const toolExpanded=Miao.state.memFolderTool!==false;
-  const roleName=currentRole().name||"角色";
-
-  let html="";
-  // 角色记忆文件夹
-  html+=`<div class="memory-folder">
-    <div class="memory-folder-header" data-action="toggle-mem-folder" data-id="role" style="cursor:pointer">
-      <span class="entry-toggle-arrow ${roleExpanded?"open":""}">›</span>
-      <b>${escapeHtml(roleName)} 的记忆</b>
-      <span style="color:#aaa;font-size:12px;margin-left:auto">${roleMem.length}条</span>
-    </div>
-    ${roleExpanded?`<div class="memory-folder-body">${roleMem.length?roleMem.map(m=>renderMemCard(m,false)).join(""):`<div style="padding:12px;color:#aaa;font-size:13px">暂无</div>`}</div>`:""}
-  </div>`;
-
-  // 工具克记忆文件夹
-  html+=`<div class="memory-folder">
-    <div class="memory-folder-header" data-action="toggle-mem-folder" data-id="tool" style="cursor:pointer">
-      <span class="entry-toggle-arrow ${toolExpanded?"open":""}">›</span>
-      <b>工具Claude 的记忆</b>
-      <span style="color:#aaa;font-size:12px;margin-left:auto">${toolMem.length}条</span>
-    </div>
-    ${toolExpanded?`<div class="memory-folder-body">${toolMem.length?toolMem.map(m=>renderMemCard(m,true)).join(""):`<div style="padding:12px;color:#aaa;font-size:13px">暂无</div>`}</div>`:""}
-  </div>`;
-
-  box.innerHTML=html;
+  let html=renderMemoryHero(all, visible);
+  if(!all.length){
+    html+=`<div class="memory-empty-mind">还没有长期记忆。可以手动新增，也可以从微信 / 通话 / 剧情 / Claude 中提取。</div>`;
+    box.innerHTML=html;
+  }else{
+    const roleItems=visible.filter(x=>x.scope==="role");
+    const toolItems=visible.filter(x=>x.scope==="tool");
+    html+=`<div class="memory-section-title">${escapeHtml(roleName)} 的地层 · ${roleItems.length}</div>`;
+    html+=roleItems.length?roleItems.map(renderMemCard).join(""):`<div class="memory-empty-mind">这里暂时没有匹配的角色记忆。</div>`;
+    html+=`<div class="memory-section-title">工具 Claude 的地层 · ${toolItems.length}</div>`;
+    html+=toolItems.length?toolItems.map(renderMemCard).join(""):`<div class="memory-empty-mind">这里暂时没有匹配的工具 Claude 记忆。</div>`;
+    box.innerHTML=html;
+  }
+  const inp=document.getElementById("memorySearchInput");
+  if(inp){ inp.addEventListener("input",()=>{ Miao.state.memorySearch=inp.value||""; renderMemoryList(); }); }
 }
 function renderRelation(){
   const scope = Miao.state.relationScopeTool ? "tool" : "role";
