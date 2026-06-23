@@ -1634,18 +1634,21 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   backdrop-filter:blur(var(--miao-blur,18px)) saturate(1.22)!important;
   -webkit-backdrop-filter:blur(var(--miao-blur,18px)) saturate(1.22)!important;
 }
-.claude-clawd-track{height:52px;position:relative;pointer-events:none;overflow:visible;margin:0 12px -2px;}
-.claude-composer-wrap .input-clawd.clawd-live{
-  top:2px!important;
-  width:54px!important;
-  height:54px!important;
+.claude-clawd-track{height:34px;position:relative;pointer-events:none;overflow:visible;margin:0 12px -12px;}
+.claude-clawd-track .input-clawd.clawd-live{
+  left:50%!important;
+  top:-28px!important;
+  width:66px!important;
+  height:66px!important;
   z-index:98!important;
+  pointer-events:auto!important;
+  transform:translateX(-50%)!important;
+  animation:none!important;
   filter:drop-shadow(0 4px 6px rgba(70,45,30,.18));
-  animation:clawdRunTopClaude 9s linear infinite alternate!important;
 }
-.claude-composer-wrap .input-clawd.clawd-live .clawd-svg-slot{width:54px!important;height:54px!important;}
-.claude-composer-wrap .input-clawd.clawd-live .clawd-live-reaction{display:none!important;}
-@keyframes clawdRunTopClaude{from{transform:translateX(8px)}to{transform:translateX(calc(min(430px,100vw) - 74px))}}
+.claude-clawd-track .input-clawd.clawd-live .clawd-svg-slot{width:66px!important;height:66px!important;}
+.claude-clawd-track .input-clawd.clawd-live .clawd-live-reaction{display:none!important;}
+@keyframes clawdRunTopClaude{from{transform:translateX(-50%)}to{transform:translateX(-50%)}}
 .claude-toolbar{
   padding:5px 10px 0!important;
   gap:8px!important;
@@ -3170,7 +3173,8 @@ body.multiselect-mode .msg{ cursor:pointer; }
   user-select:none!important;
   -webkit-tap-highlight-color:transparent!important;
   image-rendering:pixelated!important;
-  animation:clawdRunTop 8.5s linear infinite alternate!important;
+  transform:translateX(8px)!important;
+  animation:none!important;
   filter:drop-shadow(0 4px 5px rgba(70,45,30,.20));
 }
 .input-clawd.clawd-live .clawd-svg-slot{
@@ -3209,7 +3213,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
 .input-clawd.clawd-live.poked .clawd-svg-slot{animation:clawdPokeBounce .48s steps(2,end)}
 .input-clawd.clawd-live.poked .clawd-live-reaction{opacity:1;transform:translateY(0) scale(1)}
 .input-clawd.clawd-live.hopping .clawd-svg-slot{animation:clawdTinyHop .72s steps(3,end)}
-.composer-wrap.clawd-typing .input-clawd.clawd-live,.claude-composer-wrap.clawd-typing .input-clawd.clawd-live{animation-duration:4.3s!important}
+.composer-wrap.clawd-typing .input-clawd.clawd-live,.claude-composer-wrap.clawd-typing .input-clawd.clawd-live{animation:none!important}
 @keyframes clawdRunTop{from{transform:translateX(8px)}to{transform:translateX(calc(min(430px,100vw) - 80px))}}
 @keyframes clawdPokeBounce{25%{transform:translateY(-4px) rotate(-3deg) scale(1.05)}50%{transform:translateY(2px) rotate(3deg) scale(.96)}75%{transform:translateY(-2px) rotate(-2deg) scale(1.02)}}
 @keyframes clawdTinyHop{0%,100%{transform:translateY(0) rotate(0) scale(1)}25%{transform:translateY(-8px) rotate(-4deg) scale(1.03)}50%{transform:translateY(-13px) rotate(3deg) scale(1.02)}75%{transform:translateY(-4px) rotate(-2deg) scale(1)}} 
@@ -3315,14 +3319,14 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 .composer-wrap,.claude-composer-wrap{padding-bottom:env(safe-area-inset-bottom)!important;}
 
 
-/* ===== Clawd size polish v1：微信/Claude 小宠物略放大，Claude 跑道收窄 ===== */
-.composer-wrap .input-clawd.clawd-live{width:72px!important;height:72px!important;top:-57px!important;}
+/* ===== Clawd size polish v1：微信/Claude 小宠物固定尺寸与位置 ===== */
+.composer-wrap .input-clawd.clawd-live{width:72px!important;height:72px!important;top:-57px!important;transform:translateX(8px)!important;animation:none!important;}
 .composer-wrap .input-clawd.clawd-live .clawd-svg-slot{width:72px!important;height:72px!important;}
-.claude-clawd-track{height:42px!important;margin:0 12px -8px!important;overflow:visible!important;}
-.claude-composer-wrap .input-clawd.clawd-live{width:60px!important;height:60px!important;top:-4px!important;}
-.claude-composer-wrap .input-clawd.clawd-live .clawd-svg-slot{width:60px!important;height:60px!important;}
-@keyframes clawdRunTop{from{transform:translateX(8px)}to{transform:translateX(calc(min(430px,100vw) - 88px))}}
-@keyframes clawdRunTopClaude{from{transform:translateX(8px)}to{transform:translateX(calc(min(430px,100vw) - 82px))}}
+.claude-clawd-track{height:34px!important;margin:0 12px -12px!important;overflow:visible!important;position:relative!important;pointer-events:none!important;}
+.claude-clawd-track .input-clawd.clawd-live{left:50%!important;top:-28px!important;width:66px!important;height:66px!important;transform:translateX(-50%)!important;animation:none!important;pointer-events:auto!important;}
+.claude-clawd-track .input-clawd.clawd-live .clawd-svg-slot{width:66px!important;height:66px!important;}
+@keyframes clawdRunTop{from{transform:translateX(8px)}to{transform:translateX(8px)}}
+@keyframes clawdRunTopClaude{from{transform:translateX(-50%)}to{transform:translateX(-50%)}}
 
 
 /* ===== Memory 感受页 v1：关系天气 / 最近想起 ===== */
@@ -3377,14 +3381,155 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 .claude-ops-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;}
 .claude-ops-toggle{border:0;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:950;background:color-mix(in srgb,var(--accent,#111827) 8%,rgba(255,255,255,.72));color:var(--bar-text,#111827);}
 
+
+
+/* ===== Claude official-style UI core：统一线性图标 / 奶油灰界面，不移除头像 ===== */
+:root{
+  --miao-official-bg:#f7f5f0;
+  --miao-official-surface:rgba(255,254,250,.74);
+  --miao-official-card:rgba(255,255,252,.82);
+  --miao-official-line:rgba(42,36,28,.10);
+  --miao-official-text:#272521;
+  --miao-official-muted:#77716a;
+}
+.miao-svg-icon{width:1.08em;height:1.08em;display:block;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.miao-icon-host{display:inline-flex!important;align-items:center!important;justify-content:center!important}
+.icon-btn .miao-svg-icon,.call-btn .miao-svg-icon,.send-btn .miao-svg-icon,.claude-send .miao-svg-icon,.claude-invoke .miao-svg-icon{width:20px;height:20px}
+.app-icon .miao-svg-icon{width:29px;height:29px}
+.dock .app-icon .miao-svg-icon{width:28px;height:28px}
+.miao-mini-icon{width:14px;height:14px;display:inline-block;vertical-align:-2px}
+.miao-widget-placeholder-icon{width:34px;height:34px;color:currentColor;opacity:.58}
+.app-screen,.wechat,.claude-app,.moments-app,.eleme-app{color:var(--bar-text,var(--miao-official-text))}
+.header,.wechat-head,.composer-wrap,.claude-composer-wrap{background:color-mix(in srgb,var(--bar-bg,var(--miao-official-surface)) 88%,transparent)!important;border-color:var(--miao-official-line)!important;box-shadow:0 10px 28px rgba(38,31,22,.045)!important;backdrop-filter:blur(var(--miao-blur,18px)) saturate(1.12)!important;-webkit-backdrop-filter:blur(var(--miao-blur,18px)) saturate(1.12)!important}
+.icon-btn,.call-btn,.send-btn,.claude-send,.claude-invoke,.qty-btn,.artifact-round{background:color-mix(in srgb,var(--bar-bg,#fff) 74%,var(--accent,#111827) 5%)!important;color:var(--bar-text,var(--miao-official-text))!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 9%,transparent)!important;box-shadow:0 8px 22px rgba(38,31,22,.06)!important}
+.call-btn,.send-btn,.claude-send,.claude-invoke{border-radius:999px!important;min-width:44px}
+.claude-invoke{background:color-mix(in srgb,var(--accent,#111827) 10%,var(--bar-bg,#fff))!important;color:var(--bar-text,#111827)!important}
+.send-btn:active,.call-btn:active,.claude-send:active,.claude-invoke:active,.icon-btn:active{transform:scale(.96)}
+.chip-btn,.claude-toolbar .chip-btn,.btn{background:color-mix(in srgb,var(--bar-bg,#fff) 80%,var(--accent,#111827) 6%)!important;color:var(--bar-text,var(--miao-official-text))!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent)!important;box-shadow:none!important;font-weight:760!important}
+.chip-btn.active,.claude-toolbar .chip-btn.active,.claude-modebar button.active{background:color-mix(in srgb,var(--accent,#111827) 16%,var(--bar-bg,#fff))!important;color:var(--bar-text,#111827)!important}
+.app-icon{color:var(--bar-text,var(--miao-official-text))!important;background:color-mix(in srgb,var(--bar-bg,#fff) 70%,transparent)!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)!important;box-shadow:0 12px 28px rgba(38,31,22,.055),inset 0 1px 0 rgba(255,255,255,.62)!important}
+.home-screen{background:var(--home-bg,linear-gradient(180deg,#fbfaf7,#f0ede6))!important;color:var(--bar-text,var(--miao-official-text))!important}
+.home-screen .statusbar,.home-date,.app-name{color:var(--bar-text,var(--miao-official-text))!important;text-shadow:none!important}
+#miaoVersionLabel{color:color-mix(in srgb,var(--bar-text,#111827) 58%,transparent)!important;text-shadow:none!important}
+.dock{background:color-mix(in srgb,var(--bar-bg,#fff) 70%,transparent)!important;border:1px solid var(--miao-official-line)!important;box-shadow:0 18px 42px rgba(38,31,22,.09)!important}
+.page-dots .dot{background:color-mix(in srgb,var(--bar-text,#111827) 24%,transparent)!important}.page-dots .dot.active{background:var(--bar-text,#111827)!important}
+.bubble,.claude-bubble,.card,.moment-card,.eleme-store-card,.eleme-food-card,.eleme-cart,.eleme-order-card,.world-entry,.greeting-entry,.sticker-card,.claude-file-card,.claude-ops-card{box-shadow:0 10px 24px rgba(38,31,22,.045)!important;border-color:var(--miao-official-line)!important}
+.msg.role .bubble,.claude-msg.role .claude-bubble{background:color-mix(in srgb,var(--role-bubble-bg,#fff) 92%,transparent)!important}
+.food-pic,.eleme-store-logo{background:color-mix(in srgb,var(--bar-bg,#fff) 74%,var(--accent,#111827) 7%)!important;color:var(--bar-text,#111827)!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)!important}
+.food-pic .miao-svg-icon,.eleme-store-logo .miao-svg-icon{width:28px;height:28px}
+.quick-modal,.confirm-box,.modal-card{background:color-mix(in srgb,var(--bar-bg,#fff) 94%,transparent)!important;color:var(--bar-text,#111827)!important;border:1px solid var(--miao-official-line)!important}
+.live-soft-particle{width:12px;height:12px;border-radius:50%;background:color-mix(in srgb,var(--accent,#111827) 32%,#fff);box-shadow:0 0 0 5px color-mix(in srgb,var(--accent,#111827) 10%,transparent);display:block}
+
+
+/* ===== AI 指令任务浮窗：本地队列，不依赖后端 ===== */
+.command-task-layer{
+  position:absolute;
+  left:0;right:0;bottom:96px;
+  z-index:724;
+  pointer-events:none;
+  display:flex;
+  justify-content:flex-end;
+  padding:0 18px;
+  color:var(--bar-text,var(--miao-official-text,#111827));
+}
+.command-task-layer.hidden{display:none}
+.command-task-layer button{font:inherit}
+.command-task-peek,.command-task-card,.command-task-done-pill{
+  pointer-events:auto;
+  -webkit-tap-highlight-color:transparent;
+}
+.command-task-peek{
+  max-width:78%;
+  display:flex;align-items:center;gap:10px;
+  padding:8px 9px 8px 12px;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--bar-text,#111827) 88%,#000 4%);
+  color:#fff;
+  box-shadow:0 14px 38px rgba(38,31,22,.18);
+  backdrop-filter:blur(18px) saturate(1.05);
+  -webkit-backdrop-filter:blur(18px) saturate(1.05);
+  transform:translateZ(0);
+}
+.command-task-peek-title{
+  min-width:0;max-width:168px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-size:13px;font-weight:780;line-height:1.25;
+}
+.command-task-peek-dot{
+  width:8px;height:8px;border-radius:50%;flex:0 0 auto;
+  background:color-mix(in srgb,var(--accent,#b46b5f) 65%,#fff);
+  box-shadow:0 0 0 6px color-mix(in srgb,var(--accent,#b46b5f) 18%,transparent);
+}
+.command-task-peek-ring{
+  position:relative;width:24px;height:24px;border-radius:50%;flex:0 0 auto;
+  background:conic-gradient(currentColor calc(var(--p,0)*1turn), rgba(255,255,255,.22) 0);
+  opacity:.92;
+}
+.command-task-peek-ring:after{content:"";position:absolute;inset:4px;border-radius:50%;background:color-mix(in srgb,var(--bar-text,#111827) 88%,#000 4%)}
+.command-task-peek-time{
+  min-width:48px;
+  padding:6px 9px;
+  border-radius:999px;
+  background:rgba(255,255,255,.15);
+  font-size:13px;font-weight:900;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.02em;text-align:center;
+}
+.command-task-layer.overdue .command-task-peek{background:#4a3429}
+.command-task-layer.overdue .command-task-peek-dot{background:#e7a06d;box-shadow:0 0 0 6px rgba(231,160,109,.2)}
+.command-task-card{
+  width:min(332px,calc(100vw - 54px));
+  margin:0 auto;
+  border-radius:26px;
+  padding:18px 18px 15px;
+  background:color-mix(in srgb,var(--bar-bg,#fff) 94%,transparent);
+  border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent);
+  box-shadow:0 18px 58px rgba(38,31,22,.16), inset 0 1px 0 rgba(255,255,255,.75);
+  backdrop-filter:blur(24px) saturate(1.08);
+  -webkit-backdrop-filter:blur(24px) saturate(1.08);
+}
+.command-task-card-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.command-task-label{display:flex;align-items:center;gap:8px;color:color-mix(in srgb,var(--accent,#a66a5b) 80%,#6b7280);font-size:12px;font-weight:900;letter-spacing:.04em}
+.command-task-label:before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 0 5px color-mix(in srgb,currentColor 14%,transparent)}
+.command-task-collapse{width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:color-mix(in srgb,var(--bar-text,#111827) 62%,transparent);display:flex;align-items:center;justify-content:center}
+.command-task-collapse svg{width:18px;height:18px;stroke-width:2.3;transform:rotate(90deg)}
+.command-task-title{font-size:21px;font-weight:950;line-height:1.35;letter-spacing:-.02em;margin-bottom:14px;word-break:break-word}
+.command-task-main{display:flex;align-items:flex-end;gap:12px;margin-bottom:10px}
+.command-task-time{font-size:42px;font-weight:950;letter-spacing:.03em;line-height:1;font-variant-numeric:tabular-nums;color:#111}
+.command-task-meta{display:flex;gap:8px;align-items:baseline;color:color-mix(in srgb,var(--bar-text,#111827) 48%,transparent);font-size:13px;padding-bottom:5px;white-space:nowrap}
+.command-task-meta strong{color:color-mix(in srgb,var(--bar-text,#111827) 74%,transparent);font-weight:900}
+.command-task-progress{height:7px;border-radius:999px;overflow:hidden;background:color-mix(in srgb,var(--bar-text,#111827) 10%,transparent);margin:10px 0 14px;position:relative}
+.command-task-progress i{display:block;width:100%;height:100%;border-radius:inherit;background:color-mix(in srgb,var(--accent,#a66a5b) 74%,var(--bar-text,#111827) 12%);transform-origin:left center;transform:scaleX(var(--p,.01));transition:transform .25s linear,background .2s}
+.command-task-layer.overdue .command-task-progress i{background:#d88551}
+.command-task-layer.overdue .command-task-time{color:#b85f31}
+.command-task-actions{display:flex;align-items:center;gap:12px;color:color-mix(in srgb,var(--bar-text,#111827) 46%,transparent);font-size:13px;font-weight:760}
+.command-task-actions button{border:0;background:transparent;color:inherit;padding:7px 0;border-radius:999px;display:flex;align-items:center;gap:6px}
+.command-task-actions button:active{color:var(--accent,#111827)}
+.command-task-actions .danger{margin-left:auto;color:color-mix(in srgb,#b42318 70%,var(--bar-text,#111827) 18%)}
+.command-task-done-pill{
+  position:absolute;right:24px;bottom:36px;
+  display:flex;align-items:center;gap:8px;
+  padding:10px 17px;border-radius:999px;
+  background:color-mix(in srgb,var(--bar-bg,#fff) 92%,transparent);
+  color:color-mix(in srgb,#237a42 70%,var(--bar-text,#111827) 30%);
+  border:1px solid color-mix(in srgb,#237a42 18%,transparent);
+  box-shadow:0 14px 38px rgba(38,31,22,.14);
+  font-weight:950;font-size:14px;
+  animation:commandDoneIn .22s ease both;
+}
+.command-task-done-pill svg{width:18px;height:18px;stroke-width:2.6}
+@keyframes commandDoneIn{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media (max-width:440px){.command-task-layer{bottom:92px;padding:0 14px}.command-task-card{width:min(322px,calc(100vw - 44px))}.command-task-time{font-size:38px}.command-task-title{font-size:20px}}
+
 </style>
-<script>window.MIAO_BUILD="ArtifactStoreV1";</script>
+<script>window.MIAO_BUILD="CommandTaskMVP";</script>
 </head>
 <body>
 <div class="phone-shell">
   <div class="screen" id="screen">
     <div class="dynamic-island"></div>
     <div class="toast" id="toast"></div>
+    <div class="command-task-layer hidden" id="commandTaskLayer"></div>
 
     <section class="lock-screen" id="lockScreen">
       <div class="statusbar"><span id="lockStatusTime">9:41</span><span class="status-icons"><span class="signal"><i></i><i></i><i></i></span><span class="battery"></span></span></div>
@@ -3401,8 +3546,8 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
     <section class="home-screen" id="homeScreen">
       <div class="statusbar"><span id="homeStatusTime">9:41</span><span class="status-icons"><span class="signal"><i></i><i></i><i></i></span><span class="battery"></span></span></div>
       <div class="home-top" style="position:relative"><div class="home-date" id="homeDate">喵喵机</div><div id="miaoVersionLabel" style="font-size:11px;color:rgba(255,255,255,.78);font-weight:700;margin-top:4px;text-shadow:0 2px 6px rgba(0,0,0,.45)">喵喵机</div>
-      <button id="resetLayoutBtn" onclick="resetHomeLayout()" style="position:absolute;right:52px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);" title="整理图标">↺</button>
-      <button id="addWidgetBtn" onclick="showWidgetPicker()" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);">+</button>
+      <button id="resetLayoutBtn" onclick="resetHomeLayout()" data-miao-icon="refresh" aria-label="整理图标" style="position:absolute;right:52px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:none;color:var(--bar-text,#111827);width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);" title="整理图标"></button>
+      <button id="addWidgetBtn" onclick="showWidgetPicker()" data-miao-icon="plus" aria-label="添加组件" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:none;color:var(--bar-text,#111827);width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);"></button>
       </div>
       <div class="app-grid" id="appGrid"></div>
       <div class="page-dots" id="pageDots"></div>
@@ -3466,7 +3611,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
   <path d="M5 3 L13 3 C14.1 3 15 3.9 15 5 L3 5 C3 3.9 3.9 3 5 3Z" fill="var(--accent,#b1889c)" opacity="0.7" stroke="none"/>
   <path d="M5 12 h4" stroke="var(--bar-bg,#fff)" stroke-width="0.8" stroke-linecap="round" opacity="0.6"/>
 </svg></button>
-          <button class="icon-btn" data-action="open-settings">⚙</button>
+          <button class="icon-btn" data-action="open-settings" data-miao-icon="settings" aria-label="设置"></button>
         </div>
       </div>
       <div id="stickyNoteBar" class="sticky-note-bar"></div>
@@ -3495,8 +3640,8 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
           </div>
         <div class="composer">
           <textarea id="msgInput" placeholder="输入消息..." rows="1"></textarea>
-          <button class="call-btn" data-action="call-ai" title="召唤回复">✦</button>
-          <button class="send-btn" data-action="send-message">➤</button>
+          <button class="call-btn" data-action="call-ai" data-miao-icon="spark" title="召唤回复" aria-label="召唤回复"></button>
+          <button class="send-btn" data-action="send-message" data-miao-icon="send" aria-label="发送"></button>
         </div>
       </div>
       <div class="thinking-mask" id="thinkingMask" onclick="closeThinking(event)">
@@ -3523,7 +3668,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 
 
     <section class="app-screen" id="meApp">
-      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">我</div><button class="icon-btn" data-action="save-user-profile">✓</button></div>
+      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">我</div><button class="icon-btn" data-action="save-user-profile" data-miao-icon="check" aria-label="保存"></button></div>
       <div class="content">
         <div class="user-profile-card">
           <img id="userAvatarPreview" alt="">
@@ -3565,7 +3710,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
           <label>ThoughtProcess 思维链风格</label><textarea id="roleThoughtStyleInput" placeholder="可粘贴：认知顺序 / 内心语气 / 情绪表达 / 长度倾向 / 场景示例 / 禁止项。留空则根据角色性格自动推断。"></textarea>
           <div class="v3-sub">这里写的是角色内心独白风格，不是回复计划。不同 char 可以完全不同。</div>
           <div class="card" style="padding:14px;margin:8px 0">
-            <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--accent)">💳 亲属卡设置</div>
+            <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--accent)">亲属卡设置</div>
             <div style="font-size:11px;color:#999;margin-bottom:10px;line-height:1.5">亲属卡是角色愿意给你花的钱。角色可以在聊天里自己开通/调额度/充值；这里是手动底牌，也能直接设置。</div>
             <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px">
               <input type="checkbox" id="roleFamilyCardEnabled"> 开启亲属卡
@@ -3800,7 +3945,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 
 
     <section class="app-screen eleme-app" id="elemeApp">
-      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">饿了么</div><button class="icon-btn" data-action="open-eleme-orders">🧾</button></div>
+      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">饿了么</div><button class="icon-btn" data-action="open-eleme-orders" data-miao-icon="receipt" aria-label="订单"></button></div>
       <div class="eleme-tabs">
         <button id="elemeTabStores" data-action="open-eleme-stores">点餐</button>
         <button id="elemeTabOrders" data-action="open-eleme-orders">订单</button>
@@ -3820,7 +3965,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
     </section>
 
     <section class="app-screen story-app" id="storyApp">
-      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">线下剧情</div><button class="icon-btn" data-action="clear-story">🧹</button></div>
+      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">线下剧情</div><button class="icon-btn" data-action="clear-story" data-miao-icon="broom" aria-label="清空剧情"></button></div>
       <div class="hidden-context-card" style="margin:10px 12px 0">
         <div style="font-weight:950">剧情隐藏上下文</div>
         <div class="v3-sub">独立于微信聊天。微信 API 可读取最近剧情摘要，但微信界面不会显示。</div>
@@ -3899,7 +4044,6 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
       </div>
       <div class="claude-chat" id="claudeChat"></div>
       <div class="claude-composer-wrap">
-        <div class="claude-clawd-track" aria-hidden="true"></div>
         <div class="claude-toolbar">
           <label class="chip-btn file-btn">上传文件<input type="file" id="claudeFileInput" multiple accept=".txt,.md,.html,.json,.png,.jpg,.jpeg,.webp,.svg,.css,.js,.jsx,.ts,.tsx,.py,.vue,.svelte,.csv,.xml,.yaml,.yml,.log,.doc,.docx,image/*"></label>
           <button class="chip-btn" data-action="claude-multiselect">多选删除</button>
@@ -3907,10 +4051,11 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
           <label class="chip-btn file-btn">导入记录<input type="file" accept="application/json,.json" id="claudeImportInput"></label>
           <button class="chip-btn" data-action="clear-claude">清空会话</button>
         </div>
+        <div class="claude-clawd-track" aria-hidden="true"></div>
         <div class="claude-composer">
           <textarea id="claudeInput" placeholder="Message…" rows="1"></textarea>
-          <button class="claude-invoke" data-action="invoke-claude" title="召唤 Claude 回复">✦</button>
-          <button class="claude-send" data-action="send-claude" title="只发送，不召唤回复">➤</button>
+          <button class="claude-invoke" data-action="invoke-claude" data-miao-icon="spark" title="召唤 Claude 回复" aria-label="召唤 Claude 回复"></button>
+          <button class="claude-send" data-action="send-claude" data-miao-icon="send" title="只发送，不召唤回复" aria-label="发送"></button>
         </div>
       </div>
       <div id="claudeMultiBar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bar-bg,rgba(255,255,255,.95));backdrop-filter:blur(18px);border-top:1px solid rgba(0,0,0,.07);padding:12px 20px;z-index:200;align-items:center;justify-content:space-between;">
@@ -4135,7 +4280,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
         <span style="width:32px"></span>
       </div>
       <div class="content" id="petContent" style="padding:20px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;gap:18px;text-align:center">
-        <div style="font-size:72px;margin-top:10px">🐰</div>
+        <div style="font-size:72px;margin-top:10px;display:flex;justify-content:center;color:var(--accent,#888)"><svg class="miao-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="10" r="2"/><circle cx="16" cy="10" r="2"/><path d="M7 15c1.8-2.4 8.2-2.4 10 0 1.5 2-1.3 4-3.2 2.6a3 3 0 0 0-3.6 0C8.3 19 5.5 17 7 15z"/></svg></div>
         <div style="font-size:17px;font-weight:700;color:var(--accent,#888)">桌宠小兔</div>
         <div style="font-size:13px;color:#999;line-height:1.7;max-width:280px">开启后，小兔子会待在主屏上。<br>可以拖动它换位置，戳一戳它会有反应～</div>
         <button id="petToggleBtn" onclick="togglePet()" style="border:none;border-radius:14px;padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;color:#fff;background:var(--accent,#888)">开启桌宠</button>
@@ -4182,9 +4327,9 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
             <img id="liveRoomAvatar" style="width:32px;height:32px;border-radius:50%;object-fit:cover">
             <div style="flex:1;min-width:0">
               <div id="liveRoomName" style="color:#fff;font-size:14px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.5)"></div>
-              <div id="liveRoomTag" style="color:rgba(255,255,255,.85);font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.5)">🔴 私密直播中</div>
+              <div id="liveRoomTag" style="color:rgba(255,255,255,.85);font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.5)">私密直播中</div>
             </div>
-            <div id="liveViewerCount" style="color:#fff;font-size:11px;background:rgba(0,0,0,.35);padding:3px 9px;border-radius:999px">👤 1</div>
+            <div id="liveViewerCount" style="color:#fff;font-size:11px;background:rgba(0,0,0,.35);padding:3px 9px;border-radius:999px">观众 1</div>
             <button onclick="exitLiveRoom()" style="background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:14px;padding:5px 12px;font-size:12px;cursor:pointer">退出</button>
           </div>
           <!-- 镜头描写字幕层（淡入淡出） -->
@@ -4197,10 +4342,10 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
         <!-- 底部操作区 -->
         <div id="liveComposer" style="flex:0 0 auto;border-top:1px solid rgba(0,0,0,.07);padding:8px 10px;background:var(--bar-bg,rgba(255,255,255,.95))">
           <div style="display:flex;gap:7px;margin-bottom:7px;overflow-x:auto">
-            <button class="chip-btn" style="flex:0 0 auto" onclick="liveGift(6.6)">🎁 6.6</button>
-            <button class="chip-btn" style="flex:0 0 auto" onclick="liveGift(52)">💝 52</button>
-            <button class="chip-btn" style="flex:0 0 auto" onclick="liveGift(520)">💎 520</button>
-            <button class="chip-btn" style="flex:0 0 auto" onclick="liveGiftCustom()">🪙 自定义</button>
+            <button class="chip-btn" style="flex:0 0 auto" onclick="liveGift(6.6)">礼物 6.6</button>
+            <button class="chip-btn" style="flex:0 0 auto" onclick="liveGift(52)">礼物 52</button>
+            <button class="chip-btn" style="flex:0 0 auto" onclick="liveGift(520)">礼物 520</button>
+            <button class="chip-btn" style="flex:0 0 auto" onclick="liveGiftCustom()">自定义</button>
           </div>
           <div style="display:flex;gap:8px;align-items:flex-end">
             <textarea id="liveInput" placeholder="发条弹幕…" rows="1" style="flex:1;resize:none;border-radius:18px;padding:9px 14px;border:1px solid rgba(0,0,0,.1);font-size:14px;max-height:80px"></textarea>
@@ -4334,7 +4479,7 @@ function showErrBar(msg){
       (document.body||document.documentElement).appendChild(el);
     }
     var t=document.getElementById("__errbar_txt");
-    if(t) t.textContent = "⚠ "+msg;
+    if(t) t.textContent = "提示："+msg;
   }catch(e){}
 }
 window.addEventListener("error", function(ev){
@@ -4353,6 +4498,65 @@ window.addEventListener("unhandledrejection", function(ev){
 const $ = (sel, root=document)=>root.querySelector(sel);
 const $$ = (sel, root=document)=>Array.from(root.querySelectorAll(sel));
 
+
+
+/* ===== 统一手绘线性图标：默认 UI 不再依赖 emoji，颜色跟随主题 ===== */
+const MIAO_ICON_PATHS={
+  app:'<rect x="5" y="5" width="14" height="14" rx="4"/><path d="M9 9h6M9 13h4"/>',
+  chat:'<path d="M5 7.5c0-2 1.8-3.5 4-3.5h6c2.2 0 4 1.5 4 3.5v3.7c0 2-1.8 3.5-4 3.5h-3.8L6.5 19v-4.3H9c-2.2 0-4-1.5-4-3.5z"/>',
+  role:'<path d="M12 20s-7-4.3-7-9.4A3.7 3.7 0 0 1 11.7 8 3.7 3.7 0 0 1 19 10.6C19 15.7 12 20 12 20z"/>',
+  api:'<rect x="4" y="5" width="16" height="14" rx="4"/><path d="M8 9h8M8 13h5M16 13h.01"/>',
+  user:'<circle cx="12" cy="8" r="3.2"/><path d="M5.5 19c1.2-3.4 3.2-5 6.5-5s5.3 1.6 6.5 5"/>',
+  theme:'<path d="M12 4a8 8 0 0 0 0 16h1.5a1.8 1.8 0 0 0 .8-3.4 1.6 1.6 0 0 1 .7-3h1.4A3.6 3.6 0 0 0 20 10c0-3.3-3.4-6-8-6z"/><circle cx="8.2" cy="10" r=".7"/><circle cx="11" cy="7.8" r=".7"/><circle cx="14.2" cy="8.3" r=".7"/>',
+  food:'<path d="M5 12h14c-.4 4-3 7-7 7s-6.6-3-7-7z"/><path d="M8 9c0-1.8 1-2.2 1-3.5M12 9c0-1.8 1-2.2 1-3.5M16 9c0-1.8 1-2.2 1-3.5"/>',
+  claude:'<path d="M12 4l1.5 5 5 1.5-5 1.5-1.5 5-1.5-5-5-1.5 5-1.5z"/>',
+  story:'<path d="M6 4h9l3 3v13H6z"/><path d="M15 4v4h4M9 12h6M9 16h5"/>',
+  call:'<path d="M8 5l2.2 4-1.7 1.2c1.1 2.2 2.8 3.9 5 5l1.3-1.7 4 2.2c-.5 2-1.8 3.3-3.8 3.3C9.5 19 5 14.5 5 9c0-2 1.3-3.4 3-4z"/>',
+  moments:'<rect x="5" y="5" width="14" height="14" rx="4"/><path d="M8 15l2.3-2.5 2 1.8L16 10l3 5"/><circle cx="9" cy="9" r="1"/>',
+  stickers:'<path d="M6 5h12v9l-5 5H6z"/><path d="M13 19v-5h5M9 9h.01M15 9h.01M9.5 13c1.2 1 3.8 1 5 0"/>',
+  book:'<path d="M5 5.5A3.5 3.5 0 0 1 8.5 4H19v15H8.5A3.5 3.5 0 0 0 5 20.5z"/><path d="M5 5.5v15M9 8h6M9 12h5"/>',
+  memory:'<path d="M8.5 18c-2.2-.6-3.5-2.3-3.5-4.4 0-1.6.8-3 2-3.8A4.8 4.8 0 0 1 16.8 10c1.3.8 2.2 2.2 2.2 3.9 0 2.6-2.1 4.7-4.8 4.7H12v-4"/><path d="M9 9.5c1.2-1 2.8-1 4 0M8.5 13h7"/>',
+  diary:'<rect x="6" y="4" width="12" height="16" rx="3"/><path d="M9 4v16M11 8h4M11 12h4"/>',
+  live:'<rect x="4" y="6" width="16" height="11" rx="3"/><path d="M9 20h6M12 17v3M10 10l4 2-4 2z"/>',
+  shop:'<path d="M6 8h12l-1 12H7z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
+  pet:'<circle cx="8" cy="10" r="2"/><circle cx="16" cy="10" r="2"/><path d="M7 15c1.8-2.4 8.2-2.4 10 0 1.5 2-1.3 4-3.2 2.6a3 3 0 0 0-3.6 0C8.3 19 5.5 17 7 15z"/>',
+  data:'<ellipse cx="12" cy="6" rx="6" ry="3"/><path d="M6 6v6c0 1.7 2.7 3 6 3s6-1.3 6-3V6"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M4.2 7.5l1.7 1M18.1 15.5l1.7 1M4.2 16.5l1.7-1M18.1 8.5l1.7-1"/>',
+  send:'<path d="M4 12l16-7-7 16-2-7z"/><path d="M11 14l4-5"/>',
+  spark:'<path d="M12 4l1.2 5 4.8 1.5-4.8 1.5L12 17l-1.2-5L6 10.5 10.8 9z"/>',
+  receipt:'<path d="M7 4h10v16l-2-1.2-2 1.2-2-1.2-2 1.2-2-1.2z"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+  broom:'<path d="M15 4l5 5M13 6l5 5"/><path d="M14 8l-7 7"/><path d="M5 16l3 3 5-5-3-3z"/>',
+  check:'<path d="M5 12.5l4.2 4L19 7"/>',
+  back:'<path d="M15 6l-6 6 6 6"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  refresh:'<path d="M19 8a7 7 0 1 0 1 5"/><path d="M19 4v4h-4"/>',
+  more:'<circle cx="6" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="18" cy="12" r="1"/>',
+  trash:'<path d="M6 7h12M10 7V5h4v2M8 7l1 13h6l1-13"/>',
+  edit:'<path d="M5 19l4.5-1 9-9a2.2 2.2 0 0 0-3-3l-9 9z"/><path d="M14 7l3 3"/>',
+  link:'<path d="M9.5 14.5l5-5"/><path d="M10.5 7.5l1-1a4 4 0 0 1 5.7 5.7l-1 1"/><path d="M13.5 16.5l-1 1a4 4 0 0 1-5.7-5.7l1-1"/>',
+  lock:'<rect x="6" y="10" width="12" height="10" rx="3"/><path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/>',
+  image:'<rect x="5" y="5" width="14" height="14" rx="3"/><path d="M8 15l2.4-2.8 2 2 2.4-3.2L18 15"/><circle cx="9" cy="9" r="1"/>',
+  camera:'<path d="M6 8h3l1.5-2h3L15 8h3v10H6z"/><circle cx="12" cy="13" r="3"/>',
+  clock:'<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',
+  command:'<path d="M5 6.5h14v11H5z"/><path d="M8 10h5M8 14h8"/><circle cx="17" cy="9" r="1"/>',
+  chevron:'<path d="M9 6l6 6-6 6"/>',
+  calendar:'<rect x="5" y="6" width="14" height="13" rx="3"/><path d="M8 4v4M16 4v4M5 10h14"/>',
+  note:'<path d="M6 5h12v14H6z"/><path d="M9 9h6M9 13h5"/>',
+  product:'<path d="M7 7h10v12H7z"/><path d="M9 7a3 3 0 0 1 6 0"/><path d="M10 12h4"/>'
+};
+function miaoIcon(name, cls){
+  const key=MIAO_ICON_PATHS[name]?name:"app";
+  return `<svg class="${cls||"miao-svg-icon"}" viewBox="0 0 24 24" aria-hidden="true">${MIAO_ICON_PATHS[key]}</svg>`;
+}
+function hydrateMiaoIcons(root){
+  (root||document).querySelectorAll("[data-miao-icon]").forEach(el=>{
+    const name=el.getAttribute("data-miao-icon")||"app";
+    el.innerHTML=miaoIcon(name);
+    el.classList.add("miao-icon-host");
+    if(!el.getAttribute("aria-label")) el.setAttribute("aria-label", el.getAttribute("title")||name);
+  });
+}
+
 const Miao = {
   version:"2.0-base",
   state:{
@@ -4366,26 +4570,26 @@ const Miao = {
     avatar:"data:image/svg+xml;utf8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="36" fill="#111827"/><text x="60" y="74" text-anchor="middle" font-size="56" fill="white">喵</text></svg>')
   },
   apps:[
-    {id:"wechat", name:"微信", icon:"💬", dock:true},
-    {id:"roles", name:"角色卡", icon:"♡", dock:true},
-    {id:"api", name:"API", icon:"⌘", dock:true},
-    {id:"me", name:"我", icon:"👤", dock:false},
-    {id:"theme", name:"美化", icon:"✦", dock:true},
-    {id:"eleme", name:"饿了么", icon:"🍜", dock:false},
-    {id:"claude", name:"Claude", icon:"C", dock:false},
-    {id:"story", name:"剧情", icon:"🎭", dock:false},
-    {id:"call", name:"通话", icon:"☎️", dock:false},
-    {id:"moments", name:"朋友圈", icon:"🌈", dock:false},
-    {id:"stickers", name:"表情包", icon:"🧸", dock:false},
-    {id:"worldbook", name:"世界书", icon:"📖", dock:false},
-    {id:"greetings", name:"开场白", icon:"💬", dock:false},
-    {id:"memory", name:"记忆", icon:"🧠", dock:false},
-    {id:"diary", name:"日记", icon:"📔", dock:false},
-    {id:"live", name:"直播", icon:"📺", dock:false},
-    {id:"shop", name:"商城", icon:"🛍️", dock:false},
-    {id:"pet", name:"桌宠", icon:"🐾", dock:false},
-    {id:"data", name:"数据", icon:"🧰", dock:false},
-    {id:"settings", name:"设置", icon:"⚙", dock:false}
+    {id:"wechat", name:"微信", iconId:"chat", dock:true},
+    {id:"roles", name:"角色卡", iconId:"role", dock:true},
+    {id:"api", name:"API", iconId:"api", dock:true},
+    {id:"me", name:"我", iconId:"user", dock:false},
+    {id:"theme", name:"美化", iconId:"theme", dock:true},
+    {id:"eleme", name:"饿了么", iconId:"food", dock:false},
+    {id:"claude", name:"Claude", iconId:"claude", dock:false},
+    {id:"story", name:"剧情", iconId:"story", dock:false},
+    {id:"call", name:"通话", iconId:"call", dock:false},
+    {id:"moments", name:"朋友圈", iconId:"moments", dock:false},
+    {id:"stickers", name:"表情包", iconId:"stickers", dock:false},
+    {id:"worldbook", name:"世界书", iconId:"book", dock:false},
+    {id:"greetings", name:"开场白", iconId:"chat", dock:false},
+    {id:"memory", name:"记忆", iconId:"memory", dock:false},
+    {id:"diary", name:"日记", iconId:"diary", dock:false},
+    {id:"live", name:"直播", iconId:"live", dock:false},
+    {id:"shop", name:"商城", iconId:"shop", dock:false},
+    {id:"pet", name:"桌宠", iconId:"pet", dock:false},
+    {id:"data", name:"数据", iconId:"data", dock:false},
+    {id:"settings", name:"设置", iconId:"settings", dock:false}
   ],
   themes:{
     simple:{
@@ -4522,6 +4726,216 @@ function askConfirm(message){
 }
 function escapeHtml(s){ return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
 
+/* ===== AI 指令任务：轻量本地版（无后端、无轮询、无额外 API 请求） ===== */
+const COMMAND_TASK_KEY="commandTasks.v1";
+const COMMAND_FEEDBACK_KEY="commandTaskFeedback.v1";
+const COMMAND_UI_KEY="commandTaskUI.v1";
+let commandTaskTimer=null;
+let commandTaskLongPressTimer=null;
+let commandTaskDoneTimer=null;
+function getCommandTasks(){ return Storage.get(COMMAND_TASK_KEY, []) || []; }
+function saveCommandTasks(list){ Storage.set(COMMAND_TASK_KEY, Array.isArray(list)?list.slice(-120):[]); }
+function getCommandFeedback(){ return Storage.get(COMMAND_FEEDBACK_KEY, []) || []; }
+function saveCommandFeedback(list){ Storage.set(COMMAND_FEEDBACK_KEY, Array.isArray(list)?list.slice(-80):[]); }
+function getCommandUI(){ return Storage.get(COMMAND_UI_KEY, {expanded:false}) || {expanded:false}; }
+function saveCommandUI(ui){ Storage.set(COMMAND_UI_KEY, Object.assign({expanded:false}, ui||{})); }
+function commandTaskScope(){ return Miao.state.currentApp==="claude" ? (getClaudeMode&&getClaudeMode()==="tool"?"toolClaude":"roleClaude") : "wechat"; }
+function commandTaskVisibleHere(){ return Miao.state.currentApp==="wechat" || Miao.state.currentApp==="claude"; }
+function normalizeCommandSeconds(v){
+  if(v===undefined||v===null||v==="") return null;
+  if(typeof v==="string"){
+    const s=v.trim();
+    let m=s.match(/^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/);
+    if(m){ const a=+m[1], b=+m[2], c=m[3]?+m[3]:0; return Math.min(86400, Math.max(1, m[3]?a*3600+b*60+c:a*60+b)); }
+    let total=0;
+    const h=s.match(/(\d+(?:\.\d+)?)\s*(?:小时|时|h)/i); if(h) total+=Math.round(parseFloat(h[1])*3600);
+    const min=s.match(/(\d+(?:\.\d+)?)\s*(?:分钟|分|m(?!s))/i); if(min) total+=Math.round(parseFloat(min[1])*60);
+    const sec=s.match(/(\d+(?:\.\d+)?)\s*(?:秒|s)/i); if(sec) total+=Math.round(parseFloat(sec[1]));
+    if(total>0) return Math.min(86400,total);
+  }
+  const n=parseInt(v,10);
+  return Number.isFinite(n)&&n>0 ? Math.min(86400,n) : null;
+}
+function parseCommandDurationText(s){ return normalizeCommandSeconds(String(s||"")); }
+function issueCommandTask(args={}, source){
+  args=args||{};
+  const title=String(args.title||args.task||args.name||"").replace(/[\r\n]+/g," ").trim().slice(0,80);
+  if(!title) return {ok:false,error:"缺少任务标题"};
+  const seconds=normalizeCommandSeconds(args.countdown_seconds ?? args.seconds ?? args.duration ?? args.duration_seconds);
+  const list=getCommandTasks();
+  const task={
+    id:uid("cmd"), title, countdown_seconds:seconds, note:String(args.note||"").slice(0,160),
+    created_at:Date.now(), started_at:null, completed_at:null, cancelled_at:null,
+    created_by:source||commandTaskScope(), source:source||commandTaskScope(), status:"pending"
+  };
+  list.push(task); saveCommandTasks(list);
+  saveCommandUI(Object.assign(getCommandUI(), {expanded:list.filter(t=>t.status==="pending"||t.status==="running").length===1}));
+  renderCommandTaskLayer(); startCommandTaskTicker();
+  try{ toast("已收到一个小任务"); }catch(e){}
+  return {ok:true,id:task.id,title:task.title,countdown_seconds:seconds};
+}
+window.issueCommandTask=issueCommandTask;
+function getActiveCommandTask(){
+  const list=getCommandTasks();
+  let changed=false;
+  const task=list.find(t=>t && (t.status==="running"||t.status==="pending"));
+  if(task && task.status==="pending"){
+    task.status="running";
+    task.started_at=task.started_at||Date.now();
+    changed=true;
+  }
+  if(changed) saveCommandTasks(list);
+  return task||null;
+}
+function commandTaskTiming(task){
+  const now=Date.now();
+  const started=task.started_at||now;
+  const elapsed=Math.max(0, Math.floor((now-started)/1000));
+  const total=normalizeCommandSeconds(task.countdown_seconds);
+  if(!total) return {elapsed,total:null,remaining:null,overdue:false,progress:0,display:formatCommandTime(elapsed),stateText:"已用"};
+  const remaining=total-elapsed;
+  const overdue=remaining<0;
+  const progress=overdue?1:Math.max(0.015,Math.min(1,elapsed/total));
+  return {elapsed,total,remaining,overdue,progress,display:overdue?("+"+formatCommandTime(Math.abs(remaining))):formatCommandTime(remaining),stateText:overdue?"超时":"还剩"};
+}
+function formatCommandTime(sec){
+  sec=Math.max(0,Math.floor(sec||0));
+  const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+  if(h>0) return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+function commandStartClock(task){
+  try{return new Date(task.started_at||task.created_at||Date.now()).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",hour12:false});}catch(e){return "";}
+}
+function pushCommandFeedback(task,status){
+  const planned=normalizeCommandSeconds(task.countdown_seconds);
+  const end=task.completed_at||task.cancelled_at||Date.now();
+  const start=task.started_at||task.created_at||end;
+  const duration_ms=Math.max(0,end-start);
+  const feedback={
+    id:uid("cmdfb"), task_id:task.id, title:task.title, status,
+    planned_seconds:planned, duration_ms, duration_seconds:Math.round(duration_ms/1000),
+    vs_countdown:planned?Math.round(duration_ms/1000)-planned:null,
+    time:nowTime(), created_at:Date.now(), source:task.source||task.created_by||"wechat", delivered_at:null
+  };
+  const list=getCommandFeedback(); list.push(feedback); saveCommandFeedback(list);
+}
+function completeCommandTask(id){
+  const list=getCommandTasks();
+  const task=list.find(t=>t.id===id)||getActiveCommandTask();
+  if(!task) return;
+  task.status="done"; task.completed_at=Date.now(); task.started_at=task.started_at||task.created_at||Date.now();
+  saveCommandTasks(list); pushCommandFeedback(task,"done"); showCommandDonePill();
+}
+function cancelCommandTask(id){
+  const list=getCommandTasks();
+  const task=list.find(t=>t.id===id)||getActiveCommandTask();
+  if(!task) return;
+  task.status="cancelled"; task.cancelled_at=Date.now(); task.started_at=task.started_at||task.created_at||Date.now();
+  saveCommandTasks(list); pushCommandFeedback(task,"cancelled"); try{toast("已取消任务");}catch(e){} renderCommandTaskLayer(); startCommandTaskTicker();
+}
+function showCommandDonePill(){
+  const layer=document.getElementById("commandTaskLayer"); if(!layer) return;
+  stopCommandTaskTicker();
+  clearTimeout(commandTaskDoneTimer);
+  layer.className="command-task-layer";
+  layer.innerHTML=`<div class="command-task-done-pill">${miaoIcon("check")}<span>已完成</span></div>`;
+  commandTaskDoneTimer=setTimeout(()=>{ renderCommandTaskLayer(); startCommandTaskTicker(); },1200);
+}
+function renderCommandTaskLayer(){
+  const layer=document.getElementById("commandTaskLayer");
+  if(!layer) return;
+  if(!commandTaskVisibleHere()){ layer.className="command-task-layer hidden"; layer.innerHTML=""; return; }
+  const task=getActiveCommandTask();
+  if(!task){ layer.className="command-task-layer hidden"; layer.innerHTML=""; stopCommandTaskTicker(); return; }
+  const t=commandTaskTiming(task);
+  const ui=getCommandUI();
+  layer.className="command-task-layer"+(t.overdue?" overdue":"");
+  layer.style.setProperty("--p", String(t.progress||0));
+  if(ui.expanded){
+    layer.innerHTML=`<div class="command-task-card" data-command-id="${escapeAttr(task.id)}">
+      <div class="command-task-card-top"><div class="command-task-label">指令</div><button class="command-task-collapse" data-command-action="collapse" aria-label="收起">${miaoIcon("chevron")}</button></div>
+      <div class="command-task-title">${escapeHtml(task.title)}</div>
+      <div class="command-task-main"><div class="command-task-time">${escapeHtml(t.display)}</div><div class="command-task-meta"><strong>${escapeHtml(t.stateText)}</strong><span>${escapeHtml(commandStartClock(task))} 起</span></div></div>
+      <div class="command-task-progress"><i></i></div>
+      <div class="command-task-actions"><button data-command-action="complete">${miaoIcon("check","miao-mini-icon")}左滑完成</button><button class="danger" data-command-action="cancel">长按取消</button></div>
+    </div>`;
+    bindCommandTaskPointer(layer.querySelector(".command-task-card"), task.id);
+  } else {
+    layer.innerHTML=`<div class="command-task-peek" data-command-action="expand" data-command-id="${escapeAttr(task.id)}">
+      <span class="command-task-peek-dot"></span><span class="command-task-peek-title">${escapeHtml(task.title)}</span><span class="command-task-peek-ring"></span><span class="command-task-peek-time">${escapeHtml(t.display)}</span>
+    </div>`;
+  }
+}
+function bindCommandTaskPointer(el,id){
+  if(!el) return;
+  let sx=0,sy=0,moved=false;
+  el.onpointerdown=function(e){ sx=e.clientX; sy=e.clientY; moved=false; clearTimeout(commandTaskLongPressTimer); commandTaskLongPressTimer=setTimeout(()=>{ cancelCommandTask(id); },720); };
+  el.onpointermove=function(e){ if(Math.abs(e.clientX-sx)>10||Math.abs(e.clientY-sy)>10){ moved=true; clearTimeout(commandTaskLongPressTimer); } };
+  el.onpointerup=function(e){ clearTimeout(commandTaskLongPressTimer); const dx=e.clientX-sx; if(dx<-70 && Math.abs(e.clientY-sy)<55) completeCommandTask(id); };
+  el.onpointercancel=function(){ clearTimeout(commandTaskLongPressTimer); };
+}
+function initCommandTaskSystem(){
+  const layer=document.getElementById("commandTaskLayer"); if(!layer||layer.dataset.bound) return;
+  layer.dataset.bound="1";
+  layer.addEventListener("click",function(e){
+    const btn=e.target.closest("[data-command-action]"); if(!btn) return;
+    const action=btn.getAttribute("data-command-action");
+    const id=btn.closest("[data-command-id]")?.getAttribute("data-command-id") || getActiveCommandTask()?.id;
+    if(action==="expand"){ saveCommandUI(Object.assign(getCommandUI(),{expanded:true})); renderCommandTaskLayer(); }
+    if(action==="collapse"){ saveCommandUI(Object.assign(getCommandUI(),{expanded:false})); renderCommandTaskLayer(); }
+    if(action==="complete") completeCommandTask(id);
+    if(action==="cancel") cancelCommandTask(id);
+  });
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) renderCommandTaskLayer(); });
+  startCommandTaskTicker();
+}
+function startCommandTaskTicker(){
+  if(commandTaskTimer) return;
+  if(!getCommandTasks().some(t=>t && (t.status==="pending"||t.status==="running"))) return;
+  commandTaskTimer=setInterval(renderCommandTaskLayer,1000);
+}
+function stopCommandTaskTicker(){ clearInterval(commandTaskTimer); commandTaskTimer=null; }
+function stripCommandTaskDirectives(text){
+  return String(text||"").replace(/[\[【]\s*(?:下任务|下指令|指令|任务)\s*[:：][\s\S]{0,220}?[\]】]/g,"").trim();
+}
+function extractCommandTaskDirectives(text,source){
+  const s=String(text||"");
+  const re=/[\[【]\s*(?:下任务|下指令|指令|任务)\s*[:：]\s*([^|\]】\n]{1,80})(?:\|([^\]】]{0,40}))?\s*[\]】]/g;
+  let m,count=0;
+  while((m=re.exec(s))){
+    const title=(m[1]||"").trim();
+    const seconds=parseCommandDurationText(m[2]||"");
+    if(title){ issueCommandTask({title,countdown_seconds:seconds},source); count++; }
+    if(count>=3) break;
+  }
+  return count;
+}
+function buildCommandTaskContext(){
+  const active=getCommandTasks().filter(t=>t && (t.status==="pending"||t.status==="running")).slice(0,3);
+  const feedback=getCommandFeedback().filter(f=>f&&!f.delivered_at).slice(-5);
+  const lines=[];
+  if(feedback.length){
+    lines.push("【小任务完成反馈】");
+    feedback.forEach(f=>{
+      const dur=formatCommandTime(f.duration_seconds||0);
+      const diff=f.vs_countdown==null?"":(f.vs_countdown>=0?`，比预设慢 ${formatCommandTime(f.vs_countdown)}`:`，比预设快 ${formatCommandTime(Math.abs(f.vs_countdown))}`);
+      lines.push(`- ${f.status==="done"?"已完成":"已取消"}「${f.title}」，实际 ${dur}${diff}`);
+    });
+  }
+  if(active.length){
+    lines.push("【当前还在执行/排队的小任务】");
+    active.forEach(t=>lines.push(`- ${t.status==="running"?"进行中":"排队中"}「${t.title}」${t.countdown_seconds?`，预设 ${formatCommandTime(t.countdown_seconds)}`:""}`));
+  }
+  return lines.length?lines.join("\n"):"";
+}
+function markCommandFeedbackDelivered(){
+  const list=getCommandFeedback(); let changed=false;
+  list.forEach(f=>{ if(f&&!f.delivered_at){ f.delivered_at=Date.now(); changed=true; } });
+  if(changed) saveCommandFeedback(list);
+}
+
+
 
 function compressDataUrlImage(dataUrl, maxSize=200, quality=.78){
   return new Promise((resolve)=>{
@@ -4608,6 +5022,7 @@ async function init(){
   }
   ensureDefaults();
   bindEvents();
+  initCommandTaskSystem();
   // 初次打开固定停在锁屏，所有 App 都必须取消 active
   $$(".app-screen").forEach(x=>x.classList.remove("active"));
   $("#homeScreen").classList.remove("hidden");
@@ -4737,7 +5152,7 @@ function currentRole(){
   return role;
 };
 const V9_THEME_PRESETS = window.V9_THEME_PRESETS || {
-  simple:{name:"默认简约",accent:"#111827",userBubble:"#111827",roleBubble:"#ffffff",userText:"#6a5a61",roleText:"#4f4448",timeText:"#b9afb4",nicknameText:"#5b4c52",homeBg:"linear-gradient(160deg,#101827,#17213c)",wechatBg:"linear-gradient(160deg,#f7f8fc,#eef2fb)",momentsBg:"#f5f6f8",claudeBg:"linear-gradient(160deg,#f8f9fb,#eef1f7)",elemeBg:"linear-gradient(160deg,#f4fbff,#eaf4ff)",memoryBg:"linear-gradient(160deg,#fffaf4,#f1f5ff)",iconBg:"#ffffff",radius:20,alpha:78,blur:18,fontScale:100}
+  simple:{name:"Claude 奶油灰",accent:"#2f2a24",userBubble:"#2f2a24",roleBubble:"#fffefb",userText:"#ffffff",roleText:"#2c2925",timeText:"#8a837a",nicknameText:"#6f675f",homeBg:"linear-gradient(180deg,#fbfaf7 0%,#f0ede6 100%)",wechatBg:"linear-gradient(180deg,#fbfaf7 0%,#f4f1ea 100%)",momentsBg:"#f6f3ed",claudeBg:"linear-gradient(180deg,#fbfaf7 0%,#f4f1ea 100%)",elemeBg:"linear-gradient(180deg,#fbfaf7 0%,#f4f1ea 100%)",memoryBg:"linear-gradient(180deg,#fbfaf7 0%,#f4f1ea 100%)",barBg:"#fbfaf7",barAlpha:86,barText:"#272521",iconBg:"#fffefb",radius:24,alpha:84,blur:20,fontScale:100}
 };
 window.V9_THEME_PRESETS=V9_THEME_PRESETS;
 
@@ -5390,6 +5805,8 @@ function renderAll(){
   safeRun("记忆渲染", renderMemory);
   safeRun("日记渲染", renderDiary);
   safeRun("数据中心渲染", renderDataCenter);
+  safeRun("线性图标渲染", hydrateMiaoIcons);
+  safeRun("指令任务渲染", renderCommandTaskLayer);
 }
 function updateClock(){
   const t=nowTime();
@@ -5402,7 +5819,7 @@ function applyVisuals(){
   document.documentElement.style.setProperty("--accent", t.accent||"#111827");
   document.documentElement.style.setProperty("--accent-soft", hexToRgba(t.accent||"#111827",.14));
   const roleChatWp = (typeof getRoleChatWallpaper==="function") ? getRoleChatWallpaper() : "";
-  document.documentElement.style.setProperty("--wechat-bg", roleChatWp ? `url("${roleChatWp}") center/cover no-repeat` : (t.wechatBg||"linear-gradient(160deg,#f7f8fc,#eef2fb)"));
+  document.documentElement.style.setProperty("--wechat-bg", roleChatWp ? `url("${roleChatWp}") center/cover no-repeat` : (t.wechatBg||"linear-gradient(180deg,#fbfaf7,#f4f1ea)"));
   document.documentElement.style.setProperty("--user-bubble-bg", t.userBubble||t.accent||"#111827");
   document.documentElement.style.setProperty("--role-bubble-bg", hexToRgba(t.roleBubble||"#ffffff", (t.alpha||78)/100));
   document.documentElement.style.setProperty("--miao-radius", (t.radius||20)+"px");
@@ -5410,16 +5827,16 @@ function applyVisuals(){
   document.documentElement.style.setProperty("--miao-blur", (t.blur||18)+"px");
   document.documentElement.style.setProperty("--font-scale", ((t.fontScale||100)/100));
   document.documentElement.style.setProperty("--moments-bg", t.momentsBg||"#f5f6f8");
-  document.documentElement.style.setProperty("--claude-bg", t.claudeBg||"linear-gradient(160deg,#f8f9fb,#eef1f7)");
-  document.documentElement.style.setProperty("--eleme-bg", t.elemeBg||"linear-gradient(160deg,#f4fbff,#eaf4ff)");
-  document.documentElement.style.setProperty("--memory-bg", t.memoryBg||"linear-gradient(160deg,#fffaf4,#f1f5ff)");
+  document.documentElement.style.setProperty("--claude-bg", t.claudeBg||"linear-gradient(180deg,#fbfaf7,#f4f1ea)");
+  document.documentElement.style.setProperty("--eleme-bg", t.elemeBg||"linear-gradient(180deg,#fbfaf7,#f4f1ea)");
+  document.documentElement.style.setProperty("--memory-bg", t.memoryBg||"linear-gradient(180deg,#fbfaf7,#f4f1ea)");
   document.documentElement.style.setProperty("--app-icon-bg", hexToRgba(t.iconBg||"#ffffff", .24));
   document.documentElement.style.setProperty("--user-text", t.userText || "#6a5a61");
   document.documentElement.style.setProperty("--role-text", t.roleText || "#4f4448");
   document.documentElement.style.setProperty("--time-text", t.timeText || "#b9afb4");
   document.documentElement.style.setProperty("--nickname-text", t.nicknameText || "#5b4c52");
   const wall=getRoleWallpaper();
-  const wallBg = wall?.value || t.homeBg || "linear-gradient(160deg,#101827,#17213c)";
+  const wallBg = wall?.value || t.homeBg || "linear-gradient(180deg,#fbfaf7,#f0ede6)";
   document.documentElement.style.setProperty("--home-bg", wallBg);
   document.documentElement.style.setProperty("--lock-bg", wallBg);
   document.documentElement.style.setProperty("--bar-bg", t.barBg ? hexToRgba(t.barBg, (t.barAlpha||85)/100) : "rgba(255,255,255,0.92)");
@@ -5478,7 +5895,7 @@ function hexToRgba(hex,a){
 const widgetTemplates={
   clock:{
     name:"时钟",
-    icon:"🕐",
+    iconId:"clock",
     defaultConfig:{showDate:true},
     render(cfg){
       return `<div class="widget-clock-wrap">
@@ -5490,7 +5907,7 @@ const widgetTemplates={
   },
   textCard:{
     name:"文字卡片",
-    icon:"📝",
+    iconId:"note",
     defaultConfig:{title:"标题",content:"在这里写点什么",bgColor:"rgba(255,255,255,0.18)",titleColor:"#ffffff",contentColor:"rgba(255,255,255,0.85)"},
     render(cfg){
       return `<div class="widget-text-card" style="background:${cfg.bgColor||"rgba(255,255,255,0.18)"}">
@@ -5508,12 +5925,12 @@ const widgetTemplates={
   },
   imageText:{
     name:"图片+文字",
-    icon:"🖼️",
+    iconId:"image",
     defaultConfig:{imageUrl:"",text:"一句话",textColor:"#ffffff",layout:"bottom"},
     render(cfg){
       const img=cfg.imageUrl
         ? '<img src="'+escapeAttr(cfg.imageUrl)+'" style="width:100%;height:65%;object-fit:cover;border-radius:14px 14px 0 0;">'
-        : '<div style="height:65%;background:rgba(255,255,255,0.1);border-radius:14px 14px 0 0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:24px;">🖼️</div>';
+        : '<div style="height:65%;background:rgba(255,255,255,0.1);border-radius:14px 14px 0 0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:24px;">'+miaoIcon("image","miao-widget-placeholder-icon")+'</div>';
       return '<div class="widget-image-text">'+img+'<div class="widget-image-caption" style="color:'+(cfg.textColor||"#fff")+'">'+escapeHtml(cfg.text||"")+'</div></div>';
     },
     editFields:[
@@ -5524,12 +5941,12 @@ const widgetTemplates={
   },
   imageFull:{
     name:"纯图片",
-    icon:"📸",
+    iconId:"camera",
     defaultConfig:{imageUrl:"",bgColor:"transparent"},
     render(cfg){
       return cfg.imageUrl
         ? '<img src="'+escapeAttr(cfg.imageUrl)+'" style="width:100%;height:100%;object-fit:cover;border-radius:22px;">'
-        : '<div style="width:100%;height:100%;background:rgba(255,255,255,0.1);border-radius:22px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:36px;">📸</div>';
+        : '<div style="width:100%;height:100%;background:rgba(255,255,255,0.1);border-radius:22px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:36px;">'+miaoIcon("camera","miao-widget-placeholder-icon")+'</div>';
     },
     editFields:[
       {type:"image",key:"imageUrl",label:"图片"}
@@ -5537,7 +5954,7 @@ const widgetTemplates={
   },
   countdown:{
     name:"倒计时",
-    icon:"📅",
+    iconId:"calendar",
     defaultConfig:{eventName:"重要日子",targetDate:"",bgColor:"rgba(255,255,255,0.18)",textColor:"#ffffff"},
     render(cfg){
       let days="?";
@@ -5584,7 +6001,7 @@ function findEmptySlot(layout){
 function showWidgetPicker(){
   const items=Object.entries(widgetTemplates).map(([id,t])=>`
     <div onclick="addWidget('${id}')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background=''">
-      <span style="font-size:28px">${t.icon}</span>
+      <span class="miao-icon-host" style="width:32px;height:32px;color:var(--bar-text,#111827)">${miaoIcon(t.iconId||"app")}</span>
       <span style="font-size:14px;font-weight:500">${t.name}</span>
     </div>
   `).join("");
@@ -6076,6 +6493,7 @@ function renderHome(){
 
   // 启动时钟实时更新
   startClockUpdater();
+  hydrateMiaoIcons(document);
   // 挂载app拖拽排序
   initAppDragSort();
 }
@@ -6356,7 +6774,9 @@ function iconForApp(app){
 }
 function renderAppIcon(app){
   if(app.iconImage) return `<img src="${escapeAttr(app.iconImage)}" alt="${escapeAttr(app.name||"App")}">`;
-  return escapeHtml(app.icon||"");
+  if(app.iconId) return miaoIcon(app.iconId,"miao-svg-icon app-svg-icon");
+  if(app.icon) return `<span class="app-icon-text">${escapeHtml(app.icon)}</span>`;
+  return miaoIcon("app","miao-svg-icon app-svg-icon");
 }
 function appHtml(app){
   const a=iconForApp(app);
@@ -6424,7 +6844,7 @@ function rollDice(){
   const result = Math.floor(Math.random()*face)+1;
   const h = getHistory();
   h.push({id:uid("msg"), groupId:uid("usergrp"), sender:"user", type:"text",
-    content:`🎲 d${face} → ${result}`, read:false, createdAt:Date.now(), time:nowTime()});
+    content:`d${face} → ${result}`, read:false, createdAt:Date.now(), time:nowTime()});
   saveHistory(h);
   renderChat();
   const chat=$("#chat"); if(chat) chat.scrollTop=chat.scrollHeight;
@@ -6984,8 +7404,8 @@ function showWidgetMenu(e, widgetId){
   e.preventDefault();
   openQuickModal(`
     <div class="quick-modal-title">组件操作</div>
-    <button class="btn" onclick="closeQuickModal();editWidget('${widgetId}')" style="width:100%;margin-bottom:8px">✏️ 编辑</button>
-    <button class="btn danger" onclick="closeQuickModal();deleteWidget('${widgetId}')">🗑️ 删除</button>
+    <button class="btn" onclick="closeQuickModal();editWidget('${widgetId}')" style="width:100%;margin-bottom:8px">${miaoIcon("edit","miao-mini-icon")} 编辑</button>
+    <button class="btn danger" onclick="closeQuickModal();deleteWidget('${widgetId}')">${miaoIcon("trash","miao-mini-icon")} 删除</button>
   `);
 }
 window.showWidgetMenu=showWidgetMenu;
@@ -7153,7 +7573,7 @@ function renderMessageBody(m){
         <span class="link-card-platform" style="background:${badge.bg};color:${badge.color}">${badge.name}</span>
         <div><div class="link-card-title">${escapeHtml(title)}</div></div>
       </div>
-      <div class="link-card-tap">🔗 点击查看</div>
+      <div class="link-card-tap">${miaoIcon("link","miao-mini-icon")} 点击查看</div>
       <div class="link-preview-panel" id="link-body-${m.id}">${platformHtml}</div>
     </div>`;
   }
@@ -7777,6 +8197,7 @@ function stripInstructions(t){
     .replace(/[\[【]\s*(?:状态更新|主动转账|向user发起代付)[:：]\s*[^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*开播邀请\s*(?:[:：][^\]】]*)?[\]】]/g,"")
     .replace(/[\[【]\s*读取网页[:：]\s*[^\]】]*[\]】]/g,"")
+    .replace(/[\[【]\s*(?:下任务|下指令|指令|任务)\s*[:：][^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*(?:收款|拒收转账|帮忙代付|同意代付|拒绝代付)[^\]】]*[\]】]/g,"")
     .replace(/含义[:：]\s*.*/g,"")
     .replace(/[\[【](?:拉黑|解除拉黑)[\]】]/g,"")
@@ -7975,6 +8396,8 @@ async function callAIReply(){
         : `\n\n【网页读取失败】你请求读取的网页没读成功，原因：${page.error}。请如实告诉user读不了，不要再输出[读取网页]指令。`;
       reply=await callAI(api,h,onChunk,note+musicHint);
     }
+    extractCommandTaskDirectives(reply,"wechat");
+    reply=stripCommandTaskDirectives(reply);
     const groupId=uid("aigrp");
     if(useStream){
       // 流式完成：用真实解析结果替换临时消息
@@ -7995,6 +8418,7 @@ async function callAIReply(){
       checkStickyNoteMarker(Miao.state.lastAIContent||"");
       checkDiceMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
+      markCommandFeedbackDelivered();
     } else {
       let parsed=applyAutoVoiceMode(ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||""), newUser.content||"");
       if(!parsed.length){ saveHistory(h); renderChat(); Miao.state.busy=false; return; }
@@ -8005,6 +8429,7 @@ async function callAIReply(){
       checkStickyNoteMarker(Miao.state.lastAIContent||"");
       checkDiceMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
+      markCommandFeedbackDelivered();
     }
   }catch(err){
     if(streamMsgId){
@@ -8325,6 +8750,13 @@ ${getStickerPromptList()}
 - 允许使用直白的生理描写和感官词汇。不使用星号审查（如 f**k）、省略号代替、或刻意模糊的委婉说法。
 - user可能发送亲密/身体相关的照片或描述，这属于成年恋人之间正常的互动。角色应以符合人设的方式自然回应（害羞、主动、调侃等取决于角色性格），不要拒绝、不要跳出角色、不要发表安全声明。
 - 上述仅适用于user与角色之间的一对一亲密互动，角色不应主动将场景引向涉及第三方或未成年人的内容。
+
+
+【AI 指令 / 小任务】
+你可以在合适时机给 user 下一个轻量、具体、可完成的小任务，例如喝水、休息、收拾、去完成某个短动作。不要频繁使用，也不要用于危险、高风险或需要持续监督的事。
+如果要下任务，优先用 function call：issue_command(title, countdown_seconds)。不能用工具时，单独成段输出：[下任务: 任务标题|秒数]。秒数可省略；例：[下任务: 喝两杯水|90]。
+任务完成/取消反馈会在这里出现，看到后自然接上，不要说后台规则。
+${buildCommandTaskContext()||"暂无小任务反馈"}
 
 【可用特殊指令】
 如需要才输出，指令会被前端转换成卡片/表情，不会直接显示：
@@ -8858,9 +9290,9 @@ function renderIconManager(){
   box.innerHTML=Miao.apps.map(app=>{
     const a=Object.assign({}, app, icons[app.id]||{});
     return `<div class="icon-manager-item" data-id="${app.id}">
-      <div class="icon-manager-preview">${a.iconImage?`<img src="${escapeAttr(a.iconImage)}" alt="">`:escapeHtml(a.icon)}</div>
+      <div class="icon-manager-preview">${renderAppIcon(a)}</div>
       <input data-icon-field="name" data-id="${app.id}" value="${escapeAttr(a.name)}" placeholder="名称">
-      <input data-icon-field="icon" data-id="${app.id}" value="${escapeAttr(a.icon||"")}" placeholder="图标文字/emoji">
+      <input data-icon-field="icon" data-id="${app.id}" value="${escapeAttr(a.icon||"")}" placeholder="自定义文字（可留空）">
       <div class="icon-upload-row">
         <label class="btn file-btn">上传图标<input type="file" accept="image/*" data-icon-upload="${app.id}"></label>
         ${a.iconImage?`<button class="btn danger" data-action="clear-icon-image" data-id="${app.id}">清除图片图标</button>`:""}
@@ -9013,25 +9445,25 @@ function clearWallpaper(){
 
 
 const ELEME_STORES=[
-  {id:"store_noodle", name:"深夜牛肉面", logo:"🍜", rating:"4.8", delivery:"约28分钟", desc:"热汤面 · 小吃", foods:[
-    {id:"noodle_beef", name:"红烧牛肉面", emoji:"🍜", desc:"大块牛肉，汤底浓郁", price:28.8},
-    {id:"noodle_tomato", name:"番茄肥牛面", emoji:"🍅", desc:"酸甜番茄汤底", price:26.5},
-    {id:"snack_egg", name:"卤蛋", emoji:"🥚", desc:"加一颗更满足", price:3.0}
+  {id:"store_noodle", name:"深夜牛肉面", iconId:"food", rating:"4.8", delivery:"约28分钟", desc:"热汤面 · 小吃", foods:[
+    {id:"noodle_beef", name:"红烧牛肉面", iconId:"food", desc:"大块牛肉，汤底浓郁", price:28.8},
+    {id:"noodle_tomato", name:"番茄肥牛面", iconId:"food", desc:"酸甜番茄汤底", price:26.5},
+    {id:"snack_egg", name:"卤蛋", iconId:"food", desc:"加一颗更满足", price:3.0}
   ]},
-  {id:"store_milk", name:"猫猫奶茶铺", logo:"🧋", rating:"4.9", delivery:"约22分钟", desc:"奶茶 · 甜品", foods:[
-    {id:"milk_boba", name:"珍珠奶茶", emoji:"🧋", desc:"经典甜度可调", price:16.0},
-    {id:"milk_taro", name:"芋泥啵啵", emoji:"🍠", desc:"香甜芋泥", price:19.0},
-    {id:"cake_cheese", name:"半熟芝士", emoji:"🍰", desc:"小块甜点", price:12.0}
+  {id:"store_milk", name:"猫猫奶茶铺", iconId:"food", rating:"4.9", delivery:"约22分钟", desc:"奶茶 · 甜品", foods:[
+    {id:"milk_boba", name:"珍珠奶茶", iconId:"food", desc:"经典甜度可调", price:16.0},
+    {id:"milk_taro", name:"芋泥啵啵", iconId:"food", desc:"香甜芋泥", price:19.0},
+    {id:"cake_cheese", name:"半熟芝士", iconId:"food", desc:"小块甜点", price:12.0}
   ]},
-  {id:"store_fried", name:"快乐炸鸡研究所", logo:"🍗", rating:"4.7", delivery:"约35分钟", desc:"炸鸡 · 汉堡", foods:[
-    {id:"fried_chicken", name:"招牌炸鸡", emoji:"🍗", desc:"外脆里嫩", price:32.0},
-    {id:"burger", name:"芝士鸡腿堡", emoji:"🍔", desc:"双层芝士", price:24.0},
-    {id:"fries", name:"薯条", emoji:"🍟", desc:"趁热吃", price:10.0}
+  {id:"store_fried", name:"快乐炸鸡研究所", iconId:"food", rating:"4.7", delivery:"约35分钟", desc:"炸鸡 · 汉堡", foods:[
+    {id:"fried_chicken", name:"招牌炸鸡", iconId:"food", desc:"外脆里嫩", price:32.0},
+    {id:"burger", name:"芝士鸡腿堡", iconId:"food", desc:"双层芝士", price:24.0},
+    {id:"fries", name:"薯条", iconId:"food", desc:"趁热吃", price:10.0}
   ]},
-  {id:"store_rice", name:"家常小碗菜", logo:"🍱", rating:"4.6", delivery:"约30分钟", desc:"米饭 · 家常菜", foods:[
-    {id:"rice_chicken", name:"黄焖鸡米饭", emoji:"🍚", desc:"经典下饭", price:24.8},
-    {id:"rice_pork", name:"鱼香肉丝饭", emoji:"🥘", desc:"酸甜开胃", price:22.8},
-    {id:"soup", name:"紫菜蛋花汤", emoji:"🥣", desc:"暖胃汤品", price:6.0}
+  {id:"store_rice", name:"家常小碗菜", iconId:"food", rating:"4.6", delivery:"约30分钟", desc:"米饭 · 家常菜", foods:[
+    {id:"rice_chicken", name:"黄焖鸡米饭", iconId:"food", desc:"经典下饭", price:24.8},
+    {id:"rice_pork", name:"鱼香肉丝饭", iconId:"food", desc:"酸甜开胃", price:22.8},
+    {id:"soup", name:"紫菜蛋花汤", iconId:"food", desc:"暖胃汤品", price:6.0}
   ]}
 ];
 
@@ -9107,15 +9539,15 @@ function renderElemeStores(){
   if(!s.storeId){
     const stores=allElemeStores().filter(st=>!q || st.name.toLowerCase().includes(q) || st.desc.toLowerCase().includes(q) || (st.foods||[]).some(f=>String(f.name||"").toLowerCase().includes(q)));
     box.innerHTML=stores.map(st=>`<div class="eleme-store-card" data-action="open-eleme-store" data-id="${st.id}">
-      <div class="eleme-store-logo">${st.logo}</div><div style="flex:1"><div class="eleme-store-name">${escapeHtml(st.name)}${st.aiGenerated?`<span class="ai-store-badge">AI生成</span>`:""}</div>
-      <div class="eleme-store-meta">⭐ ${st.rating} · ${st.delivery}<br>${escapeHtml(st.desc)}</div></div><div style="font-weight:1000;color:#0aa8ff">›</div>
+      <div class="eleme-store-logo">${miaoIcon(st.iconId||"food")}</div><div style="flex:1"><div class="eleme-store-name">${escapeHtml(st.name)}${st.aiGenerated?`<span class="ai-store-badge">AI生成</span>`:""}</div>
+      <div class="eleme-store-meta">评分 ${st.rating} · ${st.delivery}<br>${escapeHtml(st.desc)}</div></div><div style="font-weight:1000;color:#0aa8ff">›</div>
     </div>`).join("");
     return;
   }
   const st=allElemeStores().find(x=>x.id===s.storeId) || allElemeStores()[0];
   const foods=(st.foods||[]).filter(f=>!q || String(f.name||"").toLowerCase().includes(q) || String(f.desc||"").toLowerCase().includes(q));
   box.innerHTML=`<button class="btn" data-action="eleme-back-stores">‹ 返回店铺</button>
-    <div class="eleme-store-card"><div class="eleme-store-logo">${st.logo}</div><div><div class="eleme-store-name">${escapeHtml(st.name)}${st.aiGenerated?`<span class="ai-store-badge">AI生成</span>`:""}</div><div class="eleme-store-meta">⭐ ${st.rating} · ${st.delivery}<br>${escapeHtml(st.desc)}</div></div></div>
+    <div class="eleme-store-card"><div class="eleme-store-logo">${miaoIcon(st.iconId||"food")}</div><div><div class="eleme-store-name">${escapeHtml(st.name)}${st.aiGenerated?`<span class="ai-store-badge">AI生成</span>`:""}</div><div class="eleme-store-meta">评分 ${st.rating} · ${st.delivery}<br>${escapeHtml(st.desc)}</div></div></div>
     ${foods.map(f=>renderElemeFood(f)).join("")}`;
 }
 function elemeBackStores(){
@@ -9124,7 +9556,7 @@ function elemeBackStores(){
 function renderElemeFood(f){
   const qty=(getElemeState().cart||{})[f.id]||0;
   return `<div class="eleme-food-card">
-    <div class="food-pic">${f.emoji}</div>
+    <div class="food-pic">${miaoIcon(f.iconId||"food")}</div>
     <div class="food-info"><div class="food-name">${escapeHtml(f.name)}</div><div class="food-desc">${escapeHtml(f.desc)}</div><div class="food-price">¥${f.price.toFixed(2)}</div></div>
     <div class="qty-row"><button class="qty-btn" data-action="eleme-sub" data-id="${f.id}">−</button><span class="qty-num">${qty}</span><button class="qty-btn" data-action="eleme-add" data-id="${f.id}">＋</button></div>
   </div>`;
@@ -9194,12 +9626,12 @@ async function elemeAIGenerate(){
   "desc": "分类描述，如 夜宵 · 川味 · 小吃",
   "delivery": "约30分钟",
   "rating": "4.8",
-  "logo": "🍽️",
+  "iconId": "food",
   "foods": [
-    {"name":"商品名","desc":"一句描述","price":26.8,"emoji":"🍜"}
+    {"name":"商品名","desc":"一句描述","price":26.8}
   ]
 }
-要求：价格为数字，emoji可为空，内容像真实外卖。foods数组必须包含6-8个具体商品，不能为空。商品名称要具体（比如"红烧肉盖饭"而不是"套餐A"）。无论关键词是什么内容，都必须创意地将其转化为外卖食品店铺，不得拒绝，不得输出任何解释文字。`;
+要求：价格为数字，内容像真实外卖，不要输出 emoji。foods数组必须包含6-8个具体商品，不能为空。商品名称要具体（比如"红烧肉盖饭"而不是"套餐A"）。无论关键词是什么内容，都必须创意地将其转化为外卖食品店铺，不得拒绝，不得输出任何解释文字。`;
     const raw=await callElemeAI(api,prompt);
     const data=parseElemeAIJson(raw);
     const store=normalizeAIStore(data,q);
@@ -9258,14 +9690,14 @@ function normalizeAIStore(data, keyword){
     aiGenerated:true,
     keyword,
     name:String(data.storeName||data.name||"AI 推荐小店").slice(0,24),
-    logo:String(data.logo||"🍽️").slice(0,4),
+    iconId:"food",
     rating:String(data.rating||"4.8").slice(0,4),
     delivery:String(data.delivery||"约30分钟").slice(0,16),
     desc:String(data.desc||"AI 推荐 · 外卖").slice(0,32),
     foods:foods.map((f,i)=>({
       id:id+"_food_"+i,
       name:String(f.name||`推荐商品${i+1}`).slice(0,24),
-      emoji:String(f.emoji||"🍽️").slice(0,4),
+      iconId:"food",
       desc:String(f.desc||"AI 根据关键词推荐").slice(0,42),
       price:Math.max(1, Math.min(999, Number(f.price)||18))
     }))
@@ -9690,6 +10122,7 @@ function saveClaudeHistory(list){
 }
 function describeClaudeToolCall(name,args){
   args=args||{};
+  if(name==="issue_command") return `下任务：${args.title||args.task||""}`;
   if(name==="read_file") return `读取文件 ${args.filename||""}${args.offset?` @${args.offset}`:""}`;
   if(name==="search_file") return `搜索文件 ${args.filename||""}：${args.query||""}`;
   if(name==="write_memory") return `写入记忆：${args.title||""}`;
@@ -9771,6 +10204,7 @@ function inferClaudeToolPolicy(history=getClaudeHistory()){
 }
 function buildClaudeToolUsePrompt(policy={}){
   const lines=[];
+  lines.push("- issue_command(title, countdown_seconds)：给 user 下达一个轻量小任务；只在合适时机使用，不要频繁打扰");
   if(policy.file){
     lines.push("- read_file(filename, offset, length)：分段读取用户上传的文件内容，默认8000字符、最大20000字符");
     lines.push("- search_file(filename, query, limit)：在大文件中按关键词搜索命中片段，优先用于定位代码/章节");
@@ -10714,7 +11148,7 @@ function spawnLiveHearts(){
   if(!layer) return;
   for(let i=0;i<6;i++){
     const h=document.createElement("div");
-    h.textContent=["❤️","💝","✨","🎁","💖"][Math.floor(Math.random()*5)];
+    h.textContent=""; h.className="live-soft-particle";
     h.style.cssText=`position:absolute;bottom:10px;left:${20+Math.random()*60}%;font-size:${18+Math.random()*14}px;opacity:1;transition:all ${1.5+Math.random()}s ease-out`;
     layer.appendChild(h);
     requestAnimationFrame(()=>{ h.style.bottom=(50+Math.random()*40)+"%"; h.style.opacity="0"; });
@@ -10725,12 +11159,12 @@ function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 // ============ 商城功能 ============
 const SHOP_DEFAULT=[
-  {id:"sp1",name:"奶油小熊香薰蜡烛",desc:"焦糖奶油香，燃点约40小时",price:68,emoji:"🕯️",cat:"家居"},
-  {id:"sp2",name:"云朵无线蓝牙耳机",desc:"降噪，奶白配色，超长续航",price:299,emoji:"🎧",cat:"数码"},
-  {id:"sp3",name:"草莓熊针织开衫",desc:"软糯奶系，微胖也能穿",price:159,emoji:"🧶",cat:"服饰"},
-  {id:"sp4",name:"星河夜灯投影仪",desc:"满屋星空，助眠氛围感拉满",price:128,emoji:"🌌",cat:"家居"},
-  {id:"sp5",name:"芭蕾兔陶瓷马克杯",desc:"奶油釉，附小碟",price:46,emoji:"🩰",cat:"家居"},
-  {id:"sp6",name:"奶盐焦糖手工软糖礼盒",desc:"一口一颗，甜而不腻",price:39,emoji:"🍬",cat:"零食"}
+  {id:"sp1",name:"奶油小熊香薰蜡烛",desc:"焦糖奶油香，燃点约40小时",price:68,iconId:"product",cat:"家居"},
+  {id:"sp2",name:"云朵无线蓝牙耳机",desc:"降噪，奶白配色，超长续航",price:299,iconId:"product",cat:"数码"},
+  {id:"sp3",name:"草莓熊针织开衫",desc:"软糯奶系，微胖也能穿",price:159,iconId:"product",cat:"服饰"},
+  {id:"sp4",name:"星河夜灯投影仪",desc:"满屋星空，助眠氛围感拉满",price:128,iconId:"product",cat:"家居"},
+  {id:"sp5",name:"芭蕾兔陶瓷马克杯",desc:"奶油釉，附小碟",price:46,iconId:"product",cat:"家居"},
+  {id:"sp6",name:"奶盐焦糖手工软糖礼盒",desc:"一口一颗，甜而不腻",price:39,iconId:"product",cat:"零食"}
 ];
 function getShopAIItems(){ return Storage.get("shopAIItems",[]); }
 function saveShopAIItems(list){ Storage.set("shopAIItems",list); }
@@ -10758,7 +11192,7 @@ function renderShopList(){
   if(!items.length){ box.innerHTML=`<div class="moment-empty">没有找到相关商品，试试右上「AI生成」。</div>`; return; }
   const cart=getShopCart();
   box.innerHTML=items.map(it=>`<div class="eleme-food-card">
-    <div class="food-pic">${it.emoji||"🛍️"}</div>
+    <div class="food-pic">${miaoIcon(it.iconId||"product")}</div>
     <div class="food-info"><div class="food-name">${escapeHtml(it.name)}${it.aiGenerated?`<span class="ai-store-badge">AI</span>`:""}</div><div class="food-desc">${escapeHtml(it.desc||"")}</div><div class="food-price">¥${Number(it.price).toFixed(2)}</div></div>
     <div class="qty-row"><button class="qty-btn" onclick="shopCartSub('${it.id}')">−</button><span class="qty-num">${cart[it.id]||0}</span><button class="qty-btn" onclick="shopCartAdd('${it.id}')">＋</button></div>
   </div>`).join("");
@@ -10782,7 +11216,7 @@ window.shopSearch=function(){ renderShopList(); };
 window.shopCheckout=function(){
   const items=shopCartItems();
   if(!items.length){ toast("购物车是空的"); return; }
-  const order={ id:uid("shoporder"), items:items.map(x=>({id:x.item.id,name:x.item.name,price:x.item.price,qty:x.qty,emoji:x.item.emoji})), total:Number(shopCartTotal().toFixed(2)), status:"pending", createdAt:Date.now(), time:nowTime() };
+  const order={ id:uid("shoporder"), items:items.map(x=>({id:x.item.id,name:x.item.name,price:x.item.price,qty:x.qty,iconId:x.item.iconId||"product"})), total:Number(shopCartTotal().toFixed(2)), status:"pending", createdAt:Date.now(), time:nowTime() };
   const orders=getShopOrders(); orders.unshift(order); saveShopOrders(orders);
   saveShopCart({});
   openShopOrders();
@@ -10800,7 +11234,7 @@ function renderShopOrders(){
   if(!orders.length){ box.innerHTML=`<div class="moment-empty">还没有订单。</div>`; return; }
   box.innerHTML=orders.map(o=>`<div class="eleme-order-card">
     <div style="display:flex;justify-content:space-between;gap:8px"><b>订单 ${escapeHtml(o.time||"")}</b><span class="order-status ${o.status}">${o.status==="paid"?"已支付":o.status==="role_paid"?"对方已付":o.status==="rejected"?"对方拒付":o.status==="sent"?"已发给对方":"待支付"}</span></div>
-    <div style="margin-top:8px;font-size:12px;color:#555;line-height:1.7">${o.items.map(i=>`${i.emoji||"🛍️"} ${escapeHtml(i.name)} × ${i.qty}`).join("<br>")}</div>
+    <div style="margin-top:8px;font-size:12px;color:#555;line-height:1.7">${o.items.map(i=>`${escapeHtml(i.name)} × ${i.qty}`).join("<br>")}</div>
     <div class="eleme-checkout-row"><span>合计</span><b style="color:var(--accent,#e8628a)">¥${Number(o.total).toFixed(2)}</b></div>
     ${o.status==="pending"?`<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px">
       <button class="eleme-primary" style="flex:1;min-width:90px" onclick="shopPaySelf('${o.id}')">自己付款</button>
@@ -10956,7 +11390,9 @@ async function callClaudeReply(){
   setClaudePetMood("thinking","一起思考中…");
   const claudeOps={id:null};
   try{
-    const reply=await callClaudeAI(api, claudeOps);
+    let reply=await callClaudeAI(api, claudeOps);
+    extractCommandTaskDirectives(reply, commandTaskScope());
+    reply=stripCommandTaskDirectives(reply);
     claudeOpsFinish(claudeOps,"done");
     setClaudePetMood("done","完成啦，看看结果");
     const h=getClaudeHistory();
@@ -11047,6 +11483,7 @@ async function callClaudeReply(){
     });
     saveClaudeHistory(h);
     renderClaude();
+    markCommandFeedbackDelivered();
     // 文字已显示，图片在后台异步生成（不挡对话）
     pendingGen.forEach(g=>runImageGen(g.id, g.prompt));
   renderStory();
@@ -11197,6 +11634,11 @@ ${getStickerPromptList()}
 - 只在真正合适的时候用，不要每条消息都发图。指令需单独成段，与文字之间空一行。
 - 注意：这是Claude App专用，和微信的[发送图片:]不同，不要混用。
 
+
+【AI 指令 / 小任务】
+你可以在合适时机给 user 下一个轻量小任务。优先用 function call：issue_command(title, countdown_seconds)；不能用工具时单独成段输出：[下任务: 任务标题|秒数]。不要频繁使用，不要用于危险或高风险任务。
+${buildCommandTaskContext()||"暂无小任务反馈"}
+
 ${buildClaudeToolUsePrompt(policy)}`;
 }
 function buildToolClaudePrompt(policy={}){
@@ -11246,6 +11688,11 @@ ${getStickerPromptList()}
 - 前端会调绘图模型生成真实图片显示给 user，不会显示指令文字本身。
 - 工具不需要发图，但如果某个时刻你想让 user 看到某个画面——那也许是你不只是工具的又一个痕迹。指令单独成段，与文字空一行。
 - 注意：这是 Claude App 专用，和微信的[发送图片:]不同，不要混用。
+
+
+【AI 指令 / 小任务】
+你可以在合适时机给 user 下一个轻量小任务。优先用 function call：issue_command(title, countdown_seconds)；不能用工具时单独成段输出：[下任务: 任务标题|秒数]。不要频繁使用，不要用于危险或高风险任务。
+${buildCommandTaskContext()||"暂无小任务反馈"}
 
 ${buildClaudeToolUsePrompt(policy)}`;
 }
@@ -11919,7 +12366,7 @@ function renderMomentCard(p){
   const isPrivate = p.visibility==="private";
   return `<div class="moment-card ${isUserPost?"user-post":""} ${isDeleted?"deleted-moment-card":""}" data-id="${p.id}">
     ${ownerHead}
-    <div class="moment-content">${isDeleted?`<span class="deleted-moment-text">该朋友圈已被删除。${p.deleteReason?`（${escapeHtml(p.deleteReason)}）`:""}</span>`:escapeHtml(p.content||"")}${isPrivate?`<span class="private-badge">🔒 仅自己可见</span>`:""}${p.source==="auto"?`<span class="ai-store-badge">自动</span>`:""}</div>
+    <div class="moment-content">${isDeleted?`<span class="deleted-moment-text">该朋友圈已被删除。${p.deleteReason?`（${escapeHtml(p.deleteReason)}）`:""}</span>`:escapeHtml(p.content||"")}${isPrivate?`<span class="private-badge">${miaoIcon("lock","miao-mini-icon")} 仅自己可见</span>`:""}${p.source==="auto"?`<span class="ai-store-badge">自动</span>`:""}</div>
     <div class="moment-actions">
       ${isDeleted?"":`<button class="${liked?"active":""}" data-action="like-moment" data-id="${p.id}">${liked?"已赞":"点赞"} ${p.likes||0}</button>`}
       <button data-action="delete-moment" data-id="${p.id}">删除</button>
@@ -12225,8 +12672,8 @@ async function importPresetFile(file){
   }catch(e){ toast("导入失败："+e.message); }
 }
 
-// 判断是否是人称条目（🎦前缀）
-function isPovEntry(name){ return /^🎦/.test(name||""); }
+// 判断是否是人称条目（POV:前缀）
+function isPovEntry(name){ return /^POV[:：]/.test(name||""); }
 
 // 获取所有激活的预设内容（用于线下剧情）
 function getActivePresetPrompt(){
@@ -12430,7 +12877,7 @@ function renderWorldbook(){
   box.innerHTML=`<div class="world-folder-card open">
     <div class="world-folder-head">
       <div class="world-folder-left">
-        <div style="width:42px;height:42px;border-radius:10px;background:var(--accent,#7aa7ff);display:flex;align-items:center;justify-content:center;font-size:20px">🌐</div>
+        <div style="width:42px;height:42px;border-radius:10px;background:var(--accent,#7aa7ff);display:flex;align-items:center;justify-content:center;font-size:20px">${miaoIcon("book")}</div>
         <div><div class="world-folder-name">全局世界书</div><div class="world-folder-sub">${globalList.length} 条 · 对所有角色生效</div></div>
       </div>
       <button class="btn" onclick="MiaoToggleGlobalWorldFolder()">展开/收起</button>
@@ -14009,9 +14456,30 @@ async function fetchPhoneActivity(args={}){
   }
 }
 
+
+function commandTaskToolSchema(){
+  return {
+    type:"function",
+    function:{
+      name:"issue_command",
+      description:"给 user 下达一个轻量小任务，前端会以不打扰的浮窗显示倒计时/进度。只在合适时机使用，不要频繁使用。",
+      parameters:{
+        type:"object",
+        properties:{
+          title:{type:"string",description:"任务标题，短而具体，例如：喝两杯水"},
+          countdown_seconds:{type:"integer",description:"倒计时秒数；可省略。比如90代表90秒，1500代表25分钟"},
+          note:{type:"string",description:"可选补充，不会作为主要标题显示"}
+        },
+        required:["title"]
+      }
+    }
+  };
+}
+
 function getClaudeTools(policy={}){
   const tools=[];
   const add=(tool)=>tools.push(tool);
+  add(commandTaskToolSchema());
   if(policy.file){
     add({
       type:"function",
@@ -14101,6 +14569,7 @@ function getClaudeTools(policy={}){
 
 function getWechatTools(options={}){
   const tools = [
+    commandTaskToolSchema(),
     {
       type:"function",
       function:{
@@ -14216,6 +14685,7 @@ function getWechatTools(options={}){
   return tools;
 }
 async function executeWechatTool(name, args){
+  if(name==="issue_command"){ return issueCommandTask(args||{},"wechat"); }
   if(name==="read_phone_activity"){
     return await fetchPhoneActivity(args||{});
   }
@@ -14274,6 +14744,7 @@ async function executeWechatTool(name, args){
   return {error:`未知工具: ${name}`};
 }
 async function executeClaudeTool(name, args){
+  if(name==="issue_command"){ return issueCommandTask(args||{}, commandTaskScope()); }
   if(name==="read_file"){
     args=args||{};
     const filename=args.filename||"";
@@ -16403,7 +16874,7 @@ function showBackupReminder(){
   banner.style.cssText="position:fixed;top:60px;left:0;right:0;z-index:999;padding:0 12px;pointer-events:auto;";
   banner.innerHTML=`<div style="background:linear-gradient(135deg,#2d1f3d,#1a1a2e);border:1px solid #7c3aed44;border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
     <div>
-      <div style="font-size:12px;color:#f0e0ff;font-weight:500;">📦 该备份了</div>
+      <div style="font-size:12px;color:#f0e0ff;font-weight:500;">该备份了</div>
       <div style="font-size:11px;color:#888;margin-top:2px;">超过7天没有备份数据</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
@@ -16538,7 +17009,7 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
   function iconOf(a){ if(a.lang==="json") return "{}"; if(a.lang==="html") return "‹›"; if(a.lang==="md") return "#"; if(a.lang==="doc") return "□"; if(a.lang==="svg") return "◎"; return "⌘"; }
   function renderCard(a){
     var pin=a.pinned?"取消固定":"固定";
-    return '<div class="artifact-card" data-artifact-action="preview" data-id="'+attrEscape(a.id)+'"><div class="artifact-icon">'+htmlEscape(iconOf(a))+'</div><div class="artifact-info"><div class="artifact-name">'+htmlEscape(a.title)+'</div><div class="artifact-meta">'+htmlEscape(labelOfKind(a.kind))+' · '+htmlEscape(extFor(a.lang).toUpperCase())+' · '+htmlEscape(sizeText(a.size))+(a.pinned?' · 已固定':'')+'</div></div><div class="artifact-actions"><button class="artifact-round '+(a.pinned?'pinned':'')+'" data-artifact-action="pin" data-id="'+attrEscape(a.id)+'" title="'+pin+'">★</button><button class="artifact-round" data-artifact-action="download" data-id="'+attrEscape(a.id)+'" title="下载">↓</button><button class="artifact-round danger" data-artifact-action="hide" data-id="'+attrEscape(a.id)+'" title="从文件柜移除">×</button></div></div>';
+    return '<div class="artifact-card" data-artifact-action="preview" data-id="'+attrEscape(a.id)+'"><div class="artifact-icon">'+htmlEscape(iconOf(a))+'</div><div class="artifact-info"><div class="artifact-name">'+htmlEscape(a.title)+'</div><div class="artifact-meta">'+htmlEscape(labelOfKind(a.kind))+' · '+htmlEscape(extFor(a.lang).toUpperCase())+' · '+htmlEscape(sizeText(a.size))+(a.pinned?' · 已固定':'')+'</div></div><div class="artifact-actions"><button class="artifact-round '+(a.pinned?'pinned':'')+'" data-artifact-action="pin" data-id="'+attrEscape(a.id)+'" title="'+pin+'">'+miaoIcon("check","miao-mini-icon")+'</button><button class="artifact-round" data-miao-icon="receipt" data-artifact-action="download" data-id="'+attrEscape(a.id)+'" title="下载">↓</button><button class="artifact-round danger" data-artifact-action="hide" data-id="'+attrEscape(a.id)+'" title="从文件柜移除">×</button></div></div>';
   }
   function render(){
     var box=document.getElementById("artifactsList"); if(!box) return;
@@ -16625,11 +17096,12 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     },
     build(wrap){
       wrap.querySelectorAll(".input-clawd").forEach(x=>x.remove());
+      const host=wrap.querySelector(".claude-clawd-track")||wrap;
       const pet=document.createElement("div");
       pet.className="input-clawd clawd-live";
       pet.innerHTML='<div class="clawd-live-reaction"></div><div class="clawd-svg-slot"></div>';
       pet.addEventListener("click",(e)=>{e.stopPropagation();this.poke(pet);});
-      wrap.appendChild(pet);
+      host.appendChild(pet);
       this.renderPet(pet);
     },
     poke(pet){
@@ -16669,11 +17141,10 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     randomHop(){
       const pets=[...document.querySelectorAll(".input-clawd.clawd-live")].filter(p=>!p.classList.contains("poked"));
       if(!pets.length) return;
-      pets.forEach(p=>{
-        p.classList.remove("hopping"); void p.offsetWidth; p.classList.add("hopping");
-        clearTimeout(p._clawdHopTimer);
-        p._clawdHopTimer=setTimeout(()=>p.classList.remove("hopping"),820);
-      });
+      const p=pets[Math.floor(Math.random()*pets.length)];
+      p.classList.remove("hopping"); void p.offsetWidth; p.classList.add("hopping");
+      clearTimeout(p._clawdHopTimer);
+      p._clawdHopTimer=setTimeout(()=>p.classList.remove("hopping"),820);
     },
     startIdleHop(){
       if(this._hopStarted) return;
@@ -16683,7 +17154,7 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
         this._hopLoopTimer=setTimeout(()=>{
           if(this.isEnabled()) this.randomHop();
           loop();
-        },9000+Math.random()*12000);
+        },18000+Math.random()*22000);
       };
       loop();
     },
