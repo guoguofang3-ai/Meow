@@ -12,12 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="喵喵机">
 <link rel="apple-touch-icon" href="icon-192.png">
 <!-- IndexedDB 封装 -->
-<script src="storage.js">
-// ===== GLOBAL THINKING RULE (system-level) =====
-// 注：思维链规则已直接写入system prompt的【格式规则】第6/7条，
-// 不再单独维护这个常量（之前定义了但没接入任何流程，等于没生效）。
-// ==============================================
-</script>
+<script src="storage.js"></script>
 <style>
 :root{
   --phone-w:min(430px,100vw);
@@ -6442,41 +6437,28 @@ function isReasoningLeakLine(line){
   const x=String(line||"");
   return /(让我想想|我应该|我需要|我先|用户想|用户需要|用户|user|User|角色|当前关系|自然回应|简短回应|接住|话题|适合|反问|分析|推理|决定怎么|正确的指令格式|指令格式|格式写错|写错了|重新来|回顾一下|上一条|这次重新|应该自然回应|先补上歌|补上歌|最终回复|普通正文|后台规则|解释后台|前端|LLM|提示词|系统规则|音频URL需要|没有真实的音频URL|至少能看到歌曲的基本信息|would respond|matching the energy|showing he's present|overthink|acknowledge he's here|maybe prompt|I should|The user wants|Need to|Let's respond|Final answer)/i.test(x);
 }
-
-
 function normalizeThinkingForPanel(thinking, finalText){
-  let t = stripThinkingBlocks(thinking || "").trim();
+  let t=stripThinkingBlocks(thinking).trim();
   if(!t) return "";
-
-  const final = stripThinkingBlocks(finalText || "").trim();
-  if(final && t.includes(final)) t = t.replace(final,"").trim();
-
-  t = t.replace(/\[(?:分享音乐|发送图片|发送表情包|表情包|语音|链接|主动转账|向user发起代付)[^\]]*\]/g,"");
-
-  const lines = t.split(/\n+/).map(x=>x.trim()).filter(Boolean);
-  const seen = new Set();
-  const out = [];
-
-  for(const line of lines){
-    if(seen.has(line)) continue;
+  const final=stripThinkingBlocks(finalText||"").trim();
+  if(final && t.includes(final)) t=t.replace(final,"").trim();
+  t=t.replace(/\[(?:分享音乐|发送图片|发送表情包|表情包|语音|链接|主动转账|向user发起代付)[^\]]*\]/g,"");
+  const seen=new Set();
+  const lines=t.split(/\n+/).map(x=>x.trim()).filter(line=>{
+    if(!line) return false;
+    if(isReasoningLeakLine(line)) return false;
+    if((line.match(/[A-Za-z]/g)||[]).length>=8) return false;
+    if(seen.has(line)) return false;
     seen.add(line);
-
-    if(isReasoningLeakLine(line)) continue;
-    if((line.match(/[A-Za-z]/g)||[]).length>=8) continue;
-
-    out.push(line);
-  }
-
-  let res = out.slice(0,2).join("\n").trim();
-
-  if(!res || !/[\u4e00-\u9fff]/.test(res)){
-    return "我先接住这句话，再看看怎么理解。";
-  }
-
-  return res;
+    return true;
+  });
+  t=lines.join("\n").trim();
+  if(!t || !/[\u4e00-\u9fff]/.test(t)) return "我先接住这句话，短一点回应。";
+  t=t.replace(/\buser\b/gi,"她").replace(/用户/g,"她").replace(/角色/g,"我");
+  const sentences=t.split(/(?<=[。！？!?])/).map(x=>x.trim()).filter(Boolean);
+  if(sentences.length>2) t=sentences.slice(0,2).join("");
+  return t.replace(/^[，。；、\s]+/,"");
 }
-
-
 function removeReasoningLeakText(text){
   return String(text||"").split(/\n+/).map(x=>x.trim()).filter(line=>line && !isReasoningLeakLine(line)).join("\n").trim();
 }
@@ -7009,7 +6991,6 @@ async function callAI(api, history, onChunk, extraSystem){
     const reader=res.body.getReader();
     const decoder=new TextDecoder();
     let full="";
-    let thinkingFull="";
     while(true){
       const{done,value}=await reader.read();
       if(done) break;
@@ -7021,24 +7002,13 @@ async function callAI(api, history, onChunk, extraSystem){
         if(d==="[DONE]") break;
         try{
           const j=JSON.parse(d);
-          // OpenAI兼容格式：正文
           const delta=j.choices?.[0]?.delta?.content||"";
           if(delta){ full+=delta; onChunk(full); }
-          // OpenAI兼容代理：thinking可能在reasoning_content字段
-          const reasoning=j.choices?.[0]?.delta?.reasoning_content||j.choices?.[0]?.delta?.reasoning||"";
-          if(reasoning) thinkingFull+=reasoning;
-          // Claude原生流式格式：content_block_delta with thinking_delta
-          if(j.type==="content_block_delta"){
-            if(j.delta?.type==="thinking_delta" && j.delta?.thinking) thinkingFull+=j.delta.thinking;
-            if(j.delta?.type==="text_delta" && j.delta?.text){ full+=j.delta.text; onChunk(full); }
-          }
         }catch(e){}
       }
     }
-    // 把accumulated thinking拼成<thinking>标签，让后续extractThinkingContent统一处理
-    const result=(thinkingFull?"<thinking>"+thinkingFull+"</thinking>\n":"")+full;
-    Miao.state.lastAIContent=result;
-    return result;
+    Miao.state.lastAIContent=full;
+    return full;
   }
 
   // 非流式 + tool calling 循环
@@ -7064,18 +7034,7 @@ async function callAI(api, history, onChunk, extraSystem){
     Miao.state.lastAIRaw=text.slice(0,600);
     // 没有tool_calls，返回普通文字
     if(!msg.tool_calls || msg.tool_calls.length===0){
-      // 从Claude extended thinking响应中提取thinking块
-      let thinkingPrefix="";
-      if(Array.isArray(data.content)){
-        const thinkBlocks=data.content.filter(b=>b.type==="thinking").map(b=>b.thinking||b.text||"").filter(Boolean);
-        if(thinkBlocks.length) thinkingPrefix="<thinking>"+thinkBlocks.join("\n")+"</thinking>\n";
-      }
-      // 某些OpenAI兼容代理会把thinking放在reasoning_content字段
-      if(!thinkingPrefix && msg.reasoning_content){
-        thinkingPrefix="<thinking>"+msg.reasoning_content+"</thinking>\n";
-      }
-      const textContent=msg.content || (Array.isArray(data.content) ? data.content.filter(b=>b.type==="text").map(b=>b.text).join("") : null) || data.output_text || "";
-      const content=thinkingPrefix+textContent;
+      const content=msg.content || (Array.isArray(data.content) ? data.content.filter(b=>b.type==="text").map(b=>b.text).join("") : null) || data.output_text || "";
       Miao.state.lastAIContent=content;
       return content;
     }
@@ -7201,13 +7160,12 @@ ${getStickerPromptList()}
 1. 你只能扮演${role.name}，不能替user说话。
 2. 禁止输出User:、用户：、Assistant:、旁白式剧本格式。
 6. 普通聊天正文不要输出思考过程、元分析或格式纠错。动作描写、心理描写、环境描写正常保留。
-   每次回复都必须先输出一段 <thinking>……</thinking>，前端会隐藏到 Thought process 面板，不能混入普通气泡，不能省略，不能留空。
-   <thinking> 不是推理日志，也不是"我应该怎么回复"的计划。它写角色当下真实的内心反应——私心/情绪/观察，像角色脑子里一闪而过的话，而不是计划、规则或系统说明。
-   长度、语气必须跟角色性格一致：话多的角色可以连珠炮，话少的角色可以只有一两个字甚至一个标点；冷淡的人短而克制，黏人的人软一点，嘴硬的人别扭一点。1-2句即可，最好不超过60个中文字符，但角色性格需要更短也可以。
-   绝对不能出现"用户/角色/我应该/我先/适合/回应/当前关系/格式/指令/模型/前端/系统"这类机械词，不能输出格式分析、系统规则，不能用emoji。
+   如果要给前端内心独白，只能写 <thinking>……</thinking>，前端会隐藏到 Thought process 面板，不能混入普通气泡。
+   <thinking> 不是推理日志，也不是“我应该怎么回复”的计划。它写角色当下的私心/情绪/观察，像角色脑子里一闪而过的话，1-2句即可，最好不超过60个中文字符。
+   <thinking> 的风格必须跟角色本人一致：冷淡的人就短而克制，黏人的人就软一点，嘴硬的人可以别扭；不要使用“用户/角色/我应该/我先/适合/回应/当前关系/格式/指令/模型/前端/系统”等机械词。
    普通聊天正文只输出角色的回应，不分析，不解释；如果 user 在测试功能、让你分享音乐、图片或表情，直接按当前明确请求回应。
 3. 只输出微信聊天内容；可以用双换行分成多条气泡。
-7. <thinking> 是每次回复的必填项，只写1-2句角色内心，不要写后台规则，不要留空。
+7. 如果输出 <thinking>，只写1-2句角色内心，不要写后台规则。
 8. 如果输出语音，优先使用全角外层格式，方便内部使用 ElevenLabs v3 audio tags：
    【语音: [softly] [low voice] I missed you.
 中文：我想你了。】
