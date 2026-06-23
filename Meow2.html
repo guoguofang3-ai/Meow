@@ -3366,7 +3366,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 .claude-ops-toggle{border:0;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:950;background:color-mix(in srgb,var(--accent,#111827) 8%,rgba(255,255,255,.72));color:var(--bar-text,#111827);}
 
 </style>
-<script>window.MIAO_BUILD="RC2";</script>
+<script>window.MIAO_BUILD="RC4";</script>
 </head>
 <body>
 <div class="phone-shell">
@@ -3612,9 +3612,10 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
             <option value="balanced">平衡：先显示本地内心，后台再用第 2 次 API 润色（推荐）</option>
             <option value="local">省钱：只调用 1 次聊天 API，内心用本地角色模板</option>
             <option value="precise">精准：回复 API + 内心 API 都完成后再显示</option>
+            <option value="ondemand">按需：先不生成，点 ThoughtProcess 图标时再补</option>
             <option value="off">关闭：不生成 ThoughtProcess</option>
           </select>
-          <div class="v3-sub" style="margin-top:4px">省钱模式最便宜；平衡模式不挡聊天速度但会多一次后台调用；精准模式最慢但内心最贴正式回复。</div>
+          <div class="v3-sub" style="margin-top:4px">省钱模式最便宜；平衡模式不挡聊天速度但会多一次后台调用；精准模式最慢；按需模式只有点开图标时才补第 2 次 API。</div>
           <div class="rowline" style="margin-top:8px"><div><b>流式传输</b><div class="v3-sub">逐字输出，需要中转站支持 stream:true</div></div><button class="toggle" id="streamToggle" data-action="toggle-stream"></button></div>
           <div class="rowline" style="margin-top:8px"><div><b>消息提示音</b><div class="v3-sub">角色逐条发消息时播放提示音</div></div><button class="toggle" id="msgSoundToggle" data-action="toggle-msg-sound"></button></div>
           <div class="btn-row"><button class="btn primary" data-action="save-api">保存设置</button><button class="btn" data-action="test-api">测试连接</button><button class="btn" data-action="fetch-models">拉取模型</button></div>
@@ -6851,7 +6852,7 @@ function renderMessage(m,h,idx){
       ${!isUser?`<div class="name-line">${escapeHtml(role.name)}</div>`:""}
       ${m.quoteId ? renderQuoteBlock(m) : ""}
       ${renderMessageBody(m)}
-      <div class="time-line">${escapeHtml(m.time||"")}${!isUser&&m.thinking?` <button class="thinking-btn" onclick="openThinking('${m.id}')" title="查看思考链" aria-label="查看思考链"></button>`:""}</div>
+      <div class="time-line">${escapeHtml(m.time||"")}${!isUser&&(m.thinking || getThoughtMode()==="ondemand")?` <button class="thinking-btn${m.thinking?"":" pending"}" onclick="openThinking('${m.id}')" title="${m.thinking?"查看 ThoughtProcess":"按需生成 ThoughtProcess"}" aria-label="${m.thinking?"查看 ThoughtProcess":"按需生成 ThoughtProcess"}"></button>`:""}</div>
       ${isUser?`<div class="read-line">${m.read?"已读":"未读"}</div>`:""}
     </div>
   </div>`;
@@ -7675,7 +7676,7 @@ async function attachThoughtProcessToParsed(api, parsed, ctx){
 }
 
 function getThoughtMode(){
-  return Storage.get("thoughtMode", "balanced"); // balanced | local | precise | off
+  return Storage.get("thoughtMode", "balanced"); // balanced | local | precise | ondemand | off
 }
 function getThoughtTarget(parsed){
   return [...(parsed||[])].reverse().find(m=>m && m.sender==="role" && m.type!=="system") || null;
@@ -7727,7 +7728,7 @@ function scheduleThoughtProcessRefresh(api, parsed, ctx){
 }
 async function prepareThoughtProcessForParsed(api, parsed, ctx){
   const mode=getThoughtMode();
-  if(mode==="off") return parsed;
+  if(mode==="off" || mode==="ondemand") return parsed;
   if(mode==="precise") return await attachThoughtProcessToParsed(api, parsed, ctx);
   // local / balanced 都先给一个即时本地内心，正式回复不等待第二次API
   attachFallbackThoughtProcessToParsed(parsed, ctx||{});
@@ -9991,7 +9992,7 @@ function renderClaudeBody(m){
     }
     return `<div class="claude-img-card img-loading"><span class="img-spinner"></span>图片生成中…</div>`;
   }
-  const raw=m.content||"";
+  const raw=(typeof normalizeClaudePlainOutputsToCode==="function") ? normalizeClaudePlainOutputsToCode(m.content||"", getClaudeHistory()) : (m.content||"");
 
   // 先处理表情包指令，替换成气泡HTML
   const stickerHtml=(txt)=>{
@@ -10863,6 +10864,63 @@ function retryImageGen(msgId){
   saveClaudeHistory(h); renderClaude();
   runImageGen(msgId, m.data.prompt||"");
 }
+function stripClaudeSurfaceLeaks(text){
+  let s=String(text||"");
+  // 角色 Claude 有时会把微信专用状态/卡片指令带出来；Claude App 里统一静默过滤。
+  s=s.replace(/^\s*[\[【]状态更新[:：][\s\S]*?[\]】]\s*$/gmi,"");
+  s=s.replace(/^\s*[\[【](?:拉黑|解除拉黑|开播|关闭直播|引用|主动转账|向user发起代付|收款|拒收转账|帮忙代付|同意代付|拒绝代付)[:：]?[^\]】]*[\]】]\s*$/gmi,"");
+  return s.replace(/\n{3,}/g,"\n\n").trim();
+}
+
+function claudePlainOutputLang(raw){
+  const x=String(raw||"").toLowerCase();
+  if(/^(?:docx?|word|文档)/i.test(x)) return "doc";
+  if(/^(?:md|markdown)/i.test(x)) return "md";
+  if(/^(?:json)/i.test(x)) return "json";
+  if(/^(?:html)/i.test(x)) return "html";
+  return "txt";
+}
+function cleanPlainOutputBody(body){
+  let s=String(body||"").trim();
+  const lines=s.split(/\r?\n/);
+  const quoted=lines.filter(l=>/^\s*>\s?/.test(l)).length;
+  if(lines.length && quoted>=Math.max(1, Math.floor(lines.length*0.45))){
+    s=lines.map(l=>l.replace(/^\s*>\s?/,"")).join("\n").trim();
+  }
+  return s.replace(/^```[a-zA-Z0-9_-]*\s*/,'').replace(/```\s*$/,'').trim();
+}
+function normalizeClaudePlainOutputsToCode(text, history){
+  const s=String(text||"").trim();
+  if(!s || /```/.test(s)) return s;
+  const headerRe=/^\s*(?:#{1,6}\s*)?((?:docx?|word|文档|txt|文本|md|markdown|html|json))\s*(?:文件|内容|版本|如下|草稿)?\s*[:：]\s*/gim;
+  const ms=[...s.matchAll(headerRe)];
+  if(ms.length){
+    let out="", last=0;
+    for(let i=0;i<ms.length;i++){
+      const m=ms[i];
+      const before=s.slice(last, m.index).trim();
+      if(before) out += before + "\n\n";
+      const start=m.index + m[0].length;
+      const end=i+1<ms.length ? ms[i+1].index : s.length;
+      const body=cleanPlainOutputBody(s.slice(start,end));
+      const lang=claudePlainOutputLang(m[1]);
+      if(body) out += "```"+lang+"\n"+body+"\n```\n\n";
+      last=end;
+    }
+    const tail=s.slice(last).trim();
+    if(tail) out += tail;
+    return out.trim();
+  }
+  const lastUser=(history||[]).slice().reverse().find(m=>m&&m.sender==="user");
+  const ask=String(lastUser?.content||"");
+  const wantsDoc=/\b(docx?|word|txt)\b|文档|文本文件|生成文件|做成文件|输出文件|保存成/i.test(ask);
+  if(wantsDoc && s.length>240){
+    const lang=/\b(docx?|word)\b|文档/.test(ask) ? "doc" : "txt";
+    return "```"+lang+"\n"+cleanPlainOutputBody(s)+"\n```";
+  }
+  return s;
+}
+
 async function callClaudeReply(){
   if(Miao.state.claudeBusy) return;
   const api=Storage.get("api",{});
@@ -10880,8 +10938,9 @@ async function callClaudeReply(){
     setClaudePetMood("done","完成啦，看看结果");
     const h=getClaudeHistory();
     // 按双换行拆成多条独立消息，代码块不拆
-    const cleaned=cleanAITextKeepCode(reply);
-    const claudeParts=parseCodeBlocks(cleaned);
+    const cleaned=cleanAITextKeepCode(stripClaudeSurfaceLeaks(reply));
+    const normalizedOutput=normalizeClaudePlainOutputsToCode(cleaned, h);
+    const claudeParts=parseCodeBlocks(normalizedOutput);
     let claudeBubbles=[];
     let textBuf2="";
     // 如果整体回复很长且含多个段落，判断为文件/文档内容，不拆气泡
@@ -10904,7 +10963,7 @@ async function callClaudeReply(){
       }
     });
     if(textBuf2.trim()) claudeBubbles.push({type:"text",content:textBuf2.trim()});
-    if(!claudeBubbles.length) claudeBubbles=[{type:"text",content:cleaned}];
+    if(!claudeBubbles.length) claudeBubbles=[{type:"text",content:normalizedOutput}];
     // 处理表情包
     claudeBubbles=claudeBubbles.flatMap(b=>{
       if(b.type!=="text") return [b];
@@ -11093,6 +11152,7 @@ function buildRoleClaudePrompt(policy={}){
 注意：角色 Claude 与工具 Claude 是两个独立存在；你不共享工具 Claude 的会话、文件、长期记忆或关系状态。
 user 可能请求你写代码、处理文件、生成 HTML/SVG/React。你是否愿意帮忙，要符合当前角色人设和关系。
 如果愿意输出代码，请用 Markdown 代码块，例如 \`\`\`html、\`\`\`svg、\`\`\`jsx。
+如果 user 要你做 txt/doc/文档文件，请把完整正文放进一个代码块：\`\`\`txt 或 \`\`\`doc；不要只写“txt内容：”。
 回复时可以根据性格自由决定是否用双换行拆成多条气泡，但代码块必须保持完整不拆分。
 Claude App 没有微信状态栏；不要输出 [状态更新: ...]，也不要使用微信专用的转账、代付、引用、拉黑、开播等卡片指令，除非 user 正在明确要求你整理这些格式本身。
 
@@ -11143,7 +11203,7 @@ function buildToolClaudePrompt(policy={}){
 你擅长前端、HTML、CSS、JavaScript、SVG、React、文件解析和代码说明。
 如果输出可预览内容，请用 Markdown 代码块，例如 \`\`\`html、\`\`\`svg、\`\`\`jsx。
 回复时可以根据当前状态自由决定是否用双换行拆成多条气泡，但代码块必须保持完整不拆分。
-文档类输出（需求文档/方案说明/汇总/整理等）必须放在单个代码块内输出，禁止拆分成多个代码块。
+文档类输出（需求文档/方案说明/汇总/整理等）必须放在单个代码块内输出，禁止拆分成多个代码块。若 user 要 txt/doc 文件，请使用 \`\`\`txt 或 \`\`\`doc 代码块承载完整正文。
 如果你决定发表情包，输出指令：[发送表情包: 名称]
 ${buildMemoryPrompt(true)}
 
@@ -11225,6 +11285,7 @@ function claudeOutputLang(lang){
   lang=String(lang||"txt").toLowerCase();
   if(lang==="markdown") return "md";
   if(lang==="text") return "txt";
+  if(lang==="word" || lang==="docx") return "doc";
   if(lang==="javascript") return "js";
   if(lang==="typescript") return "ts";
   if(lang==="react") return "jsx";
@@ -11232,7 +11293,7 @@ function claudeOutputLang(lang){
 }
 function claudeOutputExt(lang){
   lang=claudeOutputLang(lang);
-  const map={md:"md",txt:"txt",html:"html",json:"json",svg:"svg",jsx:"jsx",css:"css",js:"js",ts:"ts",tsx:"tsx",vue:"vue",svelte:"svelte"};
+  const map={md:"md",txt:"txt",doc:"doc",html:"html",json:"json",svg:"svg",jsx:"jsx",css:"css",js:"js",ts:"ts",tsx:"tsx",vue:"vue",svelte:"svelte"};
   return map[lang]||"txt";
 }
 function claudeOutputMime(lang){
@@ -11241,6 +11302,7 @@ function claudeOutputMime(lang){
   if(ext==="json") return "application/json;charset=utf-8";
   if(ext==="svg") return "image/svg+xml;charset=utf-8";
   if(ext==="md") return "text/markdown;charset=utf-8";
+  if(ext==="doc") return "application/msword;charset=utf-8";
   return "text/plain;charset=utf-8";
 }
 function claudeOutputLabel(lang){
@@ -11248,6 +11310,7 @@ function claudeOutputLabel(lang){
   if(ext==="MD") return "Markdown 文档";
   if(ext==="TXT") return "文本文件";
   if(ext==="HTML") return "HTML 文件";
+  if(ext==="DOC") return "Word 文档（文本）";
   if(ext==="JSON") return "JSON 数据";
   return ext+" 文件";
 }
@@ -11261,13 +11324,13 @@ function guessClaudeOutputTitle(lang,code){
   m=s.match(/<title[^>]*>([^<]{1,80})<\/title>/i); if(m) return m[1].trim();
   m=s.match(/<(h1|h2)[^>]*>([^<]{1,80})<\/\1>/i); if(m) return m[2].replace(/<[^>]+>/g,"").trim();
   if(l==="json"){ try{ const o=JSON.parse(s); if(o && typeof o==="object"){ const k=Object.keys(o)[0]; if(k) return "JSON · "+k; } }catch(e){} }
-  const map={md:"文档草稿",txt:"文本文件",html:"HTML 页面",json:"JSON 数据",svg:"SVG 图像",jsx:"React 组件",css:"样式文件",js:"脚本文件"};
+  const map={md:"文档草稿",txt:"文本文件",doc:"Word 文档",html:"HTML 页面",json:"JSON 数据",svg:"SVG 图像",jsx:"React 组件",css:"样式文件",js:"脚本文件"};
   return map[l]||"输出文件";
 }
 function isClaudeOutputFileBlock(lang,code){
   const l=claudeOutputLang(lang);
   const len=String(code||"").length;
-  if(["html","json","md","txt"].includes(l)) return true;
+  if(["html","json","md","txt","doc"].includes(l)) return true;
   return len>=1600;
 }
 function renderClaudeOutputFileBubble(id,lang,code,title,msgId){
@@ -11275,7 +11338,7 @@ function renderClaudeOutputFileBubble(id,lang,code,title,msgId){
   const ext=claudeOutputExt(l).toUpperCase();
   const chars=String(code||"").length;
   const preview=String(code||"").trim().slice(0,360);
-  const icon=l==="json"?"{}":(l==="html"?"‹›":(l==="md"?"#":"⌘"));
+  const icon=l==="json"?"{}":(l==="html"?"‹›":(l==="md"?"#":(l==="doc"?"□":"⌘")));
   return `<div class="claude-bubble claude-output-bubble"><div class="claude-file-card claude-file-card-v2 claude-output-file-card" data-action="preview-code" data-id="${escapeAttr(id)}">
     <div class="claude-file-topline">
       <div class="claude-file-mini-icon doc">${escapeHtml(icon)}</div>
@@ -13420,14 +13483,51 @@ window.toggleLyricsPlay=toggleLyricsPlay;
 
 
 // ===== 思维链面板 =====
-function openThinking(msgId){
+async function openThinking(msgId){
   const h=getHistory();
-  const m=h.find(x=>x.id===msgId);
-  if(!m||!m.thinking) return;
+  const idx=h.findIndex(x=>x.id===msgId);
+  const m=idx>=0?h[idx]:null;
+  if(!m) return;
   const body=document.getElementById("thinkingBody");
   const mask=document.getElementById("thinkingMask");
-  if(body) body.textContent=normalizeThinkingForPanel(m.thinking, m.content||"");
   if(mask) mask.classList.add("show");
+  if(m.thinking){
+    if(body) body.textContent=normalizeThinkingForPanel(m.thinking, m.content||"");
+    return;
+  }
+  if(getThoughtMode()!=="ondemand"){
+    if(body) body.textContent="这条消息没有 ThoughtProcess。";
+    return;
+  }
+  window._thoughtDemanding=window._thoughtDemanding||{};
+  if(window._thoughtDemanding[msgId]){
+    if(body) body.textContent="正在生成 ThoughtProcess…";
+    return;
+  }
+  window._thoughtDemanding[msgId]=1;
+  if(body) body.textContent="正在生成 ThoughtProcess…";
+  try{
+    const role=currentRole();
+    const prevUser=h.slice(0,idx).reverse().find(x=>x&&x.sender==="user") || null;
+    const parsed=(m.groupId?h.filter(x=>x&&x.groupId===m.groupId&&x.sender==="role"):[m]).map(x=>Object.assign({},x));
+    const api=Storage.get("api",{});
+    let thought="";
+    if(api.apiUrl && api.apiKey && api.model){
+      try{ thought=await callThoughtAI(api, role, prevUser, parsed); }catch(e){ thought=""; }
+    }
+    if(!thought) thought=fallbackThoughtTextV2(role, prevUser?.content||"", parsed);
+    thought=sanitizeThoughtTextV2(thought, parsed);
+    if(thought){
+      updateThoughtInHistory(Miao.state.currentRoleId, msgId, thought);
+      const fresh=getHistory().find(x=>x.id===msgId);
+      if(fresh) fresh.thinking=thought;
+      if(body) body.textContent=normalizeThinkingForPanel(thought, m.content||"");
+    }else{
+      if(body) body.textContent="暂时没有生成出 ThoughtProcess。";
+    }
+  }finally{
+    delete window._thoughtDemanding[msgId];
+  }
 }
 function closeThinking(e){
   if(e&&e.target!==e.currentTarget) return;
@@ -14620,14 +14720,39 @@ function markWechatImageConsumed(msgId){
     }
   }catch(e){}
 }
+function downloadDataUrlFile(dataUrl, filename){
+  try{
+    const a=document.createElement("a");
+    a.href=dataUrl;
+    a.download=filename||"image.png";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>document.body.removeChild(a),80);
+  }catch(e){ toast("下载失败："+(e.message||e)); }
+}
 function openWechatImagePreview(id){
   const m=getHistory().find(x=>x.id===id && x.type==="image_desc");
   if(!m) return;
-  const img=getWechatImageDisplayUrl(id, m.data||{});
+  const d=m.data||{};
+  const img=getWechatImageDisplayUrl(id, d);
   if(!img){ toast("图片原图已清理，只剩文字说明"); return; }
-  const title=(m.data&&m.data.imageCleared)?"图片预览（缩略图）":"图片预览";
-  openPreview(title, `<div class="svg-preview"><img src="${escapeAttr(img)}" style="max-width:100%;border-radius:16px"></div>`);
+  window._currentWechatPreviewImage={id, url:img, name:d.imageName||"wechat-image.png", desc:d.description||""};
+  const title=d.imageCleared?"图片预览（缩略图）":"图片预览";
+  openPreview(title, `<div class="output-preview-actions"><button class="btn" onclick="downloadWechatPreviewImage()">下载图片</button><button class="btn" onclick="copyWechatPreviewDesc()">复制说明</button></div><div class="svg-preview"><img src="${escapeAttr(img)}" style="max-width:100%;border-radius:16px"></div>`);
 }
+function downloadWechatPreviewImage(){
+  const cur=window._currentWechatPreviewImage;
+  if(!cur||!cur.url){toast("没有可下载的图片");return;}
+  downloadDataUrlFile(cur.url, cur.name||"wechat-image.png");
+}
+function copyWechatPreviewDesc(){
+  const cur=window._currentWechatPreviewImage;
+  const text=cur&&cur.desc?cur.desc:"";
+  if(!text){toast("没有图片说明");return;}
+  navigator.clipboard?.writeText(text).then(()=>toast("已复制图片说明")).catch(()=>toast("复制失败"));
+}
+window.downloadWechatPreviewImage=downloadWechatPreviewImage;
+window.copyWechatPreviewDesc=copyWechatPreviewDesc;
 function openImageDescModalOriginal(){
   openQuickModal(`<div class="quick-modal-title">发送图片</div>
     <label>上传图片（可选，模型可直接看到）</label>
@@ -15934,7 +16059,7 @@ function renderDataDashboard(){
   const size=moduleSize(keys);
   const roles=getRoles().length;
   const msgs=keys.filter(k=>k.startsWith("wechatHistory.")).reduce((n,k)=>n+(Storage.get(k,[])||[]).length,0);
-  box.innerHTML=`<div class="data-stat">本地数据<b>${formatSizeChars(size)}</b></div><div class="data-stat">数据键<b>${keys.length}</b></div><div class="data-stat">角色数量<b>${roles}</b></div><div class="data-stat">微信消息<b>${msgs}</b></div><div class="data-stat">构建版本<b>${escapeHtml(window.MIAO_BUILD||"RC2")}</b></div>`;
+  box.innerHTML=`<div class="data-stat">本地数据<b>${formatSizeChars(size)}</b></div><div class="data-stat">数据键<b>${keys.length}</b></div><div class="data-stat">角色数量<b>${roles}</b></div><div class="data-stat">微信消息<b>${msgs}</b></div><div class="data-stat">构建版本<b>${escapeHtml(window.MIAO_BUILD||"RC4")}</b></div>`;
 }
 function renderModuleManager(){
   const box=$("#moduleManagerList"); if(!box) return;
@@ -16094,7 +16219,7 @@ function exportData(){
   // 优先从IndexedDB导出（不受5MB限制），降级用localStorage
   if(typeof MeowStorage !== "undefined"){
     MeowStorage.exportAll().then(allData=>{
-      const data={miao2Meta:{app:"喵喵机",build:window.MIAO_BUILD||"RC2",exportedAt:new Date().toISOString(),format:"miao2-full"},miao2:{}};
+      const data={miao2Meta:{app:"喵喵机",build:window.MIAO_BUILD||"RC4",exportedAt:new Date().toISOString(),format:"miao2-full"},miao2:{}};
       Object.keys(allData).filter(k=>k.startsWith(Storage.prefix)).forEach(k=>{
         data.miao2[k.slice(Storage.prefix.length)] = allData[k];
       });
@@ -16113,7 +16238,7 @@ function exportData(){
   }
 }
 function _exportFromLocalStorage(){
-  const data={miao2Meta:{app:"喵喵机",build:window.MIAO_BUILD||"RC2",exportedAt:new Date().toISOString(),format:"miao2-full"},miao2:{}};
+  const data={miao2Meta:{app:"喵喵机",build:window.MIAO_BUILD||"RC4",exportedAt:new Date().toISOString(),format:"miao2-full"},miao2:{}};
   Object.keys(localStorage).filter(k=>k.startsWith(Storage.prefix)).forEach(k=>{
     data.miao2[k.slice(Storage.prefix.length)] = Storage.get(k.slice(Storage.prefix.length), null);
   });
@@ -16189,13 +16314,13 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
   function attrEscape(s){ return htmlEscape(s).replace(/`/g,"&#96;"); }
   function cleanName(s){ return String(s||"artifact").replace(/[\\/:*?"<>|]/g," ").replace(/[\r\n\t]+/g," ").replace(/\s+/g," ").trim().slice(0,80)||"artifact"; }
   function langNorm(lang){ lang=String(lang||"code").toLowerCase(); if(lang==="react") return "jsx"; if(lang==="javascript") return "js"; if(lang==="typescript") return "ts"; return lang||"code"; }
-  function goodLang(lang){ lang=langNorm(lang); return /^(html|svg|jsx|css|js|ts|tsx|vue|svelte|json|md|markdown|txt|text)$/.test(lang); }
-  function extFor(lang){ lang=langNorm(lang); var m={html:"html",svg:"svg",jsx:"jsx",css:"css",js:"js",ts:"ts",tsx:"tsx",vue:"vue",svelte:"svelte",json:"json",md:"md",markdown:"md",txt:"txt",text:"txt"}; return m[lang]||"txt"; }
+  function goodLang(lang){ lang=langNorm(lang); return /^(html|svg|jsx|css|js|ts|tsx|vue|svelte|json|md|markdown|txt|text|doc|docx|word)$/.test(lang); }
+  function extFor(lang){ lang=langNorm(lang); var m={html:"html",svg:"svg",jsx:"jsx",css:"css",js:"js",ts:"ts",tsx:"tsx",vue:"vue",svelte:"svelte",json:"json",md:"md",markdown:"md",txt:"txt",text:"txt",doc:"doc",docx:"doc",word:"doc"}; return m[lang]||"txt"; }
   function titleOf(code,lang,n){
     var s=String(code||"");
     var m=s.match(/<title[^>]*>([^<]{1,80})<\/title>/i); if(m) return m[1];
     m=s.match(/<(h1|h2)[^>]*>([^<]{1,80})<\/\1>/i); if(m) return m[2];
-    var names={html:"HTML 页面",svg:"SVG 图像",jsx:"React 组件",css:"样式文件",js:"脚本文件",ts:"TS 文件",tsx:"TSX 组件",vue:"Vue 组件",svelte:"Svelte 组件",json:"JSON 数据",md:"Markdown 文档",markdown:"Markdown 文档",txt:"文本文件",text:"文本文件"};
+    var names={html:"HTML 页面",svg:"SVG 图像",jsx:"React 组件",css:"样式文件",js:"脚本文件",ts:"TS 文件",tsx:"TSX 组件",vue:"Vue 组件",svelte:"Svelte 组件",json:"JSON 数据",md:"Markdown 文档",markdown:"Markdown 文档",txt:"文本文件",text:"文本文件",doc:"Word 文档",docx:"Word 文档",word:"Word 文档"};
     return (names[langNorm(lang)]||"Code")+" "+(n+1);
   }
   function artifacts(){
@@ -16205,7 +16330,8 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     for(var i=0;i<h.length;i++){
       var msg=h[i];
       if(!msg || msg.sender!=="assistant" || msg.type!=="text") continue;
-      var parts=parseCodeBlocks(msg.content||"");
+      var src=(typeof normalizeClaudePlainOutputsToCode==="function") ? normalizeClaudePlainOutputsToCode(msg.content||"", h) : (msg.content||"");
+      var parts=parseCodeBlocks(src);
       var local=0;
       for(var j=0;j<parts.length;j++){
         var p=parts[j];
