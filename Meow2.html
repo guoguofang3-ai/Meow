@@ -1521,43 +1521,6 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   backdrop-filter:blur(var(--miao-blur,18px)) saturate(1.22)!important;
   -webkit-backdrop-filter:blur(var(--miao-blur,18px)) saturate(1.22)!important;
 }
-.claude-pet-stage{
-  height:36px;
-  margin:0 12px 2px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  position:relative;
-  pointer-events:none;
-}
-.claude-status-pill{
-  max-width:78%;
-  padding:6px 12px;
-  border-radius:999px;
-  background:color-mix(in srgb,var(--accent,#111827) 12%,rgba(255,255,255,.82));
-  color:var(--bar-text,#111827);
-  border:1px solid color-mix(in srgb,var(--accent,#111827) 15%,rgba(255,255,255,.55));
-  box-shadow:0 8px 20px rgba(0,0,0,.06);
-  font-size:12px;
-  font-weight:950;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.claude-queue-hint{
-  display:none;
-  margin:0 14px 7px;
-  padding:7px 11px;
-  border-radius:999px;
-  background:color-mix(in srgb,var(--accent,#111827) 8%,rgba(255,255,255,.70));
-  border:1px solid color-mix(in srgb,var(--accent,#111827) 10%,rgba(255,255,255,.55));
-  color:var(--bar-text,#111827);
-  font-size:11px;
-  font-weight:850;
-  text-align:center;
-  opacity:.88;
-}
-.claude-queue-hint.show{display:block}
 .claude-toolbar{
   padding:7px 12px 5px!important;
   gap:7px!important;
@@ -1619,7 +1582,6 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 }
 .claude-invoke.busy,.claude-send.busy{opacity:.58;pointer-events:none;filter:saturate(.72)}
 .claude-send:active,.claude-invoke:active{transform:scale(.94)}
-.claude-composer-wrap .input-clawd.clawd-live{top:-42px!important;z-index:98!important}
 .claude-app .claude-msg.user .claude-bubble{background:var(--user-bubble-bg,var(--accent))!important}
 .claude-app .claude-file-card,.claude-app .claude-ops-card{
   border-radius:var(--miao-radius,20px)!important;
@@ -1630,9 +1592,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 }
 
 /* Claude SAFE Artifacts：不改主脚本调度，颜色跟随美化 */
-.claude-pet-stage,.claude-status-pill,.claude-queue-hint{display:none!important}
 .claude-composer-wrap{padding-top:0!important}
-.claude-composer-wrap .input-clawd.clawd-live{top:-44px!important;z-index:98!important}
 .artifacts-mask{position:absolute;inset:0;z-index:835;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.26);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
 .artifacts-mask.show{display:flex}
 .artifacts-panel{width:100%;height:82%;max-height:760px;border-radius:28px 28px 0 0;background:var(--bar-bg,rgba(255,255,255,.92));color:var(--bar-text,#111827);box-shadow:0 -18px 54px rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.52);border-bottom:0;backdrop-filter:blur(var(--miao-blur,18px)) saturate(1.2);-webkit-backdrop-filter:blur(var(--miao-blur,18px)) saturate(1.2);display:flex;flex-direction:column;animation:artifactsSafeUp .22s ease}
@@ -2877,6 +2837,14 @@ body{font-size:calc(14px * var(--font-scale));}
 /* Diary modal mobile safe fix */
 .quick-modal-mask.diary-modal-mask{align-items:flex-start!important;justify-content:center!important;padding-top:56px!important;padding-bottom:34px!important;overflow:auto!important;-webkit-overflow-scrolling:touch;}
 .quick-modal.diary-quick-modal{max-height:calc(100% - 92px)!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;padding:16px!important;}
+
+.quick-modal.diary-quick-modal{background:linear-gradient(160deg,rgba(255,255,255,.97),rgba(251,247,250,.98))!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border-color:color-mix(in srgb,var(--accent,#111827) 12%,rgba(90,70,45,.10))!important;}
+.diary-edit-modal input,.diary-edit-modal textarea{background:rgba(255,255,255,.94)!important;}
+.diary-privacy{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 8px;padding:10px 12px;border-radius:18px;background:rgba(255,255,255,.56);border:1px solid rgba(90,70,45,.06);}
+.diary-privacy-text{font-size:11px;line-height:1.45;color:color-mix(in srgb,var(--bar-text,#111827) 54%,transparent);font-weight:800;}
+.diary-privacy-text b{display:block;font-size:12px;color:var(--bar-text,#111827);margin-bottom:2px;}
+.diary-privacy button{border:0;border-radius:999px;padding:8px 11px;font-size:10px;font-weight:1000;background:color-mix(in srgb,var(--accent,#111827) 12%,rgba(255,255,255,.7));color:color-mix(in srgb,var(--accent,#111827) 70%,var(--bar-text,#111827));white-space:nowrap;}
+.diary-privacy.off button{background:rgba(255,255,255,.52);color:color-mix(in srgb,var(--bar-text,#111827) 44%,transparent);}
 .diary-edit-modal{display:flex;flex-direction:column;min-height:0;max-height:100%;}
 .diary-edit-modal .diary-edit-title{font-size:19px!important;line-height:1.2!important;}
 .diary-edit-modal .diary-edit-sub{margin-bottom:9px!important;}
@@ -3316,7 +3284,89 @@ body.multiselect-mode .msg{ cursor:pointer; }
 /* 歌词弹层防跳动：头部固定，歌词只在正文容器内滚动 */
 .lyrics-head{flex:0 0 auto!important;}
 .lyrics-body{flex:1 1 auto!important;min-height:0!important;overscroll-behavior:contain;}
+
+/* ===== Shell-less UI v1: 去掉手机黑框 / 灵动岛 / 底部上滑条，只保留应用本体 ===== */
+:root{--phone-w:100vw;--phone-h:100vh;}
+body{display:block!important;min-height:100vh!important;background:var(--memory-bg,linear-gradient(160deg,#f6f7fb,#eef2fb))!important;overflow:hidden!important;}
+.phone-shell{width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;padding:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;inset:0!important;position:fixed!important;}
+.phone-shell:before{display:none!important;}
+.screen{width:100%!important;height:100%!important;border-radius:0!important;box-shadow:none!important;}
+.dynamic-island{display:none!important;}
+.home-indicator{display:none!important;height:0!important;min-height:0!important;padding:0!important;margin:0!important;}
+.home-indicator:before{display:none!important;}
+.lock-screen,.home-screen,.app-screen{border-radius:0!important;}
+.lock-screen{padding-top:max(52px,env(safe-area-inset-top))!important;}
+.app-screen .statusbar,.home-screen .statusbar{padding-top:calc(10px + env(safe-area-inset-top))!important;height:calc(44px + env(safe-area-inset-top))!important;}
+.header{padding-top:calc(44px + env(safe-area-inset-top))!important;}
+.wechat-head{margin-top:0!important;}
+.dock{margin-bottom:calc(10px + env(safe-area-inset-bottom))!important;}
+.composer-wrap,.claude-composer-wrap{padding-bottom:env(safe-area-inset-bottom)!important;}
+
+
+/* ===== Clawd size polish v1：微信/Claude 小宠物略放大，Claude 跑道收窄 ===== */
+.composer-wrap .input-clawd.clawd-live{width:72px!important;height:72px!important;top:-57px!important;}
+.composer-wrap .input-clawd.clawd-live .clawd-svg-slot{width:72px!important;height:72px!important;}
+.claude-clawd-track{height:42px!important;margin:0 12px -8px!important;overflow:visible!important;}
+.claude-composer-wrap .input-clawd.clawd-live{width:60px!important;height:60px!important;top:-4px!important;}
+.claude-composer-wrap .input-clawd.clawd-live .clawd-svg-slot{width:60px!important;height:60px!important;}
+@keyframes clawdRunTop{from{transform:translateX(8px)}to{transform:translateX(calc(min(430px,100vw) - 88px))}}
+@keyframes clawdRunTopClaude{from{transform:translateX(8px)}to{transform:translateX(calc(min(430px,100vw) - 82px))}}
+
+
+/* ===== Memory 感受页 v1：关系天气 / 最近想起 ===== */
+.mind-mood-box{display:grid;gap:10px;padding:0 16px 10px;}
+.mind-mood-card{border-radius:24px;padding:14px;background:rgba(255,255,255,.58);border:1px solid rgba(90,70,45,.06);box-shadow:0 10px 28px rgba(70,50,30,.045);}
+.mind-mood-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.mind-mood-title{font-size:16px;font-weight:1000;color:var(--bar-text,#111827);letter-spacing:-.3px;}
+.mind-mood-sub{font-size:11px;color:color-mix(in srgb,var(--bar-text,#111827) 42%,transparent);font-weight:750;margin-top:3px;line-height:1.5;}
+.mind-mood-state{border-radius:999px;padding:6px 10px;background:color-mix(in srgb,var(--accent,#111827) 12%,rgba(255,255,255,.7));font-size:11px;font-weight:1000;color:color-mix(in srgb,var(--accent,#111827) 76%,var(--bar-text,#111827));white-space:nowrap;}
+.mind-mood-weather{display:grid;gap:9px;margin-top:12px;}
+.mind-mood-row{display:grid;grid-template-columns:50px 1fr 34px;align-items:center;gap:8px;font-size:11px;font-weight:900;color:color-mix(in srgb,var(--bar-text,#111827) 48%,transparent);}
+.mind-mood-bar{height:7px;border-radius:999px;background:rgba(0,0,0,.05);overflow:hidden;}
+.mind-mood-bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,rgba(190,130,150,.72),rgba(218,205,150,.62),rgba(130,170,178,.66));}
+.mind-recall-list{display:grid;gap:8px;margin-top:12px;}
+.mind-recall-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border-radius:16px;background:rgba(255,255,255,.42);padding:10px 11px;}
+.mind-recall-name{font-size:12px;font-weight:950;color:var(--bar-text,#111827);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mind-recall-meta{font-size:10px;color:color-mix(in srgb,var(--bar-text,#111827) 38%,transparent);font-weight:800;margin-top:2px;}
+.mind-recall-item button{border:0;border-radius:999px;padding:6px 9px;background:rgba(255,255,255,.58);font-size:10px;font-weight:950;color:color-mix(in srgb,var(--bar-text,#111827) 55%,transparent);}
+
+
+/* ===== Polish batch v1: 梦页总览 / 临时空间管理 ===== */
+.mind-dream-overview{border-radius:24px;padding:14px;background:rgba(255,255,255,.58);border:1px solid rgba(90,70,45,.06);box-shadow:0 10px 28px rgba(70,50,30,.045);margin-bottom:10px;}
+.mind-dream-overview-title{font-size:16px;font-weight:1000;color:var(--bar-text,#111827);letter-spacing:-.3px;}
+.mind-dream-overview-sub{font-size:11px;color:color-mix(in srgb,var(--bar-text,#111827) 42%,transparent);font-weight:750;margin-top:4px;line-height:1.5;}
+.mind-dream-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+.mind-dream-stat{border-radius:16px;background:rgba(255,255,255,.45);padding:10px;text-align:center;}
+.mind-dream-stat b{display:block;font-size:17px;font-weight:1000;color:var(--bar-text,#111827);}
+.mind-dream-stat span{display:block;font-size:9px;font-weight:900;color:color-mix(in srgb,var(--bar-text,#111827) 38%,transparent);margin-top:3px;}
+.temp-storage-panel{display:grid;gap:10px;margin-top:10px;}
+.temp-storage-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border-radius:18px;background:#f6f7fb;border:1px solid rgba(0,0,0,.04);padding:11px 12px;}
+.temp-storage-name{font-size:13px;font-weight:950;color:#333;}
+.temp-storage-meta{font-size:11px;color:#888;line-height:1.45;margin-top:2px;}
+.temp-storage-value{font-size:13px;font-weight:1000;color:var(--accent,#111827);white-space:nowrap;}
+.temp-storage-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.temp-storage-actions button{border:0;border-radius:999px;padding:9px 12px;font-size:12px;font-weight:900;background:#ededf2;color:#555;}
+.temp-storage-actions button.danger{background:#ffe8e6;color:#b42318;}
+
+
+/* ===== Claude output polish v1: 输出文件可见删除 / 预览操作条 ===== */
+.preview-actions{display:none;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+.preview-actions.show{display:flex;}
+.preview-actions button{border:0;border-radius:999px;padding:7px 11px;font-size:11px;font-weight:950;background:#ededf2;color:#555;}
+.preview-actions button.danger,.claude-output-actions button.danger{background:#ffe8e6!important;color:#b42318!important;}
+
+
+/* ===== Claude Ops Trace v1：真实工具调用轨迹卡片 ===== */
+.claude-ops-card{border-radius:22px!important;background:rgba(255,255,255,var(--miao-card-alpha,.82))!important;border:1px solid color-mix(in srgb,var(--accent,#111827) 9%,rgba(0,0,0,.08))!important;box-shadow:0 12px 28px rgba(0,0,0,.055)!important;}
+.claude-ops-head span:first-child{font-size:15px;letter-spacing:-.2px;}
+.claude-ops-head span:last-child{font-size:12px;color:color-mix(in srgb,var(--accent,#111827) 70%,var(--bar-text,#111827));}
+.claude-ops-terminal{margin-top:10px;border-radius:16px;background:#111;color:#cfd8cc;padding:10px 12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;line-height:1.65;white-space:pre-wrap;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);max-height:190px;overflow:auto;}
+.claude-ops-line.done{color:#9bd18d}.claude-ops-line.error{color:#ffb1aa}.claude-ops-line.running{color:#f1e6b6}
+.claude-ops-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;}
+.claude-ops-toggle{border:0;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:950;background:color-mix(in srgb,var(--accent,#111827) 8%,rgba(255,255,255,.72));color:var(--bar-text,#111827);}
+
 </style>
+<script>window.MIAO_BUILD="RC2";</script>
 </head>
 <body>
 <div class="phone-shell">
@@ -3875,6 +3925,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
     <div class="preview-mask" id="previewMask">
       <div class="preview-panel">
         <div class="preview-head"><span id="previewTitle">预览</span><button class="icon-btn" data-action="close-preview">×</button></div>
+        <div class="preview-actions" id="previewActions"></div>
         <div class="preview-body" id="previewBody"></div>
       </div>
     </div>
@@ -3996,6 +4047,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
             <button data-action="set-relation-scope" data-id="tool" id="relationScopeTool">工具 Claude</button>
           </div>
         </div>
+        <div id="relationMoodBox" class="mind-mood-box"></div>
         <div class="memory-relation-card mind-relation-card">
           <div class="memory-relation-title" id="relationScopeTitle">关系状态</div>
           <div class="memory-relation-text" id="relationText"></div>
@@ -4023,6 +4075,13 @@ body.multiselect-mode .msg{ cursor:pointer; }
             <label class="btn file-btn">导入全部<input type="file" accept="application/json,.json" id="dataImportInput"></label>
             <button class="btn danger" data-action="clear-all">清空全部</button>
           </div>
+        </div>
+
+        <div class="card">
+          <div class="v3-section-title">临时空间 / Claude 文件</div>
+          <div class="v3-sub">这里只清理文件本体和临时内容，不删除角色、记忆、日记。聊天里的文件卡片会保留，但清理后无法再读取全文。</div>
+          <div id="tempStorageDashboard" class="temp-storage-panel"></div>
+          <div class="temp-storage-actions"><button data-action="refresh-temp-storage">刷新</button><button class="danger" data-action="clear-claude-temp-files">清理 Claude 文件本体</button></div>
         </div>
 
         <div class="card">
@@ -4799,6 +4858,7 @@ function bindEvents(){
     if(action==="copy-diary") copyDiary(id);
     if(action==="download-diary") downloadDiary(id);
     if(action==="export-diaries-txt") exportDiariesTxt();
+    if(action==="toggle-diary-tool-access") toggleDiaryToolAccess();
     if(action==="toggle-memory-lock") toggleMemoryLock(id,btn.dataset.scope);
     if(action==="toggle-mem-folder"){
       if(id==="role") Miao.state.memFolderRole=!Miao.state.memFolderRole;
@@ -4816,6 +4876,8 @@ function bindEvents(){
     if(action==="repair-data") repairDataDefaults();
     if(action==="clear-gen-images") clearGenImages();
     if(action==="clear-role-voice-cache") clearPlayedRoleVoiceCache(true);
+    if(action==="refresh-temp-storage") renderTempStorageDashboard();
+    if(action==="clear-claude-temp-files") clearAllClaudeTempFiles();
     if(action==="refresh-context-preview") renderApiContextPreview();
     if(action==="copy-context-preview") copyApiContextPreview();
     if(action==="refresh-error-log") renderErrorLog();
@@ -4868,7 +4930,8 @@ function bindEvents(){
     if(action==="clear-claude") clearClaude();
     if(action==="claude-multiselect") enterClaudeMulti();
     if(action==="claude-export") exportClaudeHistory();
-    if(action==="delete-claude-msg") deleteClaudeMessage(id);
+    if(action==="delete-claude-msg"){ deleteClaudeMessage(id); if($("#previewMask")?.classList.contains("show")) closePreview(); }
+    if(action==="toggle-claude-ops") toggleClaudeOpsExpanded(id);
     if(action==="open-file-preview") openClaudeFilePreview(id);
     if(action==="download-claude-file") downloadClaudeFile(id);
     if(action==="delete-claude-file") deleteClaudeFileCard(id);
@@ -9880,6 +9943,16 @@ function renderClaudeMessage(m){
     </div>
   </div>`;
 }
+function isClaudeOpsExpanded(id){
+  Miao.state.claudeOpsExpanded=Miao.state.claudeOpsExpanded||{};
+  return !!Miao.state.claudeOpsExpanded[id];
+}
+function toggleClaudeOpsExpanded(id){
+  if(!id) return;
+  Miao.state.claudeOpsExpanded=Miao.state.claudeOpsExpanded||{};
+  Miao.state.claudeOpsExpanded[id]=!Miao.state.claudeOpsExpanded[id];
+  renderClaude();
+}
 function renderClaudeOpsCard(m){
   const d=m.data||{};
   const items=Array.isArray(d.items)?d.items:[];
@@ -9889,12 +9962,19 @@ function renderClaudeOpsCard(m){
   const state=d.state||"running";
   const title=d.title||"Claude 操作";
   const sub=state==="done" ? `${done} 个操作 · 完成` : (items.length?`${done}/${total} 个操作进行中`:`准备中…`);
-  const list=items.slice(-8).map(it=>{
+  const expanded=isClaudeOpsExpanded(m.id);
+  const shown=expanded?items:items.slice(-5);
+  const terminal=shown.map((it,idx)=>{
     const st=it.status||"running";
     const icon=st==="done"?"✓":(st==="error"?"!":"·");
-    return `<div class="claude-ops-item ${escapeAttr(st)}"><span class="claude-ops-dot">${icon}</span><span>${escapeHtml(it.label||"操作")}${it.note?`<span class="claude-ops-sub"> · ${escapeHtml(it.note)}</span>`:""}</span></div>`;
+    const note=it.note?`  # ${it.note}`:"";
+    return `<div class="claude-ops-line ${escapeAttr(st)}">${icon} ${escapeHtml(it.label||"操作")}${escapeHtml(note)}</div>`;
   }).join("");
-  return `<div class="claude-ops-card"><div class="claude-ops-head"><span>${escapeHtml(title)}</span><span>${escapeHtml(sub)}</span></div><div class="claude-ops-sub">${state==="done"?"工具调用已结束，下面是结果。":"执行工具时会实时更新，不额外消耗 API。"}</div>${list?`<div class="claude-ops-list">${list}</div>`:""}<div class="claude-ops-progress"><span style="width:${pct}%"></span></div></div>`;
+  const hidden=items.length-shown.length;
+  return `<div class="claude-ops-card"><div class="claude-ops-head"><span>${escapeHtml(title)}</span><span>${escapeHtml(sub)}</span></div>
+    <div class="claude-ops-sub">${state==="done"?"真实工具调用记录，下面是执行结果。":"正在执行真实工具调用，不额外伪造步骤。"}</div>
+    ${terminal?`<div class="claude-ops-terminal">${terminal}</div>`:`<div class="claude-ops-list"><div class="claude-ops-item running"><span class="claude-ops-dot">·</span><span>等待模型决定是否调用工具</span></div></div>`}
+    <div class="claude-ops-footer"><div class="claude-ops-progress"><span style="width:${pct}%"></span></div>${items.length>5?`<button class="claude-ops-toggle" data-action="toggle-claude-ops" data-id="${escapeAttr(m.id)}">${expanded?"收起":`查看全部${hidden>0?` · ${hidden} 条`:""}`}</button>`:""}</div></div>`;
 }
 function renderClaudeBody(m){
   if(m.type==="file") return renderClaudeFileCard(m);
@@ -9974,9 +10054,9 @@ function renderClaudeBody(m){
       // 代码块单独处理：长文档/HTML/JSON 折叠成文件气泡，短代码仍显示代码块
       const lang=(p.lang||"code").toLowerCase();
       const title=guessClaudeOutputTitle(lang,p.code);
-      const id=storeClaudeCode(lang,p.code,title);
+      const id=storeClaudeCode(lang,p.code,title,m.id);
       if(isClaudeOutputFileBlock(lang,p.code)){
-        bubbles.push(renderClaudeOutputFileBubble(id,lang,p.code,title));
+        bubbles.push(renderClaudeOutputFileBubble(id,lang,p.code,title,m.id));
       }else{
         const canPreview=["html","svg","jsx","react","json","md","markdown","txt","text"].includes(lang);
         bubbles.push(`<div class="claude-bubble"><div class="claude-code-block"><div class="claude-code-head"><span>${escapeHtml(p.lang||"code")}</span></div><pre>${escapeHtml(p.code)}</pre><div class="code-actions"><button data-action="copy-code" data-id="${id}">复制代码</button><button data-action="download-code" data-id="${id}">下载</button>${canPreview?`<button data-action="preview-code" data-id="${id}">预览</button>`:""}</div></div></div>`);
@@ -11190,7 +11270,7 @@ function isClaudeOutputFileBlock(lang,code){
   if(["html","json","md","txt"].includes(l)) return true;
   return len>=1600;
 }
-function renderClaudeOutputFileBubble(id,lang,code,title){
+function renderClaudeOutputFileBubble(id,lang,code,title,msgId){
   const l=claudeOutputLang(lang);
   const ext=claudeOutputExt(l).toUpperCase();
   const chars=String(code||"").length;
@@ -11209,13 +11289,14 @@ function renderClaudeOutputFileBubble(id,lang,code,title){
     <div class="claude-output-actions">
       <button data-action="download-code" data-id="${escapeAttr(id)}">下载</button>
       <button data-action="copy-code" data-id="${escapeAttr(id)}">复制</button>
+      <button class="danger" data-action="delete-claude-msg" data-id="${escapeAttr(msgId||"")}">删除</button>
     </div>
   </div></div>`;
 }
-function storeClaudeCode(lang,code,title){
+function storeClaudeCode(lang,code,title,msgId){
   const id=uid("code");
   Miao.state.claudeCodes=Miao.state.claudeCodes||{};
-  Miao.state.claudeCodes[id]={lang:claudeOutputLang(lang),code,title:title||guessClaudeOutputTitle(lang,code)};
+  Miao.state.claudeCodes[id]={lang:claudeOutputLang(lang),code,title:title||guessClaudeOutputTitle(lang,code),msgId:msgId||""};
   return id;
 }
 async function copyClaudeCode(id){
@@ -11223,6 +11304,14 @@ async function copyClaudeCode(id){
   if(!c) return;
   try{ await navigator.clipboard.writeText(c.code); toast("内容已复制"); }
   catch(e){ openPreview("复制内容", `<div class="text-preview">${escapeHtml(c.code)}</div>`); }
+}
+function setPreviewCodeActions(id){
+  const box=$("#previewActions");
+  if(!box) return;
+  if(!id){ box.classList.remove("show"); box.innerHTML=""; return; }
+  const c=Miao.state.claudeCodes?.[id]||{};
+  box.innerHTML=`<button data-action="download-code" data-id="${escapeAttr(id)}">下载</button><button data-action="copy-code" data-id="${escapeAttr(id)}">复制</button>${c.msgId?`<button class="danger" data-action="delete-claude-msg" data-id="${escapeAttr(c.msgId)}">删除输出</button>`:""}`;
+  box.classList.add("show");
 }
 function previewClaudeCode(id){
   const c=Miao.state.claudeCodes?.[id];
@@ -11237,6 +11326,7 @@ function previewClaudeCode(id){
     if(lang==="json"){ try{ display=JSON.stringify(JSON.parse(c.code),null,2); }catch(e){} }
     openPreview("Artifact · "+title, `<div class="text-preview">${escapeHtml(display)}</div>`);
   }
+  setPreviewCodeActions(id);
 }
 function downloadClaudeCode(id){
   const c=Miao.state.claudeCodes?.[id];
@@ -11251,7 +11341,8 @@ function downloadClaudeCode(id){
   toast("文件已下载");
 }
 function buildReactPreview(code){
-  return `<!doctype html><html><head><meta charset="utf-8"><script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"><\/script><script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"><\/script><script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;padding:18px;background:#fff}<\/style></head><body><div id="root"></div><script type="text/babel">${code}\n\nif (typeof App !== 'undefined') { ReactDOM.createRoot(document.getElementById('root')).render(<App/>); }<\/script></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"><\/script><script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"><\/script><script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;padding:18px;background:#fff}<\/style></head><body><div id="root"></div><script type="text/babel">${code}\n\nif (typeof App !== 'undefined') { ReactDOM.createRoot(document.getElementById('root')).render(<App/>); }<\/script>
+</body></html>`;
 }
 function openPreview(title, html){
   $("#previewTitle").textContent=title;
@@ -11266,6 +11357,7 @@ function openPreviewIframe(title, srcdoc){
 function closePreview(){
   $("#previewMask").classList.remove("show");
   $("#previewBody").innerHTML="";
+  setPreviewCodeActions("");
 }
 async function openClaudeFilePreview(id){
   const m=getClaudeHistory().find(x=>x.id===id);
@@ -13942,6 +14034,7 @@ async function executeWechatTool(name, args){
     return {count:results.length,results};
   }
   if(name==="read_diary"){
+    if(typeof getDiaryToolAccess==="function" && !getDiaryToolAccess()) return {error:"user 已关闭日记工具读取。",count:0,results:[]};
     const query=(args.query||"").toLowerCase();
     const category=args.category||"";
     const limit=parseInt(args.limit)||10;
@@ -14021,6 +14114,7 @@ async function executeClaudeTool(name, args){
     return {count:results.length,results};
   }
   if(name==="read_diary"){
+    if(typeof getDiaryToolAccess==="function" && !getDiaryToolAccess()) return {error:"user 已关闭日记工具读取。",count:0,results:[]};
     const query=(args.query||"").toLowerCase();
     const category=args.category||"";
     const limit=parseInt(args.limit)||10;
@@ -15140,6 +15234,13 @@ function clearDiarySearch(){
   Storage.set("diaryFilterCategory","all");
   renderDiary();
 }
+function getDiaryToolAccess(){ return Storage.get("diaryToolAccess", true)!==false; }
+function toggleDiaryToolAccess(){
+  const next=!getDiaryToolAccess();
+  Storage.set("diaryToolAccess", next);
+  renderDiary();
+  toast(next?"已允许工具按需读取日记":"已关闭日记工具读取");
+}
 function renderDiary(){
   const box=$("#diaryList");
   if(!box) return;
@@ -15155,6 +15256,7 @@ function renderDiary(){
     return `<div class="diary-hero">
       <div class="diary-kicker">Only you can write here.</div>
       <div class="diary-subline">日记是私密原文。Mind 只拿它做倒影，不把全文混进记忆地层。</div>
+      <div class="diary-privacy ${getDiaryToolAccess()?"":"off"}"><div class="diary-privacy-text"><b>工具读取：${getDiaryToolAccess()?"允许":"关闭"}</b>${getDiaryToolAccess()?"角色/Claude 需要时才会用 read_diary。":"AI 工具不会读取日记原文。"}</div><button data-action="toggle-diary-tool-access">${getDiaryToolAccess()?"关闭":"允许"}</button></div>
       <div class="diary-stat-row"><div class="diary-stat"><b>${all.length}</b><span>篇日记</span></div><div class="diary-stat"><b>${Math.round(totalChars/100)/10}k</b><span>字影子</span></div><div class="diary-stat"><b>${escapeHtml(latest?.date||"今天")}</b><span>最近</span></div></div>
       <div class="diary-tools"><input class="diary-search" id="diarySearchInput" value="${escapeAttr(q)}" placeholder="搜日记、碎片、心情"><button data-action="clear-diary-search">清空</button><button data-action="export-diaries-txt">导出</button></div>
       <div class="diary-chips">${cats.map(c=>`<button class="diary-chip ${cat===c?"active":""}" data-action="set-diary-filter" data-id="${escapeAttr(c)}">${c==="all"?"全部":escapeHtml(c)}</button>`).join("")}</div>
@@ -15468,11 +15570,12 @@ function renderMemoryDream(){
     .filter(x=>x.title||x.text)
     .sort((a,b)=>(b.time||0)-(a.time||0))
     .slice(0,10);
+  const overview=`<div class="mind-dream-overview"><div class="mind-dream-overview-title">梦的材料</div><div class="mind-dream-overview-sub">这里不生成新内容，只把日记和记忆投成影子。</div><div class="mind-dream-stats"><div class="mind-dream-stat"><b>${diaries.length}</b><span>日记影子</span></div><div class="mind-dream-stat"><b>${roleMem.length}</b><span>角色记忆</span></div><div class="mind-dream-stat"><b>${toolMem.length}</b><span>工具影子</span></div></div></div>`;
   if(!items.length){
-    box.innerHTML=`<div class="mind-dream-card"><div class="mind-dream-date">还没有梦</div><div class="mind-dream-title">这里暂时是空的。</div><div class="mind-dream-text">写几篇日记，或者让记忆多沉一会儿，梦就会有材料。</div></div>`;
+    box.innerHTML=overview+`<div class="mind-dream-card"><div class="mind-dream-date">还没有梦</div><div class="mind-dream-title">这里暂时是空的。</div><div class="mind-dream-text">写几篇日记，或者让记忆多沉一会儿，梦就会有材料。</div></div>`;
     return;
   }
-  box.innerHTML=items.map((x,i)=>{
+  box.innerHTML=overview+items.map((x,i)=>{
     const text=String(x.text||"").trim();
     const snippet=text.slice(0,260)+(text.length>260?"\n……":"");
     const date=x.kind==="diary" ? (x.date||dreamDateText(x.time)) : dreamDateText(x.time,"旧地层");
@@ -15496,6 +15599,32 @@ function renderRelation(){
   const rb=$("#relationScopeRole"), tb=$("#relationScopeTool");
   if(rb) rb.classList.toggle("active", scope==="role");
   if(tb) tb.classList.toggle("active", scope==="tool");
+  const mood=$("#relationMoodBox");
+  if(!mood) return;
+  const mems=(scope==="tool"?getToolMemories():getMemories()).slice().sort((a,b)=>(b.lastSeenAt||b.createdAt||0)-(a.lastSeenAt||a.createdAt||0));
+  const now=Date.now();
+  const recentCount=mems.filter(m=>now-Number(m.createdAt||0)<7*86400000).length;
+  const important=mems.filter(m=>m.important||m.locked).length;
+  const rel=String(getRelationStateByScope(scope)||"");
+  let state="沉睡", sub="很久没有新的波纹。";
+  if(recentCount>=3){ state="活跃"; sub="最近有很多新的记忆在浮上来。"; }
+  else if(recentCount>0 || important>0){ state="淡亮"; sub="有几件事还清楚地挂在那里。"; }
+  const weather=[
+    ["沉淀", Math.min(100, 24+mems.length*9)],
+    ["挂念", Math.min(100, 18+important*18)],
+    ["热闹", Math.min(100, 12+recentCount*22)],
+    ["安静", Math.max(14, 82-recentCount*16)]
+  ];
+  const recalls=mems.slice(0,3);
+  mood.innerHTML=`<div class="mind-mood-card">
+    <div class="mind-mood-head"><div><div class="mind-mood-title">此刻的感受天气</div><div class="mind-mood-sub">${escapeHtml(sub)} 这里不写入新数据，只读取已有关系和记忆。</div></div><span class="mind-mood-state">${escapeHtml(state)}</span></div>
+    <div class="mind-mood-weather">${weather.map(w=>`<div class="mind-mood-row"><span>${escapeHtml(w[0])}</span><div class="mind-mood-bar"><i style="width:${Math.max(8,Math.min(100,w[1]))}%"></i></div><em>${Math.round(w[1])}</em></div>`).join("")}</div>
+  </div>
+  <div class="mind-mood-card">
+    <div class="mind-mood-title">最近想起</div>
+    <div class="mind-mood-sub">翻开过、刚写下、或者被钉住的东西会先浮出来。</div>
+    <div class="mind-recall-list">${recalls.length?recalls.map(m=>`<div class="mind-recall-item"><div><div class="mind-recall-name">${escapeHtml(m.title||"未命名记忆")}</div><div class="mind-recall-meta">${escapeHtml(m.type||"普通记忆")} · ${escapeHtml(memoryBlurLabel(m))}</div></div><button data-action="open-memory-entry" data-id="${escapeAttr(m.id)}" data-scope="${scope}">翻开</button></div>`).join(""):`<div class="mind-recall-item"><div><div class="mind-recall-name">还没有浮上来的记忆</div><div class="mind-recall-meta">去地层里翻开几条，或者新写一条。</div></div></div>`}</div>
+  </div>`;
 }
 function setRelationScope(scope){
   Miao.state.relationScopeTool = (scope==="tool");
@@ -15747,8 +15876,53 @@ function formatSizeChars(n){
   if(n<1024*1024) return (n/1024).toFixed(1)+"K 字符";
   return (n/1024/1024).toFixed(2)+"M 字符";
 }
+function allClaudeHistoryKeys(){
+  return allMiaoKeys().filter(k=>String(k).startsWith("claudeHistory."));
+}
+function allClaudeMessages(){
+  let out=[];
+  allClaudeHistoryKeys().forEach(k=>{ const h=Storage.get(k,[])||[]; h.forEach(m=>out.push(Object.assign({_historyKey:k},m))); });
+  return out;
+}
+function claudeTempStats(){
+  const msgs=allClaudeMessages();
+  const fileMsgs=msgs.filter(m=>m.type==="file");
+  const fileKeys=new Set();
+  fileMsgs.forEach(m=>{ const k=m.data?.fileKey || (m.data?.kind==="document"?m.data?.name:""); if(k) fileKeys.add(k); });
+  let outputCount=0;
+  if(typeof parseCodeBlocks==="function"){
+    msgs.filter(m=>m.sender==="assistant"&&m.type==="text").forEach(m=>{ outputCount += parseCodeBlocks(m.content||"").filter(p=>p.kind==="code").length; });
+  }
+  const currentFiles=(getClaudeHistory()||[]).filter(m=>m.type==="file").length;
+  return {histories:allClaudeHistoryKeys().length, fileCards:fileMsgs.length, fileKeys:fileKeys.size, outputCount, currentFiles};
+}
+function renderTempStorageDashboard(){
+  const box=$("#tempStorageDashboard"); if(!box) return;
+  const st=claudeTempStats();
+  box.innerHTML=`<div class="temp-storage-row"><div><div class="temp-storage-name">Claude 会话</div><div class="temp-storage-meta">工具 Claude 和角色 Claude 分开统计。</div></div><div class="temp-storage-value">${st.histories} 组</div></div>
+  <div class="temp-storage-row"><div><div class="temp-storage-name">文件卡片</div><div class="temp-storage-meta">聊天里显示的文件入口，不等于全文塞进上下文。</div></div><div class="temp-storage-value">${st.fileCards} 个</div></div>
+  <div class="temp-storage-row"><div><div class="temp-storage-name">本地文件本体</div><div class="temp-storage-meta">可按需 read/search；清理后卡片还在，但不能再读取全文。</div></div><div class="temp-storage-value">${st.fileKeys} 份</div></div>
+  <div class="temp-storage-row"><div><div class="temp-storage-name">输出代码 / 文档</div><div class="temp-storage-meta">来自 Claude 回复中的代码块，Artifacts 会自动展示。</div></div><div class="temp-storage-value">${st.outputCount} 个</div></div>`;
+}
+async function clearAllClaudeTempFiles(){
+  const st=claudeTempStats();
+  if(!st.fileKeys){ toast("没有可清理的 Claude 文件本体"); return; }
+  if(!await askConfirm(`清理 ${st.fileKeys} 份 Claude 文件本体？\n聊天卡片会保留，但之后不能再读取这些文件全文。`)) return;
+  const seen=new Set();
+  const msgs=allClaudeMessages().filter(m=>m.type==="file");
+  for(const m of msgs){
+    const k=m.data?.fileKey || (m.data?.kind==="document"?m.data?.name:"");
+    if(k && seen.has(k)) continue;
+    if(k) seen.add(k);
+    await cleanupClaudeFileForMessage(m);
+  }
+  renderDataCenter();
+  renderClaude();
+  toast("Claude 文件本体已清理");
+}
 function renderDataCenter(){
   renderDataDashboard();
+  renderTempStorageDashboard();
   renderModuleManager();
   renderHealthCheck(false);
   renderApiContextPreview();
@@ -15760,7 +15934,7 @@ function renderDataDashboard(){
   const size=moduleSize(keys);
   const roles=getRoles().length;
   const msgs=keys.filter(k=>k.startsWith("wechatHistory.")).reduce((n,k)=>n+(Storage.get(k,[])||[]).length,0);
-  box.innerHTML=`<div class="data-stat">本地数据<b>${formatSizeChars(size)}</b></div><div class="data-stat">数据键<b>${keys.length}</b></div><div class="data-stat">角色数量<b>${roles}</b></div><div class="data-stat">微信消息<b>${msgs}</b></div>`;
+  box.innerHTML=`<div class="data-stat">本地数据<b>${formatSizeChars(size)}</b></div><div class="data-stat">数据键<b>${keys.length}</b></div><div class="data-stat">角色数量<b>${roles}</b></div><div class="data-stat">微信消息<b>${msgs}</b></div><div class="data-stat">构建版本<b>${escapeHtml(window.MIAO_BUILD||"RC2")}</b></div>`;
 }
 function renderModuleManager(){
   const box=$("#moduleManagerList"); if(!box) return;
@@ -15920,7 +16094,7 @@ function exportData(){
   // 优先从IndexedDB导出（不受5MB限制），降级用localStorage
   if(typeof MeowStorage !== "undefined"){
     MeowStorage.exportAll().then(allData=>{
-      const data={miao2:{}};
+      const data={miao2Meta:{app:"喵喵机",build:window.MIAO_BUILD||"RC2",exportedAt:new Date().toISOString(),format:"miao2-full"},miao2:{}};
       Object.keys(allData).filter(k=>k.startsWith(Storage.prefix)).forEach(k=>{
         data.miao2[k.slice(Storage.prefix.length)] = allData[k];
       });
@@ -15939,7 +16113,7 @@ function exportData(){
   }
 }
 function _exportFromLocalStorage(){
-  const data={miao2:{}};
+  const data={miao2Meta:{app:"喵喵机",build:window.MIAO_BUILD||"RC2",exportedAt:new Date().toISOString(),format:"miao2-full"},miao2:{}};
   Object.keys(localStorage).filter(k=>k.startsWith(Storage.prefix)).forEach(k=>{
     data.miao2[k.slice(Storage.prefix.length)] = Storage.get(k.slice(Storage.prefix.length), null);
   });
@@ -16063,8 +16237,7 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
   function preview(id){ var a=byId(id); if(!a) return; close(); var lang=langNorm(a.lang); if(lang==="svg" && typeof openPreview==="function") openPreview("Artifact · "+a.title,'<div class="svg-preview">'+a.code+'</div>'); else if((lang==="html" || lang==="jsx" || lang==="tsx") && typeof openPreviewIframe==="function") openPreviewIframe("Artifact · "+a.title, lang==="html"?a.code:buildReactPreview(a.code)); else if(typeof openPreview==="function"){ var display=a.code; if(lang==="json"){ try{ display=JSON.stringify(JSON.parse(a.code),null,2); }catch(e){} } openPreview("Artifact · "+a.title,'<div class="text-preview">'+htmlEscape(display)+'</div>'); } }
   function download(id){ var a=byId(id); if(!a) return; var ext=extFor(a.lang); var type=ext==="html"?"text/html;charset=utf-8":(ext==="svg"?"image/svg+xml;charset=utf-8":(ext==="json"?"application/json;charset=utf-8":"text/plain;charset=utf-8")); blobDownload(cleanName(a.title)+"."+ext,a.code,type); if(typeof toast==="function") toast("Artifact 已下载"); }
   function downloadAll(){ var arr=artifacts(); if(!arr.length){ if(typeof toast==="function") toast("没有可下载的 Artifacts"); return; } var pack={_type:"miaoClaudeArtifacts",exportedAt:(new Date()).toISOString(),artifacts:[]}; for(var i=0;i<arr.length;i++){ pack.artifacts.push({title:arr[i].title,lang:arr[i].lang,filename:cleanName(arr[i].title)+"."+extFor(arr[i].lang),code:arr[i].code,time:arr[i].time}); } blobDownload("claude_artifacts_"+(new Date()).toISOString().slice(0,10)+".json",JSON.stringify(pack,null,2),"application/json;charset=utf-8"); if(typeof toast==="function") toast("Artifacts 已打包下载"); }
-  function sendBack(id){ var a=byId(id); if(!a || typeof getClaudeHistory!=="function") return; var h=getClaudeHistory(); h.push({id:uid("cmsg"),sender:"user",type:"text",content:"请继续修改这个 Artifact：「"+a.title+"」。\n\n```"+a.lang+"\n"+a.code+"\n```",createdAt:Date.now(),time:nowTime()}); saveClaudeHistory(h); close(); renderClaude(); if(typeof setClaudePetMood==="function") setClaudePetMood("queued",""); if(typeof toast==="function") toast("已发回 Claude，点 ✦ 继续修改"); }
-  document.addEventListener("click",function(e){ var b=e.target.closest&&e.target.closest("[data-artifact-action]"); if(!b) return; var act=b.getAttribute("data-artifact-action"); var id=b.getAttribute("data-id")||""; e.preventDefault(); e.stopPropagation(); if(act==="open") open(); else if(act==="close") close(); else if(act==="preview") preview(id); else if(act==="download") download(id); else if(act==="download-all") downloadAll(); else if(act==="send") sendBack(id); },true);
+  document.addEventListener("click",function(e){ var b=e.target.closest&&e.target.closest("[data-artifact-action]"); if(!b) return; var act=b.getAttribute("data-artifact-action"); var id=b.getAttribute("data-id")||""; e.preventDefault(); e.stopPropagation(); if(act==="open") open(); else if(act==="close") close(); else if(act==="preview") preview(id); else if(act==="download") download(id); else if(act==="download-all") downloadAll(); },true);
   window.MiaoArtifacts={open:open,close:close,render:render,artifacts:artifacts};
 })();
 </script>
