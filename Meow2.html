@@ -3378,7 +3378,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 .claude-ops-toggle{border:0;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:950;background:color-mix(in srgb,var(--accent,#111827) 8%,rgba(255,255,255,.72));color:var(--bar-text,#111827);}
 
 </style>
-<script>window.MIAO_BUILD="ArtifactsCabinetV3";</script>
+<script>window.MIAO_BUILD="ArtifactStoreV1";</script>
 </head>
 <body>
 <div class="phone-shell">
@@ -10927,7 +10927,7 @@ function normalizeClaudePlainOutputsToCode(text, history){
   const lastUser=(history||[]).slice().reverse().find(m=>m&&m.sender==="user");
   const ask=String(lastUser?.content||"");
   const wantsDoc=/\b(docx?|word|txt)\b|文档|文本文件|生成文件|做成文件|输出文件|保存成/i.test(ask);
-  if(wantsDoc && s.length>240){
+  if(wantsDoc && s.length>18){
     const lang=/\b(docx?|word)\b|文档/.test(ask) ? "doc" : "txt";
     return "```"+lang+"\n"+cleanPlainOutputBody(s)+"\n```";
   }
@@ -11022,7 +11022,12 @@ async function callClaudeReply(){
         h.push({id:gid,sender:"assistant",type:"image_gen",content:"[图片]",data:{prompt:b.prompt,status:"loading"},createdAt:now2+i,time:nowTime()});
         pendingGen.push({id:gid, prompt:b.prompt});
       } else if(b.type==="code"){
-        h.push({id:uid("cmsg"),sender:"assistant",type:"text",content:"```"+(b.lang||"")+"\n"+(b.content||b.code||"")+"\n```",createdAt:now2+i,time:nowTime()});
+        const mid=uid("cmsg");
+        const lang=b.lang||"txt";
+        const code=b.content||b.code||"";
+        const t=nowTime();
+        saveClaudeArtifactRecord({lang,code,title:guessClaudeOutputTitle(lang,code),msgId:mid,createdAt:now2+i,time:t,origin:"generation"});
+        h.push({id:mid,sender:"assistant",type:"text",content:"```"+lang+"\n"+code+"\n```",createdAt:now2+i,time:t});
       } else if(b.content){
         h.push({id:uid("cmsg"),sender:"assistant",type:"text",content:b.content,createdAt:now2+i,time:nowTime()});
       }
@@ -11374,26 +11379,53 @@ function stableArtifactKey(lang, code, msgId){
   for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=(h*16777619)>>>0; }
   return "reg_"+h.toString(36);
 }
-function registerClaudeOutputArtifact(lang, code, title, msgId){
+function claudeArtifactStoreGet(){
+  try{ return Storage.get("claudeArtifactStore", []) || []; }
+  catch(e){ return []; }
+}
+function claudeArtifactStoreSave(list){
+  try{ Storage.set("claudeArtifactStore", (list||[]).slice(0,300)); }catch(e){}
+}
+function saveClaudeArtifactRecord(opts){
   try{
-    const l=claudeOutputLang(lang);
-    const body=String(code||"");
+    opts=opts||{};
+    const l=claudeOutputLang(opts.lang||"txt");
+    const body=String(opts.code||opts.content||"");
     if(!body.trim()) return "";
-    const key=stableArtifactKey(l, body, msgId);
-    const list=Storage.get("claudeArtifactRegistry", []);
-    const old=list.find(x=>x.key===key);
-    const rec={key, lang:l, code:body, title:title||guessClaudeOutputTitle(l,body), msgId:msgId||"", sourceKey:(typeof claudeKey==="function"?claudeKey():"current"), createdAt:Date.now(), time:nowTime()};
-    // 只持久化可视化输出；超大内容若本来就在历史代码块里，Artifacts 会从历史派生。这里限制 500KB，避免注册表膨胀。
-    if(body.length>500000) return key;
+    const msgId=opts.msgId||"";
+    const key=opts.key || stableArtifactKey(l, body, msgId);
+    const rec={
+      key,
+      lang:l,
+      code:body,
+      title:opts.title||guessClaudeOutputTitle(l,body),
+      msgId,
+      sourceKey:opts.sourceKey||(typeof claudeKey==="function"?claudeKey():"current"),
+      createdAt:opts.createdAt||Date.now(),
+      time:opts.time||nowTime(),
+      origin:opts.origin||"generation"
+    };
+    const list=claudeArtifactStoreGet();
+    const old=list.find(x=>x && x.key===key);
     if(old) Object.assign(old, rec); else list.unshift(rec);
-    Storage.set("claudeArtifactRegistry", list.slice(0,160));
+    claudeArtifactStoreSave(list);
+    try{
+      const reg=Storage.get("claudeArtifactRegistry", []) || [];
+      const oldReg=reg.find(x=>x && x.key===key);
+      if(oldReg) Object.assign(oldReg, rec); else reg.unshift(rec);
+      Storage.set("claudeArtifactRegistry", reg.slice(0,160));
+    }catch(e){}
     return key;
   }catch(e){ return ""; }
+}
+function registerClaudeOutputArtifact(lang, code, title, msgId){
+  return saveClaudeArtifactRecord({lang,code,title,msgId,origin:"render"});
 }
 function storeClaudeCode(lang,code,title,msgId){
   const id=uid("code");
   Miao.state.claudeCodes=Miao.state.claudeCodes||{};
   Miao.state.claudeCodes[id]={lang:claudeOutputLang(lang),code,title:title||guessClaudeOutputTitle(lang,code),msgId:msgId||""};
+  // 旧消息重渲染仍可补登；新回复会在生成阶段先登记。
   registerClaudeOutputArtifact(lang,code,title,msgId);
   return id;
 }
@@ -16094,7 +16126,7 @@ function renderDataDashboard(){
   const size=moduleSize(keys);
   const roles=getRoles().length;
   const msgs=keys.filter(k=>k.startsWith("wechatHistory.")).reduce((n,k)=>n+(Storage.get(k,[])||[]).length,0);
-  box.innerHTML=`<div class="data-stat">本地数据<b>${formatSizeChars(size)}</b></div><div class="data-stat">数据键<b>${keys.length}</b></div><div class="data-stat">角色数量<b>${roles}</b></div><div class="data-stat">微信消息<b>${msgs}</b></div><div class="data-stat">构建版本<b>${escapeHtml(window.MIAO_BUILD||"ArtifactsCabinetV3")}</b></div>`;
+  box.innerHTML=`<div class="data-stat">本地数据<b>${formatSizeChars(size)}</b></div><div class="data-stat">数据键<b>${keys.length}</b></div><div class="data-stat">角色数量<b>${roles}</b></div><div class="data-stat">微信消息<b>${msgs}</b></div><div class="data-stat">构建版本<b>${escapeHtml(window.MIAO_BUILD||"ArtifactStoreV1")}</b></div>`;
 }
 function renderModuleManager(){
   const box=$("#moduleManagerList"); if(!box) return;
@@ -16254,7 +16286,7 @@ function exportData(){
   // 优先从IndexedDB导出（不受5MB限制），降级用localStorage
   if(typeof MeowStorage !== "undefined"){
     MeowStorage.exportAll().then(allData=>{
-      const data={miao2Meta:{app:"喵喵机",build:window.MIAO_BUILD||"ArtifactsCabinetV3",exportedAt:new Date().toISOString(),format:"miao2-full"},miao2:{}};
+      const data={miao2Meta:{app:"喵喵机",build:window.MIAO_BUILD||"ArtifactStoreV1",exportedAt:new Date().toISOString(),format:"miao2-full"},miao2:{}};
       Object.keys(allData).filter(k=>k.startsWith(Storage.prefix)).forEach(k=>{
         data.miao2[k.slice(Storage.prefix.length)] = allData[k];
       });
@@ -16273,7 +16305,7 @@ function exportData(){
   }
 }
 function _exportFromLocalStorage(){
-  const data={miao2Meta:{app:"喵喵机",build:window.MIAO_BUILD||"ArtifactsCabinetV3",exportedAt:new Date().toISOString(),format:"miao2-full"},miao2:{}};
+  const data={miao2Meta:{app:"喵喵机",build:window.MIAO_BUILD||"ArtifactStoreV1",exportedAt:new Date().toISOString(),format:"miao2-full"},miao2:{}};
   Object.keys(localStorage).filter(k=>k.startsWith(Storage.prefix)).forEach(k=>{
     data.miao2[k.slice(Storage.prefix.length)] = Storage.get(k.slice(Storage.prefix.length), null);
   });
@@ -16391,6 +16423,19 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     var list=[]; if(typeof parseCodeBlocks!=="function") return list;
     var rows=getAllClaudeArtifactHistories();
     var hidden=hiddenSet(), pinned=pinnedSet();
+    try{
+      if(typeof Storage!=="undefined"){
+        var store=Storage.get("claudeArtifactStore",[])||[];
+        store.forEach(function(r,idx){
+          if(!r || !r.code || !goodLang(r.lang)) return;
+          var lang=langNorm(r.lang), code=String(r.code||"");
+          var id="store_"+(r.key||hash((r.msgId||idx)+"|"+lang+"|"+code.slice(0,120)));
+          var isHidden=hidden.has(id), isPinned=pinned.has(id);
+          if(isHidden && !includeHidden) return;
+          list.push({id:id,msgId:r.msgId||"",sourceKey:r.sourceKey||"store",lang:lang,kind:kindOf(lang),code:code,title:r.title||titleOf(code,lang,list.length),time:r.time||"",createdAt:r.createdAt||0,hidden:isHidden,pinned:isPinned,size:code.length,store:true});
+        });
+      }
+    }catch(e){}
     for(var i=0;i<rows.length;i++){
       var msg=rows[i].msg, h=rows[i].history||[];
       if(!msg || msg.sender!=="assistant" || msg.type!=="text") continue;
@@ -16402,7 +16447,7 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
         var id="a_"+hash((rows[i].key||"current")+"|"+(msg.id||i)+"|"+j+"|"+lang+"|"+code.slice(0,120));
         var isHidden=hidden.has(id), isPinned=pinned.has(id);
         if(isHidden && !includeHidden) continue;
-        list.push({id:id,msgId:msg.id,sourceKey:rows[i].key,lang:lang,kind:kindOf(lang),code:code,title:titleOf(code,lang,list.length),time:msg.time||"",hidden:isHidden,pinned:isPinned,size:code.length});
+        list.push({id:id,msgId:msg.id,sourceKey:rows[i].key,lang:lang,kind:kindOf(lang),code:code,title:titleOf(code,lang,list.length),time:msg.time||"",createdAt:msg.createdAt||0,hidden:isHidden,pinned:isPinned,size:code.length});
       }
     }
     try{
@@ -16413,13 +16458,25 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
           var id="registry_"+(r.key||hash((r.msgId||idx)+"|"+String(r.code).slice(0,120)));
           var isHidden=hidden.has(id), isPinned=pinned.has(id);
           if(isHidden && !includeHidden) return;
-          list.push({id:id,msgId:r.msgId||"",sourceKey:r.sourceKey||"registry",lang:langNorm(r.lang),kind:kindOf(r.lang),code:r.code||"",title:r.title||titleOf(r.code,r.lang,list.length),time:r.time||"",hidden:isHidden,pinned:isPinned,size:String(r.code||"").length,registry:true});
+          list.push({id:id,msgId:r.msgId||"",sourceKey:r.sourceKey||"registry",lang:langNorm(r.lang),kind:kindOf(r.lang),code:r.code||"",title:r.title||titleOf(r.code,r.lang,list.length),time:r.time||"",createdAt:r.createdAt||0,hidden:isHidden,pinned:isPinned,size:String(r.code||"").length,registry:true});
         });
       }
     }catch(e){}
     var uniq={}, dedup=[];
-    list.forEach(function(a){ var sig=a.lang+"|"+a.msgId+"|"+String(a.code||"").slice(0,100); if(uniq[sig]) return; uniq[sig]=1; dedup.push(a); });
-    dedup.sort(function(a,b){ if(a.pinned!==b.pinned) return a.pinned?-1:1; return (b.time||"").localeCompare(a.time||""); });
+    list.forEach(function(a){
+      var sig=a.lang+"|"+String(a.code||"").slice(0,180);
+      if(uniq[sig]){
+        var prev=dedup[uniq[sig]-1];
+        if(a.store && !prev.store) dedup[uniq[sig]-1]=a;
+        return;
+      }
+      uniq[sig]=dedup.length+1;
+      dedup.push(a);
+    });
+    dedup.sort(function(a,b){
+      if(a.pinned!==b.pinned) return a.pinned?-1:1;
+      return (Number(b.createdAt||0)-Number(a.createdAt||0)) || String(b.time||"").localeCompare(String(a.time||""));
+    });
     return dedup;
   }
   function artifacts(){ return collectArtifacts(false); }
