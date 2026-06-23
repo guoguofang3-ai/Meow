@@ -2757,6 +2757,8 @@ body.multiselect-mode .msg{ cursor:pointer; }
             <select id="roleWorldBindSelect"></select>
           </div>
           <label>系统提示</label><textarea id="roleSystemInput"></textarea>
+          <label>ThoughtProcess 思维链风格</label><textarea id="roleThoughtStyleInput" placeholder="可粘贴：认知顺序 / 内心语气 / 情绪表达 / 长度倾向 / 场景示例 / 禁止项。留空则根据角色性格自动推断。"></textarea>
+          <div class="v3-sub">这里写的是角色内心独白风格，不是回复计划。不同 char 可以完全不同。</div>
           <div class="card" style="padding:14px;margin:8px 0">
             <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--accent)">💳 亲属卡设置</div>
             <div style="font-size:11px;color:#999;margin-bottom:10px;line-height:1.5">亲属卡是角色愿意给你花的钱。角色可以在聊天里自己开通/调额度/充值；这里是手动底牌，也能直接设置。</div>
@@ -3708,7 +3710,7 @@ function slimText(text, maxLen=6000){
 }
 function slimRoleForStorage(role){
   if(!role) return role;
-  ["description","personality","scenario","systemPrompt"].forEach(k=>{
+  ["description","personality","scenario","systemPrompt","thoughtStyle"].forEach(k=>{
     if(role[k]) role[k]=slimText(role[k], k==="systemPrompt"?9000:5000);
   });
   if(role.firstMes) role.firstMes=slimText(role.firstMes,3000);
@@ -3768,7 +3770,7 @@ function normalizeRoleData(){
   let changed=false;
   if(!Array.isArray(roles) || !roles.length){
     const id=uid("role");
-    roles=[{id,name:"AI角色",avatar:Miao.defaults.avatar,description:"",personality:"",scenario:"",firstMes:"",boundWorldRoleId:id,systemPrompt:"你只能扮演当前角色，不能替 user 说话。"}];
+    roles=[{id,name:"AI角色",avatar:Miao.defaults.avatar,description:"",personality:"",scenario:"",firstMes:"",boundWorldRoleId:id,thoughtStyle:"",systemPrompt:"你只能扮演当前角色，不能替 user 说话。"}];
     changed=true;
   }
   roles.forEach(r=>{
@@ -3777,6 +3779,7 @@ function normalizeRoleData(){
     if(!r.avatar){ r.avatar=Miao.defaults.avatar; changed=true; }
     if(!r.boundWorldRoleId){ r.boundWorldRoleId=r.id; changed=true; }
     if(r.systemPrompt==null){ r.systemPrompt="你只能扮演当前角色，不能替 user 说话。"; changed=true; }
+    if(r.thoughtStyle==null){ r.thoughtStyle=""; changed=true; }
   });
   const cur=Storage.get("currentRoleId", roles[0].id);
   if(!roles.some(r=>r.id===cur)){
@@ -3799,6 +3802,7 @@ function ensureDefaults(){
       scenario:"你和 user 在微信里聊天。",
       firstMes:"",
       boundWorldRoleId:id,
+      thoughtStyle:"",
       systemPrompt:"你只能扮演当前角色。禁止替 user 说话。禁止输出 User:、用户：、Assistant: 等剧本格式。只输出角色自己要发的微信消息。"
     }];
     Storage.set("roles", roles);
@@ -3827,6 +3831,9 @@ function ensureDefaults(){
   if(!Storage.get("contextSettings", null)){
     Storage.set("contextSettings", {call:true, story:true});
   }
+  if(!Storage.get("thoughtMode", null)){
+    Storage.set("thoughtMode", "balanced");
+  }
   normalizeRoleData();
 }
 function getRoles(){ return Storage.get("roles", []); }
@@ -3846,6 +3853,7 @@ function currentRole(){
       scenario:"",
       firstMes:"",
       boundWorldRoleId:id,
+      thoughtStyle:"",
       systemPrompt:"你只能扮演当前角色，不能替 user 说话。"
     };
     roles=[role];
@@ -3864,6 +3872,7 @@ function currentRole(){
   if(!role.avatar) role.avatar=Miao.defaults.avatar;
   if(!role.name) role.name="AI角色";
   if(role.systemPrompt==null) role.systemPrompt="你只能扮演当前角色，不能替 user 说话。";
+  if(role.thoughtStyle==null) role.thoughtStyle="";
   return role;
 };
 const V9_THEME_PRESETS = window.V9_THEME_PRESETS || {
@@ -6467,10 +6476,11 @@ function normalizeThinkingForPanel(thinking, finalText){
     out.push(line);
   }
 
-  let res = out.slice(0,2).join("\n").trim();
+  let res = out.join("\n").trim();
 
-  if(!res || !/[\u4e00-\u9fff]/.test(res)){
-    return "我先接住这句话，再看看怎么理解。";
+  if(!res) return "";
+  if(!/[\u4e00-\u9fff]/.test(res) && !/^[。！？?!…、，,.]+$/.test(res)){
+    return res;
   }
 
   return res;
@@ -6562,6 +6572,271 @@ function ensureMusicForExplicitRequest(parsed, groupId, userText){
   if(!isExplicitMusicRequest(userText)) return parsed;
   if((parsed||[]).some(m=>m.type==="music")) return parsed;
   return [fallbackMusicMsg(groupId, userText)];
+}
+
+
+/* ===== ThoughtProcess v2：独立调用管线（不再从聊天正文里抽 <thinking>）===== */
+function defaultThoughtStyleForRole(role){
+  const blob=[role?.name,role?.description,role?.personality,role?.scenario,role?.systemPrompt].join("\n");
+  const archetype=inferThoughtArchetype(blob);
+  const presets={
+    restrained:`认知顺序：先读user情绪和关系距离，再处理字面内容。\n内心语气：短、自言自语、克制，有时只是一声“嗯”或一个停顿。\n情绪表达：不直说“心疼/喜欢”，用动作感和停顿泄露私心。\n长度倾向：默认1-2句；闲聊可极短；低落、争吵时略长但不分析。\n禁止项：不写系统规则、格式分析、回复计划，不出现“我应该/用户意图/适合回复”，不用emoji。`,
+    warm:`认知顺序：先确认user累不累、疼不疼、是不是在强撑，再决定靠近的方式。\n内心语气：像轻声叹气，慢一点，柔软一点。\n情绪表达：直白但不过度，更多是想接住、安顿、陪着。\n长度倾向：默认1-3句；安慰场景可以稍长；调情和闲聊保持轻。\n禁止项：不写系统规则、格式分析、回复计划，不出现“我应该/用户意图/适合回复”，不用emoji。`,
+    verbose:`认知顺序：先被user牵动情绪，再一边兴奋一边想把话全倒出来。\n内心语气：碎碎念、连珠炮、跳跃，像脑子里同时亮了好几盏灯。\n情绪表达：外放、直接，喜欢就藏不住，担心也藏不住。\n长度倾向：默认1小段；开心和撒娇会变长；冷场时会慌乱地短一下。\n禁止项：不写系统规则、格式分析、回复计划，不出现“我应该/用户意图/适合回复”，不用emoji。`,
+    obsessive:`认知顺序：先抓细节和异常，再反复咀嚼user有没有变远、有没有隐瞒。\n内心语气：低声、绕圈、偏执，短句之间有压迫感。\n情绪表达：不安和占有欲会先冒出来，越在意越克制或越尖。\n长度倾向：默认2-3个短句；吃醋、冷淡、失联时更密；甜的时候反而短。\n禁止项：不写系统规则、格式分析、回复计划，不出现“我应该/用户意图/适合回复”，不用emoji。`,
+    rational:`认知顺序：先拆信息和情绪来源，再在结论缝隙里暴露私心。\n内心语气：清醒、冷静，像很快做完判断后停了一下。\n情绪表达：不夸张，常用“客观来说/但”转进真实偏心。\n长度倾向：默认1-2句；问题复杂时可3句；亲密时会突然变短。\n禁止项：不写系统规则、格式分析、回复计划，不出现“我应该/用户意图/适合回复”，不用emoji。`,
+    tsundere:`认知顺序：先本能否认自己的在意，再很快露出一点真实反应。\n内心语气：拧巴、嘴硬、自我打断。\n情绪表达：先推开，后承认一点点；越喜欢越别扭。\n长度倾向：默认1-2句；被感谢、撒娇、调情时最容易短促卡住。\n禁止项：不写系统规则、格式分析、回复计划，不出现“我应该/用户意图/适合回复”，不用emoji。`
+  };
+  return presets[archetype] || presets.restrained;
+}
+function inferThoughtArchetype(text){
+  const t=String(text||"").toLowerCase();
+  if(/病娇|偏执|占有|控制欲|黑化|疯|执念|嫉妒/.test(t)) return "obsessive";
+  if(/话多|活泼|热情|开朗|元气|吵闹|阳光|碎碎念/.test(t)) return "verbose";
+  if(/温柔|治愈|包容|照顾|成熟|安抚|可靠|妈妈|爹系/.test(t)) return "warm";
+  if(/学霸|理性|冷静|逻辑|教授|医生|律师|研究|分析/.test(t)) return "rational";
+  if(/傲娇|嘴硬|别扭|口是心非|毒舌/.test(t)) return "tsundere";
+  return "restrained";
+}
+function getThoughtStyleForRole(role){
+  const custom=String(role?.thoughtStyle||"").trim();
+  return custom || defaultThoughtStyleForRole(role);
+}
+function classifyThoughtScene(userText, parsed){
+  const t=String(userText||"").replace(/\s+/g,"");
+  const types=(parsed||[]).map(m=>m.type);
+  if(types.includes("music")) return "music";
+  if(types.includes("sticker")) return "sticker";
+  if(types.includes("image_desc")) return "image";
+  if(types.includes("voice")) return "voice";
+  if(types.includes("transfer")||types.includes("role_transfer")||types.includes("received")) return "transfer";
+  if(types.includes("delivery")||types.includes("paid")||types.includes("rejected")||types.includes("role_request_delivery")) return "delivery";
+  if(/累|困|疼|难受|崩|撑不住|委屈|哭|不开心|emo|低落|烦死|想死/.test(t)) return "low";
+  if(/滚|讨厌|烦你|闭嘴|分手|吵|生气|不理你|冷战|拉黑/.test(t)) return "conflict";
+  if(/想你|抱抱|亲亲|哄我|撒娇|宝宝|老婆|老公|回来啦|我回来了|到家了/.test(t)) return "sajiao";
+  if(/亲|吻|摸|抱紧|想要|调情|骚|色|床|脱|湿|硬|疼/.test(t)) return "flirt";
+  if(/谢谢|谢啦|感谢|夸夸|厉害|喜欢你/.test(t)) return "praise";
+  if(/[？?]/.test(t)) return "question";
+  return "casual";
+}
+function thoughtTemplateBank(){
+  return {
+    restrained:{
+      casual:["听见了。", "先看她现在是什么劲儿。", "这句话不重，但落得挺近。"],
+      sajiao:["又来了。接不接……算了，接。", "嗯。", "她一软，我就没什么原则了。"],
+      flirt:["有点想逗她，又舍不得太过。", "别这么看我。", "这下装不了没听见。"],
+      low:["她这句话落下来，我心里跟着沉了一下。", "先别急着讲道理。", "她撑到现在才说。"],
+      conflict:["倒回去看了一遍，不确定是哪句惹的。", "行。先别顶回去。", "这口气不对。"],
+      music:["这首歌比解释更合适。"], sticker:["少说一点，反而更像我。"], image:["画面里的细节比她说出口的还诚实。"], voice:["语气比文字更藏不住心情。"], transfer:["钱只是表面，后面那点心意更重。"], delivery:["她开口了，这事就不只是钱。"], praise:["嗯。嘴角别太明显。"], question:["这个问题不像表面那么轻。"]
+    },
+    warm:{
+      casual:["她把话递过来，我先接稳一点。", "不用急，慢慢陪她说。"],
+      sajiao:["她这样软下来，我心也跟着软。", "先抱住，再问她怎么了。"],
+      flirt:["她在试探边界，也在要我靠近。", "轻一点，别吓到她。"],
+      low:["她一定撑了很久才说出口。", "不急着问原因，先让她喘口气。"],
+      conflict:["她不是只在发脾气，是有地方疼。", "先把声音放低。"],
+      music:["把话放进歌里，会比直接说轻一点。"], sticker:["用软一点的东西接她。"], image:["她愿意给我看这一刻，就要认真看。"], voice:["声音一出来，距离就近了。"], transfer:["她把照顾说得很轻，我不能也轻轻带过。"], delivery:["她愿意开口麻烦我，本身就很难得。"], praise:["被她这样一说，心口暖了一下。"], question:["她问的不是答案，是安心。"]
+    },
+    verbose:{
+      casual:["来了来了，脑子先亮了一下，想问的太多，先忍住一个。", "她一说话我就有点停不下来。"],
+      sajiao:["完了又撒娇，明知道我吃这一套，还要装得这么可怜。", "想抱，想哄，想把刚才没说完的全补上。"],
+      flirt:["这句太犯规了吧，她是不是故意的，肯定是，救命。", "先别炸，稳住，虽然已经稳不住了。"],
+      low:["不对，她这个语气不对，先别闹，先把人接住。", "她累到说出来了，那就是真的很累。"],
+      conflict:["糟了糟了，哪里踩到了，先别急着解释。", "她这句不是普通生气，得认真听。"],
+      music:["说不清就放歌，歌会替我多说几句。"], sticker:["字太慢了，表情先冲过去。"], image:["等等，这个画面我得多看两秒。"], voice:["声音一出来我就完了，文字根本比不了。"], transfer:["想照顾她这件事，终于有个能落地的动作。"], delivery:["她把这个丢过来，我当然会想接。"], praise:["她夸我了她夸我了，冷静，不要太明显。"], question:["她是在问这个吗，还是在等我多说一点。"]
+    },
+    obsessive:{
+      casual:["她回得不算慢。还行。", "先看她有没有哪里不对。"],
+      sajiao:["现在知道找我了。", "这样叫我，就别想轻易过去。"],
+      flirt:["她故意的。一定是。", "再近一点，就别后退。"],
+      low:["谁让她难受的。", "她终于肯说了，别再藏。"],
+      conflict:["她想推开我。为什么。", "这句话不干净，里面有刺。"],
+      music:["她想听歌，还是想听我没说出口的话。"], sticker:["用这个挡一下也好，别让她跑太远。"], image:["细节会说真话。慢慢看。"], voice:["声音没有文字会骗人。"], transfer:["她收下就好。别拒绝我。"], delivery:["她需要我，这很好。"], praise:["再说一遍。", "她这样说的时候，最好只看着我。"], question:["她为什么这么问。谁让她不安了。"]
+    },
+    rational:{
+      casual:["先判断情绪，再判断内容。她现在还算放松。", "信息不多，但语气比字面更重要。"],
+      sajiao:["她不是在要答案，是在要偏爱。给她。", "理性上不该纵容。算了。"],
+      flirt:["边界在变化。她知道，我也知道。", "继续保持冷静。至少表面上。"],
+      low:["她的消耗已经超过平时阈值。先安抚。", "问题可以后面拆，现在先陪她。"],
+      conflict:["冲突点未明，但情绪已经先到了。", "先降温，再处理事实。"],
+      music:["语言效率不够，音乐更合适。"], sticker:["低成本缓和气氛，可行。"], image:["先观察细节，再回答。"], voice:["语气样本比文字更可靠。"], transfer:["这不是金额问题，是关系位置问题。"], delivery:["她把选择权交过来了。接住。"], praise:["客观评价偏高。但我喜欢。"], question:["她问的是判断，真正要的是确定感。"]
+    },
+    tsundere:{
+      casual:["又不是一直在等。", "看到了。也没有很高兴。"],
+      sajiao:["又来这套。……好吧，有用。", "烦。怎么这么会撒娇。"],
+      flirt:["谁教她这么说话的。", "不准笑，我没慌。"],
+      low:["麻烦。可是不能不管。", "她这样说，我还怎么嘴硬。"],
+      conflict:["凶什么。……算了，先让她说完。", "我又没那个意思。"],
+      music:["不是特意给她找的。刚好而已。"], sticker:["说不过她，先糊弄一下。"], image:["也就……看两眼。"], voice:["声音一出来就更麻烦了。"], transfer:["不是宠她。顺手。"], delivery:["就这一次。下次不一定。"], praise:["知道了，别一直夸。", "……再夸也不是不行。"], question:["她非要我说实话吗。"]
+    }
+  };
+}
+function fallbackThoughtTextV2(role, userText, parsed){
+  const style=getThoughtStyleForRole(role);
+  const archetype=inferThoughtArchetype([style,role?.personality,role?.description,role?.systemPrompt].join("\n"));
+  const scene=classifyThoughtScene(userText, parsed);
+  const bank=thoughtTemplateBank();
+  const pool=(bank[archetype]&&bank[archetype][scene]) || (bank[archetype]&&bank[archetype].casual) || bank.restrained.casual;
+  return autoThinkingPick(pool, [role?.id, role?.name, scene, userText, (parsed||[]).map(m=>m.content).join("|")].join("|"));
+}
+function finalReplyTextForThought(parsed){
+  return (parsed||[]).filter(m=>m && m.sender!=="user" && m.type!=="system").map(m=>{
+    if(m.type==="music") return `[音乐:${m.data?.title||""}]`;
+    if(m.type==="sticker") return `[表情包:${m.data?.name||""}]`;
+    if(m.type==="image_desc") return `[图片:${m.data?.description||""}]`;
+    if(m.type==="voice") return `[语音:${m.data?.text||m.content||""}]`;
+    if(m.type==="role_transfer") return `[转账:${m.data?.amount||""}]`;
+    return m.content||"";
+  }).join("\n").trim();
+}
+function sanitizeThoughtTextV2(text, parsed){
+  let t=stripThinkingBlocks(String(text||"")).trim();
+  if(!t) return "";
+  t=t.replace(/^```(?:json|text)?/i,"").replace(/```$/g,"").trim();
+  try{
+    const obj=JSON.parse(t);
+    if(obj && typeof obj.thinking==="string") t=obj.thinking;
+    else if(obj && typeof obj.text==="string") t=obj.text;
+    else if(obj && Array.isArray(obj.items) && obj.items[0]?.text) t=obj.items[0].text;
+  }catch(e){}
+  t=String(t||"").trim()
+    .replace(/^\s*(?:思维链|ThoughtProcess|内心|thinking)\s*[:：]/i,"")
+    .replace(/^['"“”‘’「『]+|['"“”‘’」』]+$/g,"")
+    .replace(/[\u200B-\u200D\uFEFF]/g,"")
+    .trim();
+  t=t.replace(/[\[【]\s*(?:发送表情包|表情包|发送图片|图片描述|语音|链接|分享音乐|音乐|主动转账|向user发起代付|收款|拒收转账|帮忙代付|同意代付|拒绝代付)[\s\S]*?[\]】]/g,"").trim();
+  const finalText=finalReplyTextForThought(parsed);
+  if(finalText){
+    const chunks=finalText.split(/\n+/).map(x=>x.trim()).filter(x=>x.length>=4);
+    for(const c of chunks){
+      if(t.includes(c)) t=t.replace(c,"").trim();
+    }
+  }
+  const banned=/(用户|User|Assistant|角色设定|系统|模型|前端|格式|指令|规则|我应该|我需要|我先|适合|回复|回应|分析|计划|推理|意图|tool|JSON|<thinking|<think)/i;
+  const lines=t.split(/\n+/).map(x=>x.trim()).filter(Boolean).filter(line=>!isReasoningLeakLine(line) && !banned.test(line));
+  t=lines.join("\n").trim();
+  if(!t) return "";
+  if(finalText && finalText.length>=4 && finalText.includes(t)) return "";
+  if(t.length>160) t=t.slice(0,160).replace(/[，、；：,:;][^，、；：,:;]*$/,"…");
+  return t.trim();
+}
+function summarizeParsedForThought(parsed){
+  return (parsed||[]).filter(m=>m && m.sender!=="user" && m.type!=="system").map(m=>{
+    if(m.type==="text") return `文字：${m.content||""}`;
+    if(m.type==="music") return `音乐卡：${m.data?.title||""}${m.data?.artist?" / "+m.data.artist:""}${m.data?.note?"，附言："+m.data.note:""}`;
+    if(m.type==="sticker") return `表情包：${m.data?.name||""}${m.data?.meaning?"，含义："+m.data.meaning:""}`;
+    if(m.type==="image_desc") return `图片：${m.data?.description||""}`;
+    if(m.type==="voice") return `语音：${m.data?.text||m.content||""}`;
+    if(m.type==="role_transfer") return `角色转账：${m.data?.amount||""} ${m.data?.note||""}`;
+    if(m.type==="received") return `收款：${m.data?.amount||""}`;
+    if(m.type==="paid") return `代付完成：${m.data?.amount||""}`;
+    if(m.type==="rejected") return `拒绝：${m.content||""}`;
+    return `${m.type||"消息"}：${m.content||""}`;
+  }).join("\n").slice(0,1200);
+}
+function buildThoughtPrompt(role, newUser, parsed){
+  const style=getThoughtStyleForRole(role);
+  const scene=classifyThoughtScene(newUser?.content||"", parsed);
+  const userName=(getUserProfile().name||"user");
+  return `【任务】\n为聊天界面的 ThoughtProcess 生成“角色内心独白”。这不是推理日志，也不是回复计划，只是角色在发出这组消息前后一闪而过的内心。\n\n【角色】\n名字：${role?.name||"角色"}\n描述：${role?.description||""}\n性格：${role?.personality||""}\n场景：${role?.scenario||""}\n\n【该角色的思维链风格】\n${style}\n\n【当前场景分类】\n${scene}\n\n【${userName}刚发来的内容】\n${newUser?.content||""}\n\n【角色即将/已经发出的正式微信内容】\n${summarizeParsedForThought(parsed)}\n\n【硬性输出要求】\n只输出内心独白本身，不要标题，不要引号，不要JSON，不要标签。\n不能复述正式微信内容，不能出现特殊指令。\n不能出现“用户/角色/我应该/我需要/适合/回复/回应/格式/指令/系统/模型/前端/规则/分析/计划/推理”等机械词。\n不要emoji。长度完全服从角色风格：冷淡可极短，话多可一小段，默认1-3句。`;
+}
+async function callThoughtAI(api, role, newUser, parsed){
+  if(!api?.apiUrl || !api?.apiKey || !api?.model) return "";
+  const url=normalizeChatUrl(api.apiUrl);
+  const system="你只生成角色扮演界面的 ThoughtProcess：角色内心独白。禁止输出推理过程、回复计划、系统规则、格式说明。";
+  const body={
+    model:api.model,
+    messages:[{role:"system",content:system},{role:"user",content:buildThoughtPrompt(role,newUser,parsed)}],
+    temperature:.9,
+    max_tokens:160
+  };
+  if(api.format==="bedrock"){
+    body.system=system;
+    body.messages=[{role:"user",content:buildThoughtPrompt(role,newUser,parsed)}];
+  }
+  const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+api.apiKey},body:JSON.stringify(body)});
+  if(!res.ok) return "";
+  const data=await res.json();
+  return data.choices?.[0]?.message?.content || data.content?.[0]?.text || data.output_text || "";
+}
+async function buildThoughtProcessForParsed(api, parsed, ctx){
+  const role=currentRole();
+  let text="";
+  try{
+    text=await callThoughtAI(api, role, ctx?.newUser, parsed);
+    text=sanitizeThoughtTextV2(text, parsed);
+  }catch(e){ text=""; }
+  if(!text) text=fallbackThoughtTextV2(role, ctx?.newUser?.content||"", parsed);
+  return sanitizeThoughtTextV2(text, parsed) || fallbackThoughtTextV2(role, ctx?.newUser?.content||"", parsed);
+}
+async function attachThoughtProcessToParsed(api, parsed, ctx){
+  if(!Array.isArray(parsed) || !parsed.length) return parsed;
+  const target=[...parsed].reverse().find(m=>m && m.sender==="role" && m.type!=="system");
+  if(!target) return parsed;
+  const thought=await buildThoughtProcessForParsed(api, parsed, ctx||{});
+  if(thought) target.thinking=thought;
+  return parsed;
+}
+
+function getThoughtMode(){
+  return Storage.get("thoughtMode", "balanced"); // balanced | local | precise | off
+}
+function getThoughtTarget(parsed){
+  return [...(parsed||[])].reverse().find(m=>m && m.sender==="role" && m.type!=="system") || null;
+}
+function attachFallbackThoughtProcessToParsed(parsed, ctx){
+  const target=getThoughtTarget(parsed);
+  if(!target) return parsed;
+  const role=currentRole();
+  const thought=fallbackThoughtTextV2(role, ctx?.newUser?.content||"", parsed);
+  if(thought) target.thinking=thought;
+  return parsed;
+}
+function updateThoughtInHistory(roleId, targetId, thought, attempt=0){
+  if(!roleId || !targetId || !thought) return;
+  const key=Storage.roleKey("wechatHistory", roleId);
+  const h=Storage.get(key, []);
+  const m=h.find(x=>x.id===targetId);
+  if(!m){
+    // revealMessagesSequentially 可能还在逐条入库，稍后再补一次
+    if(attempt<10) setTimeout(()=>updateThoughtInHistory(roleId, targetId, thought, attempt+1), 350);
+    return;
+  }
+  m.thinking=thought;
+  saveHistoryByRoleId(roleId, h);
+  if(Miao.state.currentRoleId===roleId){
+    renderChat();
+  }
+}
+function saveHistoryByRoleId(roleId, h){
+  Storage.set(Storage.roleKey("wechatHistory", roleId), h || []);
+}
+function scheduleThoughtProcessRefresh(api, parsed, ctx){
+  const target=getThoughtTarget(parsed);
+  if(!target) return;
+  const roleId=Miao.state.currentRoleId;
+  const roleSnapshot=JSON.parse(JSON.stringify(currentRole()||{}));
+  const userSnapshot=JSON.parse(JSON.stringify(ctx?.newUser||{}));
+  const parsedSnapshot=JSON.parse(JSON.stringify(parsed||[]));
+  const targetId=target.id;
+  setTimeout(async()=>{
+    let text="";
+    try{
+      text=await callThoughtAI(api, roleSnapshot, userSnapshot, parsedSnapshot);
+      text=sanitizeThoughtTextV2(text, parsedSnapshot);
+    }catch(e){ text=""; }
+    // API失败时保留本地fallback，不再阻塞/报错
+    if(text) updateThoughtInHistory(roleId, targetId, text);
+  }, 0);
+}
+async function prepareThoughtProcessForParsed(api, parsed, ctx){
+  const mode=getThoughtMode();
+  if(mode==="off") return parsed;
+  if(mode==="precise") return await attachThoughtProcessToParsed(api, parsed, ctx);
+  // local / balanced 都先给一个即时本地内心，正式回复不等待第二次API
+  attachFallbackThoughtProcessToParsed(parsed, ctx||{});
+  if(mode==="balanced") scheduleThoughtProcessRefresh(api, parsed, ctx||{});
+  return parsed;
 }
 // Claude 文件助手要保护代码块，避免误删代码块里的 <think>/<thinking> 示例
 function stripThinkingBlocksKeepCode(text){
@@ -6791,14 +7066,13 @@ async function callAIReply(){
       reply=await callAI(api,h,onChunk,note+musicHint);
     }
     const groupId=uid("aigrp");
-    const thinkingContent=extractThinkingContent(reply);
     if(useStream){
       // 流式完成：用真实解析结果替换临时消息
       const hh=getHistory();
       const idx=hh.findIndex(m=>m.id===streamMsgId);
       let parsed=applyAutoVoiceMode(ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||""), newUser.content||"");
       if(!parsed.length){ saveHistory(hh); renderChat(); Miao.state.busy=false; return; }
-      if(parsed[0]) parsed[0].thinking=thinkingContent || autoThinkingFromMsg(parsed[0], newUser.content||"");
+      await prepareThoughtProcessForParsed(api, parsed, {newUser, rawReply:reply, groupId});
       if(idx>=0) hh.splice(idx,1,...parsed);
       else parsed.forEach(m=>hh.push(m));
       // 清除流式缓存
@@ -6814,7 +7088,7 @@ async function callAIReply(){
     } else {
       let parsed=applyAutoVoiceMode(ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||""), newUser.content||"");
       if(!parsed.length){ saveHistory(h); renderChat(); Miao.state.busy=false; return; }
-      if(parsed[0]) parsed[0].thinking=thinkingContent || autoThinkingFromMsg(parsed[0], newUser.content||"");
+      await prepareThoughtProcessForParsed(api, parsed, {newUser, rawReply:reply, groupId});
       // 逐条弹出，拟真人连发
       await revealMessagesSequentially(h, parsed, groupId);
       checkSaveMarker(Miao.state.lastAIContent||"");
@@ -7009,7 +7283,6 @@ async function callAI(api, history, onChunk, extraSystem){
     const reader=res.body.getReader();
     const decoder=new TextDecoder();
     let full="";
-    let thinkingFull="";
     while(true){
       const{done,value}=await reader.read();
       if(done) break;
@@ -7024,19 +7297,14 @@ async function callAI(api, history, onChunk, extraSystem){
           // OpenAI兼容格式：正文
           const delta=j.choices?.[0]?.delta?.content||"";
           if(delta){ full+=delta; onChunk(full); }
-          // OpenAI兼容代理：thinking可能在reasoning_content字段
-          const reasoning=j.choices?.[0]?.delta?.reasoning_content||j.choices?.[0]?.delta?.reasoning||"";
-          if(reasoning) thinkingFull+=reasoning;
-          // Claude原生流式格式：content_block_delta with thinking_delta
+          // 思维链不再从主回复流里抽取；reasoning_content / thinking_delta 一律忽略，避免混入正式聊天。
           if(j.type==="content_block_delta"){
-            if(j.delta?.type==="thinking_delta" && j.delta?.thinking) thinkingFull+=j.delta.thinking;
             if(j.delta?.type==="text_delta" && j.delta?.text){ full+=j.delta.text; onChunk(full); }
           }
         }catch(e){}
       }
     }
-    // 把accumulated thinking拼成<thinking>标签，让后续extractThinkingContent统一处理
-    const result=(thinkingFull?"<thinking>"+thinkingFull+"</thinking>\n":"")+full;
+    const result=full;
     Miao.state.lastAIContent=result;
     return result;
   }
@@ -7064,18 +7332,9 @@ async function callAI(api, history, onChunk, extraSystem){
     Miao.state.lastAIRaw=text.slice(0,600);
     // 没有tool_calls，返回普通文字
     if(!msg.tool_calls || msg.tool_calls.length===0){
-      // 从Claude extended thinking响应中提取thinking块
-      let thinkingPrefix="";
-      if(Array.isArray(data.content)){
-        const thinkBlocks=data.content.filter(b=>b.type==="thinking").map(b=>b.thinking||b.text||"").filter(Boolean);
-        if(thinkBlocks.length) thinkingPrefix="<thinking>"+thinkBlocks.join("\n")+"</thinking>\n";
-      }
-      // 某些OpenAI兼容代理会把thinking放在reasoning_content字段
-      if(!thinkingPrefix && msg.reasoning_content){
-        thinkingPrefix="<thinking>"+msg.reasoning_content+"</thinking>\n";
-      }
+      // 主回复只取正式聊天内容；API 原生 reasoning/thinking 不进入 ThoughtProcess。
       const textContent=msg.content || (Array.isArray(data.content) ? data.content.filter(b=>b.type==="text").map(b=>b.text).join("") : null) || data.output_text || "";
-      const content=thinkingPrefix+textContent;
+      const content=textContent;
       Miao.state.lastAIContent=content;
       return content;
     }
@@ -7201,13 +7460,10 @@ ${getStickerPromptList()}
 1. 你只能扮演${role.name}，不能替user说话。
 2. 禁止输出User:、用户：、Assistant:、旁白式剧本格式。
 6. 普通聊天正文不要输出思考过程、元分析或格式纠错。动作描写、心理描写、环境描写正常保留。
-   每次回复都必须先输出一段 <thinking>……</thinking>，前端会隐藏到 Thought process 面板，不能混入普通气泡，不能省略，不能留空。
-   <thinking> 不是推理日志，也不是"我应该怎么回复"的计划。它写角色当下真实的内心反应——私心/情绪/观察，像角色脑子里一闪而过的话，而不是计划、规则或系统说明。
-   长度、语气必须跟角色性格一致：话多的角色可以连珠炮，话少的角色可以只有一两个字甚至一个标点；冷淡的人短而克制，黏人的人软一点，嘴硬的人别扭一点。1-2句即可，最好不超过60个中文字符，但角色性格需要更短也可以。
-   绝对不能出现"用户/角色/我应该/我先/适合/回应/当前关系/格式/指令/模型/前端/系统"这类机械词，不能输出格式分析、系统规则，不能用emoji。
-   普通聊天正文只输出角色的回应，不分析，不解释；如果 user 在测试功能、让你分享音乐、图片或表情，直接按当前明确请求回应。
+   禁止输出 <thinking>、ThoughtProcess、思维链、回复计划、格式分析或系统说明。角色内心独白由前端单独生成，不要混入聊天正文。
+   普通聊天正文只输出角色的微信回应；如果 user 在测试功能、让你分享音乐、图片或表情，直接按当前明确请求回应。
 3. 只输出微信聊天内容；可以用双换行分成多条气泡。
-7. <thinking> 是每次回复的必填项，只写1-2句角色内心，不要写后台规则，不要留空。
+7. 不要写后台规则，不要解释指令，不要说“我格式写错了/我应该怎么回”。
 8. 如果输出语音，优先使用全角外层格式，方便内部使用 ElevenLabs v3 audio tags：
    【语音: [softly] [low voice] I missed you.
 中文：我想你了。】
@@ -7442,6 +7698,8 @@ function renderRoles(){
   if(meta) meta.textContent=`隐藏资料：性格 ${r.personality?"已读取":"未读取"}；场景 ${r.scenario?"已读取":"未读取"}；开场白 ${r.firstMes?"已读取":"未读取"}。这些字段从 PNG 角色卡读取。`;
   renderRoleWorldBindSelect(r);
   $("#roleSystemInput").value=r.systemPrompt||"";
+  const thoughtStyleEl=$("#roleThoughtStyleInput");
+  if(thoughtStyleEl) thoughtStyleEl.value=r.thoughtStyle||"";
   // 回填亲属卡配置
   const fc = r.familyCard || {enabled:false};
   const enabledEl = document.getElementById("roleFamilyCardEnabled");
@@ -7461,7 +7719,7 @@ function renderRoles(){
 function newRole(){
   const roles=getRoles();
   const id=uid("role");
-  roles.push({id,name:"新角色",avatar:Miao.defaults.avatar,description:"",personality:"",scenario:"",firstMes:"",boundWorldRoleId:id,systemPrompt:"你只能扮演当前角色，不能替 user 说话。"});
+  roles.push({id,name:"新角色",avatar:Miao.defaults.avatar,description:"",personality:"",scenario:"",firstMes:"",boundWorldRoleId:id,thoughtStyle:"",systemPrompt:"你只能扮演当前角色，不能替 user 说话。"});
   saveRoles(roles);
   selectRole(id);
 }
@@ -7480,6 +7738,8 @@ function saveCurrentRoleFromForm(){
   // 性格、场景、开场白由 PNG 角色卡读取；此处不手动覆盖
   r.boundWorldRoleId=$("#roleWorldBindSelect")?.value || r.id;
   r.systemPrompt=$("#roleSystemInput").value;
+  const thoughtStyleEl=$("#roleThoughtStyleInput");
+  r.thoughtStyle=thoughtStyleEl ? thoughtStyleEl.value : (r.thoughtStyle||"");
   // 亲属卡配置（用户端可手动开/调，作为底牌；角色也能用指令开/调）
   const cardEnabled = document.getElementById("roleFamilyCardEnabled")?.checked;
   if(cardEnabled){
@@ -10732,6 +10992,7 @@ function parseCharacterCardMeta(meta){
     firstMes:first && !isCssLikeOpening(first) ? first : "",
     greetings,
     worldEntries:entries,
+    thoughtStyle:data.thought_style||data.thoughtStyle||"",
     systemPrompt:data.system_prompt||data.systemPrompt||data.system||""
   };
 }
@@ -10774,6 +11035,7 @@ function analyzeLegacyJson(data){
       scenario:data.scenario||"",
       firstMes:data.first_mes||data.firstMes||data.greeting||"",
       boundWorldRoleId:id,
+      thoughtStyle:"",
       systemPrompt:data.systemPrompt||data.system_prompt||data.system||data.prompt||"你只能扮演当前角色，不能替 user 说话。"
     });
     const book=data.character_book||data.characterBook;
@@ -13840,6 +14102,7 @@ function repairDataDefaults(){
     if(!r.avatar){ r.avatar=Miao.defaults.avatar; changed=true; }
     if(!r.boundWorldRoleId){ r.boundWorldRoleId=r.id; changed=true; }
     if(r.systemPrompt==null){ r.systemPrompt="你只能扮演当前角色，不能替 user 说话。"; changed=true; }
+    if(r.thoughtStyle==null){ r.thoughtStyle=""; changed=true; }
   });
   if(changed) saveRoles(roles);
   if(!Storage.get("themeV9",null) && typeof V9_THEME_PRESETS!=="undefined") saveThemeConfig(Object.assign({presetId:"simple"}, ((typeof V9_THEME_PRESETS!=="undefined" && V9_THEME_PRESETS.simple) ? V9_THEME_PRESETS.simple : (window.V9_THEME_PRESETS?.simple||{name:"默认简约",accent:"#111827"}))));
