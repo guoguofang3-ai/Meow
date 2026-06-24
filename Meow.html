@@ -4404,6 +4404,7 @@ const MIAO_ICON_PATHS={
   stickers:'<path d="M6 5h12v9l-5 5H6z"/><path d="M13 19v-5h5M9 9h.01M15 9h.01M9.5 13c1.2 1 3.8 1 5 0"/>',
   book:'<path d="M5 5.5A3.5 3.5 0 0 1 8.5 4H19v15H8.5A3.5 3.5 0 0 0 5 20.5z"/><path d="M5 5.5v15M9 8h6M9 12h5"/>',
   memory:'<path d="M8.5 18c-2.2-.6-3.5-2.3-3.5-4.4 0-1.6.8-3 2-3.8A4.8 4.8 0 0 1 16.8 10c1.3.8 2.2 2.2 2.2 3.9 0 2.6-2.1 4.7-4.8 4.7H12v-4"/><path d="M9 9.5c1.2-1 2.8-1 4 0M8.5 13h7"/>',
+  memory_write:'<path d="M8.5 18c-2.2-.6-3.5-2.3-3.5-4.4 0-1.6.8-3 2-3.8A4.8 4.8 0 0 1 16.8 10c1.3.8 2.2 2.2 2.2 3.9 0 2.6-2.1 4.7-4.8 4.7H12v-4"/><path d="M9 9.5c1.2-1 2.8-1 4 0M8.5 13h5"/><path d="M14.2 18.2l3.9-3.9a1.35 1.35 0 0 1 1.9 1.9l-3.9 3.9-2.4.6z"/><path d="M17.2 15.2l1.9 1.9"/>',
   diary:'<rect x="6" y="4" width="12" height="16" rx="3"/><path d="M9 4v16M11 8h4M11 12h4"/>',
   live:'<rect x="4" y="6" width="16" height="11" rx="3"/><path d="M9 20h6M12 17v3M10 10l4 2-4 2z"/>',
   shop:'<path d="M6 8h12l-1 12H7z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
@@ -7210,19 +7211,21 @@ function scheduleMissingRoleVoiceHydration(){
 function wechatToolMeta(name,args={}){
   args=args||{};
   const map={
-    issue_command:{label:"指令",icon:"command"},
-    search_history:{label:"聊天记录",icon:"search",detail:args.query||""},
-    read_file:{label:"文件",icon:"file",detail:args.filename||""},
-    read_memory:{label:"记忆",icon:"memory",detail:args.query||args.category||""},
-    read_diary:{label:"日记",icon:"diary",detail:args.query||args.category||""},
-    read_phone_activity:{label:"监控",icon:"monitor",detail:args.summary?"摘要":""},
-    get_user_location:{label:"位置",icon:"location",detail:args.precision||""},
-    get_weather:{label:"天气",icon:"weather",detail:args.location||"当前位置"},
-    device_status:{label:"蓝牙设备",icon:"bluetooth"},
-    device_set_mode:{label:"蓝牙模式",icon:"bluetooth",detail:args.mode?`模式 ${args.mode}`:""},
-    device_stop:{label:"蓝牙设备",icon:"bluetooth",detail:"停止"}
+    issue_command:{label:"指令",icon:"command",detail:args.title||args.task||"",verbRunning:"正在下达",verbDone:"下达了",verbError:"下达失败："},
+    search_history:{label:"聊天记录",icon:"search",detail:args.query||"",verbRunning:"正在搜索",verbDone:"搜索了",verbError:"搜索失败："},
+    read_file:{label:"文件",icon:"file",detail:args.filename||"",verbRunning:"正在读取",verbDone:"读取了",verbError:"读取失败："},
+    search_file:{label:"文件",icon:"search",detail:[args.filename,args.query].filter(Boolean).join(" · "),verbRunning:"正在搜索",verbDone:"搜索了",verbError:"搜索失败："},
+    write_memory:{label:"记忆",icon:"memory_write",detail:args.title||args.category||"",verbRunning:"正在写入",verbDone:"写入了",verbError:"写入失败："},
+    read_memory:{label:"记忆",icon:"memory",detail:args.query||args.category||"",verbRunning:"正在读取",verbDone:"读取了",verbError:"读取失败："},
+    read_diary:{label:"日记",icon:"diary",detail:args.query||args.category||"",verbRunning:"正在读取",verbDone:"读取了",verbError:"读取失败："},
+    read_phone_activity:{label:"手机活动",icon:"monitor",detail:args.summary?"摘要":"",verbRunning:"正在读取",verbDone:"读取了",verbError:"读取失败："},
+    get_user_location:{label:"位置",icon:"location",detail:args.precision||"",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
+    get_weather:{label:"天气",icon:"weather",detail:args.location||"当前位置",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
+    device_status:{label:"蓝牙设备",icon:"bluetooth",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
+    device_set_mode:{label:"蓝牙模式",icon:"bluetooth",detail:args.mode?`模式 ${args.mode}`:"",verbRunning:"正在切换",verbDone:"切换了",verbError:"切换失败："},
+    device_stop:{label:"蓝牙设备",icon:"bluetooth",detail:"停止",verbRunning:"正在停止",verbDone:"停止了",verbError:"停止失败："}
   };
-  return map[name] || {label:name||"工具",icon:"command",detail:""};
+  return map[name] || {label:name||"工具",icon:"command",detail:"",verbRunning:"正在调用",verbDone:"调用了",verbError:"调用失败："};
 }
 function summarizeWechatToolResult(name,result){
   result=result||{};
@@ -7242,6 +7245,7 @@ function summarizeWechatToolResult(name,result){
     return [t,result.weather].filter(Boolean).join(" ");
   }
   if(name==="search_history" && result.count!=null) return `${result.count} 条`;
+  if(name==="write_memory") return result.status==="skipped"?"已存在":"已保存";
   if(name==="read_memory" && result.count!=null) return `${result.count} 条`;
   if(name==="read_diary" && result.count!=null) return `${result.count} 条`;
   if(name==="read_file" && result.length!=null) return `${result.length} 字`;
@@ -7255,7 +7259,7 @@ function renderWechatToolTrace(m){
   const meta=wechatToolMeta(d.name||"", d.args||{});
   const state=d.state||"done";
   const roleName=d.roleName || currentRole().name || "角色";
-  const verb=state==="running"?"正在调取":(state==="error"?"调取失败：":"调取了");
+  const verb=state==="running"?(meta.verbRunning||"正在调取"):(state==="error"?(meta.verbError||"调取失败："):(meta.verbDone||"调取了"));
   const detail=d.note || meta.detail || "";
   return `<div class="wechat-tool-trace ${escapeAttr(state)}" data-id="${escapeAttr(m.id||"")}"><span class="wechat-tool-mark">${miaoIcon(meta.icon,"miao-mini-icon")}</span><span><span class="wechat-tool-role">${escapeHtml(roleName)}</span> ${escapeHtml(verb)}${escapeHtml(meta.label)}</span>${detail?`<span class="wechat-tool-detail">· ${escapeHtml(detail)}</span>`:""}</div>`;
 }
@@ -8647,25 +8651,16 @@ function messageToAIContext(m){
 /* ===== SAVE 标记自动存记忆 ===== */
 function checkSaveMarker(replyText){
   if(!replyText) return;
-  const match = replyText.match(/\[SAVE:\s*([^\]]+)\]/);
-  if(!match) return;
-  const title = match[1].trim();
-  if(!title) return;
-  const list = getMemories();
-  if(list.find(m=>m.title===title)) return; // 去重
-  const role = currentRole();
-  list.push({
-    id: uid("mem"),
-    title: title,
-    type: "具体事件",
-    content: title,
-    source: `微信${role?.name||"角色"}写入`,
-    important: false,
-    locked: false,
-    createdAt: Date.now(),
-    time: nowTime()
-  });
-  saveMemories(list);
+  const matches=[...String(replyText||"").matchAll(/\[SAVE:\s*([^\]]+)\]/g)];
+  if(!matches.length) return;
+  for(const match of matches){
+    const title=(match[1]||"").trim();
+    if(!title) continue;
+    const traceId=addWechatToolTrace("write_memory", {category:"具体事件", title, content:title});
+    const result=writeWechatMemoryEntry({category:"具体事件", title, content:title}, `微信${currentRole()?.name||"角色"}SAVE写入`);
+    const note=summarizeWechatToolResult("write_memory", result);
+    updateWechatToolTrace(traceId, result&&result.error?"error":"done", note);
+  }
 }
 
 
@@ -9039,14 +9034,14 @@ ${(()=>{
 })()}
 
 【记忆写入规则】
-只在以下情况才在回复末尾加标记 [SAVE: 一句话摘要]，其他一律不加：
+只在以下情况才写入记忆，其他一律不要写：
 1. 关系层面变化——吵架、和好、新约定、相处方式改变
 2. user告知的新信息——换工作、搬家、新朋友、生活变化
 3. 明确约定承诺——你答应了什么、说好了怎么做
 4. user的情绪事件——今天崩了、因为什么、不要下次踩到
 5. 你自己说的认真的话、做的承诺
 6. user对你行为方式的反馈——让他难受或喜欢的
-日常闲聊、玩梗、普通对话不加标记。格式：[SAVE: 摘要]，放在回复最末尾。
+优先使用 write_memory(category,title,content) 工具写入；如果当前模型没有发起工具调用，才可用兼容格式 [SAVE: 一句话摘要] 放在回复最末尾。日常闲聊、玩梗、普通对话不写入。
 
 【角色可用指令】
 - [便签: 内容]：给user贴一张便签，user下次进来能看到。想留话给user时用，像贴在冰箱上那种。
@@ -9054,6 +9049,7 @@ ${(()=>{
 指令放在回复最末尾，可以同时用多个。
 
 【可用工具】按需主动调用，后台静默执行：
+- write_memory(category, title, content)：写入当前角色长期记忆；只在上面的记忆写入规则命中时使用。
 - read_memory(category?, query?, limit?)：读记忆库，想起某件事或查某类记忆时用。
 - search_history(query, limit?)：搜聊天记录，user问"我们之前说过""你还记得"时用。
 - read_file(filename, offset?, length?)：读取user上传的文件。
@@ -15051,6 +15047,22 @@ function getWechatTools(options={}){
     {
       type:"function",
       function:{
+        name:"write_memory",
+        description:"将重要关系变化、user信息、约定或需要长期记住的事写入当前角色长期记忆。只在确实值得记住时使用。",
+        parameters:{
+          type:"object",
+          properties:{
+            category:{type:"string",enum:["关系节点","具体事件","偏好","约定","普通记忆","重要记忆"],description:"记忆分类"},
+            title:{type:"string",description:"记忆标题，不超过20字"},
+            content:{type:"string",description:"记忆正文，写清楚事件和含义"}
+          },
+          required:["category","title","content"]
+        }
+      }
+    },
+    {
+      type:"function",
+      function:{
         name:"read_memory",
         description:"读取长期记忆库的条目。支持按分类筛选和关键词搜索，不传参时返回最近20条。",
         parameters:{
@@ -15118,8 +15130,36 @@ function getWechatTools(options={}){
   geoWeatherToolSchemas("wechat").forEach(t=>tools.push(t));
   return tools;
 }
+function writeWechatMemoryEntry(args={}, sourceLabel){
+  args=args||{};
+  const category=args.category||"普通记忆";
+  const title=String(args.title||args.summary||"").trim();
+  const content=String(args.content||title||"").trim();
+  if(!title && !content) return {error:"记忆标题和正文为空"};
+  const finalTitle=(title||content).slice(0,40);
+  const list=getMemories();
+  const dup=list.find(m=>m.title===finalTitle);
+  if(dup) return {status:"skipped",reason:"已存在相同标题的记忆",id:dup.id,title:dup.title};
+  const role=currentRole();
+  const entry={
+    id:uid("mem"),
+    title:finalTitle,
+    type:category,
+    content:content||finalTitle,
+    source:sourceLabel || `微信${role?.name||"角色"}写入`,
+    important:category==="关系节点"||category==="约定"||category==="重要记忆",
+    locked:false,
+    createdAt:Date.now(),
+    time:nowTime()
+  };
+  list.push(entry);
+  saveMemories(list);
+  return {status:"saved",id:entry.id,title:entry.title,category:entry.type};
+}
+
 async function executeWechatTool(name, args){
   if(name==="issue_command"){ return issueCommandTask(args||{},"wechat"); }
+  if(name==="write_memory"){ return writeWechatMemoryEntry(args||{}, `微信${currentRole()?.name||"角色"}工具写入`); }
   if(name==="read_phone_activity"){
     return await fetchPhoneActivity(args||{});
   }
