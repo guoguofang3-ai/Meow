@@ -3603,6 +3603,54 @@ body.keyboard-open .reading-edit-modal textarea{max-height:min(30vh,calc(var(--v
 /* 键盘打开时 visual-vh 已经是不含键盘的可视高度，不能再减 keyboard-height，否则弹窗会被压到顶部。 */
 body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual-vh,100vh) - 28px)!important;}
 
+
+/* ===== 书屿减法 UI v1：去书源堆叠，保留书架 / 共读 / 批注 ===== */
+.reading-app{
+  --reading-ink:#4a403c;
+  --reading-muted:#a78d86;
+  --reading-paper:#fffaf4;
+  --reading-blush:#f4e4dc;
+  --reading-cream:#fff7ec;
+  background:
+    radial-gradient(circle at 16% 2%,rgba(255,255,255,.98) 0 26%,rgba(255,244,233,.75) 44%,transparent 68%),
+    linear-gradient(180deg,#fff8ef 0%,#f7eee6 62%,#efe7dd 100%)!important;
+}
+.reading-header{
+  background:linear-gradient(180deg,rgba(255,248,239,.92),rgba(255,248,239,.62))!important;
+  border-bottom:1px solid rgba(124,90,79,.07)!important;
+}
+.reading-header .header-title{font-size:20px!important;font-weight:1000!important;letter-spacing:.02em!important;font-family:"Songti SC","PingFang SC",serif!important;color:#4a403c!important;}
+.reading-header .mind-header-sub{letter-spacing:.08em!important;color:rgba(114,84,76,.55)!important;}
+.reading-header .header-actions{gap:7px!important}.reading-header .icon-btn{background:rgba(255,255,255,.58)!important;color:#6f5a53!important;box-shadow:0 8px 22px rgba(90,60,52,.07)!important;}
+.reading-content{padding:18px 18px 104px!important;}
+.reading-page-title{font-family:"Songti SC","PingFang SC",serif!important;font-size:34px!important;font-weight:900!important;letter-spacing:-.02em!important;margin-top:4px!important;color:#4a403c!important;}
+.reading-page-sub{font-size:12px!important;letter-spacing:.10em!important;margin-bottom:14px!important;color:#b1948b!important;}
+.reading-bottom-nav{left:18px!important;right:18px!important;bottom:18px!important;height:64px!important;grid-template-columns:repeat(4,1fr)!important;border-radius:24px!important;background:rgba(255,250,244,.84)!important;box-shadow:0 -10px 34px rgba(78,55,47,.12)!important;}
+.reading-bottom-nav button{font-size:11px!important;color:#b09891!important;}
+.reading-bottom-nav button[data-id="home"]:before{content:"⌂"}.reading-bottom-nav button[data-id="books"]:before{content:"▤"}.reading-bottom-nav button[data-id="reader"]:before{content:"☾"}.reading-bottom-nav button[data-id="notes"]:before{content:"✎"}.reading-bottom-nav button[data-id="library"],.reading-bottom-nav button[data-id="style"]{display:none!important;}
+.reading-bottom-nav button.active{color:#4f4540!important;}
+.reading-stat-row{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:9px!important;margin:16px 0 18px!important;}
+.reading-stat{border-radius:22px;padding:13px 8px;background:rgba(255,255,255,.55);border:1px solid rgba(120,87,75,.055);text-align:center;box-shadow:0 12px 28px rgba(83,58,48,.045)}
+.reading-stat b{font-size:24px!important;font-weight:900!important}.reading-stat span{font-size:9px!important;letter-spacing:.08em!important;}
+.reading-section-head{margin:22px 0 10px!important;letter-spacing:.10em!important;text-transform:none!important;font-size:12px!important;color:#9d8178!important;}
+.reading-section-head small{letter-spacing:0!important;font-size:10px!important;}
+.reading-current-card,.reading-highlight-card,.reading-import-card,.reading-reader-card,.reading-together-card,.reading-library-card,.reading-search-result,.reading-style-panel,.reading-detail-card{border-radius:26px!important;background:rgba(255,255,255,.62)!important;border:1px solid rgba(120,87,75,.07)!important;box-shadow:0 16px 34px rgba(83,58,48,.055)!important;}
+.reading-current-card{grid-template-columns:82px 1fr!important;gap:16px!important;padding:16px!important;}
+.reading-current-label{letter-spacing:.08em!important;color:#b9968b!important;margin-bottom:7px!important;}
+.reading-current-title{font-size:20px!important;font-weight:900!important;}
+.reading-current-progress{margin-top:12px!important;text-align:left!important;font-family:"PingFang SC",sans-serif!important;font-style:normal!important;}
+.book-cover-mini{width:70px!important;height:104px!important;border-radius:14px!important}.reading-book-cover{border-radius:16px!important;}
+.reading-shelf{gap:12px!important;padding-bottom:9px!important}.reading-book-card{width:104px!important;flex-basis:104px!important}.reading-book-cover{width:104px!important;height:156px!important}.reading-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}.reading-grid .reading-book-card{width:100%!important}.reading-grid .reading-book-cover{width:100%!important;height:168px!important;}
+.reading-actions button,.reading-small-actions button,.reading-reader-actions button,.reading-search-box button{min-height:36px!important;border-radius:999px!important;background:rgba(255,255,255,.70)!important;color:#7d655d!important;}
+.reading-actions button.primary-soft,.reading-reader-actions button.primary-soft,.reading-small-actions button.primary-soft{background:color-mix(in srgb,var(--accent,#6f5a53) 16%,#fff6ee)!important;color:#5c4b45!important;}
+.reading-reader-text{max-height:48vh!important;border-radius:22px!important;background:#fffdf8!important;font-size:calc(16px * var(--reading-scale))!important;line-height:1.9!important;}
+.reading-reader-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}.reading-small-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.reading-small-actions button{text-align:center!important;}
+.reading-search-box{grid-template-columns:1fr 58px!important}.reading-search-box input{background:rgba(255,255,255,.82)!important;}
+.reading-library-tools{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+.reading-empty{background:rgba(255,255,255,.52)!important;border:1px dashed rgba(120,87,75,.12)!important;color:#8a736c!important;}
+.reading-note-thread{background:rgba(255,250,245,.70)!important;}
+.quick-modal.reading-quick-modal{background:linear-gradient(180deg,#fffaf4,#f8eee6)!important;}
+
 </style>
 <script>window.MIAO_BUILD="ArtifactStoreV1";</script>
 </head>
@@ -4300,15 +4348,13 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 
 
     <section class="app-screen reading-app" id="readingApp">
-      <div class="header reading-header"><button class="icon-btn" data-action="go-home">‹</button><div><div class="header-title">Book Nook</div><div class="mind-header-sub">共读角</div></div><div class="header-actions"><button class="icon-btn" data-action="set-reading-tab" data-id="library" title="全文书库">⌕</button><button class="icon-btn" data-action="open-reading-import" title="导入电子书">⇪</button><button class="icon-btn" data-action="open-reading-style" title="字体">Aa</button><button class="icon-btn" data-action="open-reading-book">＋</button></div></div>
+      <div class="header reading-header"><button class="icon-btn" data-action="go-home">‹</button><div><div class="header-title">书屿</div><div class="mind-header-sub">和角色一起看书</div></div><div class="header-actions"><button class="icon-btn" data-action="open-reading-import" title="放一本书">＋</button></div></div>
       <div class="content reading-content" id="readingContent"></div>
       <div class="reading-bottom-nav">
         <button data-action="set-reading-tab" data-id="home" id="readingTabHome">首页</button>
         <button data-action="set-reading-tab" data-id="books" id="readingTabBooks">书架</button>
-        <button data-action="set-reading-tab" data-id="library" id="readingTabLibrary">搜书</button>
         <button data-action="set-reading-tab" data-id="reader" id="readingTabReader">共读</button>
-        <button data-action="set-reading-tab" data-id="notes" id="readingTabNotes">摘抄</button>
-        <button data-action="set-reading-tab" data-id="style" id="readingTabStyle">字体</button>
+        <button data-action="set-reading-tab" data-id="notes" id="readingTabNotes">批注</button>
       </div>
     </section>
 
@@ -5855,7 +5901,7 @@ function bindEvents(){
     if(!files.length) return;
     try{
       for(const file of files){ await importReadingFile(file, input.dataset.targetBookId||""); }
-      if(files.length>1){ setReadingTab("library"); toast(`已导入 ${files.length} 个电子书文件`); }
+      if(files.length>1){ setReadingTab("books"); toast(`已导入 ${files.length} 个电子书文件`); }
     }
     catch(err){ console.error(err); toast("电子书导入失败："+(err?.message||err)); }
     input.value="";
@@ -12337,7 +12383,10 @@ function buildToolClaudePrompt(policy={}){
 文档类输出（需求文档/方案说明/汇总/整理等）必须放在单个代码块内输出，禁止拆分成多个代码块。若 user 要 txt/doc 文件，请使用 \`\`\`txt 或 \`\`\`doc 代码块承载完整正文。
 如果你决定发表情包，输出指令：[发送表情包: 名称]
 ${buildMemoryPrompt(true)}
-
+${(()=>{
+  const reading=typeof buildReadingContextPrompt==="function" ? buildReadingContextPrompt() : "";
+  return reading ? "\n"+reading+"\n" : "";
+})()}
 【可用表情包】
 ${getStickerPromptList()}
 
@@ -16717,23 +16766,34 @@ function parseAIReplyUnified(raw, groupId){
 
 
 /* ===== 书屿 Book Nook：共读角 ===== */
-function defaultReadingBooks(){
-  return [
-    {id:uid("book"),title:"蒙面女人",author:"克里斯蒂",status:"reading",currentChapter:12,totalChapters:19,progress:63,color:"#5a263d",summary:"正在共读的侦探小说。",createdAt:Date.now()-86400000*4,lastOpenedAt:Date.now()},
-    {id:uid("book"),title:"尼罗河上的惨案：精装纪念版",author:"克里斯蒂",status:"shelf",currentChapter:0,totalChapters:24,progress:3,color:"#252a5c",summary:"书架上的下一本。",createdAt:Date.now()-86400000*8,lastOpenedAt:0},
-    {id:uid("book"),title:"小王子",author:"圣埃克苏佩里",status:"shelf",currentChapter:0,totalChapters:27,progress:0,color:"#6a2840",summary:"等一个晚上慢慢读。",createdAt:Date.now()-86400000*12,lastOpenedAt:0}
-  ];
+function defaultReadingBooks(){ return []; }
+function defaultReadingHighlights(){ return []; }
+function readingSampleSig(text){
+  let h=2166136261;
+  String(text||"").split("").forEach(ch=>{ h^=ch.charCodeAt(0); h=Math.imul(h,16777619)>>>0; });
+  return h>>>0;
 }
-function defaultReadingHighlights(){
-  return [
-    {id:uid("note"),quote:"可疑的就只剩下嗯，夫人和男主人了",bookTitle:"蒙面女人",note:"我们画过的线。",tags:["Claude · 14","Nai · 16"],date:"May 19",createdAt:Date.now()-86400000*2}
-  ];
+function readingIsOldExampleBook(book){
+  const hasOwnContent=!!(book?.content || book?.sourceName || book?.importedAt || book?.sourceUrl || book?.remoteUrl || book?.remoteContentUrl);
+  if(hasOwnContent) return false;
+  const sig=readingSampleSig([book?.title,book?.author,book?.summary].map(x=>String(x||"").trim()).join("|"));
+  return [0xba46075d,0x6292d36c,0x02bcdf12].includes(sig);
+}
+function readingIsOldExampleHighlight(note){
+  const sig=readingSampleSig([note?.quote,note?.bookTitle,note?.note].map(x=>String(x||"").trim()).join("|"));
+  return sig===0x1c994e42;
 }
 function getReadingBooks(){
   let list=Storage.get("readingBooks", null);
   if(!Array.isArray(list)){
-    list=defaultReadingBooks();
+    list=[];
     Storage.set("readingBooks", list);
+    return list;
+  }
+  const cleaned=list.filter(b=>!readingIsOldExampleBook(b));
+  if(cleaned.length!==list.length){
+    Storage.set("readingBooks", cleaned);
+    list=cleaned;
   }
   return list;
 }
@@ -16741,8 +16801,14 @@ function saveReadingBooks(list){ Storage.set("readingBooks", Array.isArray(list)
 function getReadingHighlights(){
   let list=Storage.get("readingHighlights", null);
   if(!Array.isArray(list)){
-    list=defaultReadingHighlights();
+    list=[];
     Storage.set("readingHighlights", list);
+    return list;
+  }
+  const cleaned=list.filter(h=>!readingIsOldExampleHighlight(h));
+  if(cleaned.length!==list.length){
+    Storage.set("readingHighlights", cleaned);
+    list=cleaned;
   }
   return list;
 }
@@ -16955,34 +17021,8 @@ function readingRunLibrarySearch(){
   renderReading();
 }
 function renderReadingLibrary(box, books, notes){
-  const q=Storage.get("readingLibraryQuery","");
-  const results=readingSearchLibrary(q);
-  const fullBooks=books.filter(b=>readingPagesOfBook(b).length);
-  const latest=books.slice().sort((a,b)=>(b.importedAt||b.createdAt||0)-(a.importedAt||a.createdAt||0)).slice(0,4);
-  const onlineQ = readingOnlineSearchQuery();
-  box.innerHTML=`
-    <div class="reading-page-title">Library</div><div class="reading-page-sub">书库 · 搜书</div>
-    <div class="reading-library-card">
-      <div class="reading-library-title">在线搜书</div>
-      <div class="reading-library-tip">搜索 Project Gutenberg 公版书库，找到想读的书，点「共读」直接导入。目前以英文公版书为主。</div>
-      <div class="reading-search-box"><input id="readingOnlineSearchInput" value="${escapeAttr(onlineQ)}" placeholder="搜书名或作者，如 alice、dickens…" onkeydown="if(event.key==='Enter')readingRunOnlineSearch()"><button data-action="reading-online-search">搜书</button></div>
-    </div>
-    <div id="readingOnlineResults">${onlineQ && _gutendexCache[onlineQ] ? "" : ""}</div>
-    <div class="reading-library-card" style="margin-top:14px">
-      <div class="reading-library-title">本地书库</div>
-      <div class="reading-library-tip">本地导入的书可以全文搜索；外接 JSON 书库支持远程目录和打开时加载。</div>
-      <div class="reading-search-box"><input id="readingLibrarySearchInput" value="${escapeAttr(q)}" placeholder="搜索书名 / 作者 / 正文 / 批注…" oninput="readingSetLibrarySearch(this.value)" onkeydown="if(event.key==='Enter')readingRunLibrarySearch()"><button data-action="reading-library-search">搜索</button></div>
-      <div class="reading-library-tools">
-        <label class="btn file-btn primary">批量导入<input type="file" id="readingImportInput" multiple accept=".txt,.md,.markdown,.epub,.json,text/plain,text/markdown,application/epub+zip,application/json"></label>
-        <button class="btn" data-action="open-reading-library-url">外接 URL</button>
-        <button class="btn" data-action="open-reading-import">粘贴正文</button>
-        <button class="btn" data-action="open-reading-book">手动加书</button>
-      </div>
-      <div class="reading-inline-muted" style="margin-top:10px">已接入 ${fullBooks.length} 本有正文的书 · ${notes.length} 条摘抄 / 批注</div>
-    </div>
-    ${q?`<div class="reading-section-head">SEARCH RESULTS · 搜索结果 <small>${results.length} 条</small></div>${results.length?results.map(r=>readingSearchResultHtml(r,q)).join(""):`<div class="reading-empty">没有搜到。可以先批量导入电子书，或者换一个关键词。</div>`}`:`<div class="reading-section-head">RECENT LIBRARY · 最近接入 <small>全文可搜</small></div>${latest.length?latest.map(b=>`<div class="reading-search-result"><div class="reading-result-head"><div><div class="reading-result-title">${escapeHtml(b.title||"未命名")}</div><div class="reading-result-meta">${escapeHtml(b.author||"")} · ${escapeHtml(readingFormatChapter(b))}</div></div><span class="reading-result-badge">${readingPagesOfBook(b).length?"全文":(readingBookHasRemoteSource(b)?"远程":"书卡")}</span></div><div class="reading-actions"><button class="primary-soft" data-action="open-reading-reader" data-id="${escapeAttr(b.id||"")}">一起读</button><button data-action="reading-open-book-detail" data-id="${escapeAttr(b.id||"")}">书籍详情</button></div></div>`).join(""):`<div class="reading-empty">还没有外接书库。点「批量导入」可以一次放入多本 txt / md / epub；也可以用 JSON 书库。</div>`}`}`;
-  // restore online search results if cached
-  if(onlineQ && _gutendexCache[onlineQ]) renderReadingOnlineResults(onlineQ);
+  // 旧版「搜书/外接书源」入口已做减法：统一回到本地书架搜索。
+  return renderReadingBooks(box, books, notes);
 }
 function readingSearchResultHtml(r,q){
   const book=r.book||{};
@@ -17068,13 +17108,7 @@ function openReadingBookDetail(id){
   document.getElementById("quickModal")?.classList.add("reading-quick-modal");
 }
 function openReadingLibraryUrlModal(){
-  openQuickModal(`<div class="reading-edit-modal">
-    <div class="reading-edit-title">外接电子书库</div>
-    <div class="reading-edit-sub">可以填一个 JSON 书库地址，或者单本 txt/md/epub 地址。JSON 推荐格式：{"mode":"remote","books":[{"title":"书名","author":"作者","url":"book.txt"}]}。mode=remote 时只保存目录，打开书时才加载正文；也可以直接写 content 做本地全文书库。注意：网页必须允许 CORS，否则浏览器会拒绝读取。</div>
-    <label>书库 / 电子书 URL</label><input id="readingLibraryUrlInput" placeholder="https://.../library.json 或 book.txt">
-    <div class="reading-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-reading-library-url">接入</button></div>
-  </div>`);
-  document.getElementById("quickModal")?.classList.add("reading-quick-modal");
+  toast("外接书源入口先取消了：书屿现在只保留本地书架、共读和批注。");
 }
 async function importReadingLibraryFromUrl(){
   const url=(document.getElementById("readingLibraryUrlInput")?.value||"").trim();
@@ -17087,7 +17121,7 @@ async function importReadingLibraryFromUrl(){
     const blob=await res.blob();
     if(lower.endsWith(".epub") || blob.type==="application/epub+zip"){
       const file=new File([blob], url.split("/").pop()||"book.epub", {type:blob.type||"application/epub+zip"});
-      const parsed=await parseReadingEpub(file); createReadingBookFromContent(parsed); setReadingTab("library"); return;
+      const parsed=await parseReadingEpub(file); createReadingBookFromContent(parsed); setReadingTab("books"); return;
     }
     const text=await blob.text();
     if(lower.endsWith(".json") || /^\s*[\[{]/.test(text)){
@@ -17095,7 +17129,7 @@ async function importReadingLibraryFromUrl(){
     }else{
       const title=(url.split("/").pop()||"外接电子书").replace(/\.(txt|md|markdown)$/i,"");
       createReadingBookFromContent({title,author:"",content:readingNormalizeText(text),sourceName:url});
-      setReadingTab("library");
+      setReadingTab("books");
     }
   }catch(err){ console.error(err); toast("外接书库读取失败："+(err?.message||err)); }
 }
@@ -17140,7 +17174,7 @@ async function importReadingManifestData(data, sourceName="书库", baseUrl=""){
   if(!count) throw new Error("没有成功读取到书库条目");
   saveReadingBooks(list);
   closeQuickModal();
-  setReadingTab("library");
+  setReadingTab("books");
   toast(remoteCount?`已接入 ${count} 本：${remoteCount} 本远程懒加载，${fullCount} 本本地全文`:`已接入 ${count} 本电子书`);
 }
 function applyReadingSettings(){
@@ -17287,12 +17321,13 @@ function renderReading(){
   const box=$("#readingContent");
   if(!box) return;
   applyReadingSettings();
-  const tab=Storage.get("readingTab","home");
-  ["home","books","library","reader","notes","style"].forEach(t=>document.getElementById("readingTab"+t.charAt(0).toUpperCase()+t.slice(1))?.classList.toggle("active",tab===t));
+  let tab=Storage.get("readingTab","home");
+  if(tab==="library") tab="books";
+  if(!["home","books","reader","notes","style"].includes(tab)) tab="home";
+  ["home","books","reader","notes"].forEach(t=>document.getElementById("readingTab"+t.charAt(0).toUpperCase()+t.slice(1))?.classList.toggle("active",tab===t));
   const books=getReadingBooks();
   const notes=getReadingHighlights();
-  if(tab==="books") return renderReadingBooks(box, books);
-  if(tab==="library") return renderReadingLibrary(box, books, notes);
+  if(tab==="books") return renderReadingBooks(box, books, notes);
   if(tab==="reader") return renderReadingReader(box, books);
   if(tab==="notes") return renderReadingNotes(box, notes);
   if(tab==="style") return renderReadingStyle(box);
@@ -17300,69 +17335,80 @@ function renderReading(){
 }
 function renderReadingHome(box, books, notes){
   const cur=readingCurrentBook(books);
+  const role=currentRole();
   const readingCount=books.filter(b=>b.status==="reading").length;
+  const shelfPreview=books.slice().sort((a,b)=>(b.lastOpenedAt||b.updatedAt||b.createdAt||0)-(a.lastOpenedAt||a.updatedAt||a.createdAt||0)).slice(0,6);
   const currentHtml=cur?`<div class="reading-current-card">
     ${readingCoverHtml(cur,{mini:true,noAction:true})}
     <div class="reading-current-meta">
-      <div class="reading-current-label">READING NOW</div>
+      <div class="reading-current-label">正在共读</div>
       <div class="reading-current-title">${escapeHtml(cur.title||"未命名")}</div>
       <div class="reading-current-author">${escapeHtml(cur.author||"")}</div>
       <div class="reading-current-progress">${escapeHtml(readingFormatChapter(cur))}</div>
-      <div class="reading-actions"><button class="primary-soft" data-action="${readingPagesOfBook(cur).length?"open-reading-reader":"reading-next-chapter"}" data-id="${escapeAttr(cur.id||"")}">${readingPagesOfBook(cur).length?"一起读":"读完一章"}</button><button data-action="reading-open-book-detail" data-id="${escapeAttr(cur.id||"")}">详情</button><button data-action="open-reading-book" data-id="${escapeAttr(cur.id||"")}">编辑</button></div>
+      <div class="reading-actions"><button class="primary-soft" data-action="open-reading-reader" data-id="${escapeAttr(cur.id||"")}">继续一起看</button><button data-action="reading-open-book-detail" data-id="${escapeAttr(cur.id||"")}">书籍详情</button></div>
     </div>
-  </div>`:`<div class="reading-empty">还没有正在读的书。先把一本书放到书架上吧。</div>`;
-  const shelf=books.length?`<div class="reading-shelf">${books.map(b=>readingBookCardHtml(b,false)).join("")}</div>`:`<div class="reading-empty">书架还是空的。</div>`;
-  const highlight=notes.length?readingHighlightCardHtml(notes[0],false):`<div class="reading-empty">还没有摘抄。读到喜欢的话，可以留在这里。</div>`;
+  </div>`:`<div class="reading-empty">这里还没有正在看的书。先往书屿放一本，角色之后会知道你的书架里有哪些书。</div>`;
+  const shelf=books.length?`<div class="reading-shelf">${shelfPreview.map(b=>readingBookCardHtml(b,false)).join("")}</div>`:`<div class="reading-empty">书架还是空的。可以导入 txt / md / epub，也可以先建一张书卡。</div>`;
+  const highlight=notes.length?readingHighlightCardHtml(notes[0],false):`<div class="reading-empty">还没有批注。读到想和 TA 说的地方，选中原文，留一句话就好。</div>`;
   box.innerHTML=`
-    <div class="reading-page-title">Book Nook</div>
+    <div class="reading-page-title">书屿</div>
     <div class="reading-page-sub">我们的共读角</div>
-    <div class="reading-stat-row"><div class="reading-stat"><b>${books.length}</b><span>BOOKS</span></div><div class="reading-stat"><b>${readingCount}</b><span>READING</span></div><div class="reading-stat"><b>${notes.length}</b><span>ANNOTATIONS</span></div></div>
-    <div class="reading-section-head">CURRENTLY READING · 在读 <small>${escapeHtml(currentRole()?.name||"")}也能一起看</small></div>
+    <div class="reading-stat-row"><div class="reading-stat"><b>${books.length}</b><span>书架</span></div><div class="reading-stat"><b>${readingCount}</b><span>在读</span></div><div class="reading-stat"><b>${notes.length}</b><span>批注</span></div></div>
+    <div class="reading-section-head">现在一起看 <small>${escapeHtml(role?.name||"TA")} 会知道你的书架和当前进度</small></div>
     ${currentHtml}
-    <div class="reading-section-head">ON THE SHELF · 书架 <small><button class="btn" data-action="set-reading-tab" data-id="library" style="font-size:10px;padding:6px 9px">全文书库</button> <button class="btn" data-action="open-reading-import" style="font-size:10px;padding:6px 9px">导入</button> <button class="btn" data-action="open-reading-book" style="font-size:10px;padding:6px 9px">加一本</button></small></div>
+    <div class="reading-section-head">书库快照 <small><button class="btn" data-action="set-reading-tab" data-id="books" style="font-size:10px;padding:6px 9px">打开书架</button> <button class="btn" data-action="open-reading-import" style="font-size:10px;padding:6px 9px">放一本书</button></small></div>
     ${shelf}
-    <div class="reading-section-head">HIGHLIGHTS · 我们画过的线 <small><button class="btn" data-action="open-reading-highlight" style="font-size:10px;padding:6px 9px">摘一句</button></small></div>
+    <div class="reading-section-head">最近批注 <small><button class="btn" data-action="set-reading-tab" data-id="notes" style="font-size:10px;padding:6px 9px">全部</button></small></div>
     ${highlight}`;
 }
-function renderReadingBooks(box, books){
+function renderReadingBooks(box, books, notes=[]){
+  const q=Storage.get("readingLibraryQuery","");
+  const results=q?readingSearchLibrary(q):[];
+  const bookGrid=books.length?`<div class="reading-grid">${books.map(b=>readingBookCardHtml(b,true)).join("")}</div>`:`<div class="reading-empty">书架还是空的。点「放一本书」导入 txt / md / epub；或者先用「建书卡」记录想和 TA 一起看的书。</div>`;
   box.innerHTML=`
-    <div class="reading-page-title">Shelf</div><div class="reading-page-sub">书架</div>
-    <div class="reading-section-head">ALL BOOKS · 所有书 <small><button class="btn" data-action="open-reading-import" style="font-size:10px;padding:6px 9px">导入</button> <button class="btn" data-action="open-reading-book" style="font-size:10px;padding:6px 9px">新增</button></small></div>
-    ${books.length?`<div class="reading-grid">${books.map(b=>readingBookCardHtml(b,true)).join("")}</div>`:`<div class="reading-empty">这里还没有书。点右上角 + 新增一本。</div>`}`;
+    <div class="reading-page-title">书架</div><div class="reading-page-sub">角色会知道这里有什么书</div>
+    <div class="reading-library-card">
+      <div class="reading-library-title">找一本书 / 找一句话</div>
+      <div class="reading-library-tip">只搜你自己的书架和批注，不再堆在线书源、外接 URL 那些没写完的入口。</div>
+      <div class="reading-search-box"><input id="readingLibrarySearchInput" value="${escapeAttr(q)}" placeholder="搜书名、作者、正文或批注…" oninput="readingSetLibrarySearch(this.value)" onkeydown="if(event.key==='Enter')readingRunLibrarySearch()"><button data-action="reading-library-search">搜索</button></div>
+      <div class="reading-library-tools"><button class="btn primary" data-action="open-reading-import">放一本书</button><button class="btn" data-action="open-reading-book">建书卡</button></div>
+      <div class="reading-inline-muted" style="margin-top:10px">${books.length} 本书 · ${notes.length} 条批注。聊天里只会给角色很轻的书架摘要，不会把整本书塞过去。</div>
+    </div>
+    ${q?`<div class="reading-section-head">搜索结果 <small>${results.length} 条</small></div>${results.length?results.map(r=>readingSearchResultHtml(r,q)).join(""):`<div class="reading-empty">没有搜到。换个词试试，或者先把正文放进这本书。</div>`}`:`<div class="reading-section-head">全部书 <small>${books.length} 本</small></div>${bookGrid}`}`;
 }
 function renderReadingNotes(box, notes){
   box.innerHTML=`
-    <div class="reading-page-title">Lines</div><div class="reading-page-sub">摘抄</div>
-    <div class="reading-section-head">HIGHLIGHTS · 我们画过的线 <small><button class="btn" data-action="open-reading-highlight" style="font-size:10px;padding:6px 9px">新增摘抄</button></small></div>
-    ${notes.length?notes.map(n=>readingHighlightCardHtml(n,true)).join(""):`<div class="reading-empty">还没有摘抄。把一句话、一段笔记、一个共读瞬间留在这里。</div>`}`;
+    <div class="reading-page-title">批注</div><div class="reading-page-sub">一起留下来的话</div>
+    <div class="reading-section-head">画线和摘句 <small><button class="btn" data-action="open-reading-highlight" style="font-size:10px;padding:6px 9px">新增一句</button></small></div>
+    ${notes.length?notes.map(n=>readingHighlightCardHtml(n,true)).join(""):`<div class="reading-empty">还没有批注。读书时选中文字，点「划线 / 批注」，也可以把这一页直接给 TA 看。</div>`}`;
 }
 
 function renderReadingReader(box, books){
   const cur=readingCurrentBook(books);
   const role=currentRole();
   if(!cur){
-    box.innerHTML=`<div class="reading-page-title">Together</div><div class="reading-page-sub">一起读</div><div class="reading-empty">书架还是空的。先导入一本 txt / md / epub，或者手动放一本书。</div><div class="reading-actions"><button class="primary-soft" data-action="open-reading-import">导入电子书</button><button data-action="open-reading-book">手动加书</button></div>`;
+    box.innerHTML=`<div class="reading-page-title">共读</div><div class="reading-page-sub">打开一本书，和 TA 一起看</div><div class="reading-empty">书架还是空的。先放一本 txt / md / epub，或者建一张书卡。</div><div class="reading-actions"><button class="primary-soft" data-action="open-reading-import">放一本书</button><button data-action="open-reading-book">建书卡</button></div>`;
     return;
   }
   const pages=readingPagesOfBook(cur);
   if(!pages.length){
-    box.innerHTML=`<div class="reading-page-title">Together</div><div class="reading-page-sub">一起读</div>
-      <div class="reading-current-card">${readingCoverHtml(cur,{mini:true,noAction:true})}<div class="reading-current-meta"><div class="reading-current-label">NO TEXT YET</div><div class="reading-current-title">${escapeHtml(cur.title||"未命名")}</div><div class="reading-current-author">${escapeHtml(cur.author||"")}</div><div class="reading-current-progress">这本书还没有正文</div></div></div>
-      <div class="reading-import-card"><div class="reading-style-title">给这本书导入正文</div><div class="reading-import-tip">现在支持 txt / md，标准无 DRM 的 epub 会尝试解析。也支持外接远程书源，打开时才加载正文，避免一次性占内存。</div><div class="btn-row"><label class="btn file-btn primary">选择电子书<input type="file" id="readingImportInput" data-target-book-id="${escapeAttr(cur.id||"")}" accept=".txt,.md,.markdown,.epub,.json,text/plain,text/markdown,application/epub+zip,application/json"></label><button class="btn" data-action="open-reading-import">粘贴正文</button></div></div>`;
+    box.innerHTML=`<div class="reading-page-title">共读</div><div class="reading-page-sub">这本书还差正文</div>
+      <div class="reading-current-card">${readingCoverHtml(cur,{mini:true,noAction:true})}<div class="reading-current-meta"><div class="reading-current-label">还不能翻页</div><div class="reading-current-title">${escapeHtml(cur.title||"未命名")}</div><div class="reading-current-author">${escapeHtml(cur.author||"")}</div><div class="reading-current-progress">先给它放一份正文，就可以一起看了</div></div></div>
+      <div class="reading-import-card"><div class="reading-style-title">给这本书放正文</div><div class="reading-import-tip">保留简单一点：本地 txt / md / epub，或直接粘贴正文。不做打电话看书，也不把外接书源入口摆在这里。</div><div class="btn-row"><label class="btn file-btn primary">选择电子书<input type="file" id="readingImportInput" data-target-book-id="${escapeAttr(cur.id||"")}" accept=".txt,.md,.markdown,.epub,text/plain,text/markdown,application/epub+zip"></label><button class="btn" data-action="open-reading-import">粘贴正文</button></div></div>`;
     return;
   }
   const idx=readingPageIndex(cur), text=pages[idx]||"", pct=readingBookProgress(cur);
   const activeQ=Storage.get("readingActiveQuery","");
   box.innerHTML=`
-    <div class="reading-page-title">Together</div><div class="reading-page-sub">一起读</div>
-    <div class="reading-together-card"><img class="reading-together-avatar" src="${escapeAttr(role.avatar||Miao.defaults.avatar)}" alt=""><div class="reading-together-main"><div class="reading-together-title">和 ${escapeHtml(role.name||"AI角色")} 一起读《${escapeHtml(cur.title||"未命名")}》</div><div class="reading-together-sub">这一页可以选中文字后划线批注，也可以丢到聊天框里，让 ta 接着说读后感。</div><span class="reading-together-pill">CO-READING · ${idx+1}/${pages.length}</span></div></div>
-    ${activeQ?`<div class="reading-search-result" style="margin-top:0"><div class="reading-result-head"><div><div class="reading-result-title">正在高亮：${escapeHtml(activeQ)}</div><div class="reading-result-meta">来自全文搜索 / 最近批注</div></div><span class="reading-result-badge">高亮</span></div><div class="reading-actions"><button data-action="reading-clear-active-query">关闭高亮</button><button data-action="set-reading-tab" data-id="library">回到搜索</button></div></div>`:""}
+    <div class="reading-page-title">共读</div><div class="reading-page-sub">和 ${escapeHtml(role.name||"TA")} 一起看</div>
+    <div class="reading-together-card"><img class="reading-together-avatar" src="${escapeAttr(role.avatar||Miao.defaults.avatar)}" alt=""><div class="reading-together-main"><div class="reading-together-title">《${escapeHtml(cur.title||"未命名")}》</div><div class="reading-together-sub">TA 知道你正在看这本、书架里有哪些书，以及最近几条批注。需要讨论具体原文时，点「给 TA 看」。</div><span class="reading-together-pill">第 ${idx+1} / ${pages.length} 页</span></div></div>
+    ${activeQ?`<div class="reading-search-result" style="margin-top:0"><div class="reading-result-head"><div><div class="reading-result-title">正在高亮：${escapeHtml(activeQ)}</div><div class="reading-result-meta">来自书架搜索 / 最近批注</div></div><span class="reading-result-badge">高亮</span></div><div class="reading-actions"><button data-action="reading-clear-active-query">关闭高亮</button><button data-action="set-reading-tab" data-id="books">回到书架</button></div></div>`:""}
     <div class="reading-reader-card">
       <div class="reading-reader-top">${readingCoverHtml(cur,{mini:true,noAction:true})}<div style="min-width:0"><div class="reading-reader-title">${escapeHtml(cur.title||"未命名")}</div><div class="reading-reader-author">${escapeHtml(cur.author||"")}</div></div></div>
       <div class="reading-reader-progress"><span>${idx+1}</span><i><b style="width:${pct}%"></b></i><span>${pages.length}</span></div>
       <div class="reading-reader-text" id="readingReaderText">${readingMarkText(text,activeQ)}</div>
-      <div class="reading-reader-actions"><button data-action="reading-reader-page" data-id="${escapeAttr(cur.id||"")}" data-dir="-1">上一页</button><button data-action="reading-reader-page" data-id="${escapeAttr(cur.id||"")}" data-dir="1">下一页</button><button class="primary-soft" data-action="reading-annotate-current" data-id="${escapeAttr(cur.id||"")}">划线 / 批注</button><button class="primary-soft" data-action="reading-chat-current" data-id="${escapeAttr(cur.id||"")}">发给聊天</button></div>
-      <div class="reading-small-actions"><button data-action="open-reading-together-note" data-id="${escapeAttr(cur.id||"")}">写共读批注</button><button data-action="reading-open-book-detail" data-id="${escapeAttr(cur.id||"")}">书籍详情</button><button data-action="set-reading-tab" data-id="library">全文搜索</button><button data-action="open-reading-book" data-id="${escapeAttr(cur.id||"")}">编辑书页</button></div>
+      <div class="reading-reader-actions"><button data-action="reading-reader-page" data-id="${escapeAttr(cur.id||"")}" data-dir="-1">上一页</button><button data-action="reading-reader-page" data-id="${escapeAttr(cur.id||"")}" data-dir="1">下一页</button><button class="primary-soft" data-action="reading-annotate-current" data-id="${escapeAttr(cur.id||"")}">划线 / 批注</button><button class="primary-soft" data-action="reading-chat-current" data-id="${escapeAttr(cur.id||"")}">给 TA 看</button></div>
+      <div class="reading-small-actions"><button data-action="open-reading-together-note" data-id="${escapeAttr(cur.id||"")}">写共读批注</button><button data-action="reading-open-book-detail" data-id="${escapeAttr(cur.id||"")}">书籍详情</button><button data-action="set-reading-tab" data-id="books">回书架搜索</button><button data-action="open-reading-book" data-id="${escapeAttr(cur.id||"")}">编辑书卡</button></div>
     </div>`;
 }
 
@@ -17405,17 +17451,16 @@ function readingColorFromTitle(title){
 }
 function openReadingImportModal(){
   openQuickModal(`<div class="reading-edit-modal">
-    <div class="reading-edit-title">导入电子书</div>
-    <div class="reading-edit-sub">支持 txt / md / json；标准无 DRM 的 epub 会尝试解析。导入后可以在「共读」里翻页、全文搜索、划线批注、发给聊天。</div>
+    <div class="reading-edit-title">放一本书到书屿</div>
+    <div class="reading-edit-sub">保留最需要的入口：本地 txt / md / epub，或者直接粘贴正文。去掉外接 URL、在线书源和复杂书库配置。</div>
     <div class="reading-import-card" style="margin-top:8px">
-      <label class="btn file-btn primary" style="width:100%;justify-content:center">选择电子书 / 书库文件<input type="file" id="readingImportInput" multiple accept=".txt,.md,.markdown,.epub,.json,text/plain,text/markdown,application/epub+zip,application/json"></label>
-      <div class="btn-row"><button class="btn" data-action="open-reading-library-url">外接 URL 书库</button><button class="btn" data-action="set-reading-tab" data-id="library">去全文搜索</button></div>
-      <div class="reading-import-tip">epub 如果导入失败，通常是浏览器不支持本地解压，或文件有 DRM/特殊加密；可以先导出 txt 再导入。URL 书库需要对方站点允许 CORS。</div>
+      <label class="btn file-btn primary" style="width:100%;justify-content:center">选择电子书<input type="file" id="readingImportInput" multiple accept=".txt,.md,.markdown,.epub,text/plain,text/markdown,application/epub+zip"></label>
+      <div class="reading-import-tip">导入后可以翻页、划线、批注、给 TA 看。epub 只尝试读取无 DRM 的标准文件；读不到时可以导出 txt 再放进来。</div>
     </div>
-    <label>也可以直接粘贴正文</label><input id="readingPasteTitleInput" placeholder="书名">
+    <label>或者直接粘贴正文</label><input id="readingPasteTitleInput" placeholder="书名">
     <input id="readingPasteAuthorInput" placeholder="作者，可留空" style="margin-top:8px">
-    <textarea id="readingPasteContentInput" placeholder="把正文贴在这里。建议保留段落空行，书屿会自动分页。"></textarea>
-    <div class="reading-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-reading-paste-import">导入</button></div>
+    <textarea id="readingPasteContentInput" placeholder="把正文贴在这里。保留段落空行，书屿会自动分页。"></textarea>
+    <div class="reading-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-reading-paste-import">放进书屿</button></div>
   </div>`);
   document.getElementById("quickModal")?.classList.add("reading-quick-modal");
 }
@@ -17433,8 +17478,7 @@ async function importReadingFile(file, targetBookId){
   const lower=name.toLowerCase();
   let parsed;
   if(lower.endsWith(".json") || file.type==="application/json"){
-    const data=JSON.parse(await file.text());
-    await importReadingManifestData(data, name, "");
+    toast("书源 / JSON 导入先取消了；请导入 txt、md、epub，或直接粘贴正文。");
     return;
   }
   if(lower.endsWith(".epub") || file.type==="application/epub+zip") parsed=await parseReadingEpub(file);
@@ -17664,25 +17708,31 @@ function buildReadingContextPrompt(){
   try{
     const books=getReadingBooks();
     const b=readingCurrentBook(books);
-    if(!b) return "";
-    const pages=readingPagesOfBook(b);
-    const pageIndex=readingPageIndex(b);
-    const passage=pages.length ? readingCompactText(pages[pageIndex]||"", 360) : "";
-    const notes=getReadingHighlights().filter(n=>n.bookId===b.id || (n.bookTitle&&n.bookTitle===b.title)).slice(0,3);
+    const notesAll=getReadingHighlights();
+    if(!books.length && !notesAll.length) return "";
+    const library=books.slice().sort((a,b)=>(b.lastOpenedAt||b.updatedAt||b.createdAt||0)-(a.lastOpenedAt||a.updatedAt||a.createdAt||0)).slice(0,12).map((x,i)=>`${i+1}. ${x.title?`《${x.title}》`:"未命名"}${x.author?` / ${x.author}`:""}${x.status?`（${readingStatusText(x.status)}）`:""}`);
     let lines=[];
     lines.push("【隐藏上下文：书屿共读】");
-    lines.push(`user 当前在读：${b.title?`《${b.title}》`:"未命名书"}${b.author?` / ${b.author}`:""}`);
-    lines.push(`阅读位置：${readingFormatChapter(b)}`);
-    if(passage) lines.push(`当前页附近文字摘录（只作共读参考，不代表整本书）：${passage}`);
-    if(notes.length){
-      lines.push("最近划线 / 批注：");
-      notes.forEach((n,i)=>{
-        const q=readingCompactText(n.quote||"",160);
-        const note=readingCompactText(n.note||"",140);
-        lines.push(`${i+1}. ${n.page?`p.${n.page} `:""}“${q}”${note?`；批注：${note}`:""}`);
-      });
+    lines.push(`user 的书架共有 ${books.length} 本书${books.length>12?`，这里只给你最近的 ${library.length} 本`:""}。`);
+    if(library.length) lines.push("书架清单：\n"+library.join("\n"));
+    if(b){
+      const pages=readingPagesOfBook(b);
+      const pageIndex=readingPageIndex(b);
+      const passage=pages.length ? readingCompactText(pages[pageIndex]||"", 260) : "";
+      const notes=notesAll.filter(n=>n.bookId===b.id || (n.bookTitle&&n.bookTitle===b.title)).slice(0,3);
+      lines.push(`当前共读：${b.title?`《${b.title}》`:"未命名书"}${b.author?` / ${b.author}`:""}`);
+      lines.push(`阅读位置：${readingFormatChapter(b)}`);
+      if(passage) lines.push(`当前页附近文字摘录（只作共读参考）：${passage}`);
+      if(notes.length){
+        lines.push("最近划线 / 批注：");
+        notes.forEach((n,i)=>{
+          const q=readingCompactText(n.quote||"",120);
+          const note=readingCompactText(n.note||"",100);
+          lines.push(`${i+1}. ${n.page?`p.${n.page} `:""}“${q}”${note?`；批注：${note}`:""}`);
+        });
+      }
     }
-    lines.push("使用方式：这是共读状态。只有当 user 主动提到书、这一页、批注、一起读时才自然接上；不要假装读过整本书，不要在无关聊天里硬提。若需要更多原文，让 user 选中或发送那一段。");
+    lines.push("使用方式：这是轻量共读上下文。你可以自然知道 user 书架有什么书、当前在读哪本和最近批注；只有 user 主动提到书、这一页、批注、一起读时才接上。不要假装读过整本书，不要在无关聊天里硬提。若需要更多原文，让 user 选中或发送那一段。");
     return lines.join("\n");
   }catch(e){ return ""; }
 }
@@ -17719,8 +17769,8 @@ function openReadingBookModal(id){
   openQuickModal(`<div class="reading-edit-modal">
     <div class="reading-edit-title">${isNew?"放一本书":"编辑书页"}</div>
     <div class="reading-edit-sub">它会出现在书架里。进度、封面颜色和状态都可以慢慢改。</div>
-    <label>书名</label><input id="readingBookTitleInput" value="${escapeAttr(b.title||"")}" placeholder="例如：蒙面女人">
-    <label>作者 / 译者</label><input id="readingBookAuthorInput" value="${escapeAttr(b.author||"")}" placeholder="克里斯蒂">
+    <label>书名</label><input id="readingBookTitleInput" value="${escapeAttr(b.title||"")}" placeholder="书名">
+    <label>作者 / 译者</label><input id="readingBookAuthorInput" value="${escapeAttr(b.author||"")}" placeholder="作者 / 译者，可留空">
     <div class="row"><div><label>状态</label><select id="readingBookStatusInput"><option value="reading" ${b.status==="reading"?"selected":""}>在读</option><option value="shelf" ${b.status==="shelf"?"selected":""}>书架</option><option value="done" ${b.status==="done"?"selected":""}>读完</option></select></div><div><label>封面颜色</label><input id="readingBookColorInput" type="color" value="${/^#[0-9a-fA-F]{6}$/.test(b.color||"")?escapeAttr(b.color):"#5a263d"}"></div></div>
     <div class="row"><div><label>当前章</label><input id="readingBookChapterInput" type="number" min="0" step="1" value="${escapeAttr(b.currentChapter||0)}"></div><div><label>总章数</label><input id="readingBookTotalInput" type="number" min="0" step="1" value="${escapeAttr(b.totalChapters||"")}"></div></div>
     <label>备注</label><textarea id="readingBookSummaryInput" placeholder="为什么想读，读到哪里了。">${escapeHtml(b.summary||"")}</textarea>
@@ -17755,10 +17805,17 @@ function saveReadingBookFromModal(id){
   renderReading();
   toast("书架已更新");
 }
-function deleteReadingBook(id){
+async function deleteReadingBook(id){
   if(!id) return;
-  if(!confirm("确定从书架移除这本书？")) return;
-  saveReadingBooks(getReadingBooks().filter(b=>b.id!==id));
+  const books=getReadingBooks();
+  const book=books.find(b=>b.id===id);
+  if(!book){ toast("这本书已经不在书架里"); closeQuickModal(); renderReading(); return; }
+  const ok=typeof askConfirm==="function" ? await askConfirm(`确定从书架移除《${book.title||"这本书"}》？\n相关批注也会一起移除。`) : window.confirm("确定从书架移除这本书？");
+  if(!ok) return;
+  saveReadingBooks(books.filter(b=>b.id!==id));
+  const title=String(book.title||"");
+  saveReadingHighlights(getReadingHighlights().filter(h=>!(h.bookId===id || (title && h.bookTitle===title))));
+  Storage.set("readingTab","books");
   closeQuickModal();
   renderReading();
   toast("已移除");
@@ -17803,7 +17860,7 @@ function openReadingHighlightModal(id){
     <label>来自哪本书</label><input id="readingHighlightBookInput" value="${escapeAttr(h.bookTitle||"")}" placeholder="书名">
     <label>日期</label><input id="readingHighlightDateInput" value="${escapeAttr(h.date||"")}" placeholder="May 19">
     <label>小记</label><textarea id="readingHighlightNoteInput" placeholder="这一句为什么重要。">${escapeHtml(h.note||"")}</textarea>
-    <label>标签（用逗号隔开）</label><input id="readingHighlightTagsInput" value="${escapeAttr(tagText)}" placeholder="Claude · 14，Nai · 16">
+    <label>标签（用逗号隔开）</label><input id="readingHighlightTagsInput" value="${escapeAttr(tagText)}" placeholder="喜欢、伏笔、想和 TA 聊">
     <div class="reading-edit-actions">${id?`<button class="btn danger" data-action="delete-reading-highlight" data-id="${escapeAttr(h.id||"")}">删除</button>`:""}<button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-reading-highlight" data-id="${escapeAttr(h.id||"")}">保存</button></div>
   </div>`);
   document.getElementById("quickModal")?.classList.add("reading-quick-modal");
@@ -17827,13 +17884,18 @@ function saveReadingHighlightFromModal(id){
   setReadingTab("notes");
   toast("摘抄已保存");
 }
-function deleteReadingHighlight(id){
+async function deleteReadingHighlight(id){
   if(!id) return;
-  if(!confirm("确定删除这条摘抄？")) return;
-  saveReadingHighlights(getReadingHighlights().filter(h=>h.id!==id));
+  const list=getReadingHighlights();
+  const target=list.find(h=>h.id===id);
+  if(!target){ toast("这条批注已经不在了"); closeQuickModal(); renderReading(); return; }
+  const ok=typeof askConfirm==="function" ? await askConfirm("确定删除这条批注？") : window.confirm("确定删除这条批注？");
+  if(!ok) return;
+  saveReadingHighlights(list.filter(h=>h.id!==id));
+  Storage.set("readingTab","notes");
   closeQuickModal();
   renderReading();
-  toast("已删除摘抄");
+  toast("已删除批注");
 }
 
 
