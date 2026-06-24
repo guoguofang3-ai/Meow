@@ -4305,7 +4305,7 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
       <div class="reading-bottom-nav">
         <button data-action="set-reading-tab" data-id="home" id="readingTabHome">首页</button>
         <button data-action="set-reading-tab" data-id="books" id="readingTabBooks">书架</button>
-        <button data-action="set-reading-tab" data-id="library" id="readingTabLibrary">全文</button>
+        <button data-action="set-reading-tab" data-id="library" id="readingTabLibrary">搜书</button>
         <button data-action="set-reading-tab" data-id="reader" id="readingTabReader">共读</button>
         <button data-action="set-reading-tab" data-id="notes" id="readingTabNotes">摘抄</button>
         <button data-action="set-reading-tab" data-id="style" id="readingTabStyle">字体</button>
@@ -5457,6 +5457,8 @@ function bindEvents(){
     if(action==="reading-library-search") readingRunLibrarySearch();
     if(action==="open-reading-library-url") openReadingLibraryUrlModal();
     if(action==="save-reading-library-url") importReadingLibraryFromUrl();
+    if(action==="reading-online-search") readingRunOnlineSearch();
+    if(action==="reading-import-gutenberg") readingImportGutenberg(id);
     if(action==="open-reading-search-result") openReadingSearchResult(id, Number(btn.dataset.page||0), btn.dataset.q||"");
     if(action==="reading-highlight-search-result") openReadingAnnotationModal(id, btn.dataset.quote||"", Number(btn.dataset.page||0), btn.dataset.q||"");
     if(action==="reading-open-book-detail") openReadingBookDetail(id);
@@ -16957,11 +16959,18 @@ function renderReadingLibrary(box, books, notes){
   const results=readingSearchLibrary(q);
   const fullBooks=books.filter(b=>readingPagesOfBook(b).length);
   const latest=books.slice().sort((a,b)=>(b.importedAt||b.createdAt||0)-(a.importedAt||a.createdAt||0)).slice(0,4);
+  const onlineQ = readingOnlineSearchQuery();
   box.innerHTML=`
-    <div class="reading-page-title">Library</div><div class="reading-page-sub">外接全文书库</div>
+    <div class="reading-page-title">Library</div><div class="reading-page-sub">书库 · 搜书</div>
     <div class="reading-library-card">
-      <div class="reading-library-title">把电子书接进书屿</div>
-      <div class="reading-library-tip">这里做的是「轻量共读书库」：本地导入可全文搜索；外接 JSON 书库支持远程目录和打开时加载，不会一口气把所有书塞进内存。角色只会收到当前书页与最近批注的轻量上下文，不拖慢普通回复。</div>
+      <div class="reading-library-title">在线搜书</div>
+      <div class="reading-library-tip">搜索 Project Gutenberg 公版书库，找到想读的书，点「共读」直接导入。目前以英文公版书为主。</div>
+      <div class="reading-search-box"><input id="readingOnlineSearchInput" value="${escapeAttr(onlineQ)}" placeholder="搜书名或作者，如 alice、dickens…" onkeydown="if(event.key==='Enter')readingRunOnlineSearch()"><button data-action="reading-online-search">搜书</button></div>
+    </div>
+    <div id="readingOnlineResults">${onlineQ && _gutendexCache[onlineQ] ? "" : ""}</div>
+    <div class="reading-library-card" style="margin-top:14px">
+      <div class="reading-library-title">本地书库</div>
+      <div class="reading-library-tip">本地导入的书可以全文搜索；外接 JSON 书库支持远程目录和打开时加载。</div>
       <div class="reading-search-box"><input id="readingLibrarySearchInput" value="${escapeAttr(q)}" placeholder="搜索书名 / 作者 / 正文 / 批注…" oninput="readingSetLibrarySearch(this.value)" onkeydown="if(event.key==='Enter')readingRunLibrarySearch()"><button data-action="reading-library-search">搜索</button></div>
       <div class="reading-library-tools">
         <label class="btn file-btn primary">批量导入<input type="file" id="readingImportInput" multiple accept=".txt,.md,.markdown,.epub,.json,text/plain,text/markdown,application/epub+zip,application/json"></label>
@@ -16972,6 +16981,8 @@ function renderReadingLibrary(box, books, notes){
       <div class="reading-inline-muted" style="margin-top:10px">已接入 ${fullBooks.length} 本有正文的书 · ${notes.length} 条摘抄 / 批注</div>
     </div>
     ${q?`<div class="reading-section-head">SEARCH RESULTS · 搜索结果 <small>${results.length} 条</small></div>${results.length?results.map(r=>readingSearchResultHtml(r,q)).join(""):`<div class="reading-empty">没有搜到。可以先批量导入电子书，或者换一个关键词。</div>`}`:`<div class="reading-section-head">RECENT LIBRARY · 最近接入 <small>全文可搜</small></div>${latest.length?latest.map(b=>`<div class="reading-search-result"><div class="reading-result-head"><div><div class="reading-result-title">${escapeHtml(b.title||"未命名")}</div><div class="reading-result-meta">${escapeHtml(b.author||"")} · ${escapeHtml(readingFormatChapter(b))}</div></div><span class="reading-result-badge">${readingPagesOfBook(b).length?"全文":(readingBookHasRemoteSource(b)?"远程":"书卡")}</span></div><div class="reading-actions"><button class="primary-soft" data-action="open-reading-reader" data-id="${escapeAttr(b.id||"")}">一起读</button><button data-action="reading-open-book-detail" data-id="${escapeAttr(b.id||"")}">书籍详情</button></div></div>`).join(""):`<div class="reading-empty">还没有外接书库。点「批量导入」可以一次放入多本 txt / md / epub；也可以用 JSON 书库。</div>`}`}`;
+  // restore online search results if cached
+  if(onlineQ && _gutendexCache[onlineQ]) renderReadingOnlineResults(onlineQ);
 }
 function readingSearchResultHtml(r,q){
   const book=r.book||{};
@@ -17140,6 +17151,125 @@ function applyReadingSettings(){
   app.classList.add("font-"+(st.font||"serif"));
   app.style.setProperty("--reading-scale", (Number(st.size||100)/100));
 }
+/* ===== 书屿在线搜书：Gutendex + corsproxy ===== */
+const CORS_PROXY = "https://corsproxy.io/?";
+let _gutendexCache = {};
+let _gutendexLoading = false;
+
+function readingOnlineSearchQuery(){ return Storage.get("readingOnlineQuery",""); }
+
+async function readingRunOnlineSearch(){
+  const input = document.getElementById("readingOnlineSearchInput");
+  const q = (input?.value||"").trim();
+  Storage.set("readingOnlineQuery", q);
+  if(!q){ renderReading(); return; }
+  if(_gutendexLoading){ toast("正在搜索，稍等…"); return; }
+  _gutendexLoading = true;
+  const box = document.getElementById("readingOnlineResults");
+  if(box) box.innerHTML = `<div class="reading-empty">正在搜索「${escapeHtml(q)}」…</div>`;
+  try{
+    const res = await fetch(`https://gutendex.com/books?search=${encodeURIComponent(q)}&languages=en,zh`);
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const data = await res.json();
+    _gutendexCache[q] = data.results || [];
+    renderReadingOnlineResults(q);
+  }catch(err){
+    console.error(err);
+    if(box) box.innerHTML = `<div class="reading-empty">搜索失败：${escapeHtml(err?.message||"网络错误")}。Gutendex 可能暂时不可用。</div>`;
+  }finally{ _gutendexLoading = false; }
+}
+
+function gutendexTextUrl(book){
+  const fmts = book.formats || {};
+  // prefer plain text utf-8
+  for(const key of Object.keys(fmts)){
+    if(/text\/plain.*utf-?8/i.test(key)) return fmts[key];
+  }
+  // fallback to any text/plain
+  for(const key of Object.keys(fmts)){
+    if(/text\/plain/i.test(key) && !/zip/i.test(key)) return fmts[key];
+  }
+  return "";
+}
+
+function gutendexCoverUrl(book){
+  const fmts = book.formats || {};
+  for(const key of Object.keys(fmts)){
+    if(/image\/jpeg/i.test(key)) return fmts[key];
+  }
+  return "";
+}
+
+function renderReadingOnlineResults(q){
+  const box = document.getElementById("readingOnlineResults");
+  if(!box) return;
+  const results = _gutendexCache[q] || [];
+  if(!results.length){
+    box.innerHTML = `<div class="reading-empty">没有搜到「${escapeHtml(q)}」相关的公版书。试试英文书名或作者名。</div>`;
+    return;
+  }
+  box.innerHTML = results.slice(0, 20).map(b => {
+    const author = (b.authors||[]).map(a=>a.name).join(", ") || "未知作者";
+    const textUrl = gutendexTextUrl(b);
+    const cover = gutendexCoverUrl(b);
+    const langs = (b.languages||[]).join(", ");
+    const dl = b.download_count || 0;
+    return `<div class="reading-search-result">
+      <div class="reading-result-head">
+        ${cover?`<img src="${escapeAttr(cover)}" style="width:48px;height:72px;object-fit:cover;border-radius:8px;flex:0 0 48px;margin-right:10px">`:""}
+        <div style="min-width:0;flex:1">
+          <div class="reading-result-title">${escapeHtml(b.title||"未命名")}</div>
+          <div class="reading-result-meta">${escapeHtml(author)}${langs?" · "+escapeHtml(langs):""}${dl?" · "+dl+" downloads":""}</div>
+        </div>
+        <span class="reading-result-badge">Gutenberg</span>
+      </div>
+      <div class="reading-actions">
+        ${textUrl?`<button class="primary-soft" data-action="reading-import-gutenberg" data-id="${b.id}" data-url="${escapeAttr(textUrl)}" data-title="${escapeAttr(b.title||"")}" data-author="${escapeAttr(author)}">共读这本</button>`:`<span style="color:#b9a09b;font-size:12px">暂无纯文本格式</span>`}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+async function readingImportGutenberg(gutId){
+  // find the button that triggered this to get data attributes
+  const btn = document.querySelector(`[data-action="reading-import-gutenberg"][data-id="${gutId}"]`);
+  if(!btn) return;
+  const rawUrl = btn.dataset.url || "";
+  const title = btn.dataset.title || "Gutenberg #"+gutId;
+  const author = btn.dataset.author || "";
+  if(!rawUrl){ toast("这本书没有纯文本链接"); return; }
+
+  // check if already imported
+  const existing = getReadingBooks().find(b => b.title === title && readingPagesOfBook(b).length > 0);
+  if(existing){
+    existing.status = "reading";
+    existing.lastOpenedAt = Date.now();
+    saveReadingBooks(getReadingBooks());
+    setReadingTab("reader");
+    toast(`《${title}》已在书架，直接打开`);
+    return;
+  }
+
+  const proxyUrl = CORS_PROXY + encodeURIComponent(rawUrl);
+  toast("正在通过代理加载正文…");
+  btn.disabled = true;
+  btn.textContent = "加载中…";
+  try{
+    const res = await fetch(proxyUrl);
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const text = await res.text();
+    const content = readingNormalizeText(text);
+    if(!content || content.length < 100) throw new Error("正文太短或为空");
+    createReadingBookFromContent({title, author, content, sourceName:"Gutenberg #"+gutId});
+    toast(`《${title}》已导入，开始共读`);
+  }catch(err){
+    console.error(err);
+    toast("加载失败：" + (err?.message||"网络错误") + "。代理可能暂时不可用，稍后再试。");
+    btn.disabled = false;
+    btn.textContent = "共读这本";
+  }
+}
+
 function renderReading(){
   const box=$("#readingContent");
   if(!box) return;
