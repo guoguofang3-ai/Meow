@@ -3023,7 +3023,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 .lock-screen,.home-screen,.app-screen{border-radius:0!important;}
 .lock-screen{padding-top:max(52px,env(safe-area-inset-top))!important;}
 .app-screen .statusbar,.home-screen .statusbar{padding-top:calc(10px + env(safe-area-inset-top))!important;height:calc(44px + env(safe-area-inset-top))!important;}
-.header{padding-top:calc(44px + env(safe-area-inset-top))!important;}
+.header{padding-top:calc(10px + env(safe-area-inset-top))!important;}
 .wechat-head{margin-top:0!important;}
 .dock{margin-bottom:calc(10px + env(safe-area-inset-bottom))!important;}
 .composer-wrap,.claude-composer-wrap{padding-bottom:env(safe-area-inset-bottom)!important;}
@@ -10396,24 +10396,37 @@ function inferClaudeToolPolicy(history=getClaudeHistory()){
   const wantsMemory=/记忆|长期记忆|关系状态|日记|diary|回忆|记住|保存下来|写进记忆|read_memory|read_diary|write_memory/i.test(text);
   const wantsDevice=/设备|配件|蓝牙|震动|模式|停止|连接状态|device_/i.test(text);
   const wantsPhoneActivity=/监控|手机活动|活动记录|app活动|App活动|屏幕使用|刚才.*干嘛|刚刚.*干嘛|查我|查一下我|是不是.*刷|有没有.*玩|read_phone_activity/i.test(text);
+  const wantsGeoWeather=/天气|气温|下雨|下雪|空气质量|位置|定位|在哪|哪里|经纬度|get_weather|get_user_location/i.test(text);
+  const wantsCommand=/下任务|小任务|倒计时|提醒我|监督我|issue_command/i.test(text);
   const explicitTool=/工具|调用|读取|搜索|处理文件|改代码|查记录|监控/i.test(text);
   const fileMode=Storage.get("claudeFileMode", false);
-  const phoneActivity=!!(wantsPhoneActivity || shouldOfferPhoneActivityTool(text, history));
+  const hasFile=claudeHasActiveFile(history);
+  const mentionActiveFile=!!(hasFile&&/这个|它|上面|刚才|继续|再改|预览|检查|看看|看下|分析|总结|哪里|为什么|怎么/i.test(compact));
+
+  // 文件常开 = Claude 本轮直接注册全部可用工具，让模型按需选择。
+  // 它不是“代码专注/关闭其它工具”，也不是“每个工具都必须调用”。
+  const allToolsOpen=!!fileMode;
+  const phoneActivity=!!(allToolsOpen || wantsPhoneActivity || shouldOfferPhoneActivityTool(text, history));
+
   return {
     text,
-    file: !!(wantsFile || fileMode || (claudeHasActiveFile(history)&&/这个|它|上面|刚才|继续|再改|预览|检查|看看|看下|分析|总结|哪里|为什么|怎么/i.test(compact))),
-    history: !!wantsHistory,
-    // 记忆工具属于轻工具：默认常开。模型不需要时不会调用，但需要写记忆时不会再误以为没有 write_memory。
+    fileMode: !!fileMode,
+    allToolsOpen,
+    file: !!(allToolsOpen || wantsFile || mentionActiveFile),
+    history: !!(allToolsOpen || wantsHistory),
     memory: true,
-    device: !!wantsDevice,
+    commandTask: true,
+    device: !!(allToolsOpen || wantsDevice),
     phoneActivity,
-    geoWeather: isGeoWeatherToolAllowed("claude"),
-    explicit: !!explicitTool
+    geoWeather: !!((allToolsOpen || wantsGeoWeather) && isGeoWeatherToolAllowed("claude")),
+    explicit: !!(explicitTool || allToolsOpen)
   };
 }
 function buildClaudeToolUsePrompt(policy={}){
   const lines=[];
-  lines.push("- issue_command(title, countdown_seconds)：给 user 下达一个轻量小任务；只在合适时机使用，不要频繁打扰");
+  if(policy.commandTask!==false){
+    lines.push("- issue_command(title, countdown_seconds)：给 user 下达一个轻量小任务；只在合适时机使用，不要频繁打扰");
+  }
   if(policy.file){
     lines.push("- read_file(filename, offset, length)：分段读取用户上传的文件内容，默认8000字符、最大20000字符");
     lines.push("- search_file(filename, query, limit)：在大文件中按关键词搜索命中片段，优先用于定位代码/章节");
@@ -10438,7 +10451,15 @@ function buildClaudeToolUsePrompt(policy={}){
   if(!lines.length){
     return `【工具策略】\n当前是日常聊天轮次：不要假装读取文件/记忆/聊天记录；除非 user 明确要求，否则直接自然聊天。`;
   }
-  return `【本轮可用工具——需要时直接发起 function call，不要用自然语言描述】\n${lines.join("\n")}\n工具只服务本轮需求；用完后自然回答，不要解释“我调用了工具”。`;
+  const focus = policy.allToolsOpen ? `
+
+【文件常开 / 全工具按需】
+文件常开表示：本轮所有可用工具都已经注册给 Claude，包括文件、历史、记忆/日记、小任务、手机活动、天气/位置、设备等。
+- 这不是代码专注模式，也不是强制每个工具都调用。
+- 先判断 user 的真实需求，只调用对当前回复有帮助的工具。
+- 写代码/修 bug 时优先使用 search_file / read_file 定位文件；需要上下文、记忆、天气位置或其它工具时也可以正常调用。
+- 获得足够信息后必须停止工具调用并给最终回复，不要无限搜索。` : "";
+  return `【本轮可用工具——需要时直接发起 function call，不要用自然语言描述】\n${lines.join("\n")}\n工具只服务本轮需求；用完后自然回答，不要解释“我调用了工具”。${focus}`;
 }
 /* ===== Claude助手 多选删除 ===== */
 let claudeMultiMode=false;
@@ -10784,6 +10805,10 @@ const CLAUDE_SMALL_FILE_LIMIT = 1024 * 1024;
 const CLAUDE_CONTEXT_PREVIEW_LIMIT = 2400;
 const CLAUDE_TOOL_READ_DEFAULT = 8000;
 const CLAUDE_TOOL_READ_MAX = 20000;
+const CLAUDE_TOOL_MAX_ROUNDS_DEFAULT = 12;
+const CLAUDE_TOOL_MAX_ROUNDS_FILEMODE = 20;
+const CLAUDE_TOOL_MAX_OPS_DEFAULT = 48;
+const CLAUDE_TOOL_MAX_OPS_FILEMODE = 90;
 function openMiaoFilesDB(){
   return new Promise((resolve,reject)=>{
     const req=indexedDB.open("MiaoFiles",2);
@@ -11762,29 +11787,59 @@ async function callClaudeAI(api, ops){
   const tools=getClaudeTools(policy);
   const body={model:api.model,messages,temperature:.7};
   if(tools.length){ body.tools=tools; body.tool_choice="auto"; }
-  // 多轮tool calling循环
-  let loopMessages=[...messages];
-  for(let i=0;i<5;i++){
-    const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+api.apiKey},body:JSON.stringify({...body,messages:loopMessages})});
+
+  const requestChat=async(payload)=>{
+    const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+api.apiKey},body:JSON.stringify(payload)});
     const text=await res.text();
     if(!res.ok) throw new Error(text.slice(0,180)||res.statusText);
     const data=JSON.parse(text);
     const choice=data.choices?.[0];
-    if(!choice) break;
-    const msg=choice.message;
-    // 没有tool_calls，返回普通文字
+    if(!choice) return {data, msg:null};
+    return {data, msg:choice.message};
+  };
+  const extractAssistantText=(data,msg)=>{
+    if(msg && typeof msg.content==="string") return msg.content;
+    if(msg && Array.isArray(msg.content)) return msg.content.map(x=>x?.text||x?.content||"").join("\n").trim();
+    return data?.content?.[0]?.text || data?.output_text || "";
+  };
+
+  // 多轮 tool calling 循环：文件常开给更多轮次，按需模式也适当放宽；仅保留防无限循环的安全阀。
+  let loopMessages=[...messages];
+  const maxRounds=policy.allToolsOpen ? CLAUDE_TOOL_MAX_ROUNDS_FILEMODE : CLAUDE_TOOL_MAX_ROUNDS_DEFAULT;
+  const maxOps=policy.allToolsOpen ? CLAUDE_TOOL_MAX_OPS_FILEMODE : CLAUDE_TOOL_MAX_OPS_DEFAULT;
+  let opCount=0;
+  const seenToolCalls=new Map();
+  for(let i=0;i<maxRounds;i++){
+    const {data,msg}=await requestChat({...body,messages:loopMessages});
+    if(!msg) break;
+    // 没有 tool_calls，返回普通文字
     if(!msg.tool_calls || msg.tool_calls.length===0){
-      return msg.content || data.content?.[0]?.text || data.output_text || "";
+      return extractAssistantText(data,msg);
     }
-    // 有tool_calls，执行工具并把结果塞回去
+    // 有 tool_calls，执行工具并把结果塞回去
     if(msg.content===undefined) msg.content=null;
     loopMessages.push(msg);
     for(const tc of msg.tool_calls){
-      const args=JSON.parse(tc.function.arguments||"{}");
-      const opIndex=claudeOpsAdd(ops, describeClaudeToolCall(tc.function.name, args), claudeToolIcon(tc.function.name, args));
+      if(opCount>=maxOps){
+        loopMessages.push({role:"tool", tool_call_id:tc.id, content:JSON.stringify({error:"工具操作数已到达本轮上限", hint:"请基于已获得的工具结果直接给出最终回复，不要继续调用工具。"})});
+        continue;
+      }
+      opCount++;
+      let args={};
+      try{ args=JSON.parse(tc.function.arguments||"{}"); }
+      catch(e){ args={}; }
+      const toolName=tc.function.name;
+      const sig=toolName+":"+JSON.stringify(args||{});
+      const seen=(seenToolCalls.get(sig)||0)+1;
+      seenToolCalls.set(sig,seen);
+      const opIndex=claudeOpsAdd(ops, describeClaudeToolCall(toolName, args), claudeToolIcon(toolName, args));
       let result;
       try{
-        result=await executeClaudeTool(tc.function.name, args);
+        if(seen>=8 && /^(read_file|search_file|search_history|read_memory|read_diary)$/.test(toolName)){
+          result={error:"检测到重复工具调用", hint:"同一个工具和参数已经重复调用很多次。请换关键词/换 offset，或基于已有结果直接回答。"};
+        } else {
+          result=await executeClaudeTool(toolName, args);
+        }
         claudeOpsDone(ops, opIndex, !(result&&result.error), result&&result.error?String(result.error).slice(0,80):"");
       }catch(e){
         result={error:e.message||String(e)};
@@ -11793,7 +11848,30 @@ async function callClaudeAI(api, ops){
       loopMessages.push({role:"tool", tool_call_id:tc.id, content:JSON.stringify(result)});
     }
   }
-  return "[工具调用超过上限，未获得最终回复]";
+
+  // 工具轮次用尽时，不直接吐“超过上限”，而是强制进行最后一次无工具收口。
+  try{
+    const finalMessages=[
+      ...loopMessages,
+      {role:"user", content:policy.allToolsOpen
+        ? "工具调用轮次已经结束。现在请停止调用工具，只根据上面的所有工具结果直接给出最终回复；如果是代码问题，请给出明确修复方案或最终代码。不要再说需要继续调用工具。"
+        : "工具调用轮次已经结束。现在请停止调用工具，只根据上面的工具结果直接给出最终回复。"}
+    ];
+    const finalBody={model:api.model,messages:finalMessages,temperature:.35};
+    // 第一种：完全不携带 tools，兼容大多数 OpenAI 风格代理，确保模型无法再发起工具。
+    const {data:finalData,msg:finalMsg}=await requestChat(finalBody);
+    const finalText=extractAssistantText(finalData,finalMsg).trim();
+    if(finalText) return finalText;
+  }catch(e1){
+    try{
+      // 第二种兜底：部分代理要求保留 tools 时，用 tool_choice:none 禁止继续调用。
+      const finalBody={...body,messages:[...loopMessages,{role:"user",content:"请停止调用工具，直接根据已有工具结果给出最终回复。"}],tool_choice:"none"};
+      const {data:finalData,msg:finalMsg}=await requestChat(finalBody);
+      const finalText=extractAssistantText(finalData,finalMsg).trim();
+      if(finalText) return finalText;
+    }catch(e2){}
+  }
+  return policy.allToolsOpen ? "[工具已执行完成，但模型没有生成最终回复。请直接让我继续，我会基于已读取的工具结果收口。]" : "[工具已执行完成，但模型没有生成最终回复。]";
 }
 function buildClaudeRoleCorePrompt(role){
   role=role||currentRole()||{};
@@ -11827,6 +11905,12 @@ ${hidden?`【隐藏上下文】\n${hidden}\n`:""}${story?`【线下剧情摘要�
 【角色 Claude 默认格式】
 只能扮演当前角色，不能替 user 说话；禁止 User:/Assistant: 剧本格式；普通聊天不要输出思考过程、系统说明或格式纠错。`;
 }
+function buildClaudeCommandTaskPrompt(policy={}){
+  if(policy.commandTask===false){
+    return "【AI 指令 / 小任务】\n本轮不开放小任务工具；不要输出 [下任务: ...]。";
+  }
+  return "【AI 指令 / 小任务】\n你可以在合适时机给 user 下一个轻量小任务。优先用 function call：issue_command(title, countdown_seconds)；不能用工具时单独成段输出：[下任务: 任务标题|秒数]。不要频繁使用，不要用于危险或高风险任务。\n" + (buildCommandTaskContext()||"暂无小任务反馈");
+}
 function buildRoleClaudePrompt(policy={}){
   const base=buildClaudeRoleCorePrompt(currentRole());
   return `${base}
@@ -11851,9 +11935,7 @@ ${getStickerPromptList()}
 - 注意：这是Claude App专用，和微信的[发送图片:]不同，不要混用。
 
 
-【AI 指令 / 小任务】
-你可以在合适时机给 user 下一个轻量小任务。优先用 function call：issue_command(title, countdown_seconds)；不能用工具时单独成段输出：[下任务: 任务标题|秒数]。不要频繁使用，不要用于危险或高风险任务。
-${buildCommandTaskContext()||"暂无小任务反馈"}
+${buildClaudeCommandTaskPrompt(policy)}
 
 ${buildClaudeToolUsePrompt(policy)}`;
 }
@@ -11906,9 +11988,7 @@ ${getStickerPromptList()}
 - 注意：这是 Claude App 专用，和微信的[发送图片:]不同，不要混用。
 
 
-【AI 指令 / 小任务】
-你可以在合适时机给 user 下一个轻量小任务。优先用 function call：issue_command(title, countdown_seconds)；不能用工具时单独成段输出：[下任务: 任务标题|秒数]。不要频繁使用，不要用于危险或高风险任务。
-${buildCommandTaskContext()||"暂无小任务反馈"}
+${buildClaudeCommandTaskPrompt(policy)}
 
 ${buildClaudeToolUsePrompt(policy)}`;
 }
@@ -14844,7 +14924,7 @@ function phoneActivityToolSchema(){
 function getClaudeTools(policy={}){
   const tools=[];
   const add=(tool)=>tools.push(tool);
-  add(commandTaskToolSchema());
+  if(policy.commandTask!==false) add(commandTaskToolSchema());
   if(policy.phoneActivity) add(phoneActivityToolSchema());
   if(policy.geoWeather) geoWeatherToolSchemas("claude").forEach(add);
   if(policy.file){
