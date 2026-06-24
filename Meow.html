@@ -2534,90 +2534,84 @@ body{font-size:calc(14px * var(--font-scale));}
 .mind-dream-actions button{border:0;border-radius:999px;padding:8px 11px;background:rgba(255,255,255,.58);color:color-mix(in srgb,var(--bar-text,#111827) 62%,transparent);font-size:11px;font-weight:950;}
 .mind-dream-source{display:inline-flex;border-radius:999px;padding:3px 8px;background:rgba(255,255,255,.50);font-size:9px;font-weight:950;color:color-mix(in srgb,var(--bar-text,#111827) 42%,transparent);margin-left:6px;}
 
-/* Diary Mind v1：日记保持独立，只统一成私密本子风格 */
+/* Diary Bridge：轻量日记 / 角色可见桥 */
 .diary-app{
   background:var(--memory-bg,linear-gradient(160deg,#fbfaf5,#f3efe6))!important;
   color:var(--bar-text,#1f1d1a);
 }
 .diary-app .header.diary-header{
-  padding-top:50px!important;
-  padding-bottom:8px!important;
-  background:color-mix(in srgb,var(--memory-bg,#fbfaf5) 76%,rgba(255,255,255,.82))!important;
+  padding-top:50px!important;padding-bottom:8px!important;
+  background:color-mix(in srgb,var(--memory-bg,#fbfaf5) 78%,rgba(255,255,255,.84))!important;
   border-bottom:0!important;box-shadow:none!important;
 }
-.diary-list{padding:12px 16px 18px!important;overflow:auto!important;background:transparent!important;-webkit-overflow-scrolling:touch;}
+.diary-list{padding:12px 16px 84px!important;overflow:auto!important;background:transparent!important;-webkit-overflow-scrolling:touch;}
 .diary-hero{padding:2px 2px 12px;}
-.diary-kicker{font-family:Georgia,serif;font-style:italic;font-size:18px;font-weight:700;color:color-mix(in srgb,var(--bar-text,#111827) 84%,transparent);}
-.diary-subline{font-size:11px;color:color-mix(in srgb,var(--bar-text,#111827) 42%,transparent);margin-top:4px;font-weight:650;line-height:1.55;}
-.diary-stat-row{display:flex;gap:8px;margin:12px 0;}
-.diary-stat{flex:1;border-radius:18px;background:rgba(255,255,255,.58);border:1px solid rgba(90,70,45,.06);padding:12px;box-shadow:0 8px 22px rgba(70,50,30,.04);}
+.diary-kicker{font-family:Georgia,serif;font-style:italic;font-size:18px;font-weight:800;color:color-mix(in srgb,var(--bar-text,#111827) 84%,transparent);}
+.diary-subline{font-size:11px;color:color-mix(in srgb,var(--bar-text,#111827) 45%,transparent);margin-top:4px;font-weight:650;line-height:1.55;}
+.diary-tabs{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0;padding:6px;border-radius:22px;background:rgba(255,255,255,.42);backdrop-filter:blur(16px);}
+.diary-tab{border:0;border-radius:999px;padding:9px 0;background:transparent;font-size:11px;font-weight:1000;color:color-mix(in srgb,var(--bar-text,#111827) 46%,transparent);}
+.diary-tab.active{background:rgba(255,255,255,.88);box-shadow:0 8px 20px rgba(70,50,30,.06);color:var(--bar-text,#111827);}
+.diary-quick-row{display:flex;gap:8px;margin:10px 0 4px;}
+.diary-quick-row .diary-search{flex:1;border-radius:999px!important;border:1px solid rgba(90,70,45,.08)!important;background:rgba(255,255,255,.58)!important;padding:10px 13px!important;font-size:16px!important;color:var(--bar-text,#111827)!important;}
+.diary-round-btn{border:0;border-radius:50%;width:40px;height:40px;background:rgba(255,255,255,.70);font-size:18px;font-weight:1000;color:var(--bar-text,#111827);box-shadow:0 8px 20px rgba(70,50,30,.05);}
+.diary-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;}
+.diary-stat{border-radius:18px;background:rgba(255,255,255,.58);border:1px solid rgba(90,70,45,.06);padding:12px;box-shadow:0 8px 22px rgba(70,50,30,.04);}
 .diary-stat b{display:block;font-size:18px;line-height:1;font-weight:1000;color:var(--bar-text,#111827);}
 .diary-stat span{display:block;margin-top:6px;font-size:10px;font-weight:850;color:color-mix(in srgb,var(--bar-text,#111827) 42%,transparent);}
-.diary-card{border-radius:24px;padding:15px;background:rgba(255,255,255,.62);border:1px solid rgba(90,70,45,.06);box-shadow:0 12px 30px rgba(70,50,30,.055);margin:10px 0;}
-.diary-date{font-size:10px;font-weight:950;color:color-mix(in srgb,var(--bar-text,#111827) 38%,transparent);margin-bottom:8px;}
-.diary-title{font-size:17px;font-weight:1000;line-height:1.35;letter-spacing:-.45px;color:var(--bar-text,#111827);}
-.diary-text{font-size:12px;line-height:1.85;color:color-mix(in srgb,var(--bar-text,#111827) 64%,transparent);white-space:pre-wrap;margin-top:9px;max-height:128px;overflow:auto;-webkit-overflow-scrolling:touch;}
-.diary-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
-.diary-actions button{border:0;border-radius:999px;padding:8px 11px;background:rgba(255,255,255,.58);color:color-mix(in srgb,var(--bar-text,#111827) 62%,transparent);font-size:11px;font-weight:950;}
-.diary-actions button.danger{background:rgba(255,232,230,.72);color:#b42318;}
-
-.diary-actions button.primary-soft{background:color-mix(in srgb,var(--accent,#111827) 13%,rgba(255,255,255,.62));color:color-mix(in srgb,var(--accent,#111827) 70%,var(--bar-text,#111827));}
-
-.diary-tools{display:flex;gap:8px;align-items:center;margin:12px 0 10px;}
-.diary-search{flex:1;border-radius:999px!important;border:1px solid rgba(90,70,45,.08)!important;background:rgba(255,255,255,.58)!important;padding:10px 13px!important;font-size:16px!important;color:var(--bar-text,#111827)!important;}
-.diary-tools button{border:0;border-radius:999px;padding:10px 12px;background:rgba(255,255,255,.60);font-size:11px;font-weight:950;color:color-mix(in srgb,var(--bar-text,#111827) 56%,transparent);}
-.diary-chips{display:flex;gap:7px;overflow:auto;padding:2px 0 8px;scrollbar-width:none;}
-.diary-chips::-webkit-scrollbar{display:none;}
-.diary-chip{border:0;border-radius:999px;padding:7px 11px;background:rgba(255,255,255,.42);font-size:11px;font-weight:950;white-space:nowrap;color:color-mix(in srgb,var(--bar-text,#111827) 50%,transparent);}
-.diary-chip.active{background:color-mix(in srgb,var(--accent,#111827) 15%,rgba(255,255,255,.68));color:color-mix(in srgb,var(--accent,#111827) 76%,var(--bar-text,#111827));}
-.diary-month{margin:16px 3px 8px;font-size:12px;font-weight:1000;color:color-mix(in srgb,var(--bar-text,#111827) 52%,transparent);letter-spacing:.02em;}
-.diary-empty-filter{border-radius:22px;padding:18px;background:rgba(255,255,255,.56);font-size:12px;line-height:1.7;color:color-mix(in srgb,var(--bar-text,#111827) 54%,transparent);}
+.diary-card{position:relative;border-radius:24px;padding:15px;background:rgba(255,255,255,.64);border:1px solid rgba(90,70,45,.06);box-shadow:0 12px 30px rgba(70,50,30,.055);margin:10px 0;}
 .diary-card.diary-today{border-color:color-mix(in srgb,var(--accent,#111827) 22%,rgba(255,255,255,.5));box-shadow:0 12px 34px color-mix(in srgb,var(--accent,#111827) 8%,transparent);}
-.diary-wordline{font-size:10px;font-weight:900;color:color-mix(in srgb,var(--bar-text,#111827) 36%,transparent);margin-top:6px;}
-.diary-actions button.ghost-danger{background:rgba(255,255,255,.38);color:#b42318;}
+.diary-card.locked{background:repeating-linear-gradient(135deg,rgba(255,255,255,.72),rgba(255,255,255,.72) 11px,rgba(244,239,230,.72) 11px,rgba(244,239,230,.72) 22px);}
+.diary-card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+.diary-date{font-size:10px;font-weight:950;color:color-mix(in srgb,var(--bar-text,#111827) 38%,transparent);margin-bottom:7px;}
+.diary-title{font-size:17px;font-weight:1000;line-height:1.35;letter-spacing:-.45px;color:var(--bar-text,#111827);}
+.diary-wordline{font-size:10px;font-weight:900;color:color-mix(in srgb,var(--bar-text,#111827) 38%,transparent);margin-top:6px;}
+.diary-text{font-size:12px;line-height:1.85;color:color-mix(in srgb,var(--bar-text,#111827) 64%,transparent);white-space:pre-wrap;margin-top:9px;max-height:132px;overflow:auto;-webkit-overflow-scrolling:touch;}
+.diary-menu-btn{border:0;border-radius:50%;width:32px;height:32px;background:rgba(255,255,255,.66);font-weight:1000;color:color-mix(in srgb,var(--bar-text,#111827) 54%,transparent);flex:0 0 auto;}
+.diary-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.diary-pill{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;background:rgba(255,255,255,.52);border:1px solid rgba(90,70,45,.05);font-size:9px;font-weight:1000;color:color-mix(in srgb,var(--bar-text,#111827) 48%,transparent);}
+.diary-pill.role{background:color-mix(in srgb,var(--accent,#111827) 13%,rgba(255,255,255,.72));color:color-mix(in srgb,var(--accent,#111827) 72%,var(--bar-text,#111827));}
+.diary-pill.lock{background:rgba(25,25,25,.08);color:color-mix(in srgb,var(--bar-text,#111827) 62%,transparent);}
+.diary-comments{margin-top:10px;display:grid;gap:7px;}
+.diary-comment{border-radius:16px;background:rgba(255,255,255,.52);padding:8px 10px;font-size:11px;line-height:1.55;color:color-mix(in srgb,var(--bar-text,#111827) 62%,transparent);}
+.diary-comment b{font-size:10px;color:var(--bar-text,#111827);}
+.diary-empty-filter,.diary-notice{border-radius:22px;padding:18px;background:rgba(255,255,255,.56);font-size:12px;line-height:1.7;color:color-mix(in srgb,var(--bar-text,#111827) 54%,transparent);margin:10px 0;}
+.diary-notice b{display:block;font-size:15px;color:var(--bar-text,#111827);margin-bottom:4px;}
+.diary-month{margin:16px 3px 8px;font-size:12px;font-weight:1000;color:color-mix(in srgb,var(--bar-text,#111827) 52%,transparent);letter-spacing:.02em;}
+.diary-calendar-head{display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px;}
+.diary-calendar-title{font-size:21px;font-weight:1000;letter-spacing:-.6px;}
+.diary-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;border-radius:26px;background:rgba(255,255,255,.46);padding:12px;}
+.diary-week{font-size:9px;text-align:center;font-weight:1000;color:color-mix(in srgb,var(--bar-text,#111827) 34%,transparent);padding-bottom:3px;}
+.diary-day{border:0;border-radius:16px;min-height:44px;background:transparent;color:color-mix(in srgb,var(--bar-text,#111827) 70%,transparent);font-weight:900;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;}
+.diary-day.muted{opacity:.28;}
+.diary-day.active{background:#111;color:#fff;box-shadow:0 10px 24px rgba(0,0,0,.16);}
+.diary-day.today:not(.active){background:rgba(255,255,255,.76);}
+.diary-dots{display:flex;gap:2px;min-height:4px;}
+.diary-dots i{width:4px;height:4px;border-radius:50%;background:#d0b07c;}
+.diary-dots i.role{background:color-mix(in srgb,var(--accent,#111827) 55%,#d8a9c2);}
+.diary-dots i.lock{background:#999;}
 .diary-memory-source{margin:10px 0 12px;border-radius:18px;background:rgba(255,255,255,.56);border:1px solid rgba(90,70,45,.08);padding:10px 12px;font-size:11px;line-height:1.55;color:color-mix(in srgb,var(--bar-text,#111827) 54%,transparent);}
 .diary-memory-source b{display:block;color:var(--bar-text,#111827);font-size:12px;margin-bottom:3px;}
 .memory-source-line{margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
 .memory-source-chip{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;background:rgba(255,255,255,.54);border:1px solid rgba(90,70,45,.08);font-size:9px;font-weight:950;color:color-mix(in srgb,var(--bar-text,#111827) 46%,transparent);}
 .memory-source-chip button{border:0;background:transparent;color:inherit;font:inherit;font-weight:950;padding:0;margin-left:4px;}
-.diary-link-modal .diary-edit-sub{margin-bottom:10px;}
-.quick-modal.diary-quick-modal{
-  max-width:334px!important;
-  width:min(334px,calc(100vw - 40px))!important;
-  max-height:min(620px,calc(var(--visual-vh,100vh) - 44px))!important;
-  overflow:hidden!important;
-  display:flex!important;
-  flex-direction:column!important;
-  border-radius:24px!important;
-  padding:14px!important;
-  background:#fff!important;
-  background:linear-gradient(160deg,#fff 0%,#fbf7fa 100%)!important;
-  border:1px solid rgba(90,70,45,.10)!important;
-  box-shadow:0 20px 58px rgba(40,30,20,.24)!important;
-}
+.quick-modal.diary-quick-modal{max-width:334px!important;width:min(334px,calc(100vw - 40px))!important;max-height:min(640px,calc(var(--visual-vh,100vh) - 44px))!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;border-radius:24px!important;padding:14px!important;background:linear-gradient(160deg,#fff 0%,#fbf7fa 100%)!important;border:1px solid rgba(90,70,45,.10)!important;box-shadow:0 20px 58px rgba(40,30,20,.24)!important;}
 .diary-edit-title{font-size:18px;font-weight:1000;letter-spacing:-.35px;color:var(--bar-text,#1f1d1a);margin-bottom:3px;line-height:1.22;}
 .diary-edit-sub{font-size:10.5px;line-height:1.45;color:color-mix(in srgb,var(--bar-text,#111827) 42%,transparent);font-weight:650;margin-bottom:8px;}
-.diary-edit-modal{
-  display:flex;
-  flex-direction:column;
-  min-height:0;
-  max-height:100%;
-  overflow:auto;
-  overflow-x:hidden;
-  -webkit-overflow-scrolling:touch;
-  padding-right:2px;
-}
+.diary-edit-modal{display:flex;flex-direction:column;min-height:0;max-height:100%;overflow:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-right:2px;}
 .diary-edit-modal label{margin:8px 0 5px!important;font-size:10.5px!important;color:color-mix(in srgb,var(--bar-text,#111827) 50%,transparent)!important;font-weight:950!important;}
-.diary-edit-modal input,.diary-edit-modal textarea{border-radius:16px!important;border:1px solid rgba(90,70,45,.10)!important;background:rgba(255,255,255,.96)!important;color:var(--bar-text,#111827)!important;font-size:16px!important;line-height:1.45!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.55);}
-.diary-edit-modal input{padding:9px 11px!important;min-height:40px!important;}
+.diary-edit-modal input,.diary-edit-modal textarea,.diary-edit-modal select{border-radius:16px!important;border:1px solid rgba(90,70,45,.10)!important;background:rgba(255,255,255,.96)!important;color:var(--bar-text,#111827)!important;font-size:16px!important;line-height:1.45!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.55);}
+.diary-edit-modal input,.diary-edit-modal select{padding:9px 11px!important;min-height:40px!important;}
 .diary-edit-modal textarea{min-height:128px!important;max-height:min(32vh,230px)!important;padding:10px 11px!important;overflow:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch;resize:vertical;flex:0 0 auto!important;}
 .diary-edit-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;position:sticky!important;bottom:0!important;background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.98) 30%)!important;padding-top:10px!important;z-index:2;}
 .diary-edit-actions .btn{min-width:66px;border-radius:999px!important;padding:8px 12px!important;font-size:12px!important;}
 .diary-edit-actions .btn.primary{background:color-mix(in srgb,var(--accent,#111827) 36%,#d8a9c2)!important;color:#fff!important;}
+.diary-menu-list{display:grid;gap:8px;margin-top:12px;}
+.diary-menu-list button{border:0;border-radius:16px;padding:11px 12px;background:rgba(0,0,0,.045);text-align:left;font-size:13px;font-weight:950;color:#333;}
+.diary-menu-list button.danger{background:#ffe8e6;color:#b42318;}
+.diary-menu-list button.primary{background:var(--accent,#111827);color:#fff;}
 .quick-modal-mask.diary-modal-mask{align-items:center!important;justify-content:center!important;padding:18px!important;overflow:hidden!important;-webkit-overflow-scrolling:touch;}
 body.keyboard-open .quick-modal-mask.diary-modal-mask{align-items:flex-start!important;overflow:auto!important;padding-top:calc(env(safe-area-inset-top) + 12px)!important;padding-bottom:calc(var(--keyboard-height,0px) + env(safe-area-inset-bottom) + 12px)!important;}
 body.keyboard-open .quick-modal.diary-quick-modal,body.keyboard-open .quick-modal.mind-quick-modal{max-height:calc(var(--visual-vh,100vh) - 28px)!important;}
-
 .diary-privacy{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 8px;padding:10px 12px;border-radius:18px;background:rgba(255,255,255,.56);border:1px solid rgba(90,70,45,.06);}
 .diary-privacy-text{font-size:11px;line-height:1.45;color:color-mix(in srgb,var(--bar-text,#111827) 54%,transparent);font-weight:800;}
 .diary-privacy-text b{display:block;font-size:12px;color:var(--bar-text,#111827);margin-bottom:2px;}
@@ -4362,7 +4356,7 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 
 
     <section class="app-screen diary-app" id="diaryApp">
-      <div class="header diary-header"><button class="icon-btn" data-action="go-home">‹</button><div><div class="header-title">Diary</div><div class="mind-header-sub">私密原文</div></div><button class="icon-btn" data-action="open-diary-entry">＋</button></div>
+      <div class="header diary-header"><button class="icon-btn" data-action="go-home">‹</button><div><div class="header-title">日记</div><div class="mind-header-sub">可见桥 / 封存</div></div><button class="icon-btn" data-action="open-diary-entry">＋</button></div>
       <div class="content diary-list" id="diaryList"></div>
     </section>
 
@@ -5241,6 +5235,11 @@ async function init(){
   updateClock();
   setInterval(updateClock, 30000);
   ProactiveMsg.reset();
+  if(typeof checkDiaryUnlocks==="function"){
+    checkDiaryUnlocks({silent:false});
+    setInterval(()=>checkDiaryUnlocks({silent:false}), 60000);
+    document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) checkDiaryUnlocks({silent:false}); });
+  }
   try{ DeskPet.initDrag(); DeskPet.render(); }catch(e){ console.warn("桌宠初始化失败", e); }
   checkBackupReminder();
   // 恢复自定义字体
@@ -5484,6 +5483,17 @@ function bindEvents(){
     if(action==="save-memory-entry") saveMemoryEntryFromModal();
     if(action==="delete-memory") deleteMemory(id,btn.dataset.scope);
     if(action==="open-diary-entry") openDiaryEntryModal(id||"");
+    if(action==="set-diary-tab") setDiaryTab(id||"today");
+    if(action==="open-diary-menu") openDiaryMenu(id||"");
+    if(action==="diary-toggle-role-visible") toggleDiaryRoleVisible(id||"");
+    if(action==="open-diary-lock") openDiaryLockModal(id||"");
+    if(action==="save-diary-lock") saveDiaryLock(id||"");
+    if(action==="diary-clear-lock" || action==="diary-unlock-now") clearDiaryLock(id||"");
+    if(action==="diary-share-to-chat") diaryShareToChat(id||"");
+    if(action==="diary-role-comment") await diaryRoleComment(id||"");
+    if(action==="diary-prev-month") shiftDiaryMonth(-1);
+    if(action==="diary-next-month") shiftDiaryMonth(1);
+    if(action==="open-diary-day") openDiaryDay(id||"");
     if(action==="roll-dice") rollDice();
     if(action==="open-sticky-note") addStickyNote();
     if(action==="add-sticky-note") addStickyNote();
@@ -6105,6 +6115,13 @@ function openApp(id){
     Storage.set("lastWechatVisit", now);
     Miao.state.lastWechatVisitMs = last;
   }
+  if(id==="diary"){
+    ensureNotifyPermission();
+    if(typeof checkDiaryUnlocks==="function") checkDiaryUnlocks({silent:true});
+    Storage.set("diaryUnread", false);
+    const badge=document.getElementById("diaryBadge");
+    if(badge) badge.style.display="none";
+  }
   if(el){
     el.classList.add("active");
     Miao.state.currentApp=id;
@@ -6136,6 +6153,7 @@ function safeRun(label, fn){
 function renderAll(){
   safeRun("视觉渲染", applyVisuals);
   safeRun("主屏渲染", renderHome);
+  safeRun("日记红点渲染", renderDiaryBadge);
   safeRun("角色头部渲染", renderRoleHeader);
   safeRun("user资料渲染", renderUserProfile);
   safeRun("微信渲染", renderChat);
@@ -7133,7 +7151,9 @@ function renderAppIcon(app){
 }
 function appHtml(app){
   const a=iconForApp(app);
-  const badge=app.id==="wechat"?`<span id="wechatBadge" class="app-badge" style="display:none"></span>`:"";
+  let badge="";
+  if(app.id==="wechat") badge=`<span id="wechatBadge" class="app-badge" style="display:none"></span>`;
+  if(app.id==="diary") badge=`<span id="diaryBadge" class="app-badge" style="display:${Storage.get("diaryUnread",false)?"block":"none"}"></span>`;
   return `<div class="app-wrap" data-action="open-app" data-id="${app.id}" style="position:relative"><div class="app-icon">${renderAppIcon(a)}</div><div class="app-name">${escapeHtml(a.name)}</div>${badge}</div>`;
 }
 function renderRoleHeader(){
@@ -7452,27 +7472,39 @@ const ProactiveMsg = {
   }
 };
 
-// ===== 系统通知（iOS PWA 加到主屏后可推送到通知栏）=====
+// ===== 轻量通知出口：微信主动消息 / 日记解封共用 =====
 function ensureNotifyPermission(){
   if(!("Notification" in window)) return;
   if(Notification.permission==="default"){
     try{ Notification.requestPermission(); }catch(e){}
   }
 }
-function sendSystemNotification(title, body, icon){
+function sendSystemNotification(title, body, icon, options={}){
   try{
     if(!("Notification" in window)) return;
     if(Notification.permission!=="granted") return;
+    const app=options.app||"wechat";
     const n=new Notification(title, {
       body: String(body||"").replace(/\[[^\]]*\]/g,"").slice(0,80),
       icon: icon || "icon-192.png",
       badge: "icon-192.png",
-      tag: "miao-proactive"
+      tag: options.tag || "miao-notify"
     });
-    n.onclick=()=>{ try{ window.focus(); openApp("wechat"); const b=document.getElementById("wechatBadge"); if(b)b.style.display="none"; n.close(); }catch(e){} };
+    n.onclick=()=>{ try{ window.focus(); openApp(app); const b=document.getElementById(app+"Badge"); if(b)b.style.display="none"; n.close(); }catch(e){} };
   }catch(e){ console.warn("通知失败", e); }
 }
-
+function notifyMiao(options={}){
+  const app=options.app||"wechat";
+  const badgeId=(options.badge||app)+"Badge";
+  const badge=document.getElementById(badgeId);
+  if(badge) badge.style.display="block";
+  if(options.badge==="diary" || app==="diary") Storage.set("diaryUnread", true);
+  sendSystemNotification(options.title||"喵喵机", options.body||"有新的提醒", options.icon||"icon-192.png", {app,tag:options.tag});
+  showProactiveToast(options.title||"有新的提醒", ()=>{
+    openApp(app);
+    const b=document.getElementById(badgeId); if(b)b.style.display="none";
+  });
+}
 function showProactiveToast(msg, onClick){
   let el = document.getElementById("proactiveToast");
   if(!el){
@@ -10663,6 +10695,8 @@ function buildHiddenContextPrompt(){
   }
   const readingCtx = (typeof buildReadingContextPrompt === "function") ? buildReadingContextPrompt() : "";
   if(readingCtx) out.push(readingCtx);
+  const diaryCtx = (typeof buildDiaryContextPrompt === "function") ? buildDiaryContextPrompt("role") : "";
+  if(diaryCtx) out.push(diaryCtx);
   return out.join("\n\n");
 }
 
@@ -15615,15 +15649,7 @@ async function executeWechatTool(name, args){
     return {count:results.length,results};
   }
   if(name==="read_diary"){
-    if(typeof getDiaryToolAccess==="function" && !getDiaryToolAccess()) return {error:"user 已关闭日记工具读取。",count:0,results:[]};
-    const query=(args.query||"").toLowerCase();
-    const category=args.category||"";
-    const limit=parseInt(args.limit)||10;
-    let list=getDiaries();
-    if(category) list=list.filter(d=>d.category===category);
-    if(query) list=list.filter(d=>(d.title||"").toLowerCase().includes(query)||(d.content||"").toLowerCase().includes(query));
-    const results=list.slice(-limit).map(d=>({id:d.id,title:d.title,category:d.category,content:d.content,date:d.date||""}));
-    return {count:results.length,results};
+    return typeof diaryToolRead==="function" ? diaryToolRead(args||{}) : {error:"日记工具不可用",count:0,results:[]};
   }
   if(name==="device_status"){
     return BLE.getStatus();
@@ -15698,15 +15724,7 @@ async function executeClaudeTool(name, args){
     return {count:results.length,results};
   }
   if(name==="read_diary"){
-    if(typeof getDiaryToolAccess==="function" && !getDiaryToolAccess()) return {error:"user 已关闭日记工具读取。",count:0,results:[]};
-    const query=(args.query||"").toLowerCase();
-    const category=args.category||"";
-    const limit=parseInt(args.limit)||10;
-    let list=getDiaries();
-    if(category) list=list.filter(d=>d.category===category);
-    if(query) list=list.filter(d=>(d.title||"").toLowerCase().includes(query)||(d.content||"").toLowerCase().includes(query));
-    const results=list.slice(-limit).map(d=>({id:d.id,title:d.title,category:d.category,content:d.content,date:d.date||""}));
-    return {count:results.length,results};
+    return typeof diaryToolRead==="function" ? diaryToolRead(args||{}) : {error:"日记工具不可用",count:0,results:[]};
   }
   if(name==="device_status"){
     return BLE.getStatus();
@@ -17956,31 +17974,62 @@ function renderMemory(){
   renderMemoryDream();
 }
 
-/* ===== 日记 App ===== */
+/* ===== 日记 App：轻量可见桥 / 封存 / 本地通知 ===== */
+function diaryPad(n){ return String(n).padStart(2,"0"); }
+function diaryDateFromLocalDate(d){ return `${d.getFullYear()}-${diaryPad(d.getMonth()+1)}-${diaryPad(d.getDate())}`; }
+function diaryTodayISO(){ return diaryDateFromLocalDate(new Date()); }
+function diaryLocalInputValue(t){
+  t=Number(t||0); if(!t) return "";
+  const d=new Date(t);
+  return `${d.getFullYear()}-${diaryPad(d.getMonth()+1)}-${diaryPad(d.getDate())}T${diaryPad(d.getHours())}:${diaryPad(d.getMinutes())}`;
+}
+function diaryParseLocalInput(v){
+  if(!v) return 0;
+  const t=new Date(v).getTime();
+  return Number.isFinite(t)?t:0;
+}
+function diaryDateLabel(d){
+  if(d?.date) return String(d.date).replace(/\//g,"-");
+  const t=Number(d?.createdAt||d?.updatedAt||0);
+  if(t) return diaryDateFromLocalDate(new Date(t));
+  return diaryTodayISO();
+}
+function diaryMonthKeyFromDate(date){ return String(date||diaryTodayISO()).slice(0,7); }
+function normalizeDiaryEntry(d){
+  d=d&&typeof d==="object"?Object.assign({},d):{};
+  if(!d.id) d.id=uid("diary");
+  if(!d.category) d.category="日记";
+  if(!d.date) d.date=d.createdAt?diaryDateFromLocalDate(new Date(Number(d.createdAt))):diaryTodayISO();
+  if(!d.createdAt) d.createdAt=Date.now();
+  if(!d.visibility) d.visibility="private";
+  if(!Array.isArray(d.comments)) d.comments=[];
+  return d;
+}
 function getDiaries(){
-  return Storage.get("diaries", []);
+  return (Storage.get("diaries", [])||[]).map(normalizeDiaryEntry);
 }
 function saveDiaries(list){
-  Storage.set("diaries", list||[]);
+  Storage.set("diaries", (list||[]).map(normalizeDiaryEntry));
+  renderDiaryBadge();
 }
-function diaryDateKey(d){
-  const t=Number(d?.createdAt||d?.updatedAt||0);
-  if(t){ try{return new Date(t).toLocaleDateString("zh-CN",{year:"numeric",month:"2-digit"});}catch(e){} }
-  return String(d?.date||"未注明").slice(0,7)||"未注明";
+function diaryDateKey(d){ return diaryMonthKeyFromDate(diaryDateLabel(d)); }
+function diaryIsLocked(d,now=Date.now()){
+  const until=Number(d?.lockedUntil||0);
+  return !!(until && until>now);
+}
+function diaryUnlockText(d){
+  const until=Number(d?.lockedUntil||0);
+  if(!until) return "未封存";
+  try{return new Date(until).toLocaleString("zh-CN",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false});}catch(e){return "已设置";}
+}
+function diaryCompact(text,max=160){
+  const s=String(text||"").replace(/\s+/g," ").trim();
+  return s.length>max?s.slice(0,max)+"…":s;
 }
 function diaryMatchesSearch(d,q){
   if(!q) return true;
   const hay=[d.title,d.category,d.content,d.date].map(x=>String(x||"").toLowerCase()).join("\n");
   return hay.includes(String(q||"").toLowerCase());
-}
-function setDiaryFilter(cat){
-  Storage.set("diaryFilterCategory", cat||"all");
-  renderDiary();
-}
-function clearDiarySearch(){
-  Storage.set("diarySearchQuery","");
-  Storage.set("diaryFilterCategory","all");
-  renderDiary();
 }
 function getDiaryToolAccess(){ return Storage.get("diaryToolAccess", true)!==false; }
 function toggleDiaryToolAccess(){
@@ -17989,125 +18038,291 @@ function toggleDiaryToolAccess(){
   renderDiary();
   toast(next?"已允许工具按需读取日记":"已关闭日记工具读取");
 }
+function getDiaryTab(){ return Storage.get("diaryTab","today"); }
+function setDiaryTab(tab){
+  Storage.set("diaryTab", tab||"today");
+  renderDiary();
+}
+function setDiaryFilter(cat){
+  Storage.set("diaryFilterCategory", cat||"all");
+  Storage.set("diaryTab","today");
+  renderDiary();
+}
+function clearDiarySearch(){
+  Storage.set("diarySearchQuery","");
+  Storage.set("diaryFilterCategory","all");
+  renderDiary();
+}
+function renderDiaryBadge(){
+  const badge=document.getElementById("diaryBadge");
+  if(badge) badge.style.display=Storage.get("diaryUnread",false)?"block":"none";
+}
+function diaryTabsHtml(tab){
+  const tabs=[["today","今天"],["calendar","日历"],["locked","封存"],["me","我"]];
+  return `<div class="diary-tabs">${tabs.map(x=>`<button class="diary-tab ${tab===x[0]?"active":""}" data-action="set-diary-tab" data-id="${x[0]}">${x[1]}</button>`).join("")}</div>`;
+}
+function diaryHeroHtml(all,tab){
+  const totalChars=all.reduce((n,d)=>n+String(d.content||"").length,0);
+  const visibleCount=all.filter(d=>d.visibility==="role"&&!diaryIsLocked(d)).length;
+  const lockedCount=all.filter(d=>diaryIsLocked(d)).length;
+  const q=Storage.get("diarySearchQuery","");
+  return `<div class="diary-hero">
+    <div class="diary-kicker">Diary bridge</div>
+    <div class="diary-subline">默认只属于你。点“角色可见”后，角色只会收到轻量摘要；要读全文才会调用 read_diary。</div>
+    ${diaryTabsHtml(tab)}
+    <div class="diary-stat-row"><div class="diary-stat"><b>${all.length}</b><span>篇日记</span></div><div class="diary-stat"><b>${visibleCount}</b><span>角色可见</span></div><div class="diary-stat"><b>${lockedCount}</b><span>封存中</span></div></div>
+    ${tab==="today"?`<div class="diary-quick-row"><input class="diary-search" id="diarySearchInput" value="${escapeAttr(q)}" placeholder="搜日记、碎片、心情"><button class="diary-round-btn" data-action="clear-diary-search">×</button></div>`:""}
+  </div>`;
+}
+function diaryCardHtml(d,opts={}){
+  const now=Date.now();
+  const locked=diaryIsLocked(d,now);
+  const content=locked?`这篇日记封存到 ${diaryUnlockText(d)}。解开前，角色上下文和 read_diary 都不会拿到正文。`:String(d.content||"");
+  const wordline=locked?"已封存":`${String(d.content||"").length} 字 · ${d.updatedAt?"已修改":"原文"}${d.sourceDiaryId?" · 已沉淀":""}`;
+  const isToday=diaryDateLabel(d)===diaryTodayISO();
+  const comments=(d.comments||[]).slice(-2).map(c=>`<div class="diary-comment"><b>${escapeHtml(c.roleName||"TA")}</b> ${escapeHtml(c.content||"")}</div>`).join("");
+  const pills=[];
+  pills.push(`<span class="diary-pill">${escapeHtml(d.category||"日记")}</span>`);
+  pills.push(`<span class="diary-pill ${d.visibility==="role"?"role":""}">${d.visibility==="role"?"角色可见":"仅自己"}</span>`);
+  if(locked) pills.push(`<span class="diary-pill lock">${escapeHtml(diaryUnlockText(d))} 解封</span>`);
+  if((d.comments||[]).length) pills.push(`<span class="diary-pill">${(d.comments||[]).length} 条评论</span>`);
+  return `<div class="diary-card ${isToday?"diary-today":""} ${locked?"locked":""}">
+    <div class="diary-card-top"><div><div class="diary-date">${escapeHtml(diaryDateLabel(d))}</div><div class="diary-title">${escapeHtml(d.title||"无标题")}</div><div class="diary-wordline">${escapeHtml(wordline)}</div></div><button class="diary-menu-btn" data-action="open-diary-menu" data-id="${escapeAttr(d.id||"")}">⋯</button></div>
+    <div class="diary-text">${escapeHtml(content||"只有一点很淡的空白。")}</div>
+    <div class="diary-pills">${pills.join("")}</div>
+    ${comments?`<div class="diary-comments">${comments}</div>`:""}
+  </div>`;
+}
 function renderDiary(){
+  checkDiaryUnlocks({silent:true});
   const box=$("#diaryList");
   if(!box) return;
-  const all=getDiaries().slice().reverse();
+  const all=getDiaries().slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const tab=getDiaryTab();
   const q=Storage.get("diarySearchQuery","");
   const cat=Storage.get("diaryFilterCategory","all");
-  const latest=all[0];
-  const totalChars=all.reduce((n,d)=>n+String(d.content||"").length,0);
-  const cats=["all",...Array.from(new Set(all.map(d=>d.category||"日记")))];
-  const filtered=all.filter(d=>(cat==="all" || (d.category||"日记")===cat) && diaryMatchesSearch(d,q));
-  const todayKey=new Date().toLocaleDateString("zh-CN",{year:"numeric",month:"2-digit",day:"2-digit"}).replace(/\//g,"-");
-  function hero(){
-    return `<div class="diary-hero">
-      <div class="diary-kicker">Only you can write here.</div>
-      <div class="diary-subline">日记是私密原文。Mind 只拿它做倒影，不把全文混进记忆地层。</div>
-      <div class="diary-privacy ${getDiaryToolAccess()?"":"off"}"><div class="diary-privacy-text"><b>工具读取：${getDiaryToolAccess()?"允许":"关闭"}</b>${getDiaryToolAccess()?"角色/Claude 需要时才会用 read_diary。":"AI 工具不会读取日记原文。"}</div><button data-action="toggle-diary-tool-access">${getDiaryToolAccess()?"关闭":"允许"}</button></div>
-      <div class="diary-stat-row"><div class="diary-stat"><b>${all.length}</b><span>篇日记</span></div><div class="diary-stat"><b>${Math.round(totalChars/100)/10}k</b><span>字影子</span></div><div class="diary-stat"><b>${escapeHtml(latest?.date||"今天")}</b><span>最近</span></div></div>
-      <div class="diary-tools"><input class="diary-search" id="diarySearchInput" value="${escapeAttr(q)}" placeholder="搜日记、碎片、心情"><button data-action="clear-diary-search">清空</button><button data-action="export-diaries-txt">导出</button></div>
-      <div class="diary-chips">${cats.map(c=>`<button class="diary-chip ${cat===c?"active":""}" data-action="set-diary-filter" data-id="${escapeAttr(c)}">${c==="all"?"全部":escapeHtml(c)}</button>`).join("")}</div>
-    </div>`;
-  }
+  const today=diaryTodayISO();
   if(!all.length){
-    box.innerHTML=`<div class="diary-hero"><div class="diary-kicker">Only you can write here.</div><div class="diary-subline">日记是私密原文。角色不会默认看见，只有工具读取时才会触碰。</div><div class="diary-card"><div class="diary-date">还没有日记</div><div class="diary-title">今天可以先写一小段。</div><div class="diary-text">梦页会从这里借一点影子，但不会合并你的日记。</div><div class="diary-actions"><button data-action="open-diary-entry">新建日记</button></div></div></div>`;
+    box.innerHTML=diaryHeroHtml([],tab)+`<div class="diary-notice"><b>还没有日记</b>初始化的书屿和日记都不放任何示例。今天可以先写一小段，默认只有你自己能看。</div>`;
     return;
   }
-  if(!filtered.length){
-    box.innerHTML=hero()+`<div class="diary-empty-filter">没有找到这一层日记。可以换个关键词，或者清空筛选。</div>`;
+  if(tab==="me"){
+    box.innerHTML=diaryHeroHtml(all,tab)+renderDiaryMe(all);
+    return;
+  }
+  if(tab==="calendar"){
+    box.innerHTML=diaryHeroHtml(all,tab)+renderDiaryCalendar(all);
+    return;
+  }
+  if(tab==="locked"){
+    const locked=all.filter(d=>diaryIsLocked(d)).sort((a,b)=>(Number(a.lockedUntil||0)-Number(b.lockedUntil||0)));
+    box.innerHTML=diaryHeroHtml(all,tab)+(locked.length?locked.map(diaryCardHtml).join(""):`<div class="diary-notice"><b>没有封存中的日记</b>封存只是把某一页暂时收起来，到点后自动解开并提醒你。</div>`);
+    return;
+  }
+  const filtered=all.filter(d=>(cat==="all" || (d.category||"日记")===cat) && diaryMatchesSearch(d,q));
+  const todayList=filtered.filter(d=>diaryDateLabel(d)===today);
+  const rest=filtered.filter(d=>diaryDateLabel(d)!==today).slice(0,12);
+  const list=[...todayList,...rest];
+  if(!list.length){
+    box.innerHTML=diaryHeroHtml(all,tab)+`<div class="diary-empty-filter">没有找到这一层日记。可以换个关键词，或者清空搜索。</div>`;
     return;
   }
   let currentMonth="";
-  const cards=filtered.map(d=>{
+  const cards=list.map(d=>{
     const month=diaryDateKey(d);
-    const monthTitle=month!==currentMonth ? `<div class="diary-month">${escapeHtml(month)}</div>` : "";
+    const title=month!==currentMonth?`<div class="diary-month">${escapeHtml(month)}</div>`:"";
     currentMonth=month;
-    const content=String(d.content||"");
-    const wordline=`${content.length} 字 · ${d.updatedAt?"已修改":"原文"}${d.sourceDiaryId?" · 已沉淀":""}`;
-    const isToday=String(d.date||"").replace(/\//g,"-")===todayKey;
-    return `${monthTitle}<div class="diary-card ${isToday?"diary-today":""}">
-      <div class="diary-date">${escapeHtml(d.date||"")} · ${escapeHtml(d.category||"日记")}</div>
-      <div class="diary-title">${escapeHtml(d.title||"无标题")}</div>
-      <div class="diary-wordline">${escapeHtml(wordline)}</div>
-      <div class="diary-text">${escapeHtml(content)}</div>
-      <div class="diary-actions">
-        <button data-action="open-diary-entry" data-id="${escapeAttr(d.id||"")}">翻开</button>
-        <button class="primary-soft" data-action="diary-to-memory" data-id="${escapeAttr(d.id||"")}">沉淀成记忆</button>
-        <button data-action="copy-diary" data-id="${escapeAttr(d.id||"")}">复制</button>
-        <button data-action="download-diary" data-id="${escapeAttr(d.id||"")}">下载</button>
-        <button class="danger" data-action="delete-diary" data-id="${escapeAttr(d.id||"")}">删除</button>
-      </div>
-    </div>`;
+    return title+diaryCardHtml(d);
   }).join("");
-  box.innerHTML=hero()+cards;
+  box.innerHTML=diaryHeroHtml(all,tab)+cards;
+}
+function renderDiaryMe(all){
+  const q=Storage.get("diarySearchQuery","");
+  return `<div class="diary-privacy ${getDiaryToolAccess()?"":"off"}"><div class="diary-privacy-text"><b>工具读取：${getDiaryToolAccess()?"允许":"关闭"}</b>${getDiaryToolAccess()?"微信角色 / Claude 明确调用 read_diary 时会显示工具读取提示；封存中的日记仍不会给正文。":"AI 工具不会读取日记原文。"}</div><button data-action="toggle-diary-tool-access">${getDiaryToolAccess()?"关闭":"允许"}</button></div>
+  <div class="diary-notice"><b>角色可见桥</b>日常聊天只注入最近几条“角色可见 + 已解封”的摘要，最多约千字，不塞全文、不扫整库。工具 Claude 默认不吃这段摘要。</div>
+  <div class="diary-quick-row"><input class="diary-search" id="diarySearchInput" value="${escapeAttr(q)}" placeholder="搜索导出前可先筛一遍"><button class="diary-round-btn" data-action="export-diaries-txt">⇩</button></div>`;
+}
+function renderDiaryCalendar(all){
+  const month=Storage.get("diaryCalendarMonth", diaryTodayISO().slice(0,7));
+  const selected=Storage.get("diaryCalendarSelected", diaryTodayISO());
+  const [y,m]=month.split("-").map(Number);
+  const first=new Date(y,m-1,1), startDay=first.getDay(), days=new Date(y,m,0).getDate();
+  const prevDays=new Date(y,m-1,0).getDate();
+  const byDate={}; all.forEach(d=>{ const k=diaryDateLabel(d); (byDate[k]||(byDate[k]=[])).push(d); });
+  const cells=[];
+  for(let i=0;i<42;i++){
+    let day=i-startDay+1, date, muted=false, label=day;
+    if(day<1){ label=prevDays+day; const pd=new Date(y,m-2,label); date=diaryDateFromLocalDate(pd); muted=true; }
+    else if(day>days){ label=day-days; const nd=new Date(y,m,label); date=diaryDateFromLocalDate(nd); muted=true; }
+    else date=`${y}-${diaryPad(m)}-${diaryPad(day)}`;
+    const items=byDate[date]||[];
+    const dots=items.slice(0,3).map(d=>`<i class="${diaryIsLocked(d)?"lock":(d.visibility==="role"?"role":"")}"></i>`).join("");
+    cells.push(`<button class="diary-day ${muted?"muted":""} ${date===selected?"active":""} ${date===diaryTodayISO()?"today":""}" data-action="open-diary-day" data-id="${date}"><span>${label}</span><div class="diary-dots">${dots}</div></button>`);
+  }
+  const picked=(byDate[selected]||[]).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  return `<div class="diary-calendar-head"><button class="diary-round-btn" data-action="diary-prev-month">‹</button><div class="diary-calendar-title">${y} · ${diaryPad(m)}</div><button class="diary-round-btn" data-action="diary-next-month">›</button></div>
+    <div class="diary-calendar-grid">${["SUN","MON","TUE","WED","THU","FRI","SAT"].map(w=>`<div class="diary-week">${w}</div>`).join("")}${cells.join("")}</div>
+    <div class="diary-month">${escapeHtml(selected)}</div>${picked.length?picked.map(diaryCardHtml).join(""):`<div class="diary-notice">这一天没有日记。</div>`}`;
+}
+function shiftDiaryMonth(delta){
+  const month=Storage.get("diaryCalendarMonth", diaryTodayISO().slice(0,7));
+  const [y,m]=month.split("-").map(Number);
+  const d=new Date(y,m-1+delta,1);
+  Storage.set("diaryCalendarMonth", `${d.getFullYear()}-${diaryPad(d.getMonth()+1)}`);
+  renderDiary();
+}
+function openDiaryDay(date){
+  Storage.set("diaryCalendarSelected", date||diaryTodayISO());
+  Storage.set("diaryCalendarMonth", String(date||diaryTodayISO()).slice(0,7));
+  renderDiary();
 }
 function openDiaryEntryModal(id){
   let d=null;
   if(id) d=getDiaries().find(x=>x.id===id);
-  if(!d) d={id:"",title:"",category:"日记",content:"",date:""};
+  if(!d) d={id:"",title:"",category:"日记",content:"",date:"",visibility:"private",lockedUntil:0,comments:[]};
+  d=normalizeDiaryEntry(d);
   const isNew=!id;
   openQuickModal(`<div class="diary-edit-modal">
     <div class="diary-edit-title">${isNew?"写一页日记":"翻开日记"}</div>
-    <div class="diary-edit-sub">这里是原文，不是记忆摘要。写具体一点也没关系。</div>
+    <div class="diary-edit-sub">默认只给自己。需要角色自然知道时，再把可见性改成“角色可见”。</div>
     <label>标题</label><input id="diaryTitleInput" value="${escapeAttr(d.title||"")}" placeholder="今天发生了什么">
     <label>分类</label><input id="diaryCategoryInput" value="${escapeAttr(d.category||"日记")}" placeholder="例如：日记、想法、碎片">
+    <label>可见性</label><select id="diaryVisibilityInput"><option value="private" ${d.visibility!=="role"?"selected":""}>仅自己</option><option value="role" ${d.visibility==="role"?"selected":""}>角色可见摘要</option></select>
+    <label>封存到</label><input id="diaryLockedUntilInput" type="datetime-local" value="${escapeAttr(diaryLocalInputValue(d.lockedUntil))}">
     <label>内容</label><textarea id="diaryContentInput" rows="5" placeholder="写给自己看的话。">${escapeHtml(d.content||"")}</textarea>
-    <div class="diary-edit-actions">${!isNew?`<button class="btn" data-action="diary-to-memory" data-id="${escapeAttr(d.id||"")}">沉淀</button>`:""}<button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-diary-entry" data-id="${escapeAttr(d.id||"")}">保存</button></div>
+    <div class="diary-edit-actions">${!isNew?`<button class="btn" data-action="delete-diary" data-id="${escapeAttr(d.id||"")}">删除</button>`:""}<button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-diary-entry" data-id="${escapeAttr(d.id||"")}">保存</button></div>
   </div>`);
-  const modal=document.getElementById("quickModal");
-  const mask=document.getElementById("quickModalMask");
-  if(modal) modal.classList.add("diary-quick-modal");
-  if(mask) mask.classList.add("diary-modal-mask");
+  document.getElementById("quickModal")?.classList.add("diary-quick-modal");
+  document.getElementById("quickModalMask")?.classList.add("diary-modal-mask");
 }
 function saveDiaryEntryFromModal(id){
   const title=($("#diaryTitleInput")?.value||"").trim();
   const category=($("#diaryCategoryInput")?.value||"日记").trim();
   const content=($("#diaryContentInput")?.value||"").trim();
+  const visibility=($("#diaryVisibilityInput")?.value)||"private";
+  const lockedUntil=diaryParseLocalInput($("#diaryLockedUntilInput")?.value||"");
   if(!title && !content){ toast("请填写标题或内容"); return; }
   const list=getDiaries();
-  const now=new Date().toLocaleDateString("zh-CN",{year:"numeric",month:"2-digit",day:"2-digit"});
   if(id){
     const idx=list.findIndex(x=>x.id===id);
-    if(idx>=0) list[idx]={...list[idx],title,category,content,updatedAt:Date.now()};
+    if(idx>=0){
+      const old=list[idx];
+      list[idx]={...old,title,category,content,visibility,lockedUntil:lockedUntil||0,unlockNotifiedAt:lockedUntil?0:old.unlockNotifiedAt,updatedAt:Date.now()};
+    }
   } else {
-    list.push({id:uid("diary"),title,category,content,date:now,createdAt:Date.now()});
+    list.push({id:uid("diary"),title,category,content,visibility,lockedUntil:lockedUntil||0,unlockNotifiedAt:0,comments:[],date:diaryTodayISO(),createdAt:Date.now()});
   }
   saveDiaries(list);
   closeQuickModal();
   renderDiary();
   toast("已保存");
 }
-function deleteDiary(id){
-  if(!confirm("确定删除这条日记？")) return;
-  const list=getDiaries().filter(x=>x.id!==id);
-  saveDiaries(list);
+async function deleteDiary(id){
+  const d=getDiaries().find(x=>x.id===id);
+  if(!d){ toast("这篇日记已经不在了"); renderDiary(); return; }
+  if(!await askConfirm(`确定删除「${d.title||"无标题"}」？\n评论、封存提醒也会一起清掉。`)) return;
+  saveDiaries(getDiaries().filter(x=>x.id!==id));
+  closeQuickModal();
   renderDiary();
+  toast("日记已删除");
+}
+function openDiaryMenu(id){
+  const d=getDiaries().find(x=>x.id===id);
+  if(!d){ toast("找不到这篇日记"); return; }
+  const locked=diaryIsLocked(d);
+  openQuickModal(`<div class="diary-edit-modal"><div class="diary-edit-title">${escapeHtml(d.title||"无标题")}</div><div class="diary-edit-sub">${escapeHtml(diaryDateLabel(d))} · ${escapeHtml(d.category||"日记")}</div><div class="diary-menu-list">
+    <button data-action="open-diary-entry" data-id="${escapeAttr(id)}">翻开 / 编辑</button>
+    <button data-action="diary-toggle-role-visible" data-id="${escapeAttr(id)}">${d.visibility==="role"?"改回仅自己":"设为角色可见摘要"}</button>
+    <button data-action="open-diary-lock" data-id="${escapeAttr(id)}">${locked?"改解封时间":"封存到某个时间"}</button>
+    ${locked?`<button data-action="diary-unlock-now" data-id="${escapeAttr(id)}">现在解封</button>`:""}
+    ${!locked?`<button data-action="diary-share-to-chat" data-id="${escapeAttr(id)}">给 TA 看全文</button><button data-action="diary-role-comment" data-id="${escapeAttr(id)}">让 TA 评一句</button>`:""}
+    <button data-action="diary-to-memory" data-id="${escapeAttr(id)}">沉淀成记忆</button>
+    <button data-action="copy-diary" data-id="${escapeAttr(id)}">复制</button>
+    <button data-action="download-diary" data-id="${escapeAttr(id)}">下载</button>
+    <button class="danger" data-action="delete-diary" data-id="${escapeAttr(id)}">删除</button>
+  </div></div>`);
+  document.getElementById("quickModal")?.classList.add("diary-quick-modal");
+  document.getElementById("quickModalMask")?.classList.add("diary-modal-mask");
+}
+function toggleDiaryRoleVisible(id){
+  const list=getDiaries(); const d=list.find(x=>x.id===id);
+  if(!d){ toast("找不到这篇日记"); return; }
+  d.visibility=d.visibility==="role"?"private":"role";
+  d.updatedAt=Date.now();
+  saveDiaries(list); closeQuickModal(); renderDiary();
+  toast(d.visibility==="role"?"角色会知道这篇的轻量摘要":"已改回仅自己");
+}
+function openDiaryLockModal(id){
+  const d=getDiaries().find(x=>x.id===id); if(!d){ toast("找不到这篇日记"); return; }
+  openQuickModal(`<div class="diary-edit-modal"><div class="diary-edit-title">封存日记</div><div class="diary-edit-sub">封存期间，角色上下文和 read_diary 都不会拿到正文。</div><label>解封时间</label><input id="diaryLockUntilInput" type="datetime-local" value="${escapeAttr(diaryLocalInputValue(d.lockedUntil||Date.now()+86400000))}"><div class="diary-edit-actions"><button class="btn" data-action="diary-clear-lock" data-id="${escapeAttr(id)}">取消封存</button><button class="btn" data-action="close-quick-modal">返回</button><button class="btn primary" data-action="save-diary-lock" data-id="${escapeAttr(id)}">保存</button></div></div>`);
+  document.getElementById("quickModal")?.classList.add("diary-quick-modal");
+  document.getElementById("quickModalMask")?.classList.add("diary-modal-mask");
+}
+function saveDiaryLock(id){
+  const until=diaryParseLocalInput($("#diaryLockUntilInput")?.value||"");
+  if(!until || until<=Date.now()){ toast("请选择一个之后的时间"); return; }
+  const list=getDiaries(); const d=list.find(x=>x.id===id); if(!d) return;
+  d.lockedUntil=until; d.unlockNotifiedAt=0; d.updatedAt=Date.now();
+  saveDiaries(list); closeQuickModal(); renderDiary(); toast("已封存");
+}
+function clearDiaryLock(id,fromNotify=false){
+  const list=getDiaries(); const d=list.find(x=>x.id===id); if(!d) return;
+  d.lockedUntil=0; d.unlockNotifiedAt=fromNotify?Date.now():(d.unlockNotifiedAt||0); d.updatedAt=Date.now();
+  saveDiaries(list); closeQuickModal(); renderDiary(); toast("已解封");
+}
+function diaryShareToChat(id){
+  const d=getDiaries().find(x=>x.id===id); if(!d){ toast("找不到这篇日记"); return; }
+  if(diaryIsLocked(d)){ toast("这篇还在封存中"); return; }
+  const role=currentRole();
+  closeQuickModal(); openApp("wechat");
+  setTimeout(()=>{ const input=document.getElementById("msgInput"); if(input){ input.value=`我想给你看我今天写的一篇日记。\n\n标题：${d.title||"无标题"}\n日期：${diaryDateLabel(d)}\n\n${d.content||""}\n\n你可以只评一句，不用总结。`; input.focus(); toast(`已放到和${role.name||"TA"}的聊天框`); } },80);
+}
+async function diaryRoleComment(id){
+  const d=getDiaries().find(x=>x.id===id); if(!d){ toast("找不到这篇日记"); return; }
+  if(diaryIsLocked(d)){ toast("这篇还在封存中"); return; }
+  const api=Storage.get("api",{}); if(!api.apiUrl||!api.apiKey||!api.model){ toast("请先配置 API"); return; }
+  if(Miao.state.diaryCommentBusy){ toast("正在等 TA 写一句"); return; }
+  Miao.state.diaryCommentBusy=true; toast("正在等 TA 评一句…");
+  try{
+    const role=currentRole();
+    const prompt=`这是一篇 user 允许你看见的日记。请以 ${role.name||"当前角色"} 的口吻，在日记评论区留一句自然短评。不要总结报告，不要超过70字。\n\n标题：${d.title||"无标题"}\n日期：${diaryDateLabel(d)}\n正文：${diaryCompact(d.content,900)}`;
+    const raw=await callSimpleChatAPI(api,[{role:"system",content:buildSystemPrompt(role)},{role:"user",content:prompt}],.55);
+    const text=removeReasoningLeakText(stripThinkingBlocks(raw||"")).replace(/^["“]|["”]$/g,"").trim().slice(0,120);
+    const list=getDiaries(); const target=list.find(x=>x.id===id);
+    if(target){
+      if(!Array.isArray(target.comments)) target.comments=[];
+      target.comments.push({id:uid("dc"),roleId:role.id,roleName:role.name||"TA",content:text||"我看到了。",createdAt:Date.now()});
+      target.visibility="role";
+      saveDiaries(list);
+    }
+    closeQuickModal(); renderDiary(); toast("TA 留了一句");
+  }catch(e){ toast("评论失败："+(e.message||e)); }
+  finally{ Miao.state.diaryCommentBusy=false; }
 }
 async function copyDiary(id){
   const d=getDiaries().find(x=>x.id===id);
   if(!d){ toast("找不到这篇日记"); return; }
-  const text=`# ${d.title||"无标题"}\n${d.date||""} · ${d.category||"日记"}\n\n${d.content||""}`;
+  if(diaryIsLocked(d)){ toast("这篇还在封存中"); return; }
+  const text=`# ${d.title||"无标题"}\n${diaryDateLabel(d)} · ${d.category||"日记"}\n\n${d.content||""}`;
   try{ await navigator.clipboard.writeText(text); toast("日记已复制"); }
   catch(e){ toast("复制失败，可以打开后手动复制"); }
 }
-function diarySafeName(d){
-  return String((d?.date?d.date+"_":"")+(d?.title||"日记")).replace(/[\\/:*?"<>|]/g,"_").slice(0,80)||"日记";
-}
+function diarySafeName(d){ return String((diaryDateLabel(d)?diaryDateLabel(d)+"_":"")+(d?.title||"日记")).replace(/[\\/:*?"<>|]/g,"_").slice(0,80)||"日记"; }
 function downloadDiary(id){
   const d=getDiaries().find(x=>x.id===id);
   if(!d){ toast("找不到这篇日记"); return; }
-  const text=`# ${d.title||"无标题"}\n${d.date||""} · ${d.category||"日记"}\n\n${d.content||""}`;
+  if(diaryIsLocked(d)){ toast("这篇还在封存中"); return; }
+  const text=`# ${d.title||"无标题"}\n${diaryDateLabel(d)} · ${d.category||"日记"}\n\n${d.content||""}`;
   if(typeof downloadTextBlob==="function") downloadTextBlob(diarySafeName(d)+".txt", text, "text/plain;charset=utf-8");
   else { const b=new Blob([text],{type:"text/plain;charset=utf-8"}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=diarySafeName(d)+".txt"; a.click(); setTimeout(()=>URL.revokeObjectURL(u),100); }
   toast("日记已下载");
 }
 function exportDiariesTxt(){
-  const list=getDiaries();
-  if(!list.length){ toast("没有可导出的日记"); return; }
-  const text=list.slice().reverse().map(d=>`# ${d.title||"无标题"}\n${d.date||""} · ${d.category||"日记"}\n\n${d.content||""}`).join("\n\n---\n\n");
-  if(typeof downloadTextBlob==="function") downloadTextBlob("diary_all_"+(new Date()).toISOString().slice(0,10)+".txt", text, "text/plain;charset=utf-8");
-  toast("全部日记已导出");
+  const list=getDiaries().filter(d=>!diaryIsLocked(d));
+  if(!list.length){ toast("没有可导出的已解封日记"); return; }
+  const text=list.slice().reverse().map(d=>`# ${d.title||"无标题"}\n${diaryDateLabel(d)} · ${d.category||"日记"}\n可见性：${d.visibility==="role"?"角色可见摘要":"仅自己"}\n\n${d.content||""}`).join("\n\n---\n\n");
+  if(typeof downloadTextBlob==="function") downloadTextBlob("diary_all_"+diaryTodayISO()+".txt", text, "text/plain;charset=utf-8");
+  toast("已导出已解封日记");
 }
 function diaryMemorySummary(d){
   const raw=String(d?.content||"").replace(/\s+/g," ").trim();
@@ -18118,20 +18333,20 @@ function diaryMemorySummary(d){
 function diaryToMemoryDraft(id){
   const d=getDiaries().find(x=>x.id===id);
   if(!d){ toast("找不到这篇日记"); return; }
+  if(diaryIsLocked(d)){ toast("这篇还在封存中"); return; }
   const title=(d.title||"无标题日记").trim();
   const summary=diaryMemorySummary(d);
   openQuickModal(`<div class="mind-edit-modal diary-link-modal">
     <div class="mind-edit-title">沉淀成记忆</div>
     <div class="mind-edit-sub">只保存摘要和来源，不会把日记全文搬进记忆地层。</div>
-    <div class="diary-memory-source"><b>来自日记 · ${escapeHtml(d.date||"")}</b>${escapeHtml(title)}</div>
+    <div class="diary-memory-source"><b>来自日记 · ${escapeHtml(diaryDateLabel(d))}</b>${escapeHtml(title)}</div>
     <label>存入哪里</label><select id="diaryMemoryScopeInput"><option value="role">${escapeHtml(currentRole().name||"角色")} 的地层</option><option value="tool">工具 Claude 的地层</option></select>
     <label>这一层的名字</label><input id="diaryMemoryTitleInput" value="${escapeAttr("日记沉淀："+title)}">
     <label>类型</label><select id="diaryMemoryTypeInput"><option value="普通记忆">普通记忆</option><option value="重要记忆">重要记忆</option><option value="关系节点">关系节点</option><option value="偏好">偏好</option><option value="具体事件">具体事件</option></select>
     <label>内容</label><textarea id="diaryMemoryContentInput">${escapeHtml(summary)}</textarea>
     <div class="mind-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-diary-memory-draft" data-id="${escapeAttr(d.id||"")}">保存为记忆</button></div>
   </div>`);
-  const modal=document.getElementById("quickModal");
-  if(modal) modal.classList.add("mind-quick-modal");
+  document.getElementById("quickModal")?.classList.add("mind-quick-modal");
 }
 function saveDiaryMemoryDraftFromModal(diaryId){
   const d=getDiaries().find(x=>x.id===diaryId);
@@ -18142,26 +18357,59 @@ function saveDiaryMemoryDraftFromModal(diaryId){
   const type=($("#diaryMemoryTypeInput")?.value)||"普通记忆";
   const content=($("#diaryMemoryContentInput")?.value||"").trim();
   if(!content){ toast("记忆内容不能为空"); return; }
-  list.unshift({
-    id:uid("mem"),
-    title, type, content,
-    important:type==="重要记忆",
-    locked:false,
-    source:"日记沉淀",
-    sourceApp:"diary",
-    sourceDiaryId:diaryId,
-    sourceDiaryTitle:d?.title||"无标题日记",
-    sourceDiaryDate:d?.date||"",
-    createdAt:Date.now(),
-    time:nowTime()
-  });
+  list.unshift({id:uid("mem"),title,type,content,important:type==="重要记忆",locked:false,source:"日记沉淀",sourceApp:"diary",sourceDiaryId:diaryId,sourceDiaryTitle:d?.title||"无标题日记",sourceDiaryDate:d?diaryDateLabel(d):"",createdAt:Date.now(),time:nowTime()});
   isTool?saveToolMemories(list):saveMemories(list);
-  closeQuickModal();
-  renderMemory();
-  renderDiary();
-  toast("已沉淀成记忆");
+  closeQuickModal(); renderMemory(); renderDiary(); toast("已沉淀成记忆");
 }
-
+function buildDiaryContextPrompt(scope="role"){
+  try{
+    if(scope!=="role") return "";
+    const list=getDiaries().filter(d=>d.visibility==="role"&&!diaryIsLocked(d)).sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)).slice(0,5);
+    if(!list.length) return "";
+    const lines=["【隐藏上下文：日记可见桥】",`user 有 ${list.length} 篇最近的角色可见日记摘要（不是全文）。`];
+    list.forEach((d,i)=>lines.push(`${i+1}. ${diaryDateLabel(d)}｜${d.title||"无标题"}｜${d.category||"日记"}：${diaryCompact(d.content,180)}${(d.comments||[]).length?`（已有${(d.comments||[]).length}条角色评论）`:""}`));
+    lines.push("使用方式：只在话题自然相关时轻轻接住，不要突然审问日记；不要声称自己读过全文。若需要具体原文，请让 user 发来或主动调用 read_diary，工具调用会在界面可视化。");
+    return lines.join("\n");
+  }catch(e){ return ""; }
+}
+function diaryToolRead(args={}){
+  if(typeof getDiaryToolAccess==="function" && !getDiaryToolAccess()) return {error:"user 已关闭日记工具读取。",count:0,results:[]};
+  const query=String(args.query||"").toLowerCase();
+  const category=args.category||"";
+  const limit=Math.min(20,parseInt(args.limit)||10);
+  let list=getDiaries();
+  if(category) list=list.filter(d=>d.category===category);
+  if(query) list=list.filter(d=>{
+    const safeHay=[d.title,d.category,d.date].map(x=>String(x||"").toLowerCase()).join("\n");
+    const fullHay=safeHay+"\n"+String(d.content||"").toLowerCase();
+    return (diaryIsLocked(d)?safeHay:fullHay).includes(query);
+  });
+  const results=list.slice(-limit).map(d=>diaryIsLocked(d)?{id:d.id,title:d.title,category:d.category,date:diaryDateLabel(d),locked:true,unlock_at:d.lockedUntil,content:"[这篇日记仍在封存中，正文不可读取]"}:{id:d.id,title:d.title,category:d.category,date:diaryDateLabel(d),visibility:d.visibility||"private",content:d.content||""});
+  return {count:results.length,results};
+}
+function checkDiaryUnlocks(opts={}){
+  try{
+    const now=Date.now(); let changed=false; const unlocked=[];
+    const list=getDiaries();
+    list.forEach(d=>{
+      const until=Number(d.lockedUntil||0);
+      if(until && until<=now && !d.unlockNotifiedAt){
+        d.unlockNotifiedAt=now; d.updatedAt=now; changed=true; unlocked.push(d);
+      }
+    });
+    if(changed){
+      saveDiaries(list);
+      if(!opts.silent && Miao.state.currentApp!=="diary"){
+        Storage.set("diaryUnread", true); renderDiaryBadge();
+        const first=unlocked[0];
+        notifyMiao({app:"diary",badge:"diary",title:"一封日记解封了",body:first?.title?`「${first.title}」现在能看了。`:"之前封存的日记现在能看了。",tag:"miao-diary-unlock"});
+      }else if(!opts.silent && Miao.state.currentApp==="diary"){
+        toast("一篇封存日记已解开");
+      }
+    }
+    return unlocked;
+  }catch(e){ return []; }
+}
 function memoryAgeDays(m){
   const t=Number(m?.createdAt||m?.updatedAt||0);
   if(!t) return 0;
@@ -18309,7 +18557,7 @@ function dreamTitleFrom(text, fallback){
 function renderMemoryDream(){
   const box=$("#memoryDreamList");
   if(!box) return;
-  const diaries=(typeof getDiaries==="function"?getDiaries():[]).slice().reverse().slice(0,6).map(d=>({
+  const diaries=(typeof getDiaries==="function"?getDiaries():[]).filter(d=>!(typeof diaryIsLocked==="function"&&diaryIsLocked(d))).slice().reverse().slice(0,6).map(d=>({
     id:d.id, kind:"diary", source:"日记", title:d.title||dreamTitleFrom(d.content,"一小段梦"), text:d.content||"", date:d.date||"", time:d.createdAt||d.updatedAt||0
   }));
   const roleMem=(getMemories()||[]).slice(0,8).map(m=>({id:m.id, kind:"memory", scope:"role", source:"记忆", title:m.title||"一层旧记忆", text:m.content||"", time:m.createdAt||m.updatedAt||0}));
