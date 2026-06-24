@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <title>o MiaoYUTwT o - ArtifactsStorageFIX</title>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
@@ -905,7 +905,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   background:#ffe8e6;
 }
 .quick-modal-mask{
-  position:absolute;
+  position:fixed;
   inset:0;
   z-index:735;
   display:none;
@@ -915,16 +915,29 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   backdrop-filter:blur(12px);
   -webkit-backdrop-filter:blur(12px);
   padding:22px;
+  overscroll-behavior:contain;
 }
 .quick-modal-mask.show{display:flex}
 .quick-modal{
   width:100%;
   max-width:330px;
+  max-height:calc(var(--visual-vh,100vh) - 44px);
+  overflow:auto;
   background:#fff;
+  border:1px solid rgba(0,0,0,.06);
   border-radius:24px;
   padding:16px;
   box-shadow:0 18px 54px rgba(0,0,0,.25);
+  -webkit-overflow-scrolling:touch;
 }
+.quick-modal input,.quick-modal textarea,.quick-modal select{font-size:16px!important;}
+body.keyboard-open .quick-modal-mask.show{
+  align-items:flex-start;
+  padding-top:calc(env(safe-area-inset-top) + 12px);
+  padding-bottom:calc(var(--keyboard-height,0px) + env(safe-area-inset-bottom) + 12px);
+  overflow:auto;
+}
+body.keyboard-open .quick-modal{max-height:calc(var(--visual-vh,100vh) - 24px);}
 .quick-modal-title{
   font-weight:1000;
   font-size:18px;
@@ -2398,14 +2411,25 @@ body{font-size:calc(14px * var(--font-scale));}
 }
 .quick-modal.mind-quick-modal{
   max-width:360px!important;
-  max-height:78vh!important;
-  overflow:auto!important;
+  width:min(360px,calc(100vw - 36px))!important;
+  max-height:min(720px,calc(var(--visual-vh,100vh) - 36px))!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
   border-radius:28px!important;
   padding:18px!important;
-  background:color-mix(in srgb,var(--memory-bg,#fbfaf5) 74%,rgba(255,255,255,.96))!important;
-  border:1px solid rgba(90,70,45,.08);
+  background:#fff!important;
+  background:linear-gradient(160deg,#fff 0%,#fbf7fa 100%)!important;
+  border:1px solid rgba(90,70,45,.10)!important;
   box-shadow:0 24px 70px rgba(40,30,20,.26)!important;
+}
+.quick-modal.mind-quick-modal .mind-edit-modal,
+.quick-modal.mind-quick-modal .diary-link-modal{
+  min-height:0;
+  max-height:100%;
+  overflow:auto;
   -webkit-overflow-scrolling:touch;
+  padding-right:2px;
 }
 .mind-edit-modal .quick-modal-title,.mind-edit-title{
   font-size:20px!important;
@@ -2427,10 +2451,11 @@ body{font-size:calc(14px * var(--font-scale));}
   background:rgba(255,255,255,.66)!important;
   color:var(--bar-text,#111827)!important;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.55);
+  font-size:16px!important;
 }
 .mind-edit-modal textarea{
-  min-height:210px!important;
-  max-height:36vh!important;
+  min-height:180px!important;
+  max-height:34vh!important;
   overflow:auto!important;
   -webkit-overflow-scrolling:touch;
   resize:vertical;
@@ -2532,7 +2557,7 @@ body{font-size:calc(14px * var(--font-scale));}
 .diary-actions button.primary-soft{background:color-mix(in srgb,var(--accent,#111827) 13%,rgba(255,255,255,.62));color:color-mix(in srgb,var(--accent,#111827) 70%,var(--bar-text,#111827));}
 
 .diary-tools{display:flex;gap:8px;align-items:center;margin:12px 0 10px;}
-.diary-search{flex:1;border-radius:999px!important;border:1px solid rgba(90,70,45,.08)!important;background:rgba(255,255,255,.58)!important;padding:10px 13px!important;font-size:12px!important;color:var(--bar-text,#111827)!important;}
+.diary-search{flex:1;border-radius:999px!important;border:1px solid rgba(90,70,45,.08)!important;background:rgba(255,255,255,.58)!important;padding:10px 13px!important;font-size:16px!important;color:var(--bar-text,#111827)!important;}
 .diary-tools button{border:0;border-radius:999px;padding:10px 12px;background:rgba(255,255,255,.60);font-size:11px;font-weight:950;color:color-mix(in srgb,var(--bar-text,#111827) 56%,transparent);}
 .diary-chips{display:flex;gap:7px;overflow:auto;padding:2px 0 8px;scrollbar-width:none;}
 .diary-chips::-webkit-scrollbar{display:none;}
@@ -2549,34 +2574,45 @@ body{font-size:calc(14px * var(--font-scale));}
 .memory-source-chip{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;background:rgba(255,255,255,.54);border:1px solid rgba(90,70,45,.08);font-size:9px;font-weight:950;color:color-mix(in srgb,var(--bar-text,#111827) 46%,transparent);}
 .memory-source-chip button{border:0;background:transparent;color:inherit;font:inherit;font-weight:950;padding:0;margin-left:4px;}
 .diary-link-modal .diary-edit-sub{margin-bottom:10px;}
-.quick-modal.diary-quick-modal{max-width:360px!important;max-height:78vh!important;overflow:auto!important;border-radius:28px!important;padding:18px!important;background:color-mix(in srgb,var(--memory-bg,#fbfaf5) 74%,rgba(255,255,255,.96))!important;border:1px solid rgba(90,70,45,.08);box-shadow:0 24px 70px rgba(40,30,20,.26)!important;-webkit-overflow-scrolling:touch;}
-.diary-edit-title{font-size:20px;font-weight:1000;letter-spacing:-.4px;color:var(--bar-text,#1f1d1a);margin-bottom:4px;}
-.diary-edit-sub{font-size:11px;line-height:1.55;color:color-mix(in srgb,var(--bar-text,#111827) 42%,transparent);font-weight:650;margin-bottom:14px;}
-.diary-edit-modal label{margin:13px 0 7px!important;font-size:11px!important;color:color-mix(in srgb,var(--bar-text,#111827) 50%,transparent)!important;font-weight:950!important;}
-.diary-edit-modal input,.diary-edit-modal textarea{border-radius:18px!important;border:1px solid rgba(90,70,45,.10)!important;background:rgba(255,255,255,.66)!important;color:var(--bar-text,#111827)!important;}
-.diary-edit-modal textarea{min-height:240px!important;max-height:40vh!important;overflow:auto!important;-webkit-overflow-scrolling:touch;resize:vertical;}
-.diary-edit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+.quick-modal.diary-quick-modal{
+  max-width:360px!important;
+  width:min(360px,calc(100vw - 36px))!important;
+  max-height:min(720px,calc(var(--visual-vh,100vh) - 36px))!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+  border-radius:28px!important;
+  padding:16px!important;
+  background:#fff!important;
+  background:linear-gradient(160deg,#fff 0%,#fbf7fa 100%)!important;
+  border:1px solid rgba(90,70,45,.10)!important;
+  box-shadow:0 24px 70px rgba(40,30,20,.26)!important;
+}
+.diary-edit-title{font-size:20px;font-weight:1000;letter-spacing:-.4px;color:var(--bar-text,#1f1d1a);margin-bottom:4px;line-height:1.2;}
+.diary-edit-sub{font-size:11px;line-height:1.55;color:color-mix(in srgb,var(--bar-text,#111827) 42%,transparent);font-weight:650;margin-bottom:10px;}
+.diary-edit-modal{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  max-height:100%;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  padding-right:2px;
+}
+.diary-edit-modal label{margin:10px 0 6px!important;font-size:11px!important;color:color-mix(in srgb,var(--bar-text,#111827) 50%,transparent)!important;font-weight:950!important;}
+.diary-edit-modal input,.diary-edit-modal textarea{border-radius:18px!important;border:1px solid rgba(90,70,45,.10)!important;background:rgba(255,255,255,.96)!important;color:var(--bar-text,#111827)!important;font-size:16px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.55);}
+.diary-edit-modal input{padding:10px 12px!important;min-height:42px!important;}
+.diary-edit-modal textarea{min-height:188px!important;max-height:34vh!important;overflow:auto!important;-webkit-overflow-scrolling:touch;resize:vertical;line-height:1.55!important;flex:0 0 auto!important;}
+.diary-edit-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;position:sticky!important;bottom:0!important;background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,.98) 30%)!important;padding-top:12px!important;z-index:2;}
 .diary-edit-actions .btn{min-width:74px;border-radius:999px!important;padding:10px 14px!important;}
 .diary-edit-actions .btn.primary{background:color-mix(in srgb,var(--accent,#111827) 36%,#d8a9c2)!important;color:#fff!important;}
-
-/* Diary modal mobile safe fix */
-.quick-modal-mask.diary-modal-mask{align-items:flex-start!important;justify-content:center!important;padding-top:56px!important;padding-bottom:34px!important;overflow:auto!important;-webkit-overflow-scrolling:touch;}
-.quick-modal.diary-quick-modal{max-height:calc(100% - 92px)!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;padding:16px!important;}
-
-.quick-modal.diary-quick-modal{background:linear-gradient(160deg,rgba(255,255,255,.97),rgba(251,247,250,.98))!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border-color:color-mix(in srgb,var(--accent,#111827) 12%,rgba(90,70,45,.10))!important;}
-.diary-edit-modal input,.diary-edit-modal textarea{background:rgba(255,255,255,.94)!important;}
+.quick-modal-mask.diary-modal-mask{align-items:center!important;justify-content:center!important;padding:18px!important;overflow:hidden!important;-webkit-overflow-scrolling:touch;}
+body.keyboard-open .quick-modal-mask.diary-modal-mask{align-items:flex-start!important;overflow:auto!important;padding-top:calc(env(safe-area-inset-top) + 12px)!important;padding-bottom:calc(var(--keyboard-height,0px) + env(safe-area-inset-bottom) + 12px)!important;}
 .diary-privacy{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 8px;padding:10px 12px;border-radius:18px;background:rgba(255,255,255,.56);border:1px solid rgba(90,70,45,.06);}
 .diary-privacy-text{font-size:11px;line-height:1.45;color:color-mix(in srgb,var(--bar-text,#111827) 54%,transparent);font-weight:800;}
 .diary-privacy-text b{display:block;font-size:12px;color:var(--bar-text,#111827);margin-bottom:2px;}
 .diary-privacy button{border:0;border-radius:999px;padding:8px 11px;font-size:10px;font-weight:1000;background:color-mix(in srgb,var(--accent,#111827) 12%,rgba(255,255,255,.7));color:color-mix(in srgb,var(--accent,#111827) 70%,var(--bar-text,#111827));white-space:nowrap;}
 .diary-privacy.off button{background:rgba(255,255,255,.52);color:color-mix(in srgb,var(--bar-text,#111827) 44%,transparent);}
-.diary-edit-modal{display:flex;flex-direction:column;min-height:0;max-height:100%;}
-.diary-edit-modal .diary-edit-title{font-size:19px!important;line-height:1.2!important;}
-.diary-edit-modal .diary-edit-sub{margin-bottom:9px!important;}
-.diary-edit-modal label{margin:9px 0 6px!important;}
-.diary-edit-modal input{padding:9px 12px!important;min-height:40px!important;}
-.diary-edit-modal textarea{min-height:132px!important;max-height:28vh!important;flex:1 1 auto!important;}
-.diary-edit-actions{position:sticky!important;bottom:0!important;background:linear-gradient(180deg,rgba(255,255,255,0),color-mix(in srgb,var(--memory-bg,#fbfaf5) 72%,rgba(255,255,255,.98)) 30%)!important;padding-top:14px!important;margin-top:10px!important;z-index:2;}
 /* 多选操作栏 */
 #multiSelectBar.show{ display:flex !important; }
 #claudeMultiBar.show{ display:flex !important; }
@@ -3030,7 +3066,7 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 
 
 /* ===== iOS/PWA keyboard fit v1：用 visualViewport 修正键盘/候选栏遮挡输入框 ===== */
-:root{--app-vh:100vh;--vv-top:0px;--composer-kb-pad:0px;}
+:root{--app-vh:100vh;--layout-vh:100vh;--visual-vh:100vh;--vv-top:0px;--keyboard-height:0px;--composer-kb-pad:0px;}
 @supports (height:100dvh){:root{--app-vh:100dvh;}}
 body{height:var(--app-vh)!important;min-height:var(--app-vh)!important;}
 .phone-shell{height:var(--app-vh)!important;top:var(--vv-top)!important;}
@@ -3056,21 +3092,30 @@ body.keyboard-open .claude-composer textarea{max-height:86px!important;}
 
 
 /* ===== Memory 感受页 v1：关系天气 / 最近想起 ===== */
-.mind-mood-box{display:grid;gap:10px;padding:0 16px 10px;}
-.mind-mood-card{border-radius:24px;padding:14px;background:rgba(255,255,255,.58);border:1px solid rgba(90,70,45,.06);box-shadow:0 10px 28px rgba(70,50,30,.045);}
+.mind-mood-box{display:grid;gap:8px;padding:0 14px 8px;}
+.mind-mood-card{border-radius:22px;padding:12px;background:#fff;background:linear-gradient(160deg,rgba(255,255,255,.88),rgba(255,250,252,.82));border:1px solid rgba(90,70,45,.07);box-shadow:0 10px 28px rgba(70,50,30,.045);}
+.mind-mood-card.mind-mood-compact{padding:12px;}
 .mind-mood-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
-.mind-mood-title{font-size:16px;font-weight:1000;color:var(--bar-text,#111827);letter-spacing:-.3px;}
-.mind-mood-sub{font-size:11px;color:color-mix(in srgb,var(--bar-text,#111827) 42%,transparent);font-weight:750;margin-top:3px;line-height:1.5;}
-.mind-mood-state{border-radius:999px;padding:6px 10px;background:color-mix(in srgb,var(--accent,#111827) 12%,rgba(255,255,255,.7));font-size:11px;font-weight:1000;color:color-mix(in srgb,var(--accent,#111827) 76%,var(--bar-text,#111827));white-space:nowrap;}
-.mind-mood-weather{display:grid;gap:9px;margin-top:12px;}
-.mind-mood-row{display:grid;grid-template-columns:50px 1fr 34px;align-items:center;gap:8px;font-size:11px;font-weight:900;color:color-mix(in srgb,var(--bar-text,#111827) 48%,transparent);}
+.mind-mood-title{font-size:15px;font-weight:1000;color:var(--bar-text,#111827);letter-spacing:-.3px;}
+.mind-mood-sub{font-size:10px;color:color-mix(in srgb,var(--bar-text,#111827) 42%,transparent);font-weight:750;margin-top:2px;line-height:1.45;}
+.mind-mood-state{border-radius:999px;padding:5px 9px;background:color-mix(in srgb,var(--accent,#111827) 12%,rgba(255,255,255,.7));font-size:10px;font-weight:1000;color:color-mix(in srgb,var(--accent,#111827) 76%,var(--bar-text,#111827));white-space:nowrap;}
+.mind-mood-weather{display:grid;gap:7px;margin-top:10px;}
+.mind-mood-row{display:grid;grid-template-columns:44px 1fr 28px;align-items:center;gap:7px;font-size:10px;font-weight:900;color:color-mix(in srgb,var(--bar-text,#111827) 48%,transparent);}
 .mind-mood-bar{height:7px;border-radius:999px;background:rgba(0,0,0,.05);overflow:hidden;}
 .mind-mood-bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,rgba(190,130,150,.72),rgba(218,205,150,.62),rgba(130,170,178,.66));}
-.mind-recall-list{display:grid;gap:8px;margin-top:12px;}
-.mind-recall-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border-radius:16px;background:rgba(255,255,255,.42);padding:10px 11px;}
+.mind-recall-list{display:grid;gap:7px;margin-top:10px;}
+.mind-recall-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border-radius:15px;background:rgba(255,255,255,.55);padding:8px 10px;}
 .mind-recall-name{font-size:12px;font-weight:950;color:var(--bar-text,#111827);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .mind-recall-meta{font-size:10px;color:color-mix(in srgb,var(--bar-text,#111827) 38%,transparent);font-weight:800;margin-top:2px;}
 .mind-recall-item button{border:0;border-radius:999px;padding:6px 9px;background:rgba(255,255,255,.58);font-size:10px;font-weight:950;color:color-mix(in srgb,var(--bar-text,#111827) 55%,transparent);}
+.mind-recall-mini-title{margin-top:10px;font-size:10px;font-weight:1000;color:color-mix(in srgb,var(--bar-text,#111827) 45%,transparent);}
+.mind-relation-panel{padding:14px!important;margin-bottom:10px!important;}
+.mind-relation-panel .mind-card-title{font-size:18px!important;line-height:1.28!important;}
+.memory-relation-card.mind-relation-card{margin:0 14px 10px!important;padding:12px!important;border-radius:22px!important;}
+.memory-relation-card.mind-relation-card .btn-row{margin-top:8px!important;}
+.mind-relation-card .memory-relation-text{max-height:18vh!important;font-size:13px!important;line-height:1.65!important;}
+.mind-feeling-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin-top:8px;}
+.mind-feeling-grid .mind-feeling{margin:0;}
 
 
 /* ===== Polish batch v1: 梦页总览 / 临时空间管理 ===== */
@@ -3354,188 +3399,6 @@ body.keyboard-open .claude-composer textarea{max-height:86px!important;}
 .call-app{display:flex!important;flex-direction:column!important;min-height:0!important;background:linear-gradient(180deg,#fbfaf7,#f4f2ee)!important}.call-hero{flex:0 0 auto!important;margin:10px 14px 8px!important;padding:16px 14px!important;border-radius:30px!important;background:color-mix(in srgb,var(--bar-bg,#fff) 90%,transparent)!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)!important;box-shadow:0 14px 34px rgba(38,31,22,.06)!important;text-align:center}.call-avatar{width:68px!important;height:68px!important;border-radius:24px!important;margin:2px auto 8px!important;border:0!important;box-shadow:0 8px 18px rgba(38,31,22,.09)}.call-name{font-size:20px!important;font-weight:1000!important;margin-top:4px!important}.call-status{font-size:12px!important;color:color-mix(in srgb,var(--bar-text,#111827) 54%,transparent)!important;margin-top:2px!important}.call-timer{font-size:30px!important;line-height:1.05!important;font-weight:520!important;margin:8px 0 4px!important;font-variant-numeric:tabular-nums!important}.wave{height:22px!important;margin:3px 0!important}.wave span{width:4px!important;background:var(--accent,#111827)!important}.call-buttons{gap:12px!important;justify-content:center!important;margin-top:8px!important}.call-round{width:48px!important;height:48px!important;border-radius:18px!important;font-size:16px!important;font-weight:1000!important}.call-log{flex:1 1 auto!important;min-height:30vh!important;max-height:none!important;padding:10px 14px 8px!important;overflow:auto!important}.call-line{font-size:14px!important;line-height:1.7!important;padding:11px 12px!important;border-radius:18px!important;margin:8px 0!important;background:color-mix(in srgb,#fff 92%,var(--bar-bg,#fff))!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent)!important}.call-line .speaker{font-size:13px!important;font-weight:1000!important}.call-composer-wrap{flex:0 0 auto!important;margin:0 14px 10px!important;border-radius:28px!important;background:color-mix(in srgb,var(--bar-bg,#fff) 90%,transparent)!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)!important;box-shadow:0 -8px 24px rgba(38,31,22,.06)!important;position:relative!important;z-index:5!important}.call-toolbar{padding:9px 10px 0!important}.call-composer{padding:8px 10px 10px!important;display:flex!important;gap:8px!important;align-items:center!important}.call-composer textarea{min-height:40px!important;height:40px!important;max-height:78px!important;border-radius:18px!important;padding:9px 12px!important;font-size:15px!important;background:#fff!important}.call-send{width:42px!important;height:42px!important;border-radius:18px!important;font-size:0!important;display:flex!important;align-items:center!important;justify-content:center!important;background:var(--accent,#111827)!important;color:#fff!important}.call-send svg{width:19px;height:19px;stroke:currentColor}
 .moments-app{background:linear-gradient(180deg,#fbfaf7,#f2f0ea)!important}.moments-app .content{padding:0 14px 110px!important;background:transparent!important}.moments-cover{height:104px!important;border-radius:0 0 30px 30px!important;margin:0 -14px 42px!important;background:linear-gradient(135deg,color-mix(in srgb,var(--accent,#111827) 18%,#f8f6f1),color-mix(in srgb,var(--bar-bg,#fff) 92%,#fff))!important;box-shadow:0 12px 28px rgba(38,31,22,.065)!important}.moments-cover:after{left:18px!important;bottom:18px!important;font-size:26px!important;text-shadow:0 2px 10px rgba(0,0,0,.12)!important}.moments-cover-avatar{right:18px!important;bottom:-30px!important;width:64px!important;height:64px!important;border-radius:24px!important;border:4px solid #fff!important;box-shadow:0 10px 24px rgba(38,31,22,.12)}.moments-nav{margin:0 0 10px!important}.moments-nav-title{font-size:18px!important;font-weight:1000!important;letter-spacing:-.02em}.moments-feed-tip{background:color-mix(in srgb,#fff 88%,var(--bar-bg,#fff))!important;border-radius:18px!important}.moment-card,.moment-role-home-head,.auto-moment-card{background:color-mix(in srgb,#fff 92%,var(--bar-bg,#fff))!important;border-radius:24px!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent)!important;box-shadow:0 10px 24px rgba(38,31,22,.055)!important}.moment-card{padding:13px!important}.moment-content{font-size:calc(14px * var(--font-scale,1))!important;line-height:1.62!important}.moment-actions button,.moment-comment-input button{background:color-mix(in srgb,var(--bar-text,#111827) 7%,var(--bar-bg,#fff))!important;color:var(--bar-text,#111827)!important}.moment-actions button.active,.moment-comment-input button{background:var(--accent,#111827)!important;color:#fff!important}.moment-comment-area{background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff))!important;border-radius:18px!important}.moment-comment,.moment-reply{border-radius:14px!important}#autoMomentSettingsBox{display:none}#autoMomentSettingsBox.show{display:block}.auto-moment-card{margin:0 0 12px!important;padding:14px!important}.auto-moment-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.auto-moment-field{border-radius:18px!important;background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff))!important}.auto-moment-field input,.auto-moment-field select{min-height:44px!important;border-radius:16px!important}.auto-moment-card .btn-row{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}.auto-moment-card .btn{min-height:42px!important;border-radius:999px!important}
 @media(max-width:390px){.api-two-col,.api-sticky-actions,.api-primary-actions,.settings-action-grid,#themeApp .theme-editor-grid,.sticker-actions,.auto-moment-grid{grid-template-columns:1fr!important}#themeApp .theme-grid,.sticker-list{grid-template-columns:1fr!important}.quick-sticker-picker{grid-template-columns:repeat(2,minmax(0,1fr))!important}.eleme-search{grid-template-columns:1fr 62px 76px}.eleme-search .btn,.eleme-search .ai-generate-btn{font-size:12px;padding:0 6px}.settings-action-grid .btn{height:46px!important;min-height:46px!important}#themeApp .wall-grid{grid-template-columns:repeat(3,1fr)!important}}
-
-
-
-
-/* ===== WeChat + Diary + Mind compact v2（整理版）：微信顶栏/输入区瘦身，新增弹窗更轻，不再堆新补丁 ===== */
-:root{--keyboard-inset:0px;--vv-height:100vh;}
-html,body,.phone-shell,.screen,.app-screen{max-width:100%!important;overflow-x:hidden!important;}
-.diary-app,.memory-app{overflow:hidden!important;max-width:100%!important;}
-.diary-app .diary-header,.memory-app .mind-header{flex:0 0 auto!important;}
-.diary-list,.memory-list,.mind-view{min-width:0!important;max-width:100%!important;overscroll-behavior:contain;}
-.diary-hero,.diary-card,.diary-tools,.diary-chips,.mind-hero,.mind-panel,.mind-mood-card,.mind-relation-card,.memory-card.mind-note{min-width:0!important;max-width:100%!important;overflow-wrap:anywhere;word-break:break-word;}
-.diary-list{flex:1 1 auto!important;min-height:0!important;padding-bottom:calc(24px + env(safe-area-inset-bottom))!important;}
-.diary-tools{display:grid!important;grid-template-columns:minmax(0,1fr) auto auto!important;}
-.diary-search{min-width:0!important;}
-.diary-text{overflow-wrap:anywhere!important;word-break:break-word!important;}
-
-/* 微信：参考 Claude 的单层顶栏，去掉额外的应用内状态栏，把空间还给聊天记录 */
-.app-screen.wechat>.statusbar{display:none!important;}
-.app-screen.wechat{height:100%!important;background:var(--wechat-bg)!important;}
-.wechat-head{
-  margin:0!important;
-  padding:calc(env(safe-area-inset-top) + 8px) 12px 8px!important;
-  min-height:58px!important;
-  border-radius:0!important;
-  border-bottom:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent)!important;
-  box-shadow:0 6px 20px rgba(38,31,22,.045)!important;
-  background:color-mix(in srgb,var(--bar-bg,#fff) 88%,transparent)!important;
-  backdrop-filter:blur(var(--miao-blur,18px)) saturate(1.12)!important;
-  -webkit-backdrop-filter:blur(var(--miao-blur,18px)) saturate(1.12)!important;
-  flex:0 0 auto!important;
-}
-.wechat-head .profile{gap:8px!important;min-width:0!important;flex:1 1 auto!important;}
-.wechat-head .profile-avatar{width:36px!important;height:36px!important;border-radius:14px!important;box-shadow:0 5px 16px rgba(38,31,22,.08)!important;}
-.wechat-head .profile-title{font-size:16px!important;line-height:1.12!important;letter-spacing:-.2px!important;max-width:min(50vw,210px)!important;}
-.wechat-head .profile-sub{font-size:10px!important;line-height:1.2!important;margin-top:2px!important;gap:4px!important;}
-.wechat-head .online-dot{width:6px!important;height:6px!important;}
-.wechat-head .header-actions{gap:6px!important;flex:0 0 auto!important;}
-.wechat-head .icon-btn{width:34px!important;height:34px!important;font-size:18px!important;background:color-mix(in srgb,var(--accent,#111827) 6%,rgba(255,255,255,.60))!important;color:var(--bar-text,#111827)!important;}
-.wechat-head .icon-btn svg{width:17px!important;height:17px!important;display:block;}
-#stickyNoteBar{padding:6px 10px!important;font-size:12px!important;line-height:1.35!important;}
-#blockBar{padding:7px 12px!important;font-size:12px!important;}
-.chat{
-  padding:8px 12px 5px!important;
-  flex:1 1 auto!important;
-  min-height:0!important;
-  overflow-y:auto!important;
-  scroll-padding-bottom:10px!important;
-}
-.chat .date-chip,.chat .system-card{margin:6px auto!important;padding:5px 9px!important;font-size:10.5px!important;}
-.chat .msg{gap:7px!important;margin:7px 0!important;}
-.chat .avatar{width:31px!important;height:31px!important;margin-top:1px!important;}
-.chat .bubble-wrap{max-width:80%!important;}
-.chat .name-line{font-size:calc(9.5px * var(--font-scale,1))!important;margin:0 4px 2px!important;}
-.chat .bubble{padding:8px 10px!important;border-radius:16px!important;font-size:calc(13.5px * var(--font-scale,1))!important;line-height:1.45!important;box-shadow:0 3px 12px rgba(0,0,0,.045)!important;}
-.chat .msg.role .bubble{border-bottom-left-radius:5px!important;}
-.chat .msg.user .bubble{border-bottom-right-radius:5px!important;}
-.chat .time-line,.chat .read-line{font-size:calc(9.5px * var(--font-scale,1))!important;margin:2px 5px 0!important;}
-.wechat-real-image-card{max-width:200px!important;border-radius:16px!important;}
-.wechat-real-image-card img{max-height:220px!important;}
-.sticker-msg-img{max-width:112px!important;max-height:112px!important;}
-
-/* 微信底部：保留安全区，但把工具条和输入框压薄；键盘时不再额外撑高 */
-.composer-wrap#wechatComposer{
-  flex:0 0 auto!important;
-  padding-bottom:calc(env(safe-area-inset-bottom) + var(--composer-kb-pad))!important;
-  background:color-mix(in srgb,var(--bar-bg,#fff) 88%,transparent)!important;
-  border-top:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent)!important;
-  box-shadow:0 -6px 20px rgba(38,31,22,.045)!important;
-}
-#wechatComposer .toolbar{padding:6px 10px 3px!important;gap:6px!important;align-items:center!important;overflow-x:auto!important;overflow-y:hidden!important;}
-#wechatComposer .chip-btn{height:30px!important;min-height:30px!important;padding:0 10px!important;border-radius:999px!important;font-size:11px!important;font-weight:850!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;}
-#quoteBar{margin:0 10px 4px!important;padding:5px 8px!important;border-radius:12px!important;font-size:11px!important;}
-#wechatComposer .composer{padding:4px 10px 7px!important;gap:7px!important;align-items:center!important;}
-#wechatComposer .composer textarea{min-height:38px!important;height:38px;max-height:78px!important;border-radius:18px!important;padding:8px 12px!important;font-size:16px!important;line-height:1.35!important;background:rgba(255,255,255,.88)!important;}
-#wechatComposer .call-btn,#wechatComposer .send-btn{width:38px!important;height:38px!important;font-size:17px!important;box-shadow:0 6px 16px color-mix(in srgb,var(--accent,#111827) 18%,transparent)!important;}
-#wechatComposer .call-btn svg,#wechatComposer .send-btn svg{width:18px!important;height:18px!important;}
-#wechatComposer .input-clawd.clawd-live{width:58px!important;height:58px!important;top:-44px!important;transform:translateX(8px)!important;}
-#wechatComposer .input-clawd.clawd-live .clawd-svg-slot{width:58px!important;height:58px!important;}
-body.keyboard-open #wechatComposer .toolbar{padding-top:4px!important;padding-bottom:2px!important;}
-body.keyboard-open #wechatComposer .composer textarea{max-height:68px!important;}
-body.keyboard-open #wechatComposer{--composer-kb-pad:0px;}
-
-/* 日记 / 记忆弹窗：保持 16px 输入防止 iOS 自动放大，但视觉尺寸整体收紧 */
-#quickModal input,#quickModal select,#quickModal textarea{font-size:16px!important;-webkit-text-size-adjust:100%;}
-#quickModal input,#quickModal select{min-height:38px!important;height:38px!important;line-height:1.2!important;}
-.quick-modal-mask.diary-modal-mask,
-.quick-modal-mask.mind-modal-mask,
-#quickModalMask:has(.mind-quick-modal){
-  position:fixed!important;
-  inset:0!important;
-  align-items:center!important;
-  justify-content:center!important;
-  padding:calc(env(safe-area-inset-top) + 14px) 18px calc(var(--keyboard-inset,0px) + env(safe-area-inset-bottom) + 14px)!important;
-  overflow:hidden!important;
-  touch-action:none;
-}
-.quick-modal.diary-quick-modal,
-.quick-modal.mind-quick-modal{
-  width:min(calc(100vw - 44px),360px)!important;
-  max-height:calc(100vh - var(--keyboard-inset,0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px)!important;
-  overflow-y:auto!important;
-  overflow-x:hidden!important;
-  display:block!important;
-  padding:14px!important;
-  border-radius:26px!important;
-  background:linear-gradient(160deg,#fff,#fffafb)!important;
-  border:1px solid rgba(90,70,45,.10)!important;
-  box-shadow:0 20px 62px rgba(35,28,24,.26)!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-  -webkit-overflow-scrolling:touch!important;
-  overscroll-behavior:contain!important;
-}
-@supports (height:100dvh){.quick-modal.diary-quick-modal,.quick-modal.mind-quick-modal{max-height:calc(100dvh - var(--keyboard-inset,0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px)!important;}}
-.diary-edit-modal,.mind-edit-modal{display:block!important;min-height:0!important;max-height:none!important;overflow:visible!important;}
-.diary-edit-modal .diary-edit-title,.mind-edit-modal .quick-modal-title,.mind-edit-title{font-size:18px!important;line-height:1.18!important;margin:0 0 3px!important;letter-spacing:-.35px!important;}
-.diary-edit-modal .diary-edit-sub,.mind-edit-sub{font-size:10.5px!important;line-height:1.45!important;margin:0 0 9px!important;font-weight:700!important;}
-.diary-edit-modal label,.mind-edit-modal label{margin:8px 0 5px!important;font-size:10.5px!important;line-height:1.2!important;font-weight:950!important;color:color-mix(in srgb,var(--bar-text,#111827) 52%,transparent)!important;}
-.diary-edit-modal input,.diary-edit-modal textarea,.mind-edit-modal input,.mind-edit-modal select,.mind-edit-modal textarea{
-  border-radius:16px!important;
-  border:1px solid rgba(90,70,45,.11)!important;
-  background:#fff!important;
-  color:var(--bar-text,#111827)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.75)!important;
-}
-.diary-edit-modal input,.mind-edit-modal input,.mind-edit-modal select{padding:8px 11px!important;}
-.diary-edit-modal textarea,.mind-edit-modal textarea{
-  min-height:150px!important;
-  max-height:31vh!important;
-  padding:10px 11px!important;
-  line-height:1.45!important;
-  resize:vertical!important;
-  overflow:auto!important;
-  -webkit-overflow-scrolling:touch!important;
-}
-.mind-edit-modal textarea{min-height:142px!important;}
-body.keyboard-open .diary-edit-modal textarea,body.keyboard-open .mind-edit-modal textarea{min-height:96px!important;max-height:22vh!important;}
-.diary-edit-actions,.mind-edit-actions{
-  position:sticky!important;
-  bottom:0!important;
-  display:flex!important;
-  justify-content:flex-end!important;
-  gap:8px!important;
-  margin:10px -2px -2px!important;
-  padding:10px 2px 2px!important;
-  background:linear-gradient(180deg,rgba(255,255,255,0),#fff 38%)!important;
-  z-index:5!important;
-}
-.diary-edit-actions .btn,.mind-edit-actions .btn{min-width:68px!important;min-height:38px!important;padding:0 13px!important;border-radius:999px!important;font-size:14px!important;}
-.diary-memory-source{margin:8px 0 9px!important;padding:9px 10px!important;border-radius:15px!important;font-size:10.5px!important;line-height:1.45!important;}
-.diary-memory-source b{font-size:11px!important;margin-bottom:2px!important;}
-body.keyboard-open .quick-modal.diary-quick-modal,body.keyboard-open .quick-modal.mind-quick-modal{box-shadow:0 16px 50px rgba(40,30,20,.28)!important;}
-
-/* Mind 感受页：长文字在卡片内滚动，不再撑出一长页 */
-#memoryRelationView{padding:8px 12px 8px!important;overflow-y:auto!important;overflow-x:hidden!important;min-height:0!important;gap:8px!important;}
-#memoryRelationView .mind-panel{padding:12px!important;margin:0 0 8px!important;border-radius:20px!important;}
-#memoryRelationView .mind-card-kicker{margin-bottom:4px!important;font-size:10px!important;}
-#memoryRelationView .mind-card-title{font-size:16px!important;line-height:1.3!important;letter-spacing:-.35px!important;}
-#memoryRelationView .mind-card-desc{display:none!important;}
-#memoryRelationView .mind-scope-tabs{margin-top:10px!important;padding:4px!important;gap:5px!important;}
-#memoryRelationView .mind-scope-tabs button{padding:7px 8px!important;font-size:11px!important;}
-#relationMoodBox.mind-mood-box{padding:0!important;gap:8px!important;}
-#relationMoodBox .mind-mood-card{padding:11px!important;border-radius:19px!important;}
-#relationMoodBox .mind-mood-title{font-size:14px!important;line-height:1.25!important;}
-#relationMoodBox .mind-mood-sub{font-size:10px!important;line-height:1.35!important;margin-top:2px!important;}
-#relationMoodBox .mind-mood-state{padding:5px 8px!important;font-size:10px!important;}
-#relationMoodBox .mind-mood-weather{gap:6px!important;margin-top:8px!important;}
-#relationMoodBox .mind-mood-row{grid-template-columns:40px minmax(0,1fr) 24px!important;gap:6px!important;font-size:10px!important;}
-#relationMoodBox .mind-mood-bar{height:6px!important;}
-#relationMoodBox .mind-recall-list{gap:6px!important;margin-top:8px!important;}
-#relationMoodBox .mind-recall-item{padding:8px 9px!important;border-radius:14px!important;}
-#relationMoodBox .mind-recall-name{font-size:11px!important;}
-#relationMoodBox .mind-recall-meta{font-size:9px!important;}
-#relationMoodBox .mind-recall-item button{padding:5px 8px!important;font-size:9px!important;}
-#memoryRelationView .mind-relation-card{margin:0!important;padding:12px!important;border-radius:19px!important;}
-#memoryRelationView .mind-relation-card .memory-relation-title{font-size:11px!important;margin-bottom:6px!important;}
-#memoryRelationView .mind-relation-card .memory-relation-text{max-height:22vh!important;min-height:42px!important;overflow:auto!important;-webkit-overflow-scrolling:touch!important;font-size:12.5px!important;line-height:1.62!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;word-break:break-word!important;padding-right:4px!important;}
-#memoryRelationView .btn-row{margin-top:8px!important;}
-#memoryRelationView .btn-row .btn{padding:8px 11px!important;font-size:12px!important;}
-.memory-tabs.mind-bottom-nav{flex:0 0 auto!important;margin-bottom:calc(10px + env(safe-area-inset-bottom))!important;}
-.memory-list{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;padding-bottom:18px!important;}
-.memory-card.mind-note .memory-content{overflow-wrap:anywhere!important;word-break:break-word!important;}
 
 </style>
 <script>window.MIAO_BUILD="ArtifactStoreV1";</script>
@@ -5758,20 +5621,22 @@ function bindEvents(){
     const top=Math.max(0, Math.round(vv ? vv.offsetTop : 0));
     const layoutH=window.innerHeight || h;
     const keyboard=Math.max(0, Math.round(layoutH - h - top));
-    const focused=isEditable(document.activeElement);
-    const quickMask=document.getElementById("quickModalMask");
-    const modalCardOpen=!!(quickMask && quickMask.classList.contains("show") && (quickMask.classList.contains("diary-modal-mask") || quickMask.classList.contains("mind-modal-mask")));
-    const layoutBase=Math.max(320, Math.round(window.innerHeight || h));
-    root.style.setProperty("--keyboard-inset", (focused && keyboard>40 ? keyboard : 0)+"px");
-    root.style.setProperty("--vv-height", h+"px");
-    // 普通聊天继续使用 visualViewport 高度；日记/记忆编辑弹窗保持整屏高度，只用 --keyboard-inset 限制弹窗，避免页面被键盘压缩。
-    root.style.setProperty("--app-vh", (modalCardOpen ? layoutBase : h)+"px");
-    root.style.setProperty("--vv-top", modalCardOpen ? "0px" : top+"px");
-    root.style.setProperty("--composer-kb-pad", (!modalCardOpen && focused && keyboard>40 ? 6 : 0)+"px");
+    const active=document.activeElement;
+    const focused=isEditable(active);
+    const inComposer=!!(active && active.closest && active.closest(".composer-wrap,.claude-composer-wrap,.story-composer-wrap,.call-composer-wrap"));
+    const nextAppH=(focused && inComposer && keyboard>40) ? h : layoutH;
+    root.style.setProperty("--layout-vh", Math.max(320,Math.round(layoutH))+"px");
+    root.style.setProperty("--visual-vh", h+"px");
+    root.style.setProperty("--keyboard-height", keyboard+"px");
+    root.style.setProperty("--app-vh", Math.max(320,Math.round(nextAppH))+"px");
+    root.style.setProperty("--vv-top", (focused && inComposer && keyboard>40 ? top : 0)+"px");
+    root.style.setProperty("--composer-kb-pad", (focused && inComposer && keyboard>40 ? 10 : 0)+"px");
     document.body.classList.toggle("keyboard-open", focused && keyboard>40);
     if(focused){
-      setTimeout(scrollActiveChats, 30);
-      setTimeout(scrollActiveChats, 160);
+      if(inComposer){
+        setTimeout(scrollActiveChats, 30);
+        setTimeout(scrollActiveChats, 160);
+      }
       setTimeout(()=>{ try{ document.activeElement.scrollIntoView({block:"nearest", inline:"nearest"}); }catch(e){} },180);
     }
   }
@@ -13914,7 +13779,7 @@ function openQuickModal(html){
   const mask=$("#quickModalMask");
   const box=$("#quickModal");
   if(!mask || !box) throw new Error("quickModal DOM 不存在");
-  mask.classList.remove("diary-modal-mask","mind-modal-mask");
+  mask.classList.remove("diary-modal-mask");
   box.classList.remove("wide","mind-quick-modal","diary-quick-modal");
   box.innerHTML=html||"";
   mask.classList.add("show");
@@ -13922,7 +13787,7 @@ function openQuickModal(html){
 }
 window.closeQuickModal=function closeQuickModal(){
   try{ if(window.RealVoiceMessage && typeof window.RealVoiceMessage.reset==="function") window.RealVoiceMessage.reset(); }catch(e){}
-  $("#quickModalMask").classList.remove("show","diary-modal-mask","mind-modal-mask");
+  $("#quickModalMask").classList.remove("show","diary-modal-mask");
   $("#quickModal").classList.remove("wide","mind-quick-modal","diary-quick-modal");
   $("#quickModal").innerHTML="";
   if(typeof window.miaoUpdateKeyboardViewport==="function") setTimeout(window.miaoUpdateKeyboardViewport,0);
@@ -16699,7 +16564,6 @@ function openDiaryEntryModal(id){
   const mask=document.getElementById("quickModalMask");
   if(modal) modal.classList.add("diary-quick-modal");
   if(mask) mask.classList.add("diary-modal-mask");
-  if(typeof window.miaoUpdateKeyboardViewport==="function") setTimeout(window.miaoUpdateKeyboardViewport,0);
 }
 function saveDiaryEntryFromModal(id){
   const title=($("#diaryTitleInput")?.value||"").trim();
@@ -16772,10 +16636,7 @@ function diaryToMemoryDraft(id){
     <div class="mind-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-diary-memory-draft" data-id="${escapeAttr(d.id||"")}">保存为记忆</button></div>
   </div>`);
   const modal=document.getElementById("quickModal");
-  const mask=document.getElementById("quickModalMask");
   if(modal) modal.classList.add("mind-quick-modal");
-  if(mask) mask.classList.add("mind-modal-mask");
-  if(typeof window.miaoUpdateKeyboardViewport==="function") setTimeout(window.miaoUpdateKeyboardViewport,0);
 }
 function saveDiaryMemoryDraftFromModal(diaryId){
   const d=getDiaries().find(x=>x.id===diaryId);
@@ -16893,7 +16754,7 @@ function renderMemoryList(){
   const bars=Array.from({length:7},(_,i)=>`<i style="opacity:${i<heat?0.86:0.22}"></i>`).join("");
   const typeCount={}; all.forEach(m=>{ const k=m.type||"普通记忆"; typeCount[k]=(typeCount[k]||0)+1; });
   const maxType=Math.max(1,...Object.values(typeCount));
-  const feelingNames=["好奇","沉淀","热闹","痛","挂念","无聊"];
+  const feelingNames=["好奇","沉淀","挂念","安静"];
   const feelings=feelingNames.map((name,i)=>{
     const val=((all.length+i*2)%7+2)/9;
     return `<div class="mind-feeling"><span>${name}</span><b style="width:${Math.round(val*100)}%"></b></div>`;
@@ -16915,7 +16776,7 @@ function renderMemoryList(){
       ${hot?`<div class="memory-actions"><button data-action="open-memory-entry" data-id="${hot.id}" data-scope="${hot._scope}">翻开</button><button data-action="toggle-memory-lock" data-id="${hot.id}" data-scope="${hot._scope}">${hot.locked?"取消钉住":"钉住"}</button></div>`:""}
     </div>
     <div class="mind-section-title"><span>想要的方向</span><em>memory weather</em></div>
-    ${feelings}
+    <div class="mind-feeling-grid">${feelings}</div>
   </div>`;
 
   html+=`<div class="mind-section-title"><span>地层</span><em>最新的在上面</em></div>`;
@@ -17004,17 +16865,13 @@ function renderRelation(){
   const weather=[
     ["沉淀", Math.min(100, 24+mems.length*9)],
     ["挂念", Math.min(100, 18+important*18)],
-    ["热闹", Math.min(100, 12+recentCount*22)],
-    ["安静", Math.max(14, 82-recentCount*16)]
+    ["热闹", Math.min(100, 12+recentCount*22)]
   ];
   const recalls=mems.slice(0,2);
-  mood.innerHTML=`<div class="mind-mood-card">
-    <div class="mind-mood-head"><div><div class="mind-mood-title">此刻的感受天气</div><div class="mind-mood-sub">${escapeHtml(sub)} 这里不写入新数据，只读取已有关系和记忆。</div></div><span class="mind-mood-state">${escapeHtml(state)}</span></div>
+  mood.innerHTML=`<div class="mind-mood-card mind-mood-compact">
+    <div class="mind-mood-head"><div><div class="mind-mood-title">此刻的感受天气</div><div class="mind-mood-sub">${escapeHtml(sub)} 只读取已有关系和记忆。</div></div><span class="mind-mood-state">${escapeHtml(state)}</span></div>
     <div class="mind-mood-weather">${weather.map(w=>`<div class="mind-mood-row"><span>${escapeHtml(w[0])}</span><div class="mind-mood-bar"><i style="width:${Math.max(8,Math.min(100,w[1]))}%"></i></div><em>${Math.round(w[1])}</em></div>`).join("")}</div>
-  </div>
-  <div class="mind-mood-card">
-    <div class="mind-mood-title">最近想起</div>
-    <div class="mind-mood-sub">翻开过、刚写下、或者被钉住的东西会先浮出来。</div>
+    <div class="mind-recall-mini-title">最近想起</div>
     <div class="mind-recall-list">${recalls.length?recalls.map(m=>`<div class="mind-recall-item"><div><div class="mind-recall-name">${escapeHtml(m.title||"未命名记忆")}</div><div class="mind-recall-meta">${escapeHtml(m.type||"普通记忆")} · ${escapeHtml(memoryBlurLabel(m))}</div></div><button data-action="open-memory-entry" data-id="${escapeAttr(m.id)}" data-scope="${scope}">翻开</button></div>`).join(""):`<div class="mind-recall-item"><div><div class="mind-recall-name">还没有浮上来的记忆</div><div class="mind-recall-meta">去地层里翻开几条，或者新写一条。</div></div></div>`}</div>
   </div>`;
 }
@@ -17047,10 +16904,7 @@ function openMemoryEntryModal(id, scope){
     <div class="mind-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-memory-entry">保存</button></div>
   </div>`);
   const modal=document.getElementById("quickModal");
-  const mask=document.getElementById("quickModalMask");
   if(modal) modal.classList.add("mind-quick-modal");
-  if(mask) mask.classList.add("mind-modal-mask");
-  if(typeof window.miaoUpdateKeyboardViewport==="function") setTimeout(window.miaoUpdateKeyboardViewport,0);
 }
 function saveMemoryEntryFromModal(){
   const id=$("#memoryEditId")?.value;
@@ -17179,9 +17033,14 @@ function confirmMemoryCandidates(){
 }
 function openRelationModal(){
   const scope = Miao.state.relationScopeTool ? "tool" : "role";
-  openQuickModal(`<div class="quick-modal-title">编辑${scope==="tool"?"工具Claude":"角色"}关系状态</div>
+  openQuickModal(`<div class="mind-edit-modal">
+    <div class="mind-edit-title">编辑${scope==="tool"?"工具Claude":"角色"}关系状态</div>
+    <div class="mind-edit-sub">只写真正会影响相处温度的东西。</div>
     <label>关系状态</label><textarea id="relationInput">${escapeHtml(getRelationStateByScope(scope))}</textarea>
-    <div class="btn-row"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-relation">保存</button></div>`);
+    <div class="mind-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-relation">保存</button></div>
+  </div>`);
+  const modal=document.getElementById("quickModal");
+  if(modal) modal.classList.add("mind-quick-modal");
 }
 function saveRelationFromModal(){
   const scope = Miao.state.relationScopeTool ? "tool" : "role";
