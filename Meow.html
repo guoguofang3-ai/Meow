@@ -14329,8 +14329,11 @@ const MUSIC_CONFIG={
 };
 
 function normalizeAudioUrl(url){
-  const u=String(url||"").trim();
+  let u=String(url||"").trim();
   if(!u) return "";
+  // 网易云接口常返回 http://m*.music.126.net。页面在 https / PWA 中运行时，
+  // 直接播放 http 音频容易被浏览器拦截或自动升级失败；这里在进入播放器/入库前统一升为 https。
+  if(/^http:\/\/[^\/]*music\.126\.net\//i.test(u)) u=u.replace(/^http:/i,"https:");
   if(/^https?:\/\//i.test(u) || /^data:audio\//i.test(u) || /^blob:/i.test(u)) return u;
   return "";
 }
@@ -14391,6 +14394,7 @@ function buildNcmResult(song,u,kind,debugLog,title,artist){
   const coverRaw=song.album?.picUrl||song.al?.picUrl||song.album?.artist?.img1v1Url||song.artists?.[0]?.img1v1Url||song.ar?.[0]?.img1v1Url||"";
   const coverUrl=coverRaw?coverRaw.replace(/\?.*$/,"")+"?param=300y300":"";
   const durSec=(Number(u.time)||Number(song.duration)||Number(song.dt)||0)/1000;
+  const playableUrl=normalizeAudioUrl(u.url);
   return {
     title:song.name||title,
     artist:getSongArtists(song)||artist,
@@ -14398,8 +14402,8 @@ function buildNcmResult(song,u,kind,debugLog,title,artist){
     coverUrl,
     songId:song.id||u.id||"",
     duration:durSec?fmtTime(durSec):(kind==="full"?"":"0:30"),
-    audioUrl:kind==="full"?u.url:"",
-    previewUrl:kind==="preview"?u.url:"",
+    audioUrl:kind==="full"?playableUrl:"",
+    previewUrl:kind==="preview"?playableUrl:"",
     source:kind==="full"?"netease-full":"netease-preview",
     debugLog
   };
@@ -14470,29 +14474,51 @@ const MusicPlayer={
   seek(msgId,pct){if(this.currentMsgId===msgId&&this.audio&&this.audio.duration) this.audio.currentTime=this.audio.duration*pct;}
 };
 
+function mergeMusicInfoIntoMsg(m,info){
+  if(!m||!m.data||!info) return;
+  const fullUrl=normalizeAudioUrl(info.audioUrl);
+  const previewUrl=normalizeAudioUrl(info.previewUrl);
+  if(fullUrl) m.data.audioUrl=fullUrl;
+  if(previewUrl && !m.data.previewUrl) m.data.previewUrl=previewUrl;
+  if(info.coverUrl&&!m.data.coverUrl) m.data.coverUrl=info.coverUrl;
+  if(info.duration) m.data.duration=info.duration;
+  if(info.album&&!m.data.album) m.data.album=info.album;
+  if(info.songId&&!m.data.songId) m.data.songId=info.songId;
+  if(info.source) m.data.source=info.source;
+}
+
 function toggleMusicPlay(msgId){
   if(MusicPlayer.currentMsgId===msgId && MusicPlayer.audio && !MusicPlayer.audio.paused){MusicPlayer.pause();return;}
   const h=getHistory();
   const m=h.find(x=>x.id===msgId);
   if(!m||!m.data) return;
-  const audioUrl=normalizeAudioUrl(m.data.audioUrl)||normalizeAudioUrl(m.data.previewUrl);
-  if(audioUrl){MusicPlayer.play(msgId,audioUrl);return;}
-  toast("正在搜索歌曲…");
-  fetchMusicInfo(m.data.title,m.data.artist).then(info=>{
-    const playUrl=info.audioUrl||info.previewUrl;
-    if(!playUrl){toast("未找到可播放音源");return;}
-    Object.assign(m.data,{
-      audioUrl:info.audioUrl||m.data.audioUrl||"",
-      previewUrl:info.previewUrl||m.data.previewUrl||"",
-      coverUrl:info.coverUrl||m.data.coverUrl||"",
-      duration:info.duration||m.data.duration||"0:30",
-      album:info.album||m.data.album||"",
-      songId:info.songId||m.data.songId||"",
-      source:info.source||m.data.source||""
+  const fullUrl=normalizeAudioUrl(m.data.audioUrl);
+  if(fullUrl){MusicPlayer.play(msgId,fullUrl);return;}
+
+  // 根因：旧版本/临时失败时写入过 previewUrl 后，这里原来会直接播放试听，
+  // 导致即使网易云完整版接口已经恢复，卡片也永远不会再走完整音源搜索。
+  // 现在只要没有 audioUrl，就先重新查网易云；拿到完整版就写回 audioUrl，拿不到才播放试听兜底。
+  if(m.data.title){
+    toast(m.data.previewUrl?"正在尝试补全完整音源…":"正在搜索歌曲…");
+    fetchMusicInfo(m.data.title,m.data.artist).then(info=>{
+      mergeMusicInfoIntoMsg(m,info);
+      const nextFull=normalizeAudioUrl(m.data.audioUrl);
+      const nextPreview=normalizeAudioUrl(m.data.previewUrl);
+      const playUrl=nextFull||nextPreview;
+      if(!playUrl){toast("未找到可播放音源");return;}
+      saveHistory(h);renderChat();
+      setTimeout(()=>MusicPlayer.play(msgId,playUrl),100);
+    }).catch(e=>{
+      const fallback=normalizeAudioUrl(m.data.previewUrl);
+      if(fallback){ MusicPlayer.play(msgId,fallback); return; }
+      toast("搜索失败："+e.message);
     });
-    saveHistory(h);renderChat();
-    setTimeout(()=>MusicPlayer.play(msgId,playUrl),100);
-  }).catch(e=>toast("搜索失败："+e.message));
+    return;
+  }
+
+  const previewUrl=normalizeAudioUrl(m.data.previewUrl);
+  if(previewUrl){MusicPlayer.play(msgId,previewUrl);return;}
+  toast("未找到可播放音源");
 }
 window.toggleMusicPlay=toggleMusicPlay;
 
@@ -14638,13 +14664,7 @@ function hydrateAIMusicMsg(msgId,title,artist){
     const h=getHistory();
     const m=h.find(x=>x.id===msgId);
     if(!m||!m.data) return;
-    if(info.audioUrl&&!m.data.audioUrl) m.data.audioUrl=info.audioUrl;
-    if(info.previewUrl&&!m.data.previewUrl) m.data.previewUrl=info.previewUrl;
-    if(info.coverUrl&&!m.data.coverUrl) m.data.coverUrl=info.coverUrl;
-    if(info.duration) m.data.duration=info.duration;
-    if(info.album&&!m.data.album) m.data.album=info.album;
-    if(info.songId&&!m.data.songId) m.data.songId=info.songId;
-    if(info.source&&!m.data.source) m.data.source=info.source;
+    mergeMusicInfoIntoMsg(m,info);
     saveHistory(h);renderChat();
   }).catch(e=>console.warn("hydrateAIMusicMsg",e));
 }
