@@ -17250,24 +17250,37 @@ async function readingImportGutenberg(gutId){
     return;
   }
 
-  const proxyUrl = CORS_PROXY + encodeURIComponent(rawUrl);
   toast("正在通过代理加载正文…");
   btn.disabled = true;
   btn.textContent = "加载中…";
-  try{
-    const res = await fetch(proxyUrl);
-    if(!res.ok) throw new Error("HTTP "+res.status);
-    const text = await res.text();
-    const content = readingNormalizeText(text);
-    if(!content || content.length < 100) throw new Error("正文太短或为空");
-    createReadingBookFromContent({title, author, content, sourceName:"Gutenberg #"+gutId});
-    toast(`《${title}》已导入，开始共读`);
-  }catch(err){
-    console.error(err);
-    toast("加载失败：" + (err?.message||"网络错误") + "。代理可能暂时不可用，稍后再试。");
-    btn.disabled = false;
-    btn.textContent = "共读这本";
+
+  // try multiple URL strategies
+  const urls = [
+    rawUrl,
+    `https://www.gutenberg.org/cache/epub/${gutId}/pg${gutId}.txt`,
+    `https://www.gutenberg.org/files/${gutId}/${gutId}-0.txt`,
+  ];
+  // deduplicate
+  const uniqueUrls = [...new Set(urls)].filter(Boolean);
+
+  let lastErr = null;
+  for(const url of uniqueUrls){
+    try{
+      const proxyUrl = CORS_PROXY + url;
+      const res = await fetch(proxyUrl);
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      const text = await res.text();
+      const content = readingNormalizeText(text);
+      if(!content || content.length < 100) throw new Error("正文太短或为空");
+      createReadingBookFromContent({title, author, content, sourceName:"Gutenberg #"+gutId});
+      toast(`《${title}》已导入，开始共读`);
+      return;
+    }catch(err){ lastErr = err; console.warn("尝试URL失败:", url, err.message); }
   }
+  // all failed
+  toast("加载失败：" + (lastErr?.message||"网络错误") + "。代理可能暂时不可用，稍后再试。");
+  btn.disabled = false;
+  btn.textContent = "共读这本";
 }
 
 function renderReading(){
