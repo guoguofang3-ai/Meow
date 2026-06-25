@@ -1598,14 +1598,14 @@ body.keyboard-open .quick-modal{max-height:calc(var(--visual-vh,100vh) - 24px);}
   border:0;border-radius:999px;padding:7px 9px;font-size:11px;font-weight:900;background:color-mix(in srgb,var(--accent) 10%,#fff);color:var(--accent);
 }
 .claude-code-block{
-  margin:8px 0;border-radius:16px;overflow:hidden;border:1px solid #e6e7ed;background:#0f172a;color:#e5e7eb;white-space:normal;
+  margin:8px 0;border-radius:16px;overflow:hidden;border:1px solid #f0dde3;background:#fffdfb;color:#5b4a42;white-space:normal;
   max-width:260px;
 }
 .claude-code-head{
-  display:flex;justify-content:space-between;align-items:center;padding:7px 9px;background:rgba(255,255,255,.08);font-size:11px;color:#cbd5e1;font-weight:900;
+  display:flex;justify-content:space-between;align-items:center;padding:7px 9px;background:rgba(120,74,61,.06);font-size:11px;color:#8a6b73;font-weight:900;
 }
 .claude-code-block pre{
-  margin:0;padding:10px;max-height:220px;overflow:auto;font-size:11px;line-height:1.55;white-space:pre;
+  margin:0;padding:10px;max-height:220px;overflow:auto;font-size:11px;line-height:1.55;white-space:pre;color:#5b4a42;background:transparent;
 }
 .code-actions{display:flex;gap:6px;padding:0 9px 9px;flex-wrap:wrap}
 .claude-ops-card{
@@ -1873,7 +1873,7 @@ body.keyboard-open .quick-modal{max-height:calc(var(--visual-vh,100vh) - 24px);}
   color:var(--accent,#111827)!important;
   border:1px solid color-mix(in srgb,var(--accent,#111827) 8%,rgba(255,255,255,.5))!important;
 }
-.claude-code-block{border-radius:18px!important;border-color:rgba(255,255,255,.16)!important;box-shadow:0 8px 24px rgba(0,0,0,.08)!important;}
+.claude-code-block{border-radius:18px!important;border-color:var(--miao-official-line,#f0dde3)!important;box-shadow:0 8px 22px rgba(70,50,42,.06)!important;}
 .claude-msg{margin:9px 0!important}.claude-chat{padding-bottom:10px!important;}
 
 .claude-file-card-v2{cursor:pointer!important;white-space:normal!important;}
@@ -12314,7 +12314,7 @@ function normalizeClaudePlainOutputsToCode(text, history){
       const end=i+1<ms.length ? ms[i+1].index : s.length;
       const body=cleanPlainOutputBody(s.slice(start,end));
       const lang=claudePlainOutputLang(m[1]);
-      if(body) out += "```"+lang+"\n"+body+"\n```\n\n";
+      if(body){ const f=fenceFor(body); out += f+lang+"\n"+body+"\n"+f+"\n\n"; }
       last=end;
     }
     const tail=s.slice(last).trim();
@@ -12327,14 +12327,14 @@ function normalizeClaudePlainOutputsToCode(text, history){
   const wantsDoc=/\b(docx?|word|txt)\b|文档|文本文件|生成文件|做成文件|输出文件|保存成|写一?个文件|给我写|帮我写|写成|弄成文件/i.test(ask);
   if(wantsDoc && s.length>18){
     const lang=/\b(docx?|word)\b|文档/.test(ask) ? "doc" : "txt";
-    return "```"+lang+"\n"+cleanPlainOutputBody(s)+"\n```";
+    const b=cleanPlainOutputBody(s); const f=fenceFor(b); return f+lang+"\n"+b+"\n"+f;
   }
   // 3. 新增：模型输出看起来像独立文件（非对话性质）
   //    如果回复不像对话（没有称呼/语气词开头），且长度 > 50，且用户请求暗示要"作品"类输出
   const wantsCreation=/写[一个]*|生成|创作|编写|拟[一个]*|草拟|起草|做[一个]*|弄[一个]*|来[一个]*|出[一个]*|整[一个]*/.test(ask)
     && /信|文|稿|诗|词|歌|故事|剧本|通知|公告|简历|自荐|推荐信|邀请|贺|祝|说明书|方案|计划|总结|报告|日记|情书|小作文|惊喜|卡片|便签|留言/.test(ask);
   if(wantsCreation && s.length>50 && !/^(好的|当然|没问题|嗯|哈|可以|我来|以下|这是)/i.test(s)){
-    return "```txt\n"+cleanPlainOutputBody(s)+"\n```";
+    const b=cleanPlainOutputBody(s); const f=fenceFor(b); return f+"txt\n"+b+"\n"+f;
   }
   return s;
 }
@@ -12437,7 +12437,8 @@ async function callClaudeReply(){
         console.log("[ClaudeReply] 保存 artifact:", lang, "code长度:", code.length, "msgId:", mid);
         const savedKey=saveClaudeArtifactRecord({lang,code,title:guessClaudeOutputTitle(lang,code),msgId:mid,createdAt:now2+i,time:t,origin:"generation"});
         console.log("[ClaudeReply] artifact key:", savedKey||"(空/失败)");
-        h.push({id:mid,sender:"assistant",type:"text",content:"```"+lang+"\n"+code+"\n```",createdAt:now2+i,time:t});
+        const cf=fenceFor(code);
+        h.push({id:mid,sender:"assistant",type:"text",content:cf+lang+"\n"+code+"\n"+cf,createdAt:now2+i,time:t});
       } else if(b.content){
         h.push({id:uid("cmsg"),sender:"assistant",type:"text",content:b.content,createdAt:now2+i,time:nowTime()});
       }
@@ -12641,6 +12642,7 @@ function buildRoleClaudePrompt(policy={}){
 user 可能请求你写代码、处理文件、生成 HTML/SVG/React。你是否愿意帮忙，要符合当前角色人设和关系。
 如果愿意输出代码，请用 Markdown 代码块，例如 \`\`\`html、\`\`\`svg、\`\`\`jsx。
 回复时可以根据性格自由决定是否用双换行拆成多条气泡，但代码块必须保持完整不拆分。
+重要：当你要输出一份完整文件（md/markdown、txt、doc、html 等），且文件正文内部本身又包含 \`\`\` 代码块时，请用四个反引号 \`\`\`\` 作为最外层文件围栏，内部的代码继续用三个反引号。例如输出一份含代码示例的 md：先写一行 \`\`\`\`md，正文里照常用 \`\`\` 包代码，最后用一行 \`\`\`\` 收尾。这样文件不会被内部代码块截断。
 Claude App 没有微信状态栏；不要输出 [状态更新: ...]，也不要使用微信专用的转账、代付、引用、拉黑、开播等卡片指令，除非 user 正在明确要求你整理这些格式本身。
 
 【可用表情包】
@@ -12694,6 +12696,7 @@ function buildToolClaudePrompt(policy={}){
 如果输出可预览内容，请用 Markdown 代码块，例如 \`\`\`html、\`\`\`svg、\`\`\`jsx。
 回复时可以根据当前状态自由决定是否用双换行拆成多条气泡，但代码块必须保持完整不拆分。
 文档类输出（需求文档/方案说明/汇总/整理等）必须放在单个代码块内输出，禁止拆分成多个代码块。若 user 要 txt/doc 文件，请使用 \`\`\`txt 或 \`\`\`doc 代码块承载完整正文。
+重要：当文件正文内部本身又包含 \`\`\` 代码块时（例如一份 md 文档里举了代码例子），请用四个反引号 \`\`\`\` 作为最外层文件围栏，内部代码继续用三个反引号收尾用四个反引号。这样整份文件不会被内部代码块截断，也不会污染成多条气泡。
 如果你决定发表情包，输出指令：[发送表情包: 名称]
 ${buildMemoryPrompt(true)}
 ${(()=>{
@@ -12739,16 +12742,41 @@ function cleanAITextKeepCode(text){
     .replace(/[\[【]\s*状态更新[:：]\s*[^\]】]*[\]】]/g,"")
     .trim();
 }
+// 返回一段比 code 里最长连续反引号还长的围栏（至少 3 个），用于安全包裹含 ``` 的内容
+function fenceFor(code){
+  const s=String(code||"");
+  let max=0, mm; const re=/`+/g;
+  while((mm=re.exec(s))){ if(mm[0].length>max) max=mm[0].length; }
+  return "`".repeat(Math.max(3, max+1));
+}
+// 按 CommonMark 变长围栏规则解析：记住开围栏的反引号数量，只有 >= 同数量且独占一行的围栏才算结束。
+// 这样 4 反引号包裹的文件里即使含有 3 反引号代码块，也不会被内层围栏截断。
 function parseCodeBlocks(text){
   const s=String(text||"");
-  const re=/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g;
-  let out=[], last=0, m;
-  while((m=re.exec(s))){
-    if(m.index>last) out.push({kind:"text", text:s.slice(last,m.index)});
-    out.push({kind:"code", lang:(m[1]||"code").toLowerCase(), code:m[2]||""});
-    last=re.lastIndex;
+  const lines=s.split("\n");
+  const out=[]; let buf=[];
+  const flush=()=>{ if(buf.length){ out.push({kind:"text", text:buf.join("\n")}); buf=[]; } };
+  const openRe=/^(\s{0,3})(`{3,})([^`]*)$/;
+  let i=0;
+  while(i<lines.length){
+    const om=lines[i].match(openRe);
+    if(om){
+      const ticks=om[2].length;
+      const lang=((om[3]||"").trim().split(/\s+/)[0]||"code").toLowerCase();
+      const closeRe=new RegExp("^\\s{0,3}`{"+ticks+",}\\s*$");
+      const body=[]; let j=i+1, closed=false;
+      while(j<lines.length){
+        if(closeRe.test(lines[j])){ closed=true; break; }
+        body.push(lines[j]); j++;
+      }
+      flush();
+      out.push({kind:"code", lang:lang||"code", code:body.join("\n")});
+      i = closed ? j+1 : lines.length;
+      continue;
+    }
+    buf.push(lines[i]); i++;
   }
-  if(last<s.length) out.push({kind:"text", text:s.slice(last)});
+  flush();
   if(!out.length) return [{kind:"text", text:s}];
   return mergeAdjacentCodeBlocks(out);
 }

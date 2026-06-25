@@ -5,7 +5,8 @@
       "PowerShell(git add -A)",
       "Bash(gh auth *)",
       "Bash(python -c ' *)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(rm -f /tmp/test_parse.mjs; echo done)"
     ]
   }
 }
