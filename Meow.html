@@ -12317,11 +12317,19 @@ function stripClaudeSurfaceLeaks(text){
 }
 
 function claudePlainOutputLang(raw){
-  const x=String(raw||"").toLowerCase();
+  const x=String(raw||"").toLowerCase().trim();
   if(/^(?:docx?|word|文档)/i.test(x)) return "doc";
   if(/^(?:md|markdown)/i.test(x)) return "md";
   if(/^(?:json)/i.test(x)) return "json";
-  if(/^(?:html)/i.test(x)) return "html";
+  if(/^(?:html|网页|页面)/i.test(x)) return "html";
+  if(/^(?:svg)/i.test(x)) return "svg";
+  if(/^(?:css|style|样式)/i.test(x)) return "css";
+  if(/^(?:jsx|react)/i.test(x)) return "jsx";
+  if(/^(?:tsx)/i.test(x)) return "tsx";
+  if(/^(?:ts|typescript)/i.test(x)) return "ts";
+  if(/^(?:js|javascript|脚本)/i.test(x)) return "js";
+  if(/^(?:vue)/i.test(x)) return "vue";
+  if(/^(?:svelte)/i.test(x)) return "svelte";
   if(/^(?:txt|text|文本)/i.test(x)) return "txt";
   return "txt";
 }
@@ -12349,6 +12357,133 @@ function safeClaudeFenceBlock(lang, body){
   const fence="`".repeat(Math.max(3, maxFenceRun(clean,"`")+1));
   return fence+l+"\n"+clean+"\n"+fence;
 }
+
+function claudeKnownFenceInfo(info){
+  const t=String(info||"").trim().toLowerCase();
+  if(!t) return false;
+  const first=(t.split(/\s+/)[0]||"").replace(/[^a-z0-9_-]/g,"");
+  return /^(?:html|xml|svg|json|md|markdown|txt|text|doc|docx|css|scss|sass|less|js|javascript|mjs|cjs|ts|typescript|tsx|jsx|react|vue|svelte|py|python|java|c|cpp|csharp|cs|go|rs|rust|php|rb|ruby|swift|kt|kotlin|sql|sh|bash|zsh|yaml|yml|toml|ini|csv)$/i.test(first);
+}
+function claudeSplitBalancedJson(s){
+  s=String(s||"");
+  const start=s.search(/[\[{]/);
+  if(start<0) return null;
+  const opener=s[start], closer=opener==="{"?"}":"]";
+  const stack=[closer];
+  let inStr=false, esc=false;
+  for(let i=start+1;i<s.length;i++){
+    const ch=s[i];
+    if(inStr){
+      if(esc){ esc=false; continue; }
+      if(ch==="\\"){ esc=true; continue; }
+      if(ch==='"') inStr=false;
+      continue;
+    }
+    if(ch==='"'){ inStr=true; continue; }
+    if(ch==="{" ) stack.push("}");
+    else if(ch==="[") stack.push("]");
+    else if(ch==="}" || ch==="]"){
+      if(ch!==stack[stack.length-1]) return null;
+      stack.pop();
+      if(!stack.length) return {start, end:i+1};
+    }
+  }
+  return null;
+}
+function claudeFindLastTagClose(s, tags){
+  let best=-1, bestLen=0;
+  (tags||[]).forEach(tag=>{
+    const re=new RegExp("</"+tag+"\\s*>","ig");
+    let m;
+    while((m=re.exec(s))){ best=m.index; bestLen=m[0].length; }
+  });
+  return best>=0 ? {start:0,end:best+bestLen} : null;
+}
+function claudeLooksLikeArtifactTail(tail){
+  const t=String(tail||"").trim();
+  if(!t) return false;
+  if(t.length>500) return false;
+  const lines=t.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const first=lines[0]||"";
+  const meta=/代码|文件|卡片|预览|显示|测通|测试|复制|下载|artifact|Artifact|黑色|代码块|输出|吞|分开|告诉我|看看|修好|好了|完成|这里|后面|前面|正常/i.test(t);
+  const conversational=/^(?:好|好了|写完了|修好了|测通|测试|你看|看看|这段|这个|如果|要是|现在|这样|我把|我已经|可以|直接|复制|下载|告诉我|有问题|另外|然后|注意|说明|done|ok|okay|finished|here|copy|download|test)/i.test(first);
+  return meta && (conversational || /[。！？!?]$/.test(first) || lines.length>=2);
+}
+function claudeSplitTrailingConversation(s){
+  const text=String(s||"");
+  const lines=text.split(/\r?\n/);
+  let pos=text.length;
+  for(let i=lines.length-1;i>=1;i--){
+    const line=lines[i];
+    const lineStart=pos-line.length;
+    const prev=lines[i-1]||"";
+    const tail=text.slice(lineStart).trim();
+    if(tail && (prev.trim()==="" || /^\s*[`~]{3,}/.test(line)) && claudeLooksLikeArtifactTail(tail)){
+      return {code:text.slice(0,lineStart).replace(/\s+$/,""), tail:text.slice(lineStart).trim()};
+    }
+    pos=lineStart-1;
+  }
+  const m=text.match(/([`~]{3,})([^\r\n]*)$/);
+  if(m && claudeLooksLikeArtifactTail(m[2]||"")){
+    const idx=text.lastIndexOf(m[0]);
+    return {code:text.slice(0,idx).replace(/\s+$/,""), tail:String(m[2]||"").trim()};
+  }
+  return {code:text, tail:""};
+}
+function splitClaudePlainArtifactBody(body, lang){
+  const l=claudeOutputLang(lang||"txt");
+  let s=cleanPlainOutputBody(body);
+  if(!s) return {lang:l, lead:"", code:"", tail:"", hard:false};
+  const fenced=parseCodeBlocks(s).filter(p=>p.kind==="code");
+  if(fenced.length===1 && fenced[0].code && fenced[0].code.trim().length >= Math.min(60, s.trim().length)){
+    const code=cleanPlainOutputBody(fenced[0].code);
+    return {lang:claudeOutputLang(fenced[0].lang||l), lead:"", code, tail:"", hard:true};
+  }
+  let range=null;
+  if(l==="html"){
+    const start=s.search(/<!doctype\s+html|<html[\s>]/i);
+    const close=s.match(/<\/html\s*>/i);
+    if(start>=0){
+      const rest=s.slice(start);
+      const endMatch=[...rest.matchAll(/<\/html\s*>/ig)].pop();
+      if(endMatch) range={start, end:start+endMatch.index+endMatch[0].length};
+    }
+  }else if(l==="svg"){
+    const start=s.search(/<svg[\s>]/i);
+    if(start>=0){
+      const rest=s.slice(start);
+      const endMatch=[...rest.matchAll(/<\/svg\s*>/ig)].pop();
+      if(endMatch) range={start, end:start+endMatch.index+endMatch[0].length};
+    }
+  }else if(l==="json"){
+    range=claudeSplitBalancedJson(s);
+  }else if(l==="vue" || l==="svelte"){
+    const start=s.search(/<(template|script|style)[\s>]/i);
+    const close=claudeFindLastTagClose(start>=0?s.slice(start):s,["template","script","style"]);
+    if(start>=0 && close) range={start, end:start+close.end};
+  }
+  if(range && range.end>range.start){
+    return {lang:l, lead:s.slice(0,range.start).trim(), code:s.slice(range.start,range.end).trim(), tail:s.slice(range.end).trim(), hard:true};
+  }
+  const split=claudeSplitTrailingConversation(s);
+  return {lang:l, lead:"", code:split.code.trim(), tail:split.tail.trim(), hard:!!split.tail};
+}
+function sanitizeClaudeArtifactCode(lang, code){
+  const l=claudeOutputLang(lang||"txt");
+  let s=cleanPlainOutputBody(code);
+  if(!s) return "";
+  const split=splitClaudePlainArtifactBody(s,l);
+  if(split && split.code && (split.hard || split.tail)) return split.code.trim();
+  return s.trim();
+}
+function buildClaudeArtifactFenceWithText(lang, body){
+  const split=splitClaudePlainArtifactBody(body, lang);
+  const pieces=[];
+  if(split.lead) pieces.push(split.lead);
+  if(split.code) pieces.push(safeClaudeFenceBlock(split.lang||lang, split.code));
+  if(split.tail) pieces.push(split.tail);
+  return pieces.join("\n\n").trim();
+}
 function explicitClaudeOutputLangFromText(txt){
   const x=String(txt||"").toLowerCase();
   if(/(?:^|[\s。！？,.，、])(?:markdown|md|\.md)(?:[\s。！？,.，、]|文件|文档|$)|md文件|markdown文档/.test(x)) return "md";
@@ -12356,6 +12491,14 @@ function explicitClaudeOutputLangFromText(txt){
   if(/(?:docx?|word|\.docx?|word文档|文档文件)/.test(x)) return "doc";
   if(/(?:json|\.json)(?:文件|数据|格式|$)/.test(x)) return "json";
   if(/(?:html|\.html)(?:文件|网页|页面|$)/.test(x)) return "html";
+  if(/(?:svg|\.svg)(?:文件|图像|图片|$)/.test(x)) return "svg";
+  if(/(?:css|\.css|样式)(?:文件|代码|$)/.test(x)) return "css";
+  if(/(?:jsx|react|\.jsx)(?:文件|组件|代码|$)/.test(x)) return "jsx";
+  if(/(?:tsx|\.tsx)(?:文件|组件|代码|$)/.test(x)) return "tsx";
+  if(/(?:typescript|\.ts|ts文件)(?:文件|代码|$)/.test(x)) return "ts";
+  if(/(?:javascript|\.js|js文件)(?:文件|脚本|代码|$)/.test(x)) return "js";
+  if(/(?:vue|\.vue)(?:文件|组件|代码|$)/.test(x)) return "vue";
+  if(/(?:svelte|\.svelte)(?:文件|组件|代码|$)/.test(x)) return "svelte";
   return "";
 }
 function inferClaudeOutputLangFromBody(body, preferred){
@@ -12365,6 +12508,9 @@ function inferClaudeOutputLangFromBody(body, preferred){
   try{ const o=JSON.parse(s); if(o && typeof o==="object") return "json"; }catch(e){}
   if(/<!doctype\s+html|<html[\s>]/i.test(s)) return "html";
   if(/<svg[\s>][\s\S]*<\/svg>/i.test(s)) return "svg";
+  if(/<(template|script|style)[\s>][\s\S]*<\/(template|script|style)>/i.test(s)) return "vue";
+  if(/^\s*(?:import|export|const|let|var|function|class)\s+/m.test(s) || /=>|document\.|window\.|module\.exports/.test(s)) return /:\s*[A-Za-z_$][\w$<>[\]|&]*/.test(s)?"ts":"js";
+  if(/^\s*[.#]?[a-z0-9_-]+(?:\s+[.#]?[a-z0-9_-]+)*\s*\{/im.test(s) && /[a-z-]+\s*:\s*[^;]+;/.test(s)) return "css";
   const markdownSignals=[/^#{1,6}\s+\S/m,/^[-*+]\s+\S/m,/^\d+[.)]\s+\S/m,/^>\s+\S/m,/\|[^\n]+\|\s*\n\|[-:| ]+\|/m,/```|~~~/,/^\s*(?:[-+*]|\d+[.)])\s+`?[^\n]+`?/m,/^[\w.-]+\/[\w.-]+/m];
   if(markdownSignals.some(re=>re.test(s))) return "md";
   if(s.length>260 && /[：:]/.test(s) && /\n/.test(s)) return "md";
@@ -12396,8 +12542,11 @@ function decideClaudeOutputMode(text, history){
 function normalizeClaudePlainOutputsToCode(text, history){
   const s=String(text||"").trim();
   if(!s) return s;
-  // 1. 显式标头：例如 “Markdown 文件：...”。用安全长围栏包裹，正文里有 ``` 也不会拆。
-  const headerRe=/^\s*(?:#{1,6}\s*)?((?:docx?|word|文档|txt|文本|md|markdown|html|json))\s*(?:文件|内容|版本|如下|草稿)?\s*[:：]\s*/gim;
+  // 已经有真实/近似代码围栏时，不再把整段回复整体套成文件。
+  // 由 parseCodeBlocks 先切出代码段，围栏前后的解释保持普通聊天气泡。
+  if(/^\s*[`~]{3,}/m.test(s)) return s;
+  // 显式标头：例如 “HTML 文件：...”。只把标头后的可识别正文收进 artifact，尾随说明拆回普通文本。
+  const headerRe=/^\s*(?:#{1,6}\s*)?((?:docx?|word|文档|txt|text|文本|md|markdown|html|json|svg|css|style|样式|jsx|react|tsx|ts|typescript|js|javascript|脚本|vue|svelte))\s*(?:文件|内容|版本|如下|草稿|代码|组件|页面|数据)?\s*[:：]\s*/gim;
   const ms=[...s.matchAll(headerRe)];
   if(ms.length){
     let out="", last=0;
@@ -12407,19 +12556,20 @@ function normalizeClaudePlainOutputsToCode(text, history){
       if(before) out += before + "\n\n";
       const start=m.index + m[0].length;
       const end=i+1<ms.length ? ms[i+1].index : s.length;
-      const body=cleanPlainOutputBody(s.slice(start,end));
       const lang=claudePlainOutputLang(m[1]);
-      if(body) out += safeClaudeFenceBlock(lang, body) + "\n\n";
+      const built=buildClaudeArtifactFenceWithText(lang, s.slice(start,end));
+      if(built) out += built + "\n\n";
       last=end;
     }
     const tail=s.slice(last).trim();
     if(tail) out += tail;
     return out.trim();
   }
-  // 2. 根据“是否是可交付成品”判断，而不是把某些词写死成某个格式。
+  // 根据“是否是可交付成品”判断；即使要收成文件，也先尝试切掉开头/结尾的自然语言说明。
   const decision=decideClaudeOutputMode(s, history);
   if(decision.wrap){
-    return safeClaudeFenceBlock(decision.lang, s);
+    const built=buildClaudeArtifactFenceWithText(decision.lang, s);
+    return built || safeClaudeFenceBlock(decision.lang, s);
   }
   return s;
 }
@@ -12464,8 +12614,9 @@ async function callClaudeReply(){
         }
       } else {
         if(textBuf2.trim()){ claudeBubbles.push({type:"text",content:textBuf2.trim()}); textBuf2=""; }
-        claudeBubbles.push({type:"code",content:p.code,lang:p.lang});
-        console.log("[ClaudeReply] 检测到 code block:", p.lang, "长度:", (p.code||"").length);
+        const fixedCode=sanitizeClaudeArtifactCode(p.lang,p.code);
+        if(fixedCode) claudeBubbles.push({type:"code",content:fixedCode,lang:p.lang});
+        console.log("[ClaudeReply] 检测到 code block:", p.lang, "长度:", (fixedCode||"").length);
       }
     });
     if(textBuf2.trim()) claudeBubbles.push({type:"text",content:textBuf2.trim()});
@@ -12517,7 +12668,7 @@ async function callClaudeReply(){
       } else if(b.type==="code"){
         const mid=uid("cmsg");
         const lang=b.lang||"txt";
-        const code=b.content||b.code||"";
+        const code=sanitizeClaudeArtifactCode(lang, b.content||b.code||"");
         const t=nowTime();
         console.log("[ClaudeReply] 保存 artifact:", lang, "code长度:", code.length, "msgId:", mid);
         const savedKey=saveClaudeArtifactRecord({lang,code,title:guessClaudeOutputTitle(lang,code),msgId:mid,createdAt:now2+i,time:t,origin:"generation"});
@@ -12829,8 +12980,8 @@ function parseCodeBlocks(text){
   const out=[];
   let last=0;
   const escRe=(v)=>String(v).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
-  // 支持可变长度围栏：```、````、~~~~。闭合围栏必须在行首，且长度 >= 开启围栏。
-  // 这样外层 ````md 可以安全包住正文里的 ```json / ```js，不再把一个 md 文件拆碎。
+  // 支持可变长度围栏：```、````、~~~~。
+  // 修复模型常见的“```好了/```done”关闭围栏粘连：把围栏作为关闭，后面的说明继续作为 text。
   const openRe=/^([`~]{3,})([^\r\n]*)\r?\n/gm;
   let m;
   while((m=openRe.exec(s))){
@@ -12841,12 +12992,20 @@ function parseCodeBlocks(text){
     const rawInfo=String(m[2]||"").trim();
     const lang=(rawInfo.split(/\s+/)[0]||"code").replace(/[^a-zA-Z0-9_-]/g,"").toLowerCase()||"code";
     const codeStart=openRe.lastIndex;
-    const closeRe=new RegExp("^"+escRe(ch)+"{"+minLen+",}[ \\t]*(?:\\r?\\n|$)","gm");
+    const closeRe=new RegExp("^("+escRe(ch)+"{"+minLen+",})([^\\r\\n]*)(?:\\r?\\n|$)","gm");
     closeRe.lastIndex=codeStart;
-    const cm=closeRe.exec(s);
+    let cm=null;
+    while((cm=closeRe.exec(s))){
+      const tail=String(cm[2]||"");
+      const trimmed=tail.trim();
+      // 行首 ```json / ```html 这类更可能是正文里的嵌套示例开头，不当作关闭。
+      if(trimmed && claudeKnownFenceInfo(trimmed) && !/[\u4e00-\u9fff。！？]/.test(trimmed)) continue;
+      break;
+    }
     if(!cm){
       // 未闭合时按普通文本保留，避免吞掉后续聊天。
-      out.push({kind:"text", text:s.slice(last)});
+      if(m.index>last) out.push({kind:"text", text:s.slice(last,m.index)});
+      out.push({kind:"text", text:s.slice(m.index)});
       last=s.length;
       break;
     }
@@ -12854,7 +13013,15 @@ function parseCodeBlocks(text){
     let code=s.slice(codeStart,cm.index);
     code=code.replace(/\r?\n$/,"");
     out.push({kind:"code", lang, code});
-    last=closeRe.lastIndex;
+    const closeFenceLen=(cm[1]||"").length;
+    const afterFence=cm.index+closeFenceLen;
+    const tail=String(cm[2]||"");
+    if(tail.trim()){
+      // 只消费围栏本身，说明文字留给下一轮 text。
+      last=afterFence;
+    }else{
+      last=closeRe.lastIndex;
+    }
     openRe.lastIndex=last;
   }
   if(last<s.length) out.push({kind:"text", text:s.slice(last)});
@@ -13033,7 +13200,7 @@ function saveClaudeArtifactRecord(opts){
   try{
     opts=opts||{};
     const l=claudeOutputLang(opts.lang||"txt");
-    const body=String(opts.code||opts.content||"");
+    const body=sanitizeClaudeArtifactCode(l, opts.code||opts.content||"");
     if(!body.trim()){ console.warn("[ArtifactStore] 跳过空内容", opts.lang, opts.origin); return ""; }
     const msgId=opts.msgId||"";
     const key=opts.key || stableArtifactKey(l, body, msgId);
@@ -13070,7 +13237,7 @@ function saveClaudeArtifactRecord(opts){
 function registerClaudeOutputArtifact(lang, code, title, msgId){
   try{
     const l=claudeOutputLang(lang||"txt");
-    const body=String(code||"");
+    const body=sanitizeClaudeArtifactCode(l, code||"");
     const key=stableArtifactKey(l, body, msgId||"");
     const list=claudeArtifactStoreGet();
     const old=list.find(x=>x && x.key===key && x.lang===l && x.code===body);
@@ -13082,10 +13249,12 @@ function registerClaudeOutputArtifact(lang, code, title, msgId){
 }
 function storeClaudeCode(lang,code,title,msgId){
   const id=uid("code");
+  const l=claudeOutputLang(lang);
+  const fixed=sanitizeClaudeArtifactCode(l,code);
   Miao.state.claudeCodes=Miao.state.claudeCodes||{};
-  Miao.state.claudeCodes[id]={lang:claudeOutputLang(lang),code,title:title||guessClaudeOutputTitle(lang,code),msgId:msgId||""};
+  Miao.state.claudeCodes[id]={lang:l,code:fixed,title:title||guessClaudeOutputTitle(l,fixed),msgId:msgId||""};
   // 旧消息重渲染仍可补登；新回复会在生成阶段先登记。
-  registerClaudeOutputArtifact(lang,code,title,msgId);
+  registerClaudeOutputArtifact(l,fixed,title,msgId);
   return id;
 }
 async function copyClaudeCode(id){
@@ -19653,6 +19822,13 @@ window.dismissBackupReminder=async function(){
 };
 
 
+try{
+  window.parseCodeBlocks=parseCodeBlocks;
+  window.normalizeClaudePlainOutputsToCode=normalizeClaudePlainOutputsToCode;
+  window.sanitizeClaudeArtifactCode=sanitizeClaudeArtifactCode;
+  window.safeClaudeFenceBlock=safeClaudeFenceBlock;
+}catch(e){}
+
 init().catch(e=>{ console.error("[init]", e); renderAll(); });
 })();
 </script>
@@ -19733,7 +19909,8 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
       var store=getStoreArray("claudeArtifactStore")||[];
       store.forEach(function(r,idx){
           if(!r || !r.code || !goodLang(r.lang)) return;
-          var lang=langNorm(r.lang), code=String(r.code||"");
+          var lang=langNorm(r.lang), code=(typeof window.sanitizeClaudeArtifactCode==="function"?window.sanitizeClaudeArtifactCode(lang,r.code||""):String(r.code||""));
+          if(!code) return;
           var id=artifactIdentity(lang,code);
           var isHidden=hidden.has(id), isPinned=pinned.has(id);
           if(isHidden && !includeHidden){ _debugHiddenSkip++; return; }
@@ -19748,7 +19925,8 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
       var parts=parseCodeBlocks(src);
       for(var j=0;j<parts.length;j++){
         var p=parts[j]; if(!p || p.kind!=="code" || !goodLang(p.lang)) continue;
-        var lang=langNorm(p.lang), code=p.code||"";
+        var lang=langNorm(p.lang), code=(typeof window.sanitizeClaudeArtifactCode==="function"?window.sanitizeClaudeArtifactCode(lang,p.code||""):(p.code||""));
+        if(!code) continue;
         var id=artifactIdentity(lang,code);
         var isHidden=hidden.has(id), isPinned=pinned.has(id);
         if(isHidden && !includeHidden){ _debugHiddenSkip++; continue; }
@@ -19760,7 +19938,8 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
       var reg=getStoreArray("claudeArtifactRegistry")||[];
       reg.forEach(function(r,idx){
           if(!r || !r.code || !goodLang(r.lang)) return;
-          var lang=langNorm(r.lang), code=String(r.code||"");
+          var lang=langNorm(r.lang), code=(typeof window.sanitizeClaudeArtifactCode==="function"?window.sanitizeClaudeArtifactCode(lang,r.code||""):String(r.code||""));
+          if(!code) return;
           var id=artifactIdentity(lang,code);
           var isHidden=hidden.has(id), isPinned=pinned.has(id);
           if(isHidden && !includeHidden){ _debugHiddenSkip++; return; }
