@@ -563,14 +563,14 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   transform:scale(1.01);
   transition:transform .14s ease,box-shadow .14s ease;
 }
+/* 微信页改为 Claude 同款真实状态栏结构：隐藏旧模拟状态栏，避免和 iOS 顶栏相撞 */
 .app-screen.wechat .statusbar{
-  height:36px;
-  padding-top:9px;
+  display:none;
 }
 .app-screen.wechat .wechat-head{
-  margin-top:-4px;
-  padding:7px 14px 9px;
-  min-height:58px;
+  margin-top:0;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+  min-height:calc(60px + env(safe-area-inset-top));
 }
 .app-screen.wechat .profile{gap:9px}
 .app-screen.wechat .profile-avatar{width:40px;height:40px}
@@ -3758,8 +3758,9 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 
 
 /* ===== Meow UI final overrides 2026-06-25：保持底部不动，仅统一顶部与卡片密度 ===== */
-.app-screen.wechat .statusbar{height:36px!important;padding-top:9px!important;}
-.app-screen.wechat .wechat-head{margin-top:-4px!important;padding:7px 14px 9px!important;min-height:58px!important;}
+/* 微信页顶部跟随 Claude 页面：不再显示旧模拟状态栏，只保留系统状态栏 + 角色顶栏 */
+.app-screen.wechat .statusbar{display:none!important;}
+.app-screen.wechat .wechat-head{margin-top:0!important;padding:calc(10px + env(safe-area-inset-top)) 14px 10px!important;min-height:calc(60px + env(safe-area-inset-top))!important;}
 .app-screen.wechat .profile{gap:9px!important;}
 .app-screen.wechat .profile-avatar{width:40px!important;height:40px!important;}
 .app-screen.wechat .profile-title{font-size:16px!important;line-height:1.1!important;max-width:184px!important;}
