@@ -12756,13 +12756,16 @@ function parseCodeBlocks(text){
   const lines=s.split("\n");
   const out=[]; let buf=[];
   const flush=()=>{ if(buf.length){ out.push({kind:"text", text:buf.join("\n")}); buf=[]; } };
-  const openRe=/^(\s{0,3})(`{3,})([^`]*)$/;
+  // 开围栏：行内可有前置文字（算正文），之后是 3+ 反引号，再跟不含反引号的 info(语言)到行尾。
+  const openRe=/^(.*?)(`{3,})([^`]*)$/;
   let i=0;
   while(i<lines.length){
     const om=lines[i].match(openRe);
     if(om){
+      const prefix=om[1];
       const ticks=om[2].length;
       const lang=((om[3]||"").trim().split(/\s+/)[0]||"code").toLowerCase();
+      if(prefix.trim()) buf.push(prefix);          // 围栏前的同行文字归入正文
       const closeRe=new RegExp("^\\s{0,3}`{"+ticks+",}\\s*$");
       const body=[]; let j=i+1, closed=false;
       while(j<lines.length){
