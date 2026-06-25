@@ -11385,17 +11385,21 @@ function renderClaudeOpsCard(m){
 function renderClaudeFileOpsCard(m){
   const d=m.data||{};
   const items=Array.isArray(d.items)?d.items:[];
+  const done=items.filter(x=>x.status==="done"||x.status==="error").length;
+  const total=items.length||1;
+  const finished=d.state==="done"||done>=items.length;
+  const pct=Math.round(done/total*100);
   const title=d.title||"文件操作";
-  const sub=items.length+" 步 · 完成";
+  const sub=finished?(items.length+" 步 · 完成"):(done+"/"+items.length+" 进行中");
   const terminal=items.map(it=>{
     const st=it.status||"done";
     const iconName=it.icon||"file";
     return `<div class="claude-ops-line ${escapeAttr(st)}"><span class="claude-ops-line-icon">${miaoIcon(iconName,"miao-mini-icon")}</span><span class="claude-ops-line-text">${escapeHtml(it.label||"步骤")}</span></div>`;
   }).join("");
   return `<div class="claude-ops-card"><div class="claude-ops-head"><span>${escapeHtml(title)}</span><span>${escapeHtml(sub)}</span></div>
-    <div class="claude-ops-sub">基于本次输出推导的真实文件步骤。</div>
+    <div class="claude-ops-sub">${finished?"基于本次输出推导的真实文件步骤。":"正在写入文件…"}</div>
     <div class="claude-ops-terminal">${terminal||""}</div>
-    <div class="claude-ops-footer"><div class="claude-ops-progress"><span style="width:100%"></span></div></div></div>`;
+    <div class="claude-ops-footer"><div class="claude-ops-progress"><span style="width:${pct}%"></span></div></div></div>`;
 }
 function renderClaudeBody(m){
   if(m.type==="file") return renderClaudeFileCard(m);
@@ -12444,7 +12448,9 @@ async function callClaudeReply(){
     });
     const now2=Date.now();
     const pendingGen=[];
-    claudeBubbles.forEach((b,i)=>{
+    const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+    for(let i=0;i<claudeBubbles.length;i++){
+      const b=claudeBubbles[i];
       if(b.type==="sticker"){
         h.push({id:uid("cmsg"),sender:"assistant",type:"sticker",content:`[表情包:${b.name}]`,data:{name:b.name,url:b.url,meaning:b.meaning},createdAt:now2+i,time:nowTime()});
       } else if(b.type==="image_gen"){
@@ -12457,19 +12463,36 @@ async function callClaudeReply(){
         const code=b.content||b.code||"";
         const t=nowTime();
         const ftitle=guessClaudeOutputTitle(lang,code);
-        // 文件操作可视化卡片：仅文件类输出，步骤由真实输出推导，放在文件气泡上方
-        if(isClaudeFileLang(lang)){
-          try{ h.push({id:uid("cmsg"),sender:"assistant",type:"file_ops",content:"[文件操作]",data:buildClaudeFileOps(lang,code,ftitle),createdAt:now2+i,time:t}); }catch(e){ console.warn("[FileOps] 生成失败",e); }
-        }
-        console.log("[ClaudeReply] 保存 artifact:", lang, "code长度:", code.length, "msgId:", mid);
+        // 先建文件操作卡（基于真实输出推导步骤），但此时 artifact 还没存，便于判断新建/修改
+        let ops=null;
+        if(isClaudeFileLang(lang)){ try{ ops=buildClaudeFileOps(lang,code,ftitle); }catch(e){ console.warn("[FileOps] 生成失败",e); ops=null; } }
+        // 存 artifact（数据层）
         const savedKey=saveClaudeArtifactRecord({lang,code,title:ftitle,msgId:mid,createdAt:now2+i,time:t,origin:"generation"});
-        console.log("[ClaudeReply] artifact key:", savedKey||"(空/失败)");
         const cf=fenceFor(code);
-        h.push({id:mid,sender:"assistant",type:"text",content:cf+lang+"\n"+code+"\n"+cf,createdAt:now2+i,time:t});
+        const NL=String.fromCharCode(10);
+        const codeMsg={id:mid,sender:"assistant",type:"text",content:cf+lang+NL+code+NL+cf,createdAt:now2+i,time:t};
+        if(ops){
+          // 分阶段：先出步骤卡（全部 running），逐条点亮，完成后再出文件气泡
+          ops.items.forEach(s=>s.status="running"); ops.state="running";
+          const opsId=uid("cmsg");
+          h.push({id:opsId,sender:"assistant",type:"file_ops",content:"[文件操作]",data:ops,createdAt:now2+i,time:t});
+          setClaudePetMood("working","写文件中…");
+          saveClaudeHistory(h); renderClaude();
+          for(let k=0;k<ops.items.length;k++){
+            await sleep(180);
+            const om=h.find(x=>x.id===opsId);
+            if(om&&om.data&&om.data.items[k]) om.data.items[k].status="done";
+            if(om&&om.data&&k===ops.items.length-1) om.data.state="done";
+            saveClaudeHistory(h); renderClaude();
+          }
+          await sleep(220);
+        }
+        h.push(codeMsg);
+        saveClaudeHistory(h); renderClaude();
       } else if(b.content){
         h.push({id:uid("cmsg"),sender:"assistant",type:"text",content:b.content,createdAt:now2+i,time:nowTime()});
       }
-    });
+    }
     saveClaudeHistory(h);
     renderClaude();
     markCommandFeedbackDelivered();
