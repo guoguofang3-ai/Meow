@@ -15,7 +15,13 @@
       "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" auth status 2>&1)",
       "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" repo list --limit 50 --json name,visibility,owner,defaultBranchRef,url | ConvertFrom-Json | Format-Table @{n='owner';e={$_.owner.login}}, name, visibility, url -AutoSize)",
       "Bash(grep -n \"function.*[Mm]usic\\\\|function.*[Ll]yric\\\\|musicApiBase\\\\|musicApi\\\\|/search\\\\|/lyric\\\\|share_music\\\\|send_music\\\\|\\\\\\\\[分享音乐\\\\|\\\\\\\\[发送音乐\\\\|分享音乐\\\\|发送音乐\\\\|musicSearch\\\\|fetchLyric\\\\|getLyric\\\\|songUrl\\\\|/song\" Meow.html)",
-      "Bash(grep -n \"分享了音乐\\\\|分享了一首\\\\|type===\\\\\"music\\\\\"\\\\|type==='music'\\\\|msgToContext\\\\|function buildWechatMessages\\\\|function buildContext\\\\|\\\\\\\\[音乐\\\\\\\\]\\\\|lyricDigest\\\\|歌词氛围\\\\|m.data.lyrics\" Meow.html)"
+      "Bash(grep -n \"分享了音乐\\\\|分享了一首\\\\|type===\\\\\"music\\\\\"\\\\|type==='music'\\\\|msgToContext\\\\|function buildWechatMessages\\\\|function buildContext\\\\|\\\\\\\\[音乐\\\\\\\\]\\\\|lyricDigest\\\\|歌词氛围\\\\|m.data.lyrics\" Meow.html)",
+      "Bash(grep -n \"发送语音\\\\|\\\\\\\\[语音\\\\|type:\\\\\"voice\\\\\"\\\\|type==='voice'\\\\|type===\\\\\"voice\\\\\"\\\\|转文字\\\\|语气\\\\|elevenlabs\\\\|ElevenLabs\\\\|voiceText\\\\|voice-text\\\\|renderVoice\\\\|\\\\\\\\[\\\\\\\\[语气\\\\|（语气\\\\|【语气\" Meow.html)",
+      "Bash(grep -n \"语音[:：]\\\\|语音:\\\\|voiceDesc\\\\|声音描述\\\\|中文：\\\\|中文:\\\\|parseVoice\\\\|语音.*正则\\\\|【语音\\\\|\\\\\\\\[语音\" Meow.html)",
+      "Bash(grep -iE \"replace|match|regex|exec|split|parse|data.text|voiceDesc|/\\\\\\\\[|/【|new RegExp\")",
+      "Bash(awk 'NR>=8250 && NR<=8310 && /^function |^  function |^async function /{print NR\": \"$0}' Meow.html)",
+      "Bash(grep -nE \"function parseAIMessage|function splitInto|function parseReply|parseInstructions|双换行|split\\\\\\(/\\\\\\\\\\\\\\\\n|\\\\\\\\.split\\\\\\(.*n\\\\\\\\\\\\\\\\n|function parseBubbles|function parseWechat|INSTRUCTION_PARSERS|parsers\\\\.|function parseRoleReply\" Meow.html)",
+      "Bash(awk 'NR>=16980 && NR<=17175 && \\(/^function |^  function |^async function |INSTRUCTION|parsers\\\\s*=|const parsers|segments|split/\\){print NR\": \"$0}' Meow.html)"
     ]
   }
 }
