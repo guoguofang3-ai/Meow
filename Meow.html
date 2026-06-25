@@ -17521,13 +17521,20 @@ async function importReadingFile(file, targetBookId){
   }
   if(lower.endsWith(".epub") || file.type==="application/epub+zip") parsed=await parseReadingEpub(file);
   else {
-    let text=await file.text();
-    // 如果UTF-8解出来有乱码（连续替换字符或锟斤拷），尝试用GBK重新解码
-    if(/\ufffd{2,}/.test(text)||/[锟斤拷]{2,}/.test(text)){
-      try{
-        const buf=await file.arrayBuffer();
-        text=new TextDecoder("gbk").decode(buf);
-      }catch(e){/* fallback保持UTF-8结果 */}
+    const buf=await file.arrayBuffer();
+    const u8=new Uint8Array(buf);
+    let text;
+    // BOM / 编码自动检测：UTF-16LE、UTF-16BE、GBK、UTF-8
+    if(u8.length>=2 && u8[0]===0xFF && u8[1]===0xFE){
+      text=new TextDecoder("utf-16le").decode(buf);
+    }else if(u8.length>=2 && u8[0]===0xFE && u8[1]===0xFF){
+      text=new TextDecoder("utf-16be").decode(buf);
+    }else{
+      text=new TextDecoder("utf-8").decode(buf);
+      // UTF-8解出来有乱码就尝试GBK
+      if(/\ufffd{2,}/.test(text)||/[锟斤拷]{2,}/.test(text)){
+        try{text=new TextDecoder("gbk").decode(buf);}catch(e){}
+      }
     }
     parsed={title:name.replace(/\.(txt|md|markdown)$/i,""),author:"",content:readingNormalizeText(text),sourceName:name};
   }
