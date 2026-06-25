@@ -4486,7 +4486,7 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
         </div>
       </div>
       <div class="listen-sheet-mask" id="listenSheetMask" data-listen-action="sheet-close">
-        <div class="listen-sheet" id="listenSheet" onclick="event.stopPropagation()">
+        <div class="listen-sheet" id="listenSheet">
           <div class="listen-sheet-handle"></div>
           <div class="listen-search-bar" id="listenSearchBar">
             <input id="listenSearchInput" placeholder="搜索歌曲 / 歌手" autocomplete="off">
@@ -15153,11 +15153,14 @@ function listenWireOnce(){
   E.on("pause",()=>listenSyncPlayState());
   E.on("timeupdate",()=>listenSyncProgress());
   E.on("queuechange",()=>{ const m=document.getElementById("listenSheetMask"); if(m&&m.classList.contains("show")&&document.getElementById("listenSearchBar")?.style.display==="none") listenRenderQueue(); });
+  // 捕获阶段：避免被浮层的 stopPropagation 吞掉点击
   document.addEventListener("click",function(e){
     const b=e.target.closest && e.target.closest("[data-listen-action]");
     if(!b) return;
-    try{ MusicEngine.unlock(); }catch(e2){}   // 在用户手势里解锁 iOS 音频
     const act=b.getAttribute("data-listen-action");
+    // 只在点遮罩“空白处”时关闭浮层；点输入框/按钮/内容不关、也不拦默认（保证能打字）
+    if(act==="sheet-close"){ if(e.target&&e.target.id==="listenSheetMask") listenCloseSheet(); return; }
+    try{ MusicEngine.unlock(); }catch(e2){}   // 在用户手势里解锁 iOS 音频
     if(act==="seek"){ const r=b.getBoundingClientRect(); if(r.width) MusicEngine.seekPct((e.clientX-r.left)/r.width); return; }
     e.preventDefault();
     if(act==="toggle") MusicEngine.toggle();
@@ -15165,11 +15168,10 @@ function listenWireOnce(){
     else if(act==="prev") MusicEngine.prev();
     else if(act==="search-open") listenOpenSheet("search");
     else if(act==="queue-open") listenOpenSheet("queue");
-    else if(act==="sheet-close") listenCloseSheet();
     else if(act==="search-go") listenDoSearch();
     else if(act==="play-result"){ listenPlayResult(b.dataset); listenCloseSheet(); }
     else if(act==="play-queue"){ MusicEngine.playIndex(Number(b.dataset.i)); }
-  });
+  },true);
   const input=document.getElementById("listenSearchInput");
   if(input) input.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); listenDoSearch(); } });
 }
