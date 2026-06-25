@@ -11368,7 +11368,20 @@ async function searchStoredFile(filename, query, limit=8){
 }
 async function readTextFileInChunks(file, onProgress){
   const chunkSize=CLAUDE_FILE_CHUNK_SIZE;
-  const decoder=new TextDecoder("utf-8");
+  // 先嗅探编码：读开头一小段看BOM，再判断UTF-8是否乱码
+  let encoding="utf-8";
+  try{
+    const headBuf=await file.slice(0,Math.min(file.size,4096)).arrayBuffer();
+    const head=new Uint8Array(headBuf);
+    if(head.length>=2 && head[0]===0xFF && head[1]===0xFE) encoding="utf-16le";
+    else if(head.length>=2 && head[0]===0xFE && head[1]===0xFF) encoding="utf-16be";
+    else {
+      const probe=new TextDecoder("utf-8").decode(headBuf);
+      if(/\ufffd{2,}/.test(probe)||/[锟斤拷]{2,}/.test(probe)) encoding="gbk";
+    }
+  }catch(e){}
+  let decoder;
+  try{ decoder=new TextDecoder(encoding); }catch(e){ decoder=new TextDecoder("utf-8"); }
   const chunks=[];
   let loaded=0, sample="", words=0;
   for(let start=0; start<file.size; start+=chunkSize){
