@@ -15017,12 +15017,24 @@ const MusicEngine={
     if(this.audio) return;
     const a=this.audio=new Audio();
     a.preload="metadata";
-    a.addEventListener("ended",()=>this.next());
+    a.addEventListener("ended",()=>{ if(this._unlocking) return; this.next(); });
     a.addEventListener("error",()=>{ const t=this.current; if(t){ t.available=false; this.emit("queuechange"); } this.next(); });
     a.addEventListener("play",()=>{ this.emit("play"); this._session("playing"); });
     a.addEventListener("pause",()=>{ this.emit("pause"); this._session("paused"); });
     a.addEventListener("timeupdate",()=>this._tick());
     a.addEventListener("loadedmetadata",()=>this.emit("timeupdate"));
+  },
+  // iOS：首次必须在用户手势里播一下才解锁，之后异步取到地址再 play 就不受限。
+  // 用一段极短静音 wav 解锁同一个 audio 元素（解锁期间屏蔽 ended→next）。
+  unlock(){
+    if(this._unlocked||this._unlocking) return;
+    this.init();
+    const a=this.audio, pm=a.muted;
+    this._unlocking=true; a.muted=true;
+    a.src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+    const fin=()=>{ try{ a.pause(); a.removeAttribute("src"); a.load(); }catch(e){} a.muted=pm; this._unlocked=true; this._unlocking=false; };
+    try{ const p=a.play(); if(p&&p.then) p.then(fin).catch(()=>{ a.muted=pm; this._unlocking=false; }); else fin(); }
+    catch(e){ a.muted=pm; this._unlocking=false; }
   },
   on(ev,cb){ (this._ls[ev]=this._ls[ev]||[]).push(cb); return this; },
   emit(ev,data){ (this._ls[ev]||[]).forEach(cb=>{ try{ cb(data); }catch(e){} }); },
@@ -15073,7 +15085,8 @@ const MusicEngine={
     this.init();
     try{ if(typeof MusicPlayer!=="undefined"&&MusicPlayer.stop) MusicPlayer.stop(); }catch(e){}  // 互斥：停聊天卡
     if(this.audio.src!==url){ this.audio.src=url; this.audio.load(); }
-    try{ await this.audio.play(); }catch(e){ /* iOS 首次需手势，UI 会显示暂停态 */ }
+    try{ await this.audio.play(); }
+    catch(e){ try{ this.emit("pause"); }catch(_){}; if(typeof toast==="function") toast("点一下 ▶ 开始播放"); }
     this._loadLyrics(t);
   },
   toggle(){ this.init(); if(!this.audio.src){ if(this.queue.length) this.playIndex(this.index<0?0:this.index); return; } if(this.audio.paused) this.audio.play().catch(()=>{}); else this.audio.pause(); },
@@ -15143,6 +15156,7 @@ function listenWireOnce(){
   document.addEventListener("click",function(e){
     const b=e.target.closest && e.target.closest("[data-listen-action]");
     if(!b) return;
+    try{ MusicEngine.unlock(); }catch(e2){}   // 在用户手势里解锁 iOS 音频
     const act=b.getAttribute("data-listen-action");
     if(act==="seek"){ const r=b.getBoundingClientRect(); if(r.width) MusicEngine.seekPct((e.clientX-r.left)/r.width); return; }
     e.preventDefault();
