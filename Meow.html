@@ -10994,6 +10994,8 @@ function claudeKey(){
   const mode=getClaudeMode();
   return mode==="tool" ? "claudeHistory.tool" : Storage.roleKey("claudeHistory.role");
 }
+// 暴露给独立模块（如文件柜 IIFE）使用，保证读取作用域与保存作用域一致
+try{ window.claudeKey=claudeKey; window.getClaudeMode=getClaudeMode; }catch(e){}
 function getClaudeIdentityScope(){
   const mode=getClaudeMode();
   return mode==="tool" ? "tool" : "role_" + (Miao.state.currentRoleId || "default");
@@ -19580,7 +19582,10 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
   function pinnedSet(){ return new Set(getStoreArray("claudeArtifactsPinned")); }
   function saveSet(key,set){ setStoreArray(key, Array.from(set||[])); }
   function hash(s){ var h=2166136261; s=String(s||""); for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=(h*16777619)>>>0; } return h.toString(36); }
-  function currentScope(){ try{ return (typeof claudeKey==="function")?claudeKey():"current"; }catch(e){ return "current"; } }
+  function currentScope(){
+    try{ var f=(typeof window!=="undefined"&&typeof window.claudeKey==="function")?window.claudeKey:((typeof claudeKey==="function")?claudeKey:null); if(f) return f(); }catch(e){}
+    return "current";
+  }
   // ===== 一次性迁移：把仅存在于聊天记录、还没进 store 的旧文件按所属会话补进 store =====
   function migrateOnce(){
     var S=appStorage(); if(!S) return;

@@ -7,7 +7,8 @@
       "Bash(python -c ' *)",
       "Bash(echo \"exit: $?\")",
       "Bash(rm -f /tmp/test_parse.mjs; echo done)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(cd \"/c/Users/Administrator/Desktop/喵喵机owo\" && grep -n \"roleKey\\\\s*[:=]\\\\|roleKey\\(\\\\|roleKey =\\\\|function getClaudeMode\\\\|claudeHistory.role\" Meow.html | head -30)"
     ]
   }
 }
