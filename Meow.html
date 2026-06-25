@@ -10995,7 +10995,11 @@ function claudeKey(){
   return mode==="tool" ? "claudeHistory.tool" : Storage.roleKey("claudeHistory.role");
 }
 // 暴露给独立模块（如文件柜 IIFE）使用，保证读取作用域与保存作用域一致
-try{ window.claudeKey=claudeKey; window.getClaudeMode=getClaudeMode; }catch(e){}
+try{
+  window.claudeKey=claudeKey; window.getClaudeMode=getClaudeMode;
+  if(typeof toast==="function") window.toast=toast;
+  if(typeof buildReactPreview==="function") window.buildReactPreview=buildReactPreview;
+}catch(e){}
 function getClaudeIdentityScope(){
   const mode=getClaudeMode();
   return mode==="tool" ? "tool" : "role_" + (Miao.state.currentRoleId || "default");
@@ -19655,27 +19659,63 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     if(!arr.length){ box.innerHTML='<div class="artifacts-empty">还没有文件。Claude 输出 HTML / JSON / Markdown / TXT / DOC / SVG / 代码 后，会自动收进这里。</div>'; return; }
     box.innerHTML=arr.map(renderCard).join("");
   }
-  function open(){ migrateOnce(); render(); var m=document.getElementById("artifactsMask"); if(m) m.classList.add("show"); }
+  // ===== 一次性回收：尊重旧版"删除"(其实是隐藏)记录，把迁移后冒出来的、用户早删过的文件清掉 =====
+  function reconcileOldDeletions(){
+    var S=appStorage(); if(!S) return;
+    var done=false; try{ done=S.get("claudeArtifactsReconciledV3",false); }catch(e){}
+    if(done) return;
+    try{
+      var H=new Set(getStoreArray("claudeArtifactsHidden")||[]);
+      if(H.size){
+        var store=getStoreArray("claudeArtifactStore")||[];
+        var kept=store.filter(function(r){
+          if(!r) return false;
+          var K=r.key||"", M=String(r.msgId||""), L=langNorm(r.lang), C=String(r.code||""), SK=r.sourceKey||"current";
+          var c120=C.slice(0,120);
+          var cands=[
+            "store_"+K,
+            "registry_"+K,
+            "store_"+hash(M+"|"+L+"|"+c120),
+            "registry_"+hash(M+"|"+c120),
+            "a_"+hash(SK+"|"+M+"|0|"+L+"|"+c120),
+            "a_"+hash("current|"+M+"|0|"+L+"|"+c120)
+          ];
+          for(var i=0;i<cands.length;i++){ if(H.has(cands[i])) return false; }
+          return true;
+        });
+        if(kept.length!==store.length){ setStoreArray("claudeArtifactStore",kept); console.log("[Artifacts] 尊重旧删除，移除 "+(store.length-kept.length)+" 条"); }
+      }
+      S.set("claudeArtifactsReconciledV3",true);
+    }catch(e){ console.error("[Artifacts] 旧删除回收异常",e); }
+  }
+  function open(){ migrateOnce(); reconcileOldDeletions(); render(); var m=document.getElementById("artifactsMask"); if(m) m.classList.add("show"); }
   function close(){ var m=document.getElementById("artifactsMask"); if(m) m.classList.remove("show"); }
   function blobDownload(name,content,type){ var b=new Blob([content],{type:type||"text/plain;charset=utf-8"}); var url=URL.createObjectURL(b); var a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click(); setTimeout(function(){try{document.body.removeChild(a);}catch(e){} URL.revokeObjectURL(url);},100); }
   function preview(id){
     var a=byId(id); if(!a) return;
     close();
     var lang=langNorm(a.lang);
-    if(lang==="svg" && typeof openPreview==="function") openPreview("Artifact · "+a.title,'<div class="svg-preview">'+a.code+'</div>');
-    else if((lang==="html"||lang==="jsx"||lang==="tsx") && typeof openPreviewIframe==="function") openPreviewIframe("Artifact · "+a.title, lang==="html"?a.code:buildReactPreview(a.code));
-    else if(typeof openPreview==="function"){ var display=a.code; if(lang==="json"){ try{ display=JSON.stringify(JSON.parse(a.code),null,2); }catch(e){} } openPreview("Artifact · "+a.title,'<div class="text-preview">'+htmlEscape(display)+'</div>'); }
+    var titleEl=document.getElementById("previewTitle");
+    var bodyEl=document.getElementById("previewBody");
+    var maskEl=document.getElementById("previewMask");
+    if(!bodyEl||!maskEl) return;
+    if(titleEl) titleEl.textContent="Artifact · "+a.title;
+    if(lang==="html"){ bodyEl.innerHTML='<iframe sandbox="allow-scripts allow-forms allow-modals allow-popups" srcdoc="'+attrEscape(a.code)+'"></iframe>'; }
+    else if((lang==="jsx"||lang==="tsx") && typeof window.buildReactPreview==="function"){ bodyEl.innerHTML='<iframe sandbox="allow-scripts allow-forms allow-modals allow-popups" srcdoc="'+attrEscape(window.buildReactPreview(a.code))+'"></iframe>'; }
+    else if(lang==="svg"){ bodyEl.innerHTML='<div class="svg-preview">'+a.code+'</div>'; }
+    else { var display=a.code; if(lang==="json"){ try{ display=JSON.stringify(JSON.parse(a.code),null,2); }catch(e){} } bodyEl.innerHTML='<div class="text-preview">'+htmlEscape(display)+'</div>'; }
+    maskEl.classList.add("show");
     var box=document.getElementById("previewActions");
     if(box){ box.innerHTML='<button data-artifact-action="download" data-id="'+attrEscape(a.id)+'">下载</button><button class="danger" data-artifact-action="delete" data-id="'+attrEscape(a.id)+'">删除</button>'; box.classList.add("show"); }
   }
-  function download(id){ var a=byId(id); if(!a) return; var ext=extFor(a.lang); var type=ext==="html"?"text/html;charset=utf-8":(ext==="svg"?"image/svg+xml;charset=utf-8":(ext==="json"?"application/json;charset=utf-8":(ext==="doc"?"application/msword;charset=utf-8":"text/plain;charset=utf-8"))); blobDownload(cleanName(a.title)+"."+ext,a.code,type); if(typeof toast==="function") toast("已下载"); }
+  function download(id){ var a=byId(id); if(!a) return; var ext=extFor(a.lang); var type=ext==="html"?"text/html;charset=utf-8":(ext==="svg"?"image/svg+xml;charset=utf-8":(ext==="json"?"application/json;charset=utf-8":(ext==="doc"?"application/msword;charset=utf-8":"text/plain;charset=utf-8"))); blobDownload(cleanName(a.title)+"."+ext,a.code,type); if(typeof window.toast==="function") window.toast("已下载"); }
   function removeArtifact(id){
     var a=byId(id); if(!a) return;
     if(typeof window.confirm==="function" && !window.confirm("确定从文件柜删除「"+a.title+"」？此操作不可恢复。")) return;
     deleteArtifact(a.key);
     try{ if(typeof closePreview==="function") closePreview(); }catch(e){}
     open();
-    if(typeof toast==="function") toast("已删除");
+    if(typeof window.toast==="function") window.toast("已删除");
   }
   // ===== 纯 JS 最小 ZIP（store 模式，无压缩，带 CRC32） =====
   function crc32(bytes){ var crc=-1; for(var i=0;i<bytes.length;i++){ var c=(crc^bytes[i])&0xff; for(var k=0;k<8;k++){ c=(c&1)?((c>>>1)^0xEDB88320):(c>>>1); } crc=(crc>>>8)^c; } return (crc^-1)>>>0; }
@@ -19697,7 +19737,7 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     return new Blob(chunks.concat(central).concat([new Uint8Array(end)]),{type:"application/zip"});
   }
   function downloadAll(){
-    var arr=collectArtifacts(); if(!arr.length){ if(typeof toast==="function") toast("没有可下载的文件"); return; }
+    var arr=collectArtifacts(); if(!arr.length){ if(typeof window.toast==="function") window.toast("没有可下载的文件"); return; }
     var used={}, files=[];
     arr.forEach(function(a){
       var base=cleanName(a.title)+"."+extFor(a.lang);
@@ -19707,8 +19747,8 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     try{
       var blob=makeZip(files);
       var url=URL.createObjectURL(blob); var el=document.createElement("a"); el.href=url; el.download="claude_artifacts_"+(new Date()).toISOString().slice(0,10)+".zip"; document.body.appendChild(el); el.click(); setTimeout(function(){try{document.body.removeChild(el);}catch(e){} URL.revokeObjectURL(url);},100);
-      if(typeof toast==="function") toast("已打包为 zip");
-    }catch(e){ console.error("[Artifacts] 打包失败",e); if(typeof toast==="function") toast("打包失败"); }
+      if(typeof window.toast==="function") window.toast("已打包为 zip");
+    }catch(e){ console.error("[Artifacts] 打包失败",e); if(typeof window.toast==="function") window.toast("打包失败"); }
   }
   document.addEventListener("click",function(e){ var b=e.target.closest&&e.target.closest("[data-artifact-action]"); if(!b) return; var act=b.getAttribute("data-artifact-action"); var id=b.getAttribute("data-id")||""; e.preventDefault(); e.stopPropagation(); if(act==="open") open(); else if(act==="close") close(); else if(act==="preview") preview(id); else if(act==="download") download(id); else if(act==="delete") removeArtifact(id); else if(act==="download-all") downloadAll(); },true);
   window.MiaoArtifacts={open:open,close:close,render:render,artifacts:collectArtifacts};
