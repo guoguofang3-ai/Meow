@@ -15069,8 +15069,9 @@ async function submitMusicInput(){
   const info=await fetchMusicInfo(title,artist);
   const note=userNote;
   const h=getHistory();
+  const mid=uid("msg");
   h.push({
-    id:uid("msg"),groupId:uid("usergrp"),sender:"user",type:"music",content:"[音乐:"+title+"]",
+    id:mid,groupId:uid("usergrp"),sender:"user",type:"music",content:"[音乐:"+title+"]",
     data:{
       title:info.title||title,
       artist:info.artist||artist,
@@ -15086,6 +15087,8 @@ async function submitMusicInput(){
     read:false,createdAt:Date.now(),time:nowTime()
   });
   saveHistory(h);renderChat();
+  // 手动分享若搜到了网易云歌(有 songId)，补算歌词摘要，让角色也知道几句词
+  if(!manualAudioUrl && info.songId) ensureLyricDigest(mid);
   const chat=$("#chat");if(chat) requestAnimationFrame(()=>{chat.scrollTop=chat.scrollHeight;});
   if(manualAudioUrl) toast("已使用手填完整音频链接，点击播放");
   else if(info.audioUrl) toast("已找到完整音源，点击播放");
