@@ -17524,14 +17524,13 @@ async function importReadingFile(file, targetBookId){
     const buf=await file.arrayBuffer();
     const u8=new Uint8Array(buf);
     let text;
-    // BOM / 编码自动检测：UTF-16LE、UTF-16BE、GBK、UTF-8
+    // BOM检测：UTF-16LE、UTF-16BE；否则UTF-8，UTF-8乱码回退GBK
     if(u8.length>=2 && u8[0]===0xFF && u8[1]===0xFE){
       text=new TextDecoder("utf-16le").decode(buf);
     }else if(u8.length>=2 && u8[0]===0xFE && u8[1]===0xFF){
       text=new TextDecoder("utf-16be").decode(buf);
     }else{
       text=new TextDecoder("utf-8").decode(buf);
-      // UTF-8解出来有乱码就尝试GBK
       if(/\ufffd{2,}/.test(text)||/[锟斤拷]{2,}/.test(text)){
         try{text=new TextDecoder("gbk").decode(buf);}catch(e){}
       }
