@@ -7617,26 +7617,12 @@ const ProactiveMsg = {
 };
 
 // ===== 轻量通知出口：微信主动消息 / 日记解封共用 =====
-function ensureNotifyPermission(){
-  if(!("Notification" in window)) return;
-  if(Notification.permission==="default"){
-    try{ Notification.requestPermission(); }catch(e){}
-  }
-}
-function sendSystemNotification(title, body, icon, options={}){
-  try{
-    if(!("Notification" in window)) return;
-    if(Notification.permission!=="granted") return;
-    const app=options.app||"wechat";
-    const n=new Notification(title, {
-      body: String(body||"").replace(/\[[^\]]*\]/g,"").slice(0,80),
-      icon: icon || "icon-192.png",
-      badge: "icon-192.png",
-      tag: options.tag || "miao-notify"
-    });
-    n.onclick=()=>{ try{ window.focus(); openApp(app); const b=document.getElementById(app+"Badge"); if(b)b.style.display="none"; n.close(); }catch(e){} };
-  }catch(e){ console.warn("通知失败", e); }
-}
+// 注意：iOS（Safari / 主屏 PWA）不支持 new Notification() 构造函数，
+// 真·系统/锁屏通知需要 service worker + Web Push + 后端推送服务，本静态单文件 PWA 没有。
+// 所以这里不再请求"通知权限"、也不再尝试发系统通知（在 iOS 上永远静默失败、且会误导）。
+// 角色主动消息的反馈一律走应用内：红点 badge + showProactiveToast 横幅（这套在 iOS 正常）。
+function ensureNotifyPermission(){ /* 故意空操作：见上方说明 */ }
+function sendSystemNotification(){ /* 故意空操作：见上方说明，反馈改用应用内红点+横幅 */ }
 function notifyMiao(options={}){
   const app=options.app||"wechat";
   const badgeId=(options.badge||app)+"Badge";
