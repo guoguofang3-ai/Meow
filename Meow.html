@@ -17521,7 +17521,14 @@ async function importReadingFile(file, targetBookId){
   }
   if(lower.endsWith(".epub") || file.type==="application/epub+zip") parsed=await parseReadingEpub(file);
   else {
-    const text=await file.text();
+    let text=await file.text();
+    // 如果UTF-8解出来有乱码（连续替换字符或锟斤拷），尝试用GBK重新解码
+    if(/\ufffd{2,}/.test(text)||/[锟斤拷]{2,}/.test(text)){
+      try{
+        const buf=await file.arrayBuffer();
+        text=new TextDecoder("gbk").decode(buf);
+      }catch(e){/* fallback保持UTF-8结果 */}
+    }
     parsed={title:name.replace(/\.(txt|md|markdown)$/i,""),author:"",content:readingNormalizeText(text),sourceName:name};
   }
   if(!parsed.content) throw new Error("没有读到正文");
