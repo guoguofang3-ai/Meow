@@ -12341,7 +12341,7 @@ function cleanPlainOutputBody(body){
     s=lines.map(l=>l.replace(/^\s*>\s?/,"")).join("\n").trim();
   }
   // 只剥掉完整包裹在最外层的代码围栏；正文里的围栏保留。
-  const outer=s.match(/^([`~]{3,})([a-zA-Z0-9_-]*)[^\n]*\r?\n([\s\S]*?)\r?\n\1\s*$/);
+  const outer=s.match(/^[\t ]{0,3}(?:[、，,。.;；:：]*[\t ]*)?([`~]{3,})([a-zA-Z0-9_-]*)[^\n]*\r?\n([\s\S]*?)\r?\n[\t ]{0,3}(?:[、，,。.;；:：]*[\t ]*)?\1\s*$/);
   if(outer) s=outer[3].trim();
   return s.trim();
 }
@@ -12418,12 +12418,12 @@ function claudeSplitTrailingConversation(s){
     const lineStart=pos-line.length;
     const prev=lines[i-1]||"";
     const tail=text.slice(lineStart).trim();
-    if(tail && (prev.trim()==="" || /^\s*[`~]{3,}/.test(line)) && claudeLooksLikeArtifactTail(tail)){
+    if(tail && (prev.trim()==="" || /^\s*(?:[、，,。.;；:：]*\s*)?[`~]{3,}/.test(line)) && claudeLooksLikeArtifactTail(tail)){
       return {code:text.slice(0,lineStart).replace(/\s+$/,""), tail:text.slice(lineStart).trim()};
     }
     pos=lineStart-1;
   }
-  const m=text.match(/([`~]{3,})([^\r\n]*)$/);
+  const m=text.match(/(?:^|\n)\s*(?:[、，,。.;；:：]*\s*)?([`~]{3,})([^\r\n]*)$/);
   if(m && claudeLooksLikeArtifactTail(m[2]||"")){
     const idx=text.lastIndexOf(m[0]);
     return {code:text.slice(0,idx).replace(/\s+$/,""), tail:String(m[2]||"").trim()};
@@ -12544,7 +12544,7 @@ function normalizeClaudePlainOutputsToCode(text, history){
   if(!s) return s;
   // 已经有真实/近似代码围栏时，不再把整段回复整体套成文件。
   // 由 parseCodeBlocks 先切出代码段，围栏前后的解释保持普通聊天气泡。
-  if(/^\s*[`~]{3,}/m.test(s)) return s;
+  if(/^[\t ]{0,3}(?:[、，,。.;；:：]*[\t ]*)?[`~]{3,}/m.test(s)) return s;
   // 显式标头：例如 “HTML 文件：...”。只把标头后的可识别正文收进 artifact，尾随说明拆回普通文本。
   const headerRe=/^\s*(?:#{1,6}\s*)?((?:docx?|word|文档|txt|text|文本|md|markdown|html|json|svg|css|style|样式|jsx|react|tsx|ts|typescript|js|javascript|脚本|vue|svelte))\s*(?:文件|内容|版本|如下|草稿|代码|组件|页面|数据)?\s*[:：]\s*/gim;
   const ms=[...s.matchAll(headerRe)];
@@ -12981,8 +12981,12 @@ function parseCodeBlocks(text){
   let last=0;
   const escRe=(v)=>String(v).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
   // 支持可变长度围栏：```、````、~~~~。
-  // 修复模型常见的“```好了/```done”关闭围栏粘连：把围栏作为关闭，后面的说明继续作为 text。
-  const openRe=/^([`~]{3,})([^\r\n]*)\r?\n/gm;
+  // 修复模型常见的坏围栏：
+  // 1）```好了 / ```done：关闭围栏后粘了说明文字；
+  // 2）、```好了 / ，```done：关闭围栏前被模型多带了中文标点；
+  // 3）围栏前缩进 0-3 个空格。
+  // 这些都只把围栏本体当作代码边界，说明文字继续作为普通 text，避免代码被拆成白色气泡。
+  const openRe=/^[\t ]{0,3}(?:[、，,。.;；:：]*[\t ]*)?([`~]{3,})([^\r\n]*)\r?\n/gm;
   let m;
   while((m=openRe.exec(s))){
     const fence=m[1]||"```";
@@ -12992,7 +12996,7 @@ function parseCodeBlocks(text){
     const rawInfo=String(m[2]||"").trim();
     const lang=(rawInfo.split(/\s+/)[0]||"code").replace(/[^a-zA-Z0-9_-]/g,"").toLowerCase()||"code";
     const codeStart=openRe.lastIndex;
-    const closeRe=new RegExp("^("+escRe(ch)+"{"+minLen+",})([^\\r\\n]*)(?:\\r?\\n|$)","gm");
+    const closeRe=new RegExp("^[\\t ]{0,3}(?:[、，,。.;；:：]*[\\t ]*)?("+escRe(ch)+"{"+minLen+",})([^\\r\\n]*)(?:\\r?\\n|$)","gm");
     closeRe.lastIndex=codeStart;
     let cm=null;
     while((cm=closeRe.exec(s))){
@@ -13013,8 +13017,9 @@ function parseCodeBlocks(text){
     let code=s.slice(codeStart,cm.index);
     code=code.replace(/\r?\n$/,"");
     out.push({kind:"code", lang, code});
-    const closeFenceLen=(cm[1]||"").length;
-    const afterFence=cm.index+closeFenceLen;
+    const closeFence=(cm[1]||"");
+    const closeFenceOffset=cm[0].indexOf(closeFence);
+    const afterFence=cm.index + Math.max(0,closeFenceOffset) + closeFence.length;
     const tail=String(cm[2]||"");
     if(tail.trim()){
       // 只消费围栏本身，说明文字留给下一轮 text。
