@@ -22,7 +22,8 @@
       "Bash(awk 'NR>=8250 && NR<=8310 && /^function |^  function |^async function /{print NR\": \"$0}' Meow.html)",
       "Bash(grep -nE \"function parseAIMessage|function splitInto|function parseReply|parseInstructions|双换行|split\\\\\\(/\\\\\\\\\\\\\\\\n|\\\\\\\\.split\\\\\\(.*n\\\\\\\\\\\\\\\\n|function parseBubbles|function parseWechat|INSTRUCTION_PARSERS|parsers\\\\.|function parseRoleReply\" Meow.html)",
       "Bash(awk 'NR>=16980 && NR<=17175 && \\(/^function |^  function |^async function |INSTRUCTION|parsers\\\\s*=|const parsers|segments|split/\\){print NR\": \"$0}' Meow.html)",
-      "Bash(grep -ivE \"function|console|//|sendSystem|ensureNotify|notifyMiao|notifyChar\")"
+      "Bash(grep -ivE \"function|console|//|sendSystem|ensureNotify|notifyMiao|notifyChar\")",
+      "Bash(cd \"/c/Users/Administrator/Desktop/喵喵机owo\" && echo \"=== openApp 定义 ===\" && sed -n '/function openApp/,/^}/p' Meow.html | head -40 *)"
     ]
   }
 }
