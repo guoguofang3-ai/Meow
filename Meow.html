@@ -1745,6 +1745,29 @@ body.keyboard-open .quick-modal{max-height:calc(var(--visual-vh,100vh) - 24px);}
 .artifacts-mini-actions .btn{flex:1;background:rgba(0,0,0,.055)}
 
 
+/* Claude Artifacts 文件柜：紧凑版卡片 + 长文件名完整显示 */
+.artifacts-panel{height:80%!important;max-height:720px!important;border-radius:24px 24px 0 0!important;}
+.artifacts-handle{width:36px!important;height:4px!important;margin:9px auto 2px!important;}
+.artifacts-head{height:50px!important;grid-template-columns:46px 1fr 46px!important;padding:0 14px!important;}
+.artifacts-title{font-size:20px!important;font-weight:650!important;}
+.artifacts-close{width:38px!important;height:38px!important;font-size:24px!important;}
+.artifacts-list{padding:8px 14px 8px!important;gap:9px!important;}
+.artifact-card{grid-template-columns:46px minmax(0,1fr) auto!important;gap:10px!important;min-height:66px!important;padding:9px 10px!important;border-radius:18px!important;}
+.artifact-icon{width:42px!important;height:42px!important;border-radius:13px!important;font-size:20px!important;box-shadow:0 7px 14px rgba(0,0,0,.08)!important;}
+.artifact-name{font-size:14px!important;font-weight:800!important;line-height:1.25!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;word-break:break-word!important;overflow-wrap:anywhere!important;}
+.artifact-meta{font-size:10.5px!important;line-height:1.25!important;margin-top:3px!important;}
+.artifact-actions{gap:5px!important;}
+.artifact-round{width:34px!important;height:34px!important;font-size:17px!important;}
+.artifact-round .miao-mini-icon{width:16px!important;height:16px!important;}
+.artifact-group{gap:7px!important;}
+.artifact-group-title{font-size:11px!important;padding:0 3px!important;}
+.artifacts-toolbar{gap:7px!important;padding:3px 12px 8px!important;position:relative!important;z-index:1!important;}
+.artifacts-chip{padding:7px 11px!important;font-size:11px!important;}
+.artifacts-mini-actions{padding:0 20px 7px!important;gap:8px!important;}
+.artifacts-mini-actions .btn{padding:8px 10px!important;font-size:12px!important;}
+.artifacts-download-all{height:48px!important;margin:6px 22px 18px!important;font-size:15px!important;}
+
+
 /* Claude 页面 UI v2：输入区靠近微信，Clawd 独立跑道，图标手绘化 */
 .claude-head-actions .icon-btn{color:var(--bar-text,#111827);background:color-mix(in srgb,var(--accent,#111827) 7%,rgba(255,255,255,.62));}
 .claude-head-actions .icon-btn svg{display:block}
@@ -1877,9 +1900,11 @@ body.keyboard-open .quick-modal{max-height:calc(var(--visual-vh,100vh) - 24px);}
 .claude-msg{margin:9px 0!important}.claude-chat{padding-bottom:10px!important;}
 
 .claude-file-card-v2{cursor:pointer!important;white-space:normal!important;}
-.claude-file-topline{display:grid;grid-template-columns:42px 1fr;gap:10px;align-items:center;}
+.claude-file-topline{display:grid;grid-template-columns:38px 1fr;gap:9px;align-items:center;}
+.claude-file-card-v2{padding:10px!important;border-radius:16px!important;}
+.claude-file-mini-icon{width:38px!important;height:38px!important;border-radius:12px!important;font-size:19px!important;}
 .claude-file-main{min-width:0;}
-.claude-file-mini-icon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:var(--accent,#111827);color:#fff;font-size:22px;font-weight:1000;box-shadow:0 8px 18px color-mix(in srgb,var(--accent,#111827) 18%,transparent);}
+.claude-file-mini-icon{width:38px!important;height:38px!important;border-radius:12px!important;display:flex;align-items:center;justify-content:center;background:var(--accent,#111827);color:#fff;font-size:19px!important;font-weight:1000;box-shadow:0 7px 14px color-mix(in srgb,var(--accent,#111827) 14%,transparent);}
 .claude-file-mini-icon.image{background:color-mix(in srgb,var(--accent,#111827) 78%,#fff 22%);}
 .claude-file-status{margin-top:5px;font-size:10px;line-height:1.35;color:color-mix(in srgb,var(--bar-text,#111827) 45%,transparent);font-weight:750;display:flex;align-items:center;gap:5px;}
 .claude-file-status span{width:6px;height:6px;border-radius:50%;background:color-mix(in srgb,var(--accent,#111827) 70%,#fff 30%);flex:0 0 auto;}
@@ -1914,6 +1939,18 @@ body.keyboard-open .quick-modal{max-height:calc(var(--visual-vh,100vh) - 24px);}
 }
 .claude-output-file-card .claude-file-preview{
   max-height:86px!important;
+}
+.claude-code-preview-card{
+  width:min(276px,100%)!important;
+}
+.claude-code-preview-card .claude-file-mini-icon.code{
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent,#111827) 82%,#fff 18%),var(--accent,#111827));
+  font-size:16px!important;
+}
+.claude-code-preview-text{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;
+  font-size:11px!important;
+  max-height:84px!important;
 }
 .claude-file-inline-actions{
   display:flex;
@@ -11456,8 +11493,7 @@ function renderClaudeBody(m){
       if(isClaudeOutputFileBlock(lang,p.code)){
         bubbles.push(renderClaudeOutputFileBubble(id,lang,p.code,title,m.id));
       }else{
-        const canPreview=["html","svg","jsx","react","json","md","markdown","txt","text"].includes(lang);
-        bubbles.push(`<div class="claude-bubble"><div class="claude-code-block"><div class="claude-code-head"><span>${escapeHtml(p.lang||"code")}</span></div><pre>${escapeHtml(p.code)}</pre><div class="code-actions"><button data-action="copy-code" data-id="${id}">复制代码</button><button data-action="download-code" data-id="${id}">下载</button>${canPreview?`<button data-action="preview-code" data-id="${id}">预览</button>`:""}</div></div></div>`);
+        bubbles.push(renderClaudeCodePreviewBubble(id,lang,p.code,title,m.id));
       }
     }
   });
@@ -12286,6 +12322,7 @@ function claudePlainOutputLang(raw){
   if(/^(?:md|markdown)/i.test(x)) return "md";
   if(/^(?:json)/i.test(x)) return "json";
   if(/^(?:html)/i.test(x)) return "html";
+  if(/^(?:txt|text|文本)/i.test(x)) return "txt";
   return "txt";
 }
 function cleanPlainOutputBody(body){
@@ -12295,12 +12332,71 @@ function cleanPlainOutputBody(body){
   if(lines.length && quoted>=Math.max(1, Math.floor(lines.length*0.45))){
     s=lines.map(l=>l.replace(/^\s*>\s?/,"")).join("\n").trim();
   }
-  return s.replace(/^```[a-zA-Z0-9_-]*\s*/,'').replace(/```\s*$/,'').trim();
+  // 只剥掉完整包裹在最外层的代码围栏；正文里的围栏保留。
+  const outer=s.match(/^([`~]{3,})([a-zA-Z0-9_-]*)[^\n]*\r?\n([\s\S]*?)\r?\n\1\s*$/);
+  if(outer) s=outer[3].trim();
+  return s.trim();
+}
+function maxFenceRun(s,ch){
+  const re=new RegExp((ch==="`"?"`":"~")+"{3,}","g");
+  let max=2,m;
+  while((m=re.exec(String(s||"")))) max=Math.max(max,m[0].length);
+  return max;
+}
+function safeClaudeFenceBlock(lang, body){
+  const clean=cleanPlainOutputBody(body);
+  const l=(typeof claudeOutputLang==="function") ? claudeOutputLang(lang||"txt") : claudePlainOutputLang(lang||"txt");
+  const fence="`".repeat(Math.max(3, maxFenceRun(clean,"`")+1));
+  return fence+l+"\n"+clean+"\n"+fence;
+}
+function explicitClaudeOutputLangFromText(txt){
+  const x=String(txt||"").toLowerCase();
+  if(/(?:^|[\s。！？,.，、])(?:markdown|md|\.md)(?:[\s。！？,.，、]|文件|文档|$)|md文件|markdown文档/.test(x)) return "md";
+  if(/(?:^|[\s。！？,.，、])(?:txt|text|\.txt)(?:[\s。！？,.，、]|文件|文本|$)|文本文件/.test(x)) return "txt";
+  if(/(?:docx?|word|\.docx?|word文档|文档文件)/.test(x)) return "doc";
+  if(/(?:json|\.json)(?:文件|数据|格式|$)/.test(x)) return "json";
+  if(/(?:html|\.html)(?:文件|网页|页面|$)/.test(x)) return "html";
+  return "";
+}
+function inferClaudeOutputLangFromBody(body, preferred){
+  if(preferred) return claudeOutputLang(preferred);
+  const s=String(body||"").trim();
+  if(!s) return "txt";
+  try{ const o=JSON.parse(s); if(o && typeof o==="object") return "json"; }catch(e){}
+  if(/<!doctype\s+html|<html[\s>]/i.test(s)) return "html";
+  if(/<svg[\s>][\s\S]*<\/svg>/i.test(s)) return "svg";
+  const markdownSignals=[/^#{1,6}\s+\S/m,/^[-*+]\s+\S/m,/^\d+[.)]\s+\S/m,/^>\s+\S/m,/\|[^\n]+\|\s*\n\|[-:| ]+\|/m,/```|~~~/,/^\s*(?:[-+*]|\d+[.)])\s+`?[^\n]+`?/m,/^[\w.-]+\/[\w.-]+/m];
+  if(markdownSignals.some(re=>re.test(s))) return "md";
+  if(s.length>260 && /[：:]/.test(s) && /\n/.test(s)) return "md";
+  return "txt";
+}
+function decideClaudeOutputMode(text, history){
+  const s=String(text||"").trim();
+  const lastUser=(history||[]).slice().reverse().find(m=>m&&m.sender==="user");
+  const ask=String(lastUser?.content||"");
+  const explicit=explicitClaudeOutputLangFromText(ask) || explicitClaudeOutputLangFromText(s.split(/\n/).slice(0,3).join("\n"));
+  const fileIntent=/文件|artifact|Artifacts|下载|导出|保存成|输出为|输出成|做成|弄成|写成|整理成|合并成|打包成|生成.*(?:文件|文档|页面|数据)/i.test(ask);
+  const deliverAction=/帮我写|给我写|写一(?:个|份|篇|版)?|生成|创作|编写|拟一(?:个|份|篇|版)?|草拟|起草|整理|汇总|总结成|做一(?:个|份|篇|版)?|来一(?:个|份|篇|版)?|出一(?:个|份|篇|版)?/i.test(ask);
+  const deliverObject=/方案|文档|报告|总结|清单|指南|教程|说明|说明书|步骤|计划|规划|提纲|草稿|稿子|文案|邮件|通知|公告|故事|剧本|日记|信|提示词|prompt|角色设定|世界书|部署|集成|改动说明|任务书|需求|README|手册/i.test(ask);
+  const handoff=/复制|拿去|交给|发给|给\s*(?:cc|cursor|claude code|Claude Code)|让\s*(?:cc|cursor|claude)/i.test(ask);
+  const teaching=/教我|怎么|为什么|原因|解释|分析|排查|看看|检查|确认|先别|讨论|聊聊|能不能|可不可以|哪里错|什么意思|帮我看/i.test(ask);
+  const replyStructured=/^#{1,6}\s+\S/m.test(s) || /```|~~~/.test(s) || (/\n\s*(?:[-*+]|\d+[.)])\s+\S/.test(s) && s.length>180);
+  let score=0;
+  if(fileIntent) score+=4;
+  if(explicit) score+=2;
+  if(deliverAction && deliverObject) score+=3;
+  else if(deliverAction && handoff) score+=3;
+  if(handoff) score+=2;
+  if(replyStructured && s.length>220) score+=1;
+  if(s.length>800 && deliverAction) score+=1;
+  if(teaching && !fileIntent && !handoff) score-=3;
+  const wrap=!!s && (score>=3);
+  return {wrap, lang:inferClaudeOutputLangFromBody(s, explicit)};
 }
 function normalizeClaudePlainOutputsToCode(text, history){
   const s=String(text||"").trim();
-  if(!s || /```/.test(s)) return s;
-  // 1. 显式标头匹配（原有逻辑）
+  if(!s) return s;
+  // 1. 显式标头：例如 “Markdown 文件：...”。用安全长围栏包裹，正文里有 ``` 也不会拆。
   const headerRe=/^\s*(?:#{1,6}\s*)?((?:docx?|word|文档|txt|文本|md|markdown|html|json))\s*(?:文件|内容|版本|如下|草稿)?\s*[:：]\s*/gim;
   const ms=[...s.matchAll(headerRe)];
   if(ms.length){
@@ -12313,27 +12409,17 @@ function normalizeClaudePlainOutputsToCode(text, history){
       const end=i+1<ms.length ? ms[i+1].index : s.length;
       const body=cleanPlainOutputBody(s.slice(start,end));
       const lang=claudePlainOutputLang(m[1]);
-      if(body) out += "```"+lang+"\n"+body+"\n```\n\n";
+      if(body) out += safeClaudeFenceBlock(lang, body) + "\n\n";
       last=end;
     }
     const tail=s.slice(last).trim();
     if(tail) out += tail;
     return out.trim();
   }
-  // 2. 用户消息意图匹配（放宽版）
-  const lastUser=(history||[]).slice().reverse().find(m=>m&&m.sender==="user");
-  const ask=String(lastUser?.content||"");
-  const wantsDoc=/\b(docx?|word|txt)\b|文档|文本文件|生成文件|做成文件|输出文件|保存成|写一?个文件|给我写|帮我写|写成|弄成文件/i.test(ask);
-  if(wantsDoc && s.length>18){
-    const lang=/\b(docx?|word)\b|文档/.test(ask) ? "doc" : "txt";
-    return "```"+lang+"\n"+cleanPlainOutputBody(s)+"\n```";
-  }
-  // 3. 新增：模型输出看起来像独立文件（非对话性质）
-  //    如果回复不像对话（没有称呼/语气词开头），且长度 > 50，且用户请求暗示要"作品"类输出
-  const wantsCreation=/写[一个]*|生成|创作|编写|拟[一个]*|草拟|起草|做[一个]*|弄[一个]*|来[一个]*|出[一个]*|整[一个]*/.test(ask)
-    && /信|文|稿|诗|词|歌|故事|剧本|通知|公告|简历|自荐|推荐信|邀请|贺|祝|说明书|方案|计划|总结|报告|日记|情书|小作文|惊喜|卡片|便签|留言/.test(ask);
-  if(wantsCreation && s.length>50 && !/^(好的|当然|没问题|嗯|哈|可以|我来|以下|这是)/i.test(s)){
-    return "```txt\n"+cleanPlainOutputBody(s)+"\n```";
+  // 2. 根据“是否是可交付成品”判断，而不是把某些词写死成某个格式。
+  const decision=decideClaudeOutputMode(s, history);
+  if(decision.wrap){
+    return safeClaudeFenceBlock(decision.lang, s);
   }
   return s;
 }
@@ -12436,7 +12522,7 @@ async function callClaudeReply(){
         console.log("[ClaudeReply] 保存 artifact:", lang, "code长度:", code.length, "msgId:", mid);
         const savedKey=saveClaudeArtifactRecord({lang,code,title:guessClaudeOutputTitle(lang,code),msgId:mid,createdAt:now2+i,time:t,origin:"generation"});
         console.log("[ClaudeReply] artifact key:", savedKey||"(空/失败)");
-        h.push({id:mid,sender:"assistant",type:"text",content:"```"+lang+"\n"+code+"\n```",createdAt:now2+i,time:t});
+        h.push({id:mid,sender:"assistant",type:"text",content:safeClaudeFenceBlock(lang,code),createdAt:now2+i,time:t});
       } else if(b.content){
         h.push({id:uid("cmsg"),sender:"assistant",type:"text",content:b.content,createdAt:now2+i,time:nowTime()});
       }
@@ -12740,12 +12826,36 @@ function cleanAITextKeepCode(text){
 }
 function parseCodeBlocks(text){
   const s=String(text||"");
-  const re=/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g;
-  let out=[], last=0, m;
-  while((m=re.exec(s))){
+  const out=[];
+  let last=0;
+  const escRe=(v)=>String(v).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  // 支持可变长度围栏：```、````、~~~~。闭合围栏必须在行首，且长度 >= 开启围栏。
+  // 这样外层 ````md 可以安全包住正文里的 ```json / ```js，不再把一个 md 文件拆碎。
+  const openRe=/^([`~]{3,})([^\r\n]*)\r?\n/gm;
+  let m;
+  while((m=openRe.exec(s))){
+    const fence=m[1]||"```";
+    const ch=fence.charAt(0);
+    if(!/^([`]+|[~]+)$/.test(fence)){ continue; }
+    const minLen=fence.length;
+    const rawInfo=String(m[2]||"").trim();
+    const lang=(rawInfo.split(/\s+/)[0]||"code").replace(/[^a-zA-Z0-9_-]/g,"").toLowerCase()||"code";
+    const codeStart=openRe.lastIndex;
+    const closeRe=new RegExp("^"+escRe(ch)+"{"+minLen+",}[ \\t]*(?:\\r?\\n|$)","gm");
+    closeRe.lastIndex=codeStart;
+    const cm=closeRe.exec(s);
+    if(!cm){
+      // 未闭合时按普通文本保留，避免吞掉后续聊天。
+      out.push({kind:"text", text:s.slice(last)});
+      last=s.length;
+      break;
+    }
     if(m.index>last) out.push({kind:"text", text:s.slice(last,m.index)});
-    out.push({kind:"code", lang:(m[1]||"code").toLowerCase(), code:m[2]||""});
-    last=re.lastIndex;
+    let code=s.slice(codeStart,cm.index);
+    code=code.replace(/\r?\n$/,"");
+    out.push({kind:"code", lang, code});
+    last=closeRe.lastIndex;
+    openRe.lastIndex=last;
   }
   if(last<s.length) out.push({kind:"text", text:s.slice(last)});
   if(!out.length) return [{kind:"text", text:s}];
@@ -12851,6 +12961,31 @@ function renderClaudeOutputFileBubble(id,lang,code,title,msgId){
     </div>
   </div></div>`;
 }
+function renderClaudeCodePreviewBubble(id,lang,code,title,msgId){
+  const l=claudeOutputLang(lang);
+  const ext=claudeOutputExt(l).toUpperCase();
+  const chars=String(code||"").length;
+  const preview=String(code||"").trim().slice(0,260);
+  const icon=l==="json"?"{}":(l==="html"?"‹›":(l==="css"?"#":(l==="js"||l==="ts"||l==="tsx"||l==="jsx"?"</>":"⌘")));
+  const canPreview=["html","svg","jsx","react","json","md","markdown","txt","text","tsx"].includes(String(lang||"").toLowerCase());
+  return `<div class="claude-bubble claude-output-bubble"><div class="claude-file-card claude-file-card-v2 claude-code-preview-card" data-action="preview-code" data-id="${escapeAttr(id)}">
+    <div class="claude-file-topline">
+      <div class="claude-file-mini-icon code">${escapeHtml(icon)}</div>
+      <div class="claude-file-main">
+        <div class="claude-file-title">${escapeHtml(title||guessClaudeOutputTitle(l,code))}</div>
+        <div class="claude-file-meta">代码片段 · ${escapeHtml(ext)} · ${chars} 字符</div>
+        <div class="claude-file-status"><span></span>Claude 输出代码 · 点卡片预览</div>
+      </div>
+    </div>
+    ${preview?`<div class="claude-file-preview claude-code-preview-text">${escapeHtml(preview)}${chars>260?"\n…":""}</div>`:""}
+    <div class="claude-output-actions">
+      <button data-action="copy-code" data-id="${escapeAttr(id)}">复制</button>
+      <button data-action="download-code" data-id="${escapeAttr(id)}">下载</button>
+      ${canPreview?`<button data-action="preview-code" data-id="${escapeAttr(id)}">预览</button>`:""}
+      <button class="danger" data-action="delete-claude-msg" data-id="${escapeAttr(msgId||"")}">删除</button>
+    </div>
+  </div></div>`;
+}
 function stableArtifactKey(lang, code, msgId){
   let s=String(claudeOutputLang(lang)||"txt")+"|"+String(msgId||"")+"|"+String(code||"").slice(0,500);
   let h=2166136261;
@@ -12933,7 +13068,17 @@ function saveClaudeArtifactRecord(opts){
   }catch(e){ console.error("[ArtifactStore] saveClaudeArtifactRecord 异常!", e, opts); return ""; }
 }
 function registerClaudeOutputArtifact(lang, code, title, msgId){
-  return saveClaudeArtifactRecord({lang,code,title,msgId,origin:"render"});
+  try{
+    const l=claudeOutputLang(lang||"txt");
+    const body=String(code||"");
+    const key=stableArtifactKey(l, body, msgId||"");
+    const list=claudeArtifactStoreGet();
+    const old=list.find(x=>x && x.key===key && x.lang===l && x.code===body);
+    if(old) return key;
+    return saveClaudeArtifactRecord({key,lang:l,code:body,title,msgId,origin:"render"});
+  }catch(e){
+    return saveClaudeArtifactRecord({lang,code,title,msgId,origin:"render"});
+  }
 }
 function storeClaudeCode(lang,code,title,msgId){
   const id=uid("code");
@@ -19540,12 +19685,23 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     return (names[langNorm(lang)]||"Code")+" "+(n+1);
   }
   function appStorage(){ try{ if(window.MiaoAppStorage && typeof window.MiaoAppStorage.get==="function") return window.MiaoAppStorage; }catch(e){} try{ if(typeof Storage!=="undefined" && Storage && typeof Storage.get==="function") return Storage; }catch(e){} return null; }
-  function getStoreArray(key){ try{ var S=appStorage(); if(S) return S.get(key,[])||[]; }catch(e){ console.warn("[Artifacts] getStoreArray Storage失败",key,e); } try{return JSON.parse(localStorage.getItem("miao2."+key)||"[]")||[];}catch(e){return [];} }
-  function setStoreArray(key, arr){ try{ var S=appStorage(); if(S) return S.set(key,arr||[]); }catch(e){ console.warn("[Artifacts] setStoreArray Storage失败",key,e); } try{localStorage.setItem("miao2."+key,JSON.stringify(arr||[]));}catch(e){} }
+  function normalizeArrayValue(v){
+    if(Array.isArray(v)) return v.filter(Boolean);
+    if(v==null || v==="") return [];
+    if(typeof v==="string"){
+      var t=v.trim(); if(!t) return [];
+      if(t.charAt(0)==="["){ try{ var parsed=JSON.parse(t); if(Array.isArray(parsed)) return parsed.filter(Boolean); }catch(e){} }
+      return t.split(",").map(function(x){return x.trim();}).filter(Boolean);
+    }
+    try{ return Array.from(v||[]).filter(Boolean); }catch(e){ return []; }
+  }
+  function getStoreArray(key){ try{ var S=appStorage(); if(S) return normalizeArrayValue(S.get(key,[])); }catch(e){ console.warn("[Artifacts] getStoreArray Storage失败",key,e); } try{return normalizeArrayValue(JSON.parse(localStorage.getItem("miao2."+key)||"[]"));}catch(e){ try{return normalizeArrayValue(localStorage.getItem("miao2."+key)||"");}catch(_){return [];} } }
+  function setStoreArray(key, arr){ try{ var S=appStorage(); if(S) return S.set(key,normalizeArrayValue(arr)); }catch(e){ console.warn("[Artifacts] setStoreArray Storage失败",key,e); } try{localStorage.setItem("miao2."+key,JSON.stringify(normalizeArrayValue(arr)));}catch(e){} }
   function hiddenSet(){ return new Set(getStoreArray("claudeArtifactsHidden")); }
   function pinnedSet(){ return new Set(getStoreArray("claudeArtifactsPinned")); }
   function saveSet(key,set){ setStoreArray(key, Array.from(set||[])); }
   function hash(s){ var h=2166136261; s=String(s||""); for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=(h*16777619)>>>0; } return h.toString(36); }
+  function artifactIdentity(lang,code){ return "art_"+hash(langNorm(lang)+"|"+String(code||"").slice(0,512)); }
   function getAllClaudeArtifactHistories(){
     var rows=[], seen={};
     function add(key, arr){
@@ -19578,7 +19734,7 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
       store.forEach(function(r,idx){
           if(!r || !r.code || !goodLang(r.lang)) return;
           var lang=langNorm(r.lang), code=String(r.code||"");
-          var id="store_"+(r.key||hash((r.msgId||idx)+"|"+lang+"|"+code.slice(0,120)));
+          var id=artifactIdentity(lang,code);
           var isHidden=hidden.has(id), isPinned=pinned.has(id);
           if(isHidden && !includeHidden){ _debugHiddenSkip++; return; }
           list.push({id:id,msgId:r.msgId||"",sourceKey:r.sourceKey||"store",lang:lang,kind:kindOf(lang),code:code,title:r.title||titleOf(code,lang,list.length),time:r.time||"",createdAt:r.createdAt||0,hidden:isHidden,pinned:isPinned,size:code.length,store:true});
@@ -19593,7 +19749,7 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
       for(var j=0;j<parts.length;j++){
         var p=parts[j]; if(!p || p.kind!=="code" || !goodLang(p.lang)) continue;
         var lang=langNorm(p.lang), code=p.code||"";
-        var id="a_"+hash((rows[i].key||"current")+"|"+(msg.id||i)+"|"+j+"|"+lang+"|"+code.slice(0,120));
+        var id=artifactIdentity(lang,code);
         var isHidden=hidden.has(id), isPinned=pinned.has(id);
         if(isHidden && !includeHidden){ _debugHiddenSkip++; continue; }
         list.push({id:id,msgId:msg.id,sourceKey:rows[i].key,lang:lang,kind:kindOf(lang),code:code,title:titleOf(code,lang,list.length),time:msg.time||"",createdAt:msg.createdAt||0,hidden:isHidden,pinned:isPinned,size:code.length});
@@ -19604,10 +19760,11 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
       var reg=getStoreArray("claudeArtifactRegistry")||[];
       reg.forEach(function(r,idx){
           if(!r || !r.code || !goodLang(r.lang)) return;
-          var id="registry_"+(r.key||hash((r.msgId||idx)+"|"+String(r.code).slice(0,120)));
+          var lang=langNorm(r.lang), code=String(r.code||"");
+          var id=artifactIdentity(lang,code);
           var isHidden=hidden.has(id), isPinned=pinned.has(id);
           if(isHidden && !includeHidden){ _debugHiddenSkip++; return; }
-          list.push({id:id,msgId:r.msgId||"",sourceKey:r.sourceKey||"registry",lang:langNorm(r.lang),kind:kindOf(r.lang),code:r.code||"",title:r.title||titleOf(r.code,r.lang,list.length),time:r.time||"",createdAt:r.createdAt||0,hidden:isHidden,pinned:isPinned,size:String(r.code||"").length,registry:true});
+          list.push({id:id,msgId:r.msgId||"",sourceKey:r.sourceKey||"registry",lang:lang,kind:kindOf(lang),code:code,title:r.title||titleOf(code,lang,list.length),time:r.time||"",createdAt:r.createdAt||0,hidden:isHidden,pinned:isPinned,size:code.length,registry:true});
           _debugFromRegistry++;
         });
     }catch(e){ console.error("[collectArtifacts] registry读取异常", e); }
@@ -19639,23 +19796,27 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
   }
   function render(){
     var box=document.getElementById("artifactsList"); if(!box) return;
-    var all=collectArtifacts(true), arr=collectArtifacts(false);
-    var hiddenCount=all.filter(function(x){return x.hidden;}).length;
+    var all=collectArtifacts(true);
+    var arr=all.filter(function(x){return !x.hidden;});
+    var hiddenCount=all.length-arr.length;
     var filter=(window.MiaoArtifacts&&window.MiaoArtifacts.filter)||"all";
     var visible=filter==="all"?arr:arr.filter(function(a){return a.kind===filter;});
     var dl=document.querySelector(".artifacts-download-all"); if(dl) dl.style.display=arr.length?"block":"none";
-    var chips=['all','doc','web','data','image','code'].map(function(k){ var name=k==='all'?'全部':labelOfKind(k); var count=k==='all'?arr.length:arr.filter(function(a){return a.kind===k;}).length; return '<button class="artifacts-chip '+(filter===k?'active':'')+'" data-artifact-action="filter" data-kind="'+k+'">'+name+' '+count+'</button>'; }).join('');
+    var counts={all:arr.length,doc:0,web:0,data:0,image:0,code:0};
+    arr.forEach(function(a){ if(counts[a.kind]!=null) counts[a.kind]++; });
+    var chips=['all','doc','web','data','image','code'].map(function(k){ var name=k==='all'?'全部':labelOfKind(k); return '<button class="artifacts-chip '+(filter===k?'active':'')+'" data-artifact-action="filter" data-kind="'+k+'">'+name+' '+(counts[k]||0)+'</button>'; }).join('');
     var mini='<div class="artifacts-toolbar">'+chips+'</div><div class="artifacts-mini-actions"><button class="btn" data-artifact-action="clear-unpinned">清理未固定输出</button><button class="btn" data-artifact-action="restore-hidden">恢复隐藏 '+hiddenCount+'</button></div>';
-    if(!visible.length){ box.innerHTML=mini+'<div class="artifacts-empty">还没有可显示的 Artifacts。Claude 回复里出现 HTML / JSON / Markdown / TXT / DOC / SVG / JS 后，会自动收进这里。</div>'; return; }
+    if(!visible.length){ box.innerHTML=mini+'<div class="artifacts-empty">还没有可显示的 Artifacts。Claude 回复里出现 HTML / JSON / Markdown / TXT / DOC / SVG / JS 后，会自动收进这里。</div>'; box.scrollTop=0; return; }
     var order=['doc','web','data','image','code'], html=mini;
     order.forEach(function(kind){
       var group=visible.filter(function(a){return a.kind===kind;}); if(!group.length) return;
       html+='<div class="artifact-group"><div class="artifact-group-title">'+htmlEscape(labelOfKind(kind))+'</div>';
-      group.slice(0,20).forEach(function(a){ html+=renderCard(a); });
-      if(group.length>20) html+='<div class="artifact-more">还有 '+(group.length-20)+' 个更早输出，已折叠以避免卡顿。</div>';
+      group.slice(0,30).forEach(function(a){ html+=renderCard(a); });
+      if(group.length>30) html+='<div class="artifact-more">还有 '+(group.length-30)+' 个更早输出，已折叠以避免卡顿。</div>';
       html+='</div>';
     });
     box.innerHTML=html;
+    box.scrollTop=0;
   }
   function open(){ render(); var m=document.getElementById("artifactsMask"); if(m) m.classList.add("show"); }
   function close(){ var m=document.getElementById("artifactsMask"); if(m) m.classList.remove("show"); }
