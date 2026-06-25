@@ -12749,37 +12749,39 @@ function fenceFor(code){
   while((mm=re.exec(s))){ if(mm[0].length>max) max=mm[0].length; }
   return "`".repeat(Math.max(3, max+1));
 }
-// 按 CommonMark 变长围栏规则解析：记住开围栏的反引号数量，只有 >= 同数量且独占一行的围栏才算结束。
-// 这样 4 反引号包裹的文件里即使含有 3 反引号代码块，也不会被内层围栏截断。
+// 扫描式解析，按变长围栏规则（CommonMark 思路 + 容忍 LLM 常见写法）：
+// - 开围栏：3+ 反引号 + 同行 info(语言) + 换行；围栏前若有同行文字，算正文。
+// - 闭围栏：首个 >= 开围栏反引号数 的反引号串（可在行内、其后可跟文字，跟随文字算正文）。
+// - 记住开围栏长度，4 反引号文件里的 3 反引号内层代码块不会误闭合，文件不被截断。
 function parseCodeBlocks(text){
   const s=String(text||"");
-  const lines=s.split("\n");
-  const out=[]; let buf=[];
-  const flush=()=>{ if(buf.length){ out.push({kind:"text", text:buf.join("\n")}); buf=[]; } };
-  // 开围栏：行内可有前置文字（算正文），之后是 3+ 反引号，再跟不含反引号的 info(语言)到行尾。
-  const openRe=/^(.*?)(`{3,})([^`]*)$/;
-  let i=0;
-  while(i<lines.length){
-    const om=lines[i].match(openRe);
-    if(om){
-      const prefix=om[1];
-      const ticks=om[2].length;
-      const lang=((om[3]||"").trim().split(/\s+/)[0]||"code").toLowerCase();
-      if(prefix.trim()) buf.push(prefix);          // 围栏前的同行文字归入正文
-      const closeRe=new RegExp("^\\s{0,3}`{"+ticks+",}\\s*$");
-      const body=[]; let j=i+1, closed=false;
-      while(j<lines.length){
-        if(closeRe.test(lines[j])){ closed=true; break; }
-        body.push(lines[j]); j++;
-      }
-      flush();
-      out.push({kind:"code", lang:lang||"code", code:body.join("\n")});
-      i = closed ? j+1 : lines.length;
-      continue;
+  const out=[];
+  let pos=0;
+  const openRe=/(`{3,})([^\n`]*)\n/g;
+  while(pos<s.length){
+    openRe.lastIndex=pos;
+    const om=openRe.exec(s);
+    if(!om){
+      if(pos<s.length) out.push({kind:"text", text:s.slice(pos)});
+      break;
     }
-    buf.push(lines[i]); i++;
+    const ticks=om[1].length;
+    const lang=(om[2].trim().split(/\s+/)[0]||"code").toLowerCase();
+    const bodyStart=om.index+om[0].length;
+    if(om.index>pos) out.push({kind:"text", text:s.slice(pos,om.index)});
+    const closeRe=new RegExp("`{"+ticks+",}","g");
+    closeRe.lastIndex=bodyStart;
+    const cm=closeRe.exec(s);
+    if(!cm){
+      out.push({kind:"code", lang:lang||"code", code:s.slice(bodyStart)});
+      pos=s.length;
+    }else{
+      out.push({kind:"code", lang:lang||"code", code:s.slice(bodyStart,cm.index).replace(/\n$/,"")});
+      let after=cm.index+cm[0].length;
+      if(s[after]==="\n") after++;   // 吃掉闭围栏后的一个换行，保留段落分隔
+      pos=after;
+    }
   }
-  flush();
   if(!out.length) return [{kind:"text", text:s}];
   return mergeAdjacentCodeBlocks(out);
 }
