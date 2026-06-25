@@ -13,7 +13,9 @@
       "PowerShell(winget install --id GitHub.cli -e --accept-source-agreements --accept-package-agreements --silent)",
       "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" --version)",
       "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" auth status 2>&1)",
-      "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" repo list --limit 50 --json name,visibility,owner,defaultBranchRef,url | ConvertFrom-Json | Format-Table @{n='owner';e={$_.owner.login}}, name, visibility, url -AutoSize)"
+      "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" repo list --limit 50 --json name,visibility,owner,defaultBranchRef,url | ConvertFrom-Json | Format-Table @{n='owner';e={$_.owner.login}}, name, visibility, url -AutoSize)",
+      "Bash(grep -n \"function.*[Mm]usic\\\\|function.*[Ll]yric\\\\|musicApiBase\\\\|musicApi\\\\|/search\\\\|/lyric\\\\|share_music\\\\|send_music\\\\|\\\\\\\\[分享音乐\\\\|\\\\\\\\[发送音乐\\\\|分享音乐\\\\|发送音乐\\\\|musicSearch\\\\|fetchLyric\\\\|getLyric\\\\|songUrl\\\\|/song\" Meow.html)",
+      "Bash(grep -n \"分享了音乐\\\\|分享了一首\\\\|type===\\\\\"music\\\\\"\\\\|type==='music'\\\\|msgToContext\\\\|function buildWechatMessages\\\\|function buildContext\\\\|\\\\\\\\[音乐\\\\\\\\]\\\\|lyricDigest\\\\|歌词氛围\\\\|m.data.lyrics\" Meow.html)"
     ]
   }
 }

@@ -3128,7 +3128,8 @@ body.multiselect-mode .msg{ cursor:pointer; }
 .lyrics-panel{
   --lyrics-bg: color-mix(in srgb, var(--bar-bg, var(--card, #fff)) 88%, transparent);
   --lyrics-text: var(--bar-text, var(--text, #111827));
-  --lyrics-muted: color-mix(in srgb, var(--lyrics-text) 44%, transparent);
+  --lyrics-muted: color-mix(in srgb, var(--lyrics-text) 52%, transparent);
+  --lyrics-line: color-mix(in srgb, var(--lyrics-text) 64%, transparent);
   --lyrics-soft: color-mix(in srgb, var(--lyrics-text) 18%, transparent);
   --lyrics-accent: var(--accent, #c07a92);
   height:78%;border-radius:28px 28px 0 0;
@@ -3146,7 +3147,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
 .lyrics-close{position:absolute!important;right:20px!important;top:52px!important;background:transparent!important;color:var(--lyrics-muted)!important;box-shadow:none!important;}
 .lyrics-close:before,.lyrics-close:after{background:currentColor!important;height:2px!important;}
 .lyrics-body{padding:26px 30px 44px!important;text-align:center!important;}
-.lyric-line{margin:22px 0!important;color:var(--lyrics-muted)!important;font-size:16px!important;line-height:1.45!important;font-weight:600!important;transition:color .25s,transform .25s,opacity .25s!important;opacity:.72;}
+.lyric-line{margin:22px 0!important;color:var(--lyrics-line)!important;font-size:16px!important;line-height:1.45!important;font-weight:650!important;transition:color .25s,transform .25s,opacity .25s!important;opacity:1;}
 .lyric-line .lyric-main{font-size:16px;letter-spacing:.2px;}
 .lyric-line .lyric-trans{font-size:13px;margin-top:7px;color:var(--lyrics-muted);font-weight:500;letter-spacing:.3px;}
 .lyric-line.active{color:var(--lyrics-accent)!important;font-size:16px!important;transform:scale(1.035)!important;opacity:1;font-weight:900!important;}
@@ -9455,7 +9456,7 @@ function extractBareUrl(text){
 
 async function callAI(api, history, onChunk, extraSystem){
   const role=currentRole();
-  const system=buildSystemPrompt(role) + (extraSystem||"");
+  const system=buildSystemPrompt(role) + (extraSystem||"") + buildLatestLyricDigestNote(history);
   let realWechatImageToConsume=null;
   const messages=[
     {role:"system", content:system},
@@ -9667,6 +9668,7 @@ ${buildCommandTaskContext()||"暂无小任务反馈"}
 平台可选：小红书、微博、贴吧、论坛、新闻。评论字段可省略。
 [分享音乐: 歌名|歌手|专辑|附言|歌词氛围/这首歌的感觉|音频URL]（分享一首歌给user，专辑、附言、音频URL可省略；第5栏不要编真实歌词，只写这首歌的大概氛围、情绪、适合当前关系的理由，让你之后知道这首歌是什么感觉；音频URL必须是可公开访问的 mp3/m4a/ogg 直链；不知道真实音频直链时必须把音频URL留空，绝对不要编造链接；不要输出整首受版权保护的歌词）
 示例：[分享音乐: Medicine|Daughter|The Wild Youth|声音轻得像哄你睡，歌词在拆骨头。|歌词氛围：冷、轻、像夜里低声哄睡。|]
+你可以分享网易云音乐曲库里的任意一首歌，不要只局限在那几首大众金曲——冷门的、小众的、华语/欧美/日韩/纯音乐都行，只要写准确的「歌名+歌手」，前端会自动去网易云搜完整音频和歌词。按你的人设、心情和当下场景挑歌，越贴合越好。
 当 user 明确说“分享一首歌/发首歌/来首歌/放首歌/推荐一首歌”时，必须直接使用 [分享音乐: ...] 指令，不要用句号、省略号、“又来”“说话”等短句代替。
 不要在聊天正文解释“我格式写错了/重新来/补一首歌”，也不要连续重复分享同一首歌。
 [收款]
@@ -14945,6 +14947,7 @@ function toggleMusicPlay(msgId){
       const playUrl=nextFull||nextPreview;
       if(!playUrl){toast("未找到可播放音源");return;}
       saveHistory(h);renderChat();
+      ensureLyricDigest(msgId);
       setTimeout(()=>MusicPlayer.play(msgId,playUrl),100);
     }).catch(e=>{
       const fallback=normalizeAudioUrl(m.data.previewUrl);
@@ -15104,6 +15107,7 @@ function hydrateAIMusicMsg(msgId,title,artist){
     if(!m||!m.data) return;
     mergeMusicInfoIntoMsg(m,info);
     saveHistory(h);renderChat();
+    ensureLyricDigest(msgId);
   }).catch(e=>console.warn("hydrateAIMusicMsg",e));
 }
 window.hydrateAIMusicMsg=hydrateAIMusicMsg;
@@ -15172,6 +15176,45 @@ async function fetchNcmLyrics(songId){
   const merged=mergeTranslatedLyrics(parseLrc(rawPayload.mainRaw), parseLrc(rawPayload.transRaw));
   try{ localStorage.setItem(key,JSON.stringify(rawPayload)); }catch(e){}
   return merged;
+}
+// 把整首歌词提炼成 ≤200 字摘要：去重、跳过制作信息、均匀取最多8句代表歌词
+function buildLyricDigest(lines){
+  const texts=[]; let prev="";
+  for(const l of (lines||[])){
+    const t=String(l&&l.text||"").trim();
+    if(!t || t===prev) continue;
+    if(/^(作词|作曲|编曲|制作|出品|混音|监制|和声|吉他|贝斯|鼓|键盘|录音|母带|后期|Produced|Lyrics?|Composed|Arranged|Mixing|Master)/i.test(t)) continue;
+    texts.push(t); prev=t;
+  }
+  if(!texts.length) return "";
+  const want=Math.min(8, texts.length), step=texts.length/want, picked=[];
+  for(let i=0;i<want;i++) picked.push(texts[Math.floor(i*step)]);
+  let digest=picked.join(" / ");
+  if(digest.length>200) digest=digest.slice(0,200)+"…";
+  return digest;
+}
+// 歌曲分享/播放后预先算好歌词摘要存进消息（只算一次，日常聊天不再请求）
+function ensureLyricDigest(msgId){
+  const h=getHistory(); const m=h.find(x=>x.id===msgId);
+  if(!m||!m.data||!m.data.songId||m.data.lyricDigest) return;
+  fetchNcmLyrics(m.data.songId).then(lines=>{
+    const digest=buildLyricDigest(lines);
+    if(!digest) return;
+    const h2=getHistory(); const m2=h2.find(x=>x.id===msgId);
+    if(m2&&m2.data){ m2.data.lyricDigest=digest; saveHistory(h2); }
+  }).catch(()=>{});
+}
+// 只取"最近一首"歌的歌词摘要注入上下文，换歌自动替换、历史旧歌不重复带
+function buildLatestLyricDigestNote(history){
+  const list=history||getHistory();
+  for(let i=list.length-1;i>=0;i--){
+    const m=list[i];
+    if(m && m.type==="music" && m.data && m.data.lyricDigest){
+      const d=m.data;
+      return `\n\n【最近这首歌的歌词大意】《${d.title||""}》${d.artist?(" - "+d.artist):""}：${d.lyricDigest}\n（你听过这首、知道这些词，聊天时可以自然带出一两句或它的情绪，但别整段背歌词、也别每句都提；换了下一首就以新的为准。）`;
+    }
+  }
+  return "";
 }
 function renderLyricsLines(lines,fallback){
   const body=document.getElementById("lyricsBody");
