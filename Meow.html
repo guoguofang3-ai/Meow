@@ -3176,17 +3176,17 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 .header{padding-top:calc(10px + env(safe-area-inset-top))!important;}
 .wechat-head{margin-top:0!important;}
 .dock{margin-bottom:calc(10px + env(safe-area-inset-bottom))!important;}
-.composer-wrap,.claude-composer-wrap{padding-bottom:env(safe-area-inset-bottom)!important;}
+.composer-wrap,.claude-composer-wrap{padding-bottom:var(--safe-bottom)!important;}
 
 
 /* ===== iOS/PWA keyboard fit v2：键盘打开时锁住页面，用 visualViewport 裁剪应用高度，避免输入框/弹窗被顶到最上方 ===== */
-:root{--app-vh:100vh;--layout-vh:100vh;--visual-vh:100vh;--vv-top:0px;--keyboard-height:0px;--composer-kb-pad:0px;}
+:root{--app-vh:100vh;--layout-vh:100vh;--visual-vh:100vh;--vv-top:0px;--keyboard-height:0px;--composer-kb-pad:0px;--safe-bottom:7px;}
 @supports (height:100dvh){:root{--app-vh:100dvh;}}
 html,body{width:100%!important;height:var(--app-vh)!important;min-height:var(--app-vh)!important;overflow:hidden!important;overscroll-behavior:none!important;}
 body{position:fixed!important;inset:0!important;}
 .phone-shell{height:var(--app-vh)!important;top:0!important;transform:translateY(var(--vv-top))!important;}
 .screen,.app-screen,.home-screen,.lock-screen{height:100%!important;}
-.composer-wrap,.claude-composer-wrap,.story-composer-wrap,.call-composer-wrap{padding-bottom:calc(env(safe-area-inset-bottom) + var(--composer-kb-pad))!important;}
+.composer-wrap,.claude-composer-wrap,.story-composer-wrap,.call-composer-wrap{padding-bottom:calc(var(--safe-bottom) + var(--composer-kb-pad))!important;}
 body.keyboard-open .composer-wrap,
 body.keyboard-open .claude-composer-wrap{box-shadow:0 -10px 30px rgba(40,50,80,.08)!important;}
 body.keyboard-open .chat,
@@ -6133,6 +6133,7 @@ function bindEvents(){
     root.style.setProperty("--app-vh", Math.max(320,Math.round(nextAppH))+"px");
     root.style.setProperty("--vv-top", (keyboardOpen ? top : 0)+"px");
     root.style.setProperty("--composer-kb-pad", (keyboardOpen && inComposer ? 10 : 0)+"px");
+    root.style.setProperty("--safe-bottom", (keyboardOpen ? 0 : 7)+"px");
     document.body.classList.toggle("keyboard-open", keyboardOpen);
     resetNativeScroll();
     if(focused){
