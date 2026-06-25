@@ -458,34 +458,144 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 }
 .call-btn:active,.send-btn:active{transform:scale(.94)}
 .msg-actions{display:none!important}
-.msg-menu{
+
+/* ===== Meow UI 调整：消息操作 Action Sheet / 微信顶栏 / 紧凑卡片 ===== */
+.action-sheet-mask{
   position:absolute;
-  z-index:700;
-  min-width:132px;
-  padding:6px;
-  border-radius:16px;
-  background:rgba(255,255,255,.96);
-  border:1px solid rgba(0,0,0,.08);
-  box-shadow:0 14px 38px rgba(0,0,0,.18);
-  backdrop-filter:blur(18px);
-  -webkit-backdrop-filter:blur(18px);
+  inset:0;
+  z-index:780;
   display:none;
+  align-items:flex-end;
+  justify-content:center;
+  background:rgba(38,28,32,0);
+  backdrop-filter:blur(0);
+  -webkit-backdrop-filter:blur(0);
+  transition:background .22s ease,backdrop-filter .22s ease;
+  padding:0 12px calc(env(safe-area-inset-bottom) + 12px);
 }
-.msg-menu.show{display:block}
-.msg-menu button{
+.action-sheet-mask.show{display:flex}
+.action-sheet-mask.visible{
+  background:rgba(38,28,32,.24);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+}
+.action-sheet{
   width:100%;
-  border:0;
-  background:transparent;
-  color:#111;
-  text-align:left;
-  padding:10px 12px;
-  border-radius:12px;
-  font-size:13px;
-  font-weight:850;
+  max-width:392px;
+  color:var(--bar-text,#111827);
+  transform:translateY(118%);
+  transition:transform .28s cubic-bezier(.22,1,.36,1),opacity .2s ease;
+  opacity:.86;
 }
-.msg-menu button:active{background:#f1f1f4}
-.msg-menu button.danger{color:#c5221f}
-.msg-menu button[hidden]{display:none!important}
+.action-sheet-mask.visible .action-sheet{transform:translateY(0);opacity:1}
+.action-sheet-card,.action-sheet-cancel{
+  background:color-mix(in srgb,var(--bar-bg,#fff) 93%,rgba(255,255,255,.68));
+  border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,rgba(255,255,255,.5));
+  box-shadow:0 22px 60px rgba(45,31,36,.18), inset 0 1px 0 rgba(255,255,255,.55);
+  backdrop-filter:blur(24px) saturate(1.18);
+  -webkit-backdrop-filter:blur(24px) saturate(1.18);
+}
+.action-sheet-card{
+  border-radius:28px;
+  overflow:hidden;
+  padding:8px;
+}
+.action-sheet-handle{
+  width:38px;
+  height:4px;
+  border-radius:999px;
+  margin:3px auto 8px;
+  background:color-mix(in srgb,var(--bar-text,#111827) 18%,transparent);
+}
+.action-sheet-item{
+  width:100%;
+  min-height:46px;
+  border:0;
+  border-radius:16px;
+  background:transparent;
+  color:var(--bar-text,#111827);
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:0 14px;
+  font-size:13px;
+  font-weight:950;
+  text-align:left;
+}
+.action-sheet-item svg{
+  width:18px;
+  height:18px;
+  flex:0 0 auto;
+  stroke-width:1.65;
+}
+.action-sheet-item:active{
+  background:color-mix(in srgb,var(--accent,#111827) 10%,rgba(255,255,255,.55));
+  transform:scale(.988);
+}
+.action-sheet-item.danger{
+  color:#d6383a;
+  background:rgba(255,232,232,.46);
+}
+.action-sheet-item.danger:active{background:rgba(255,218,218,.75)}
+.action-sheet-divider{
+  height:1px;
+  margin:6px 8px;
+  background:color-mix(in srgb,var(--bar-text,#111827) 8%,transparent);
+}
+.action-sheet-cancel{
+  margin-top:9px;
+  height:48px;
+  border-radius:22px;
+  width:100%;
+  border:none;
+  font-size:14px;
+  font-weight:1000;
+  color:var(--bar-text,#111827);
+}
+.action-sheet-cancel:active{transform:scale(.988)}
+.msg.action-target .bubble,.claude-msg.action-target .claude-bubble{
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent,#111827) 20%,transparent),0 10px 26px rgba(45,31,36,.12)!important;
+  transform:scale(1.012);
+  transition:transform .14s ease,box-shadow .14s ease;
+}
+.msg.action-target .money-card,.msg.action-target .delivery-card,.msg.action-target .paid-card,.msg.action-target .received-card,.msg.action-target .reject-card,.msg.action-target .music-card,.msg.action-target .wechat-real-image-card,.msg.action-target .image-desc-card,.claude-msg.action-target .claude-file-card,.claude-msg.action-target .claude-img-card{
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent,#111827) 18%,transparent),0 10px 26px rgba(45,31,36,.12)!important;
+  transform:scale(1.01);
+  transition:transform .14s ease,box-shadow .14s ease;
+}
+.app-screen.wechat .statusbar{
+  height:36px;
+  padding-top:9px;
+}
+.app-screen.wechat .wechat-head{
+  margin-top:-4px;
+  padding:7px 14px 9px;
+  min-height:58px;
+}
+.app-screen.wechat .profile{gap:9px}
+.app-screen.wechat .profile-avatar{width:40px;height:40px}
+.app-screen.wechat .profile-title{font-size:16px;line-height:1.1;max-width:184px}
+.app-screen.wechat .profile-sub{font-size:10.5px;line-height:1.15;margin-top:2px}
+.app-screen.wechat .icon-btn{width:38px;height:38px}
+.app-screen.wechat .chat{padding-top:8px}
+.card,.theme-tile,.world-entry,.greeting-entry,.moment-card,.diary-card,.claude-file-card,.hidden-context-card,.memory-relation-card,.memory-extract-box .card{
+  border-radius:18px!important;
+  padding:11px 12px!important;
+  box-shadow:0 8px 22px rgba(70,50,42,.045)!important;
+}
+.card{margin:8px 0!important}
+.theme-tile{padding:9px!important}
+.theme-demo{height:48px!important;border-radius:13px!important}
+.role-item img{width:42px!important;height:42px!important;border-radius:14px!important}
+.role-name,.entry-name{font-size:13.5px!important}
+.role-desc,.entry-meta,.theme-sub,.v3-sub{font-size:11px!important;line-height:1.48!important}
+.claude-file-card{width:220px!important}
+.claude-file-preview{max-height:112px!important;font-size:11.5px!important;line-height:1.45!important}
+.diary-stat{border-radius:17px!important;padding:10px 11px!important}
+.diary-stat b{font-size:17px!important}
+.diary-card{margin:8px 0!important}
+.diary-title{font-size:15.5px!important}
+.diary-text{font-size:11.5px!important;line-height:1.7!important;max-height:116px!important}
 
 
 .confirm-mask{
@@ -3645,6 +3755,32 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 .reading-note-thread{background:rgba(255,250,245,.70)!important;}
 .quick-modal.reading-quick-modal{background:linear-gradient(180deg,#fffaf4,#f8eee6)!important;}
 
+
+
+/* ===== Meow UI final overrides 2026-06-25：保持底部不动，仅统一顶部与卡片密度 ===== */
+.app-screen.wechat .statusbar{height:36px!important;padding-top:9px!important;}
+.app-screen.wechat .wechat-head{margin-top:-4px!important;padding:7px 14px 9px!important;min-height:58px!important;}
+.app-screen.wechat .profile{gap:9px!important;}
+.app-screen.wechat .profile-avatar{width:40px!important;height:40px!important;}
+.app-screen.wechat .profile-title{font-size:16px!important;line-height:1.1!important;max-width:184px!important;}
+.app-screen.wechat .profile-sub{font-size:10.5px!important;line-height:1.15!important;margin-top:2px!important;}
+.app-screen.wechat .icon-btn{width:38px!important;height:38px!important;}
+.app-screen.wechat .chat{padding-top:8px!important;}
+.card,.theme-tile,.world-entry,.greeting-entry,.moment-card,.diary-card,.claude-file-card,.hidden-context-card,.memory-relation-card,.memory-extract-box .card{border-radius:18px!important;padding:11px 12px!important;box-shadow:0 8px 22px rgba(70,50,42,.045)!important;}
+.card{margin:8px 0!important;}
+.theme-tile{padding:9px!important;}
+.theme-demo{height:48px!important;border-radius:13px!important;}
+.role-item img{width:42px!important;height:42px!important;border-radius:14px!important;}
+.role-name,.entry-name{font-size:13.5px!important;}
+.role-desc,.entry-meta,.theme-sub,.v3-sub{font-size:11px!important;line-height:1.48!important;}
+.claude-file-card{width:220px!important;}
+.claude-file-preview{max-height:112px!important;font-size:11.5px!important;line-height:1.45!important;}
+.diary-stat{border-radius:17px!important;padding:10px 11px!important;}
+.diary-stat b{font-size:17px!important;}
+.diary-card{margin:8px 0!important;}
+.diary-title{font-size:15.5px!important;}
+.diary-text{font-size:11.5px!important;line-height:1.7!important;max-height:116px!important;}
+
 </style>
 <script>window.MIAO_BUILD="ArtifactStoreV1";</script>
 </head>
@@ -4628,11 +4764,14 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
       </div>
     </div>
 
-    <div class="msg-menu" id="msgMenu">
-      <button data-menu-action="quote">引用</button>
-      <button data-menu-action="recall" id="menuRecallBtn">撤回</button>
-      <button data-menu-action="multiselect">多选</button>
-      <button data-menu-action="delete" class="danger">删除</button>
+    <div class="action-sheet-mask" id="actionSheetMask" aria-hidden="true">
+      <div class="action-sheet" id="actionSheet" role="dialog" aria-modal="true" aria-label="消息操作">
+        <div class="action-sheet-card">
+          <div class="action-sheet-handle"></div>
+          <div class="action-sheet-items" id="actionSheetItems"></div>
+        </div>
+        <button class="action-sheet-cancel" type="button" data-action-sheet-cancel="1">取消</button>
+      </div>
     </div>
 
   <!-- 多选操作栏 -->
@@ -7608,7 +7747,7 @@ function chatIsNearBottom(){
   return chat.scrollHeight - chat.scrollTop - chat.clientHeight < 120;
 }
 function renderChat(){
-  const menu=$("#msgMenu"); if(menu) menu.classList.remove("show");
+  if(typeof closeActionSheet==="function") closeActionSheet(true);
   const chat=$("#chat");
   // 渲染前记录：用户当前是否贴在底部（决定渲染后是否自动跟随滚动）
   const stick = chatIsNearBottom();
@@ -8275,41 +8414,172 @@ function renderMessageBody(m){
 }
 function escapeAttr(s){ return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
 
+
+
+/* ===== Meow Action Sheet：微信 / Claude 共用长按操作面板 ===== */
+function actionSheetIcon(name){
+  const common='viewBox="0 0 18 18" fill="none" aria-hidden="true"';
+  const icons={
+    copy:`<svg ${common}><rect x="5.3" y="3.1" width="8.7" height="10.1" rx="2.1" stroke="currentColor"/><path d="M4.1 5.1H3.8c-1 0-1.8.8-1.8 1.8v7c0 1 .8 1.8 1.8 1.8h6.3c1 0 1.8-.8 1.8-1.8v-.35" stroke="currentColor"/><path d="M7.2 5.8h4.9M7.2 8.1h3.7" stroke="currentColor"/></svg>`,
+    quote:`<svg ${common}><path d="M7.4 5.2c-2 .45-3.1 1.75-3.1 3.55 0 1.45.9 2.55 2.25 2.55.9 0 1.55-.58 1.55-1.38 0-.74-.5-1.25-1.22-1.35-.18-.03-.34-.04-.5-.03.12-.78.64-1.35 1.55-1.72" stroke="currentColor"/><path d="M14 5.2c-2 .45-3.1 1.75-3.1 3.55 0 1.45.9 2.55 2.25 2.55.9 0 1.55-.58 1.55-1.38 0-.74-.5-1.25-1.22-1.35-.18-.03-.34-.04-.5-.03.12-.78.64-1.35 1.55-1.72" stroke="currentColor"/></svg>`,
+    regenerate:`<svg ${common}><path d="M13.7 5.6A5.15 5.15 0 0 0 4.3 7" stroke="currentColor"/><path d="M13.9 2.9v2.9h-2.8" stroke="currentColor"/><path d="M4.3 12.4A5.15 5.15 0 0 0 13.7 11" stroke="currentColor"/><path d="M4.1 15.1v-2.9h2.8" stroke="currentColor"/></svg>`,
+    recall:`<svg ${common}><path d="M7.1 5.1 3.2 9l3.9 3.9" stroke="currentColor"/><path d="M3.6 9h7.2c2.25 0 3.85 1.18 4.25 3.15" stroke="currentColor"/></svg>`,
+    multiselect:`<svg ${common}><rect x="2.9" y="3.2" width="11.8" height="11.8" rx="2.6" stroke="currentColor" stroke-dasharray="2.2 1.8"/><path d="M6 9.1 8.1 11.2 12.3 6.8" stroke="currentColor"/></svg>`,
+    delete:`<svg ${common}><path d="M4.2 5.4h9.6" stroke="currentColor"/><path d="M7.1 5.2l.55-1.45h2.7l.55 1.45" stroke="currentColor"/><path d="M6 7.4l.45 6.1c.06.85.66 1.35 1.5 1.35h2.1c.84 0 1.44-.5 1.5-1.35L12 7.4" stroke="currentColor"/><path d="M8.1 8.6v4.1M9.9 8.6v4.1" stroke="currentColor"/></svg>`
+  };
+  return icons[name]||'';
+}
+function actionSheetNormalizeText(text){
+  return String(text||'').replace(/\u00a0/g,' ').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').replace(/[ \t]{2,}/g,' ').trim();
+}
+function actionSheetTextFromNode(node){
+  if(!node) return '';
+  const preferred=node.querySelectorAll('.bubble,.claude-bubble,.voice-text,.music-card,.link-card,.image-desc-card,.wechat-real-image-card,.money-card,.delivery-card,.paid-card,.received-card,.reject-card,.claude-file-card,.claude-img-card');
+  let text=Array.from(preferred).map(el=>el.textContent||'').map(actionSheetNormalizeText).filter(Boolean).join('\n');
+  if(!text){
+    const clone=node.cloneNode(true);
+    clone.querySelectorAll('img,svg,button,.avatar,.claude-avatar,.name-line,.claude-name,.time-line,.read-line,.multi-check,.msg-actions').forEach(el=>el.remove());
+    text=clone.textContent||'';
+  }
+  return actionSheetNormalizeText(text);
+}
+async function copyActionSheetText(text){
+  text=actionSheetNormalizeText(text);
+  if(!text){ toast('没有可复制的文字'); return; }
+  try{
+    if(navigator.clipboard && window.isSecureContext!==false) await navigator.clipboard.writeText(text);
+    else {
+      const ta=document.createElement('textarea');
+      ta.value=text; ta.style.position='fixed'; ta.style.left='-9999px'; ta.style.top='0';
+      document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    toast('已复制');
+  }catch(e){
+    openQuickModal(`<div class="quick-modal-title">复制内容</div><textarea readonly>${escapeHtml(text)}</textarea><div class="btn-row"><button class="btn primary" data-action="close-quick-modal">关闭</button></div>`);
+  }
+}
+function bindActionSheetOnce(){
+  const mask=$('#actionSheetMask'), list=$('#actionSheetItems');
+  if(!mask || !list || mask.dataset.bound==='1') return;
+  mask.dataset.bound='1';
+  mask.addEventListener('click',(e)=>{
+    if(e.target===mask || e.target.closest('[data-action-sheet-cancel]')) closeActionSheet();
+  });
+  const sheet=$('#actionSheet');
+  if(sheet) sheet.addEventListener('click',(e)=>e.stopPropagation());
+  list.addEventListener('click',(e)=>{
+    const btn=e.target.closest('[data-action-sheet-index]');
+    if(!btn) return;
+    const items=window.__meowActionSheetItems||[];
+    const item=items[Number(btn.dataset.actionSheetIndex)];
+    if(!item || typeof item.action!=='function') return;
+    e.preventDefault();
+    closeActionSheet();
+    Promise.resolve().then(()=>item.action()).catch(err=>{ console.error(err); toast('操作失败：'+(err.message||err)); });
+  });
+}
+function openActionSheet(items, options={}){
+  const mask=$('#actionSheetMask'), list=$('#actionSheetItems');
+  if(!mask || !list) return;
+  bindActionSheetOnce();
+  closeActionSheet(true);
+  items=(items||[]).filter(Boolean);
+  window.__meowActionSheetItems=items;
+  window.__meowActionSheetTarget=options.target||null;
+  if(window.__meowActionSheetTarget) window.__meowActionSheetTarget.classList.add('action-target');
+  list.innerHTML=items.map((it,i)=>{
+    if(it.type==='divider') return '<div class="action-sheet-divider" aria-hidden="true"></div>';
+    const icon=it.icon?actionSheetIcon(it.icon):'';
+    return `<button class="action-sheet-item${it.danger?' danger':''}" type="button" data-action-sheet-index="${i}">${icon}<span>${escapeHtml(it.label||'操作')}</span></button>`;
+  }).join('');
+  mask.classList.add('show');
+  mask.setAttribute('aria-hidden','false');
+  clearTimeout(window.__meowActionSheetCloseTimer);
+  requestAnimationFrame(()=>mask.classList.add('visible'));
+  try{ if(navigator.vibrate) navigator.vibrate(10); }catch(e){}
+}
+function closeActionSheet(immediate=false){
+  const mask=$('#actionSheetMask');
+  const target=window.__meowActionSheetTarget;
+  if(target) target.classList.remove('action-target');
+  window.__meowActionSheetTarget=null;
+  if(!mask) return;
+  clearTimeout(window.__meowActionSheetCloseTimer);
+  const finish=()=>{
+    if(!mask.classList.contains('visible')){
+      mask.classList.remove('show');
+      mask.setAttribute('aria-hidden','true');
+      const list=$('#actionSheetItems'); if(list) list.innerHTML='';
+      window.__meowActionSheetItems=[];
+    }
+  };
+  mask.classList.remove('visible');
+  if(immediate){ mask.classList.remove('show'); finish(); }
+  else window.__meowActionSheetCloseTimer=setTimeout(finish,260);
+}
+function lastUserMessageId(){
+  const h=getHistory();
+  const last=h.slice().reverse().find(m=>m&&m.sender==='user');
+  return last&&last.id;
+}
+async function regenerateWechatMessage(msgId, groupId){
+  if(groupId) return regenMessage(groupId);
+  let h=getHistory();
+  const idx=h.findIndex(m=>m.id===msgId);
+  if(idx<0) return;
+  h=h.slice(0,idx);
+  saveHistory(h);
+  renderChat();
+  await callAIReply();
+}
+function openWechatMessageActionSheet(msg){
+  const msgId=msg&&msg.dataset&&msg.dataset.id;
+  if(!msgId) return;
+  const sender=msg.dataset.sender||'';
+  const groupId=msg.dataset.groupId||'';
+  const items=[
+    {icon:'copy',label:'复制',action:()=>copyActionSheetText(actionSheetTextFromNode(msg))},
+    {icon:'quote',label:'引用',action:()=>setQuote(msgId)}
+  ];
+  if(sender!=='user') items.push({icon:'regenerate',label:'重新生成',action:()=>regenerateWechatMessage(msgId,groupId)});
+  if(sender==='user' && msgId===lastUserMessageId()) items.push({icon:'recall',label:'撤回',action:()=>recallMessage(msgId)});
+  items.push({icon:'multiselect',label:'多选',action:()=>enterMultiSelect()});
+  items.push({type:'divider'});
+  items.push({icon:'delete',label:'删除',danger:true,action:()=>deleteMessage(msgId)});
+  openActionSheet(items,{target:msg});
+}
+async function regenerateClaudeMessage(id){
+  const before=getClaudeHistory();
+  const target=before.find(m=>m.id===id);
+  if(!target || target.sender==='user') return;
+  await cleanupClaudeFileForMessage(target);
+  saveClaudeHistory(before.filter(m=>m.id!==id));
+  renderClaude();
+  renderStory();
+  renderCall();
+  renderContextSettings();
+  await callClaudeReply();
+}
+function openClaudeMessageActionSheet(msg){
+  const id=msg&&msg.dataset&&msg.dataset.id;
+  if(!id) return;
+  const sender=msg.dataset.sender||'';
+  const items=[{icon:'copy',label:'复制',action:()=>copyActionSheetText(actionSheetTextFromNode(msg))}];
+  if(sender!=='user') items.push({icon:'regenerate',label:'重新生成',action:()=>regenerateClaudeMessage(id)});
+  items.push({type:'divider'});
+  items.push({icon:'delete',label:'删除',danger:true,action:()=>deleteClaudeMessage(id)});
+  openActionSheet(items,{target:msg});
+}
 function bindMessageLongPressMenu(){
   const chat=$("#chat");
-  const menu=$("#msgMenu");
-  let timer=null, target=null;
-  const open=(msg,x,y)=>{
-    target=msg;
-    menu.dataset.msgId=msg.dataset.id||"";
-    menu.dataset.groupId=msg.dataset.groupId||"";
-    // 撤回只对user消息显示
-    const recallBtn=menu.querySelector('[data-menu-action="recall"]');
-    if(recallBtn) recallBtn.hidden = msg.dataset.sender!=="user";
-    menu.classList.add("show");
-    const rect=$("#screen").getBoundingClientRect();
-    const mw=150, mh=96;
-    menu.style.left=Math.min(Math.max(x-rect.left,10),rect.width-mw-10)+"px";
-    menu.style.top=Math.min(Math.max(y-rect.top,54),rect.height-mh-18)+"px";
+  if(!chat || chat.dataset.longPressMenuBound==="1") return;
+  chat.dataset.longPressMenuBound="1";
+  let timer=null;
+  const clear=()=>{ if(timer){ clearTimeout(timer); timer=null; } };
+  const open=(msg)=>{
+    if(!msg || multiSelectMode) return;
+    openWechatMessageActionSheet(msg);
   };
-  const close=()=>{ menu.classList.remove("show"); target=null; };
-  document.addEventListener("click",(e)=>{
-    if(!e.target.closest("#msgMenu")) close();
-  });
-  menu.addEventListener("click",(e)=>{
-    const b=e.target.closest("[data-menu-action]");
-    if(!b) return;
-    e.stopPropagation();
-    const action=b.dataset.menuAction;
-    const msgId=menu.dataset.msgId;
-    const groupId=menu.dataset.groupId;
-    close();
-    if(action==="delete") deleteMessage(msgId);
-    if(action==="recall") recallMessage(msgId);
-    if(action==="multiselect") enterMultiSelect();
-    if(action==="quote") setQuote(msgId);
-  });
-  // 多选模式下点击消息触发选中
   chat.addEventListener("click",(e)=>{
     if(!multiSelectMode) return;
     const msg=e.target.closest(".msg");
@@ -8319,23 +8589,23 @@ function bindMessageLongPressMenu(){
     const msg=e.target.closest(".msg");
     if(!msg) return;
     e.preventDefault();
-    open(msg,e.clientX,e.clientY);
+    open(msg);
   });
   chat.addEventListener("touchstart",(e)=>{
     const msg=e.target.closest(".msg");
     if(!msg) return;
-    timer=setTimeout(()=>{
-      const t=e.touches[0];
-      open(msg,t.clientX,t.clientY);
-    },520);
+    clear();
+    timer=setTimeout(()=>open(msg),520);
   },{passive:true});
-  ["touchend","touchmove","touchcancel"].forEach(ev=>chat.addEventListener(ev,()=>clearTimeout(timer),{passive:true}));
+  ["touchend","touchmove","touchcancel"].forEach(ev=>chat.addEventListener(ev,clear,{passive:true}));
   chat.addEventListener("mousedown",(e)=>{
+    if(e.button!==0) return;
     const msg=e.target.closest(".msg");
     if(!msg) return;
-    timer=setTimeout(()=>open(msg,e.clientX,e.clientY),520);
+    clear();
+    timer=setTimeout(()=>open(msg),520);
   });
-  ["mouseup","mouseleave","mousemove"].forEach(ev=>chat.addEventListener(ev,()=>clearTimeout(timer)));
+  ["mouseup","mouseleave","mousemove"].forEach(ev=>chat.addEventListener(ev,clear));
 }
 
 // 功能指令预规范化：只做轻量容错，避免模型偶发输出全角方括号/零宽字符/指令内多余空格
@@ -12828,18 +13098,32 @@ async function deleteClaudeMessage(id){
 }
 function bindClaudeLongPressMenu(){
   const chat=$("#claudeChat");
-  if(!chat) return;
+  if(!chat || chat.dataset.longPressMenuBound==="1") return;
+  chat.dataset.longPressMenuBound="1";
   let timer=null;
-  const open=(msg,x,y)=>{
-    const id=msg.dataset.id;
-    if(!id) return;
-    openQuickModal(`<div class="quick-modal-title">消息操作</div><div class="btn-row"><button class="btn danger" data-action="delete-claude-msg" data-id="${id}">删除/撤回</button><button class="btn" data-action="close-quick-modal">取消</button></div>`);
-  };
-  chat.addEventListener("contextmenu",(e)=>{const msg=e.target.closest(".claude-msg"); if(!msg)return; e.preventDefault(); open(msg,e.clientX,e.clientY);});
-  chat.addEventListener("touchstart",(e)=>{const msg=e.target.closest(".claude-msg"); if(!msg)return; timer=setTimeout(()=>{const t=e.touches[0]; open(msg,t.clientX,t.clientY);},520);},{passive:true});
-  ["touchend","touchmove","touchcancel"].forEach(ev=>chat.addEventListener(ev,()=>clearTimeout(timer),{passive:true}));
-  chat.addEventListener("mousedown",(e)=>{const msg=e.target.closest(".claude-msg"); if(!msg)return; timer=setTimeout(()=>open(msg,e.clientX,e.clientY),520);});
-  ["mouseup","mouseleave","mousemove"].forEach(ev=>chat.addEventListener(ev,()=>clearTimeout(timer)));
+  const clear=()=>{ if(timer){ clearTimeout(timer); timer=null; } };
+  const open=(msg)=>{ if(msg && !claudeMultiMode) openClaudeMessageActionSheet(msg); };
+  chat.addEventListener("contextmenu",(e)=>{
+    const msg=e.target.closest(".claude-msg");
+    if(!msg) return;
+    e.preventDefault();
+    open(msg);
+  });
+  chat.addEventListener("touchstart",(e)=>{
+    const msg=e.target.closest(".claude-msg");
+    if(!msg) return;
+    clear();
+    timer=setTimeout(()=>open(msg),520);
+  },{passive:true});
+  ["touchend","touchmove","touchcancel"].forEach(ev=>chat.addEventListener(ev,clear,{passive:true}));
+  chat.addEventListener("mousedown",(e)=>{
+    if(e.button!==0) return;
+    const msg=e.target.closest(".claude-msg");
+    if(!msg) return;
+    clear();
+    timer=setTimeout(()=>open(msg),520);
+  });
+  ["mouseup","mouseleave","mousemove"].forEach(ev=>chat.addEventListener(ev,clear));
 }
 
 function getUserProfile(){
