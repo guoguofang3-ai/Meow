@@ -8775,26 +8775,21 @@ function autoThinkingFromMsg(msg, userText){
 }
 function isExplicitMusicRequest(text){
   const t=String(text||"").replace(/\s+/g,"");
-  return /(分享|发|来|放|推|推荐|听).{0,8}(歌|音乐|歌曲)|(?:歌|音乐|歌曲).{0,8}(分享|发|来一首|放一首|推荐)/.test(t);
+  // 在谈"音乐app/听歌功能/做个应用/界面/项目"等概念 → 不是点歌，避免误触
+  if(/(功能|app|应用|软件|界面|做一个|做个|名字叫|项目|页面|开发|设计)/.test(t)) return false;
+  // 真·点歌：祈使动词紧跟歌/音乐；或 动词+量词(一首/首/点)+歌；或 点歌/唱首歌
+  return /(分享|发|放|来|换|推荐|点|给我来|给我放|给我发)(歌|音乐|歌曲)/.test(t)
+    || /(分享|发|放|来|换|推荐|点|给我|想听|听)[^。！？]{0,2}(一首|首|两首|几首|点)[^。！？]{0,6}(歌|音乐|歌曲)/.test(t)
+    || /点歌|唱一?首歌?/.test(t);
 }
 function musicRequestHint(text){
   if(!isExplicitMusicRequest(text)) return "";
   return `\n\n【强制音乐请求】user刚刚明确要求你分享/播放/推荐一首歌。你必须至少输出一个音乐指令，并且该指令要单独成段：\n[分享音乐: 歌名|歌手|专辑|附言|歌词氛围/这首歌的感觉|]\n不要只回复标点、省略号、“又来”、“说话”、“你先发的省略号”，也不要解释格式。`;
 }
-function fallbackMusicMsg(groupId, seedText){
-  const picks=[
-    {title:"想你",artist:"陈洁仪",album:"入戏太深",note:"给你。",lyrics:"歌词氛围：温柔、想念、像把话轻轻放到你手里。"},
-    {title:"慢慢喜欢你",artist:"莫文蔚",album:"我们在中场相遇",note:"这首适合现在。",lyrics:"歌词氛围：慢慢靠近，认真又不吵。"},
-    {title:"小半",artist:"陈粒",album:"小梦大半",note:"听这个。",lyrics:"歌词氛围：轻、倔、像把心事藏进夜里。"},
-    {title:"告白气球",artist:"周杰伦",album:"周杰伦的床边故事",note:"别笑。",lyrics:"歌词氛围：轻快、甜一点，像故意把气氛放软。"}
-  ];
-  const p=picks[autoThinkingHash(seedText)%picks.length];
-  return {id:uid("msg"),groupId,sender:"role",type:"music",content:"[音乐:"+p.title+"]",data:{title:p.title,artist:p.artist,album:p.album,note:p.note,lyrics:p.lyrics,audioUrl:"",duration:"0:30",previewUrl:"",coverUrl:""},read:false,createdAt:Date.now(),time:nowTime(),thinking:"我想直接把歌递过去，别再用沉默绕开她。"};
-}
-function ensureMusicForExplicitRequest(parsed, groupId, userText){
-  if(!isExplicitMusicRequest(userText)) return parsed;
-  if((parsed||[]).some(m=>m.type==="music")) return parsed;
-  return [fallbackMusicMsg(groupId, userText)];
+// 不再强塞写死的兜底歌（曾导致"永远那几首"）。真·点歌时由 musicRequestHint
+// 提示模型自己挑歌（曲库已放开），让选曲多样、贴合人设与场景。
+function ensureMusicForExplicitRequest(parsed){
+  return parsed;
 }
 
 
