@@ -8,7 +8,12 @@
       "Bash(echo \"exit: $?\")",
       "Bash(rm -f /tmp/test_parse.mjs; echo done)",
       "Bash(node -e ' *)",
-      "Bash(cd \"/c/Users/Administrator/Desktop/喵喵机owo\" && grep -n \"roleKey\\\\s*[:=]\\\\|roleKey\\(\\\\|roleKey =\\\\|function getClaudeMode\\\\|claudeHistory.role\" Meow.html | head -30)"
+      "Bash(cd \"/c/Users/Administrator/Desktop/喵喵机owo\" && grep -n \"roleKey\\\\s*[:=]\\\\|roleKey\\(\\\\|roleKey =\\\\|function getClaudeMode\\\\|claudeHistory.role\" Meow.html | head -30)",
+      "PowerShell(winget --version; Write-Output \"---\"; \\(Get-Command gh -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell(winget install --id GitHub.cli -e --accept-source-agreements --accept-package-agreements --silent)",
+      "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" --version)",
+      "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" auth status 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\GitHub CLI\\\\gh.exe\" repo list --limit 50 --json name,visibility,owner,defaultBranchRef,url | ConvertFrom-Json | Format-Table @{n='owner';e={$_.owner.login}}, name, visibility, url -AutoSize)"
     ]
   }
 }
