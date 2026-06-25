@@ -4068,6 +4068,8 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
             <label>位置精度</label>
             <select id="geoWeatherPrecisionInput"><option value="exact">直接查手机精确位置</option><option value="coarse">只给大概区域</option></select>
             <label>定位缓存时间（分钟）</label><input id="geoWeatherMaxAgeInput" type="number" min="0" step="1" placeholder="5">
+            <label>高德逆地理编码 Key（可选）</label><input id="geoWeatherAmapKeyInput" type="text" placeholder="填了才会把经纬度转成具体地址">
+            <div class="v3-sub" style="margin-top:4px">在高德开放平台申请「Web服务」类型的 Key 填这里：位置工具会把经纬度转成"省市区·街道"地址给角色看。不填则只返回经纬度。Key 只存在你本机。</div>
             <div class="v3-sub" style="margin-top:4px">浏览器/手机系统会负责位置授权；授权后工具可直接读当前位置。缓存时间用于减少反复定位造成的等待。</div>
           </div>
         </details>
@@ -5447,7 +5449,7 @@ function ensureDefaults(){
     Storage.set("phoneActivity", {enabled:false, baseUrl:"", token:"", cooldownMinutes:5});
   }
   if(!Storage.get("geoWeather", null)){
-    Storage.set("geoWeather", {wechatEnabled:false, claudeEnabled:false, weatherEnabled:false, locationEnabled:false, autoEnabled:true, precision:"exact", maxAgeMinutes:5});
+    Storage.set("geoWeather", {wechatEnabled:false, claudeEnabled:false, weatherEnabled:false, locationEnabled:false, autoEnabled:true, precision:"exact", maxAgeMinutes:5, amapKey:""});
   }
   if(!Storage.get("theme", null)){
     Storage.set("theme", {themeId:"simple"});
@@ -10049,6 +10051,7 @@ function renderApi(){
   const _gwa=document.getElementById("geoWeatherAutoEnabled"); if(_gwa) _gwa.checked=gw.autoEnabled!==false;
   const _gwp=document.getElementById("geoWeatherPrecisionInput"); if(_gwp) _gwp.value=gw.precision||"exact";
   const _gwm=document.getElementById("geoWeatherMaxAgeInput"); if(_gwm) _gwm.value=String(gw.maxAgeMinutes ?? 5);
+  const _gwk=document.getElementById("geoWeatherAmapKeyInput"); if(_gwk) _gwk.value=String(gw.amapKey||"");
   $("#apiFormatInput").value=api.format||"openai";
 }
 function saveApiFromForm(){
@@ -10059,8 +10062,8 @@ function saveApiFromForm(){
   Storage.set("ttsApi", { provider:"elevenlabs", apiKey:(tk?tk.value.trim():""), voiceId:(tv?tv.value.trim():""), model:(tm?tm.value.trim():"eleven_v3")||"eleven_v3", mode:(tmode?tmode.value:"explicit")||"explicit" });
   const pae=document.getElementById("phoneActivityEnabled"), pau=document.getElementById("phoneActivityUrlInput"), pat=document.getElementById("phoneActivityTokenInput"), pac=document.getElementById("phoneActivityCooldownInput");
   Storage.set("phoneActivity", { enabled:!!(pae&&pae.checked), baseUrl:(pau?pau.value.trim():"").replace(/\/+$/,""), token:(pat?pat.value.trim():""), cooldownMinutes:Math.max(0, parseInt(pac&&pac.value)||5) });
-  const gww=document.getElementById("geoWeatherWechatEnabled"), gwc=document.getElementById("geoWeatherClaudeEnabled"), gwt=document.getElementById("geoWeatherWeatherEnabled"), gwl=document.getElementById("geoWeatherLocationEnabled"), gwa=document.getElementById("geoWeatherAutoEnabled"), gwp=document.getElementById("geoWeatherPrecisionInput"), gwm=document.getElementById("geoWeatherMaxAgeInput");
-  Storage.set("geoWeather", { wechatEnabled:!!(gww&&gww.checked), claudeEnabled:!!(gwc&&gwc.checked), weatherEnabled:!!(gwt&&gwt.checked), locationEnabled:!!(gwl&&gwl.checked), autoEnabled:gwa?!!gwa.checked:true, precision:(gwp&&gwp.value)||"exact", maxAgeMinutes:Math.max(0, parseInt(gwm&&gwm.value)||5) });
+  const gww=document.getElementById("geoWeatherWechatEnabled"), gwc=document.getElementById("geoWeatherClaudeEnabled"), gwt=document.getElementById("geoWeatherWeatherEnabled"), gwl=document.getElementById("geoWeatherLocationEnabled"), gwa=document.getElementById("geoWeatherAutoEnabled"), gwp=document.getElementById("geoWeatherPrecisionInput"), gwm=document.getElementById("geoWeatherMaxAgeInput"), gwk=document.getElementById("geoWeatherAmapKeyInput");
+  Storage.set("geoWeather", { wechatEnabled:!!(gww&&gww.checked), claudeEnabled:!!(gwc&&gwc.checked), weatherEnabled:!!(gwt&&gwt.checked), locationEnabled:!!(gwl&&gwl.checked), autoEnabled:gwa?!!gwa.checked:true, precision:(gwp&&gwp.value)||"exact", maxAgeMinutes:Math.max(0, parseInt(gwm&&gwm.value)||5), amapKey:(gwk&&gwk.value||"").trim() });
   const thoughtModeEl=document.getElementById("thoughtModeInput");
   Storage.set("thoughtMode", (thoughtModeEl&&thoughtModeEl.value) || "balanced");
   toast("API 设置已保存");
@@ -15675,7 +15678,8 @@ function getGeoWeatherConfig(){
     locationEnabled:!!cfg.locationEnabled,
     autoEnabled:cfg.autoEnabled!==false,
     precision:(cfg.precision==="coarse"?"coarse":"exact"),
-    maxAgeMinutes:Math.max(0, parseInt(cfg.maxAgeMinutes)||0)
+    maxAgeMinutes:Math.max(0, parseInt(cfg.maxAgeMinutes)||0),
+    amapKey:String(cfg.amapKey||"")
   };
 }
 function isGeoWeatherToolAllowed(scope){
@@ -15694,6 +15698,39 @@ function weatherCodeText(code){
   const map={0:"晴",1:"大部晴朗",2:"多云",3:"阴",45:"雾",48:"雾凇",51:"小毛毛雨",53:"毛毛雨",55:"大毛毛雨",56:"冻毛毛雨",57:"强冻毛毛雨",61:"小雨",63:"中雨",65:"大雨",66:"冻雨",67:"强冻雨",71:"小雪",73:"中雪",75:"大雪",77:"雪粒",80:"阵雨",81:"中等阵雨",82:"强阵雨",85:"阵雪",86:"强阵雪",95:"雷暴",96:"雷暴伴小冰雹",99:"雷暴伴冰雹"};
   return map[code] || "未知天气";
 }
+// WGS-84(浏览器GPS) → GCJ-02(高德/国测局) 坐标转换，中国境内才需要
+function _geoOutOfChina(lon,lat){ return !(lon>73.66&&lon<135.05&&lat>3.86&&lat<53.55); }
+function _geoTransLat(x,y){ let r=-100+2*x+3*y+0.2*y*y+0.1*x*y+0.2*Math.sqrt(Math.abs(x)); r+=(20*Math.sin(6*x*Math.PI)+20*Math.sin(2*x*Math.PI))*2/3; r+=(20*Math.sin(y*Math.PI)+40*Math.sin(y/3*Math.PI))*2/3; r+=(160*Math.sin(y/12*Math.PI)+320*Math.sin(y*Math.PI/30))*2/3; return r; }
+function _geoTransLon(x,y){ let r=300+x+2*y+0.1*x*x+0.1*x*y+0.1*Math.sqrt(Math.abs(x)); r+=(20*Math.sin(6*x*Math.PI)+20*Math.sin(2*x*Math.PI))*2/3; r+=(20*Math.sin(x*Math.PI)+40*Math.sin(x/3*Math.PI))*2/3; r+=(150*Math.sin(x/12*Math.PI)+300*Math.sin(x/30*Math.PI))*2/3; return r; }
+function wgs84ToGcj02(lon,lat){
+  if(_geoOutOfChina(lon,lat)) return [lon,lat];
+  const a=6378245.0, ee=0.00669342162296594323;
+  let dLat=_geoTransLat(lon-105,lat-35), dLon=_geoTransLon(lon-105,lat-35);
+  const radLat=lat/180*Math.PI; let magic=Math.sin(radLat); magic=1-ee*magic*magic;
+  const sqrtMagic=Math.sqrt(magic);
+  dLat=(dLat*180)/((a*(1-ee))/(magic*sqrtMagic)*Math.PI);
+  dLon=(dLon*180)/(a/sqrtMagic*Math.cos(radLat)*Math.PI);
+  return [lon+dLon, lat+dLat];
+}
+// 高德逆地理编码：经纬度 → 具体地址
+async function amapReverseGeocode(lat, lon, key, precision){
+  if(!key) return null;
+  try{
+    const [glon,glat]=wgs84ToGcj02(Number(lon),Number(lat));
+    const url="https://restapi.amap.com/v3/geocode/regeo?location="+glon.toFixed(6)+","+glat.toFixed(6)+"&key="+encodeURIComponent(key)+"&extensions=base&radius=300";
+    const res=await fetch(url,{headers:{"Accept":"application/json"}});
+    if(!res.ok) return {ok:false,error:"高德 HTTP "+res.status};
+    const data=await res.json();
+    if(data.status!=="1"||!data.regeocode) return {ok:false,error:"高德返回："+(data.info||"失败")+(data.infocode?("/"+data.infocode):"")};
+    const rc=data.regeocode, ac=rc.addressComponent||{};
+    const pick=v=>Array.isArray(v)?(v[0]||""):(v||"");
+    const province=pick(ac.province), city=pick(ac.city)||province, district=pick(ac.district), township=pick(ac.township);
+    if(precision==="coarse"){
+      return {ok:true, address:[province,(city!==province?city:""),district].filter(Boolean).join(""), province, city, district};
+    }
+    return {ok:true, formatted_address:rc.formatted_address||"", address:rc.formatted_address||[province,city,district,township].filter(Boolean).join(""), province, city, district, township};
+  }catch(e){ return {ok:false,error:String((e&&e.message)||e)}; }
+}
 async function readBrowserLocation(args={}){
   const cfg=getGeoWeatherConfig();
   if(!cfg.locationEnabled) return {ok:false,error:"位置工具未开启"};
@@ -15705,10 +15742,24 @@ async function readBrowserLocation(args={}){
     return Object.assign({}, cached, {cached:true, precision, latitude:geoRound(cached.latitude, precision), longitude:geoRound(cached.longitude, precision)});
   }
   return await new Promise(resolve=>{
-    navigator.geolocation.getCurrentPosition(pos=>{
+    navigator.geolocation.getCurrentPosition(async pos=>{
       const c=pos.coords||{};
       const rawLat=Number(c.latitude), rawLon=Number(c.longitude);
       const out={ok:true,source:"browser_geolocation",permission:"granted",precision,latitude:geoRound(rawLat,precision),longitude:geoRound(rawLon,precision),accuracy:c.accuracy||null,altitude:c.altitude||null,heading:c.heading||null,speed:c.speed||null,fetchedAt:Date.now(),label:precision==="coarse"?"手机当前位置（大概区域）":"手机当前位置"};
+      // 逆地理编码：把经纬度转成具体地址（填了高德 Key 才会）
+      const amapKey=String(cfg.amapKey||"").trim();
+      if(amapKey){
+        try{
+          const geo=await amapReverseGeocode(rawLat, rawLon, amapKey, precision);
+          if(geo && geo.ok){
+            if(geo.formatted_address) out.formatted_address=geo.formatted_address;
+            out.address=geo.address||geo.formatted_address||"";
+            out.province=geo.province; out.city=geo.city; out.district=geo.district;
+            if(geo.township) out.township=geo.township;
+            if(out.address) out.label=out.address;
+          } else if(geo && geo.error){ out.address_error=geo.error; }
+        }catch(e){ out.address_error=String((e&&e.message)||e); }
+      }
       Storage.set("geoWeatherLastLocation", out);
       resolve(out);
     },err=>{
@@ -15769,7 +15820,7 @@ function geoWeatherToolSchemas(scope){
   const tools=[];
   const autonomy=cfg.autoEnabled?"已授权角色可按人设和情绪主动调用，不必等 user 明确要求；调用后自然回应，不要解释工具。":"仅在 user 明确要求查天气/位置时调用。";
   if(cfg.locationEnabled){
-    tools.push({type:"function",function:{name:"get_user_location",description:"查询 user 手机当前位置。"+autonomy+" 如果权限失败，按角色性格自然反应。",parameters:{type:"object",properties:{precision:{type:"string",enum:["exact","coarse"],description:"exact=精确位置；coarse=大概区域。不传则使用设置。"}},required:[]}}});
+    tools.push({type:"function",function:{name:"get_user_location",description:"查询 user 手机当前位置。返回经纬度，若 user 配置了逆地理编码还会返回 address/formatted_address（具体省市区·街道地址）——优先用地址自然回应，别只报经纬度。"+autonomy+" 如果权限失败，按角色性格自然反应。",parameters:{type:"object",properties:{precision:{type:"string",enum:["exact","coarse"],description:"exact=精确位置；coarse=大概区域。不传则使用设置。"}},required:[]}}});
   }
   if(cfg.weatherEnabled){
     tools.push({type:"function",function:{name:"get_weather",description:"查询当前位置天气；不传 location 时会先读取 user 手机当前位置。"+autonomy,parameters:{type:"object",properties:{location:{type:"string",description:"可选。指定城市/地点；不传则使用手机当前位置。"}},required:[]}}});
