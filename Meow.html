@@ -8287,16 +8287,14 @@ function renderDeliveryLinkCard(data){
 function voiceDisplayText(raw){
   let s=String(raw||"").trim();
   if(!s) return "";
-  // 全角格式「英文台词 + 中文：翻译」→ 只显示中文翻译（user 真正要读的意思）
-  const cn=s.match(/中文\s*[:：]\s*([\s\S]+)$/);
-  if(cn && cn[1].trim()) return cn[1].trim();
-  // 去掉开头连续的 ElevenLabs audio tags，如 [softly][low voice]
-  s=s.replace(/^(?:\s*\[[A-Za-z][A-Za-z0-9 _-]{0,28}\]\s*)+/,"");
-  // 去掉开头的（声音描述）语气说明
+  // 只隐藏「语气」，保留真正说/唱的台词（中英都留）：
+  // 1) 开头的（声音描述）语气说明
   s=s.replace(/^\s*[（(][^）)]{1,40}[）)]\s*/,"");
-  // 去掉句中残留的英文 audio tags（仅英文标签，保留中文方括号内容如[停顿]）
-  s=s.replace(/\[[A-Za-z][A-Za-z0-9 _-]{0,28}\]/g,"");
-  return s.replace(/\s{2,}/g," ").trim();
+  // 2) ElevenLabs audio tags（英文方括号标签，如 [softly] [singing] [low voice]），整段去掉
+  s=s.replace(/\[[A-Za-z][A-Za-z0-9 _\-]{0,28}\]/g," ");
+  // 3) 去掉"中文："这个标签本身，但保留译文（让中英台词都显示，只是不显示标签）
+  s=s.replace(/\n?[ \t]*中文[ \t]*[:：][ \t]*/g,"\n");
+  return s.replace(/[ \t]{2,}/g," ").replace(/[ \t]*\n[ \t]*/g,"\n").replace(/\n{2,}/g,"\n").replace(/^\n+|\n+$/g,"").trim();
 }
 function renderMessageBody(m){
   const d=m.data||{};
