@@ -11332,6 +11332,7 @@ function renderClaudeMessage(m){
   if(m.type==="error") return `<div class="system-card error err-dismissable"><span class="err-text">${escapeHtml(m.content||"")}</span><button class="err-close" onclick="dismissClaudeErrorMsg('${m.id}')" title="关闭">×</button></div>`;
   if(m.type==="system") return `<div class="system-card">${escapeHtml(m.content||"")}</div>`;
   if(m.type==="ops") return renderClaudeOpsCard(m);
+  if(m.type==="file_ops") return renderClaudeFileOpsCard(m);
   const isUser=m.sender==="user";
   const mode=getClaudeMode();
   const role=currentRole();
@@ -11380,6 +11381,21 @@ function renderClaudeOpsCard(m){
     <div class="claude-ops-sub">${state==="done"?"真实工具调用记录，下面是执行结果。":"正在执行真实工具调用，不额外伪造步骤。"}</div>
     ${terminal?`<div class="claude-ops-terminal">${terminal}</div>`:`<div class="claude-ops-list"><div class="claude-ops-item running"><span class="claude-ops-dot">·</span><span>等待模型决定是否调用工具</span></div></div>`}
     <div class="claude-ops-footer"><div class="claude-ops-progress"><span style="width:${pct}%"></span></div>${items.length>5?`<button class="claude-ops-toggle" data-action="toggle-claude-ops" data-id="${escapeAttr(m.id)}">${expanded?"收起":`查看全部${hidden>0?` · ${hidden} 条`:""}`}</button>`:""}</div></div>`;
+}
+function renderClaudeFileOpsCard(m){
+  const d=m.data||{};
+  const items=Array.isArray(d.items)?d.items:[];
+  const title=d.title||"文件操作";
+  const sub=items.length+" 步 · 完成";
+  const terminal=items.map(it=>{
+    const st=it.status||"done";
+    const iconName=it.icon||"file";
+    return `<div class="claude-ops-line ${escapeAttr(st)}"><span class="claude-ops-line-icon">${miaoIcon(iconName,"miao-mini-icon")}</span><span class="claude-ops-line-text">${escapeHtml(it.label||"步骤")}</span></div>`;
+  }).join("");
+  return `<div class="claude-ops-card"><div class="claude-ops-head"><span>${escapeHtml(title)}</span><span>${escapeHtml(sub)}</span></div>
+    <div class="claude-ops-sub">基于本次输出推导的真实文件步骤。</div>
+    <div class="claude-ops-terminal">${terminal||""}</div>
+    <div class="claude-ops-footer"><div class="claude-ops-progress"><span style="width:100%"></span></div></div></div>`;
 }
 function renderClaudeBody(m){
   if(m.type==="file") return renderClaudeFileCard(m);
@@ -12440,8 +12456,13 @@ async function callClaudeReply(){
         const lang=b.lang||"txt";
         const code=b.content||b.code||"";
         const t=nowTime();
+        const ftitle=guessClaudeOutputTitle(lang,code);
+        // 文件操作可视化卡片：仅文件类输出，步骤由真实输出推导，放在文件气泡上方
+        if(isClaudeFileLang(lang)){
+          try{ h.push({id:uid("cmsg"),sender:"assistant",type:"file_ops",content:"[文件操作]",data:buildClaudeFileOps(lang,code,ftitle),createdAt:now2+i,time:t}); }catch(e){ console.warn("[FileOps] 生成失败",e); }
+        }
         console.log("[ClaudeReply] 保存 artifact:", lang, "code长度:", code.length, "msgId:", mid);
-        const savedKey=saveClaudeArtifactRecord({lang,code,title:guessClaudeOutputTitle(lang,code),msgId:mid,createdAt:now2+i,time:t,origin:"generation"});
+        const savedKey=saveClaudeArtifactRecord({lang,code,title:ftitle,msgId:mid,createdAt:now2+i,time:t,origin:"generation"});
         console.log("[ClaudeReply] artifact key:", savedKey||"(空/失败)");
         const cf=fenceFor(code);
         h.push({id:mid,sender:"assistant",type:"text",content:cf+lang+"\n"+code+"\n"+cf,createdAt:now2+i,time:t});
@@ -12974,6 +12995,65 @@ function saveClaudeArtifactRecord(opts){
 }
 function registerClaudeOutputArtifact(lang, code, title, msgId){
   return saveClaudeArtifactRecord({lang,code,title,msgId,origin:"render"});
+}
+// ===== 文件操作可视化：从真实输出推导步骤（不编造），供 file_ops 卡片使用 =====
+function isClaudeFileLang(lang){
+  return /^(html|css|js|ts|jsx|tsx|vue|svelte|json|md|markdown|txt|text|doc|docx|word|svg)$/i.test(String(lang||""));
+}
+function detectClaudeFileStructure(l, code){
+  const s=String(code||""); const out=[];
+  if(l==="html"){
+    const bits=[];
+    if(/<head[\s>]/i.test(s)) bits.push("head");
+    if(/<style[\s>]/i.test(s)) bits.push("内联样式");
+    if(/<script[\s>]/i.test(s)) bits.push("脚本");
+    if(/<body[\s>]/i.test(s)) bits.push("body");
+    out.push("搭建页面结构"+(bits.length?"（"+bits.join(" / ")+"）":""));
+  } else if(l==="css"){
+    out.push("定义 "+((s.match(/\}/g)||[]).length)+" 条样式规则");
+  } else if(l==="json"){
+    try{ const o=JSON.parse(s); out.push(o&&typeof o==="object"&&!Array.isArray(o)?("结构化 "+Object.keys(o).length+" 个字段"):"整理 JSON 数据"); }catch(e){ out.push("整理 JSON 数据"); }
+  } else if(l==="md"){
+    const h=(s.match(/^#{1,6}\s/gm)||[]).length;
+    out.push(h?("组织 "+h+" 个章节"):"撰写文档正文");
+  } else if(l==="jsx"||l==="tsx"){
+    out.push("编写 React 组件");
+  } else if(l==="js"||l==="ts"){
+    const fn=(s.match(/function\s|=>/g)||[]).length;
+    out.push(fn?("实现 "+fn+" 处函数/逻辑"):"编写脚本逻辑");
+  } else if(l==="svg"){
+    out.push("绘制矢量图形");
+  } else {
+    out.push("撰写正文内容");
+  }
+  return out;
+}
+function buildClaudeFileOps(lang, code, title){
+  const l=claudeOutputLang(lang);
+  const ext=claudeOutputExt(l);
+  const fname=cleanClaudeDownloadName(title||guessClaudeOutputTitle(l,code))+"."+ext;
+  const lines=String(code||"").split("\n").length;
+  const chars=String(code||"").length;
+  let prev=null;
+  try{
+    const store=claudeArtifactStoreGet()||[]; const scope=claudeKey();
+    prev=store.find(r=>r && r.sourceKey===scope && r.title===title && String(r.code||"")!==String(code||""));
+  }catch(e){}
+  const steps=[];
+  if(prev){
+    const plines=String(prev.code||"").split("\n").length;
+    steps.push({label:"读取现有 "+fname, icon:"file"});
+    steps.push({label:"定位需要改动的部分", icon:"search"});
+    steps.push({label:"更新内容（"+plines+" → "+lines+" 行）", icon:"edit"});
+  }else{
+    steps.push({label:"规划 "+ext.toUpperCase()+" 文件结构", icon:"command"});
+    detectClaudeFileStructure(l, code).forEach(t=>steps.push({label:t, icon:"edit"}));
+    steps.push({label:"生成 "+fname, icon:"file"});
+  }
+  steps.push({label:"写入 "+lines+" 行 · "+chars+" 字符", icon:"check"});
+  steps.push({label:"已存入文件柜", icon:"check"});
+  steps.forEach(s=>s.status="done");
+  return {kind:"file", title:(prev?"修改文件":"编写文件")+" · "+fname, filename:fname, items:steps, total:steps.length, state:"done"};
 }
 function storeClaudeCode(lang,code,title,msgId){
   const id=uid("code");
