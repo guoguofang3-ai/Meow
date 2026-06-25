@@ -19647,7 +19647,13 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     var box=document.getElementById("artifactsList"); if(!box) return;
     var arr=collectArtifacts();
     var dl=document.querySelector(".artifacts-download-all"); if(dl) dl.style.display=arr.length?"block":"none";
-    if(!arr.length){ box.innerHTML='<div class="artifacts-empty">还没有文件。Claude 输出 HTML / JSON / Markdown / TXT / DOC / SVG / 代码 后，会自动收进这里。</div>'; return; }
+    if(!arr.length){
+      var _raw=getStoreArray("claudeArtifactStore")||[];
+      var _by={}; _raw.forEach(function(r){ var s=(r&&r.sourceKey)||"(无)"; _by[s]=(_by[s]||0)+1; });
+      var _diag='【诊断】store总数='+_raw.length+'；当前scope='+currentScope()+'；各归属='+JSON.stringify(_by);
+      box.innerHTML='<div class="artifacts-empty">还没有文件。Claude 输出 HTML / JSON / Markdown / TXT / DOC / SVG / 代码 后，会自动收进这里。<br><br><span style="font-size:11px;opacity:.55;word-break:break-all">'+htmlEscape(_diag)+'</span></div>';
+      return;
+    }
     box.innerHTML=arr.map(renderCard).join("");
   }
   function open(){ migrateOnce(); render(); var m=document.getElementById("artifactsMask"); if(m) m.classList.add("show"); }
