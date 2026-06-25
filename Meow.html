@@ -15737,9 +15737,24 @@ async function readBrowserLocation(args={}){
   if(!navigator.geolocation) return {ok:false,error:"当前浏览器不支持定位"};
   const precision=(args.precision==="coarse"||args.precision==="exact")?args.precision:cfg.precision;
   const maxAge=cfg.maxAgeMinutes*60*1000;
+  const amapKey=String(cfg.amapKey||"").trim();
   const cached=Storage.get("geoWeatherLastLocation", null);
   if(cached && maxAge>0 && Date.now()-(cached.fetchedAt||0)<maxAge && !(precision==="exact" && cached.precision==="coarse")){
-    return Object.assign({}, cached, {cached:true, precision, latitude:geoRound(cached.latitude, precision), longitude:geoRound(cached.longitude, precision)});
+    const result=Object.assign({}, cached, {cached:true, precision, latitude:geoRound(cached.latitude, precision), longitude:geoRound(cached.longitude, precision)});
+    // 缓存里还没有地址、但现在配了 Key → 补一次逆地理编码（不必重新定位）
+    if(amapKey && !result.address && cached.latitude!=null && cached.longitude!=null){
+      try{
+        const geo=await amapReverseGeocode(cached.latitude, cached.longitude, amapKey, precision);
+        if(geo && geo.ok){
+          if(geo.formatted_address) result.formatted_address=geo.formatted_address;
+          result.address=geo.address||geo.formatted_address||"";
+          result.province=geo.province; result.city=geo.city; result.district=geo.district;
+          if(geo.township) result.township=geo.township;
+          if(result.address){ result.label=result.address; Storage.set("geoWeatherLastLocation", Object.assign({}, cached, {address:result.address, formatted_address:result.formatted_address||"", province:result.province, city:result.city, district:result.district, township:result.township||"", label:result.label})); }
+        } else if(geo && geo.error){ result.address_error=geo.error; }
+      }catch(e){ result.address_error=String((e&&e.message)||e); }
+    }
+    return result;
   }
   return await new Promise(resolve=>{
     navigator.geolocation.getCurrentPosition(async pos=>{
