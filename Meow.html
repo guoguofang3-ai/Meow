@@ -210,6 +210,54 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .pet-bubble::after{content:"";position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#fff;border-bottom:0}
 .home-top{padding:8px 22px 4px}
 .home-date{font-size:15px;font-weight:800;color:rgba(255,255,255,.88);text-shadow:0 2px 8px rgba(0,0,0,.35)}
+.home-cottage{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  padding:8px 24px 118px;
+  color:#4e3d39;
+  background:
+    radial-gradient(circle at 18% 2%,rgba(255,255,255,.82),transparent 30%),
+    radial-gradient(circle at 84% 16%,rgba(207,166,160,.18),transparent 28%),
+    linear-gradient(160deg,#fbf5ea 0%,#f4e5dc 55%,#efe8dc 100%);
+}
+.cottage-hero{position:relative;padding:18px 0 10px;min-height:235px;}
+.cottage-kicker{font-family:Georgia,"Times New Roman",serif;letter-spacing:.32em;text-transform:uppercase;font-size:11px;color:#b79a91;margin-bottom:6px}
+.cottage-title{font-family:Georgia,"Times New Roman","Songti SC",serif;font-size:42px;line-height:.94;font-weight:650;letter-spacing:0;color:#3f312e}
+.cottage-sub{font-size:14px;color:#9b847c;margin-top:10px;letter-spacing:.08em}
+.cottage-days{margin-top:18px;display:flex;align-items:flex-end;gap:8px;color:#6f5650}
+.cottage-days b{font-family:Georgia,"Times New Roman",serif;font-size:64px;line-height:.8;font-weight:480;letter-spacing:0}
+.cottage-days span{font-family:Georgia,"Times New Roman",serif;font-size:22px;font-style:italic;padding-bottom:5px}
+.cottage-visual{position:absolute;right:-4px;top:70px;width:142px;height:142px;border-radius:34px;background:rgba(255,255,255,.38);border:1px solid rgba(255,255,255,.58);box-shadow:0 16px 38px rgba(111,86,80,.08);display:flex;align-items:center;justify-content:center;color:#cfa6a0;transform:rotate(-4deg);overflow:hidden}
+.cottage-visual svg{width:92px;height:92px;stroke-width:1.25}
+.cottage-tape{position:absolute;right:103px;top:58px;width:52px;height:18px;background:rgba(215,190,130,.32);border-radius:4px;transform:rotate(-15deg);box-shadow:0 4px 12px rgba(111,86,80,.06)}
+.cottage-note{position:relative;margin-top:8px;padding:17px 18px 16px;border-radius:24px;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.7);box-shadow:0 12px 34px rgba(111,86,80,.09);backdrop-filter:blur(18px) saturate(1.05);-webkit-backdrop-filter:blur(18px) saturate(1.05)}
+.cottage-note:before{content:"";position:absolute;right:18px;top:-10px;width:34px;height:34px;border-radius:50%;background:#d7be82;opacity:.55;box-shadow:inset 0 0 0 8px rgba(255,255,255,.24)}
+.cottage-note-label{font-family:Georgia,"Times New Roman",serif;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#b79a91;margin-bottom:9px}
+.cottage-note-text{font-size:16px;line-height:1.72;color:#6f5650}
+.cottage-section-title{margin:24px 2px 10px;font-family:Georgia,"Times New Roman",serif;letter-spacing:.34em;text-transform:uppercase;font-size:12px;color:#b79a91}
+.cottage-primary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cottage-card{border:0;text-align:left;border-radius:24px;padding:16px 15px;min-height:116px;background:rgba(255,255,255,.52);color:#6f5650;box-shadow:0 12px 28px rgba(111,86,80,.075);border:1px solid rgba(255,255,255,.66);display:flex;flex-direction:column;gap:10px}
+.cottage-card-icon,.cottage-tool-icon,.cottage-tab-icon{display:flex;align-items:center;justify-content:center;color:currentColor}
+.cottage-card-icon{width:38px;height:38px;border-radius:16px;background:rgba(207,166,160,.18);color:#8a6b64}
+.cottage-card-icon svg{width:21px;height:21px}
+.cottage-card-title{font-size:17px;font-weight:950;color:#4e3d39}
+.cottage-card-sub{font-size:12px;line-height:1.45;color:#9b847c}
+.cottage-drawer{margin-top:12px;border-radius:26px;background:rgba(255,255,255,.48);border:1px solid rgba(255,255,255,.62);overflow:hidden;box-shadow:0 10px 26px rgba(111,86,80,.065)}
+.cottage-drawer summary{list-style:none;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;font-weight:950;color:#4e3d39}
+.cottage-drawer summary::-webkit-details-marker{display:none}
+.cottage-drawer summary span:last-child{font-family:Georgia,"Times New Roman",serif;color:#b79a91;font-weight:500}
+.cottage-tool-list{display:grid;gap:1px;padding:0 10px 12px}
+.cottage-tool{border:0;background:rgba(255,255,255,.42);color:#6f5650;text-align:left;display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:10px;padding:11px 12px;border-radius:16px;margin-top:7px}
+.cottage-tool-icon{width:36px;height:36px;border-radius:14px;background:rgba(245,235,221,.82)}
+.cottage-tool-icon svg{width:19px;height:19px}
+.cottage-tool b{font-size:14px;color:#4e3d39}
+.cottage-tool small{display:block;font-size:11px;color:#a89289;margin-top:2px}
+.cottage-tool .miao-mini-icon{width:15px;height:15px;color:#cfa6a0}
+.cottage-bottom-nav{position:absolute;left:22px;right:22px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:6;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:10px 12px;border-radius:32px;background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.78);box-shadow:0 16px 40px rgba(111,86,80,.13);backdrop-filter:blur(22px) saturate(1.05);-webkit-backdrop-filter:blur(22px) saturate(1.05)}
+.cottage-tab{border:0;background:transparent;color:#9b847c;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;padding:5px 2px;border-radius:20px;font-size:11px;font-weight:850}
+.cottage-tab.active{background:#3f3735;color:#fff;box-shadow:0 10px 24px rgba(63,55,53,.18)}
+.cottage-tab-icon svg{width:22px;height:22px}
 .app-grid{
   display:flex;
   flex-direction:row;
@@ -3914,13 +3962,9 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 
     <section class="home-screen" id="homeScreen">
       <div class="statusbar"><span id="homeStatusTime">9:41</span><span class="status-icons"><span class="signal"><i></i><i></i><i></i></span><span class="battery"></span></span></div>
-      <div class="home-top" style="position:relative"><div class="home-date" id="homeDate">喵喵机</div><div id="miaoVersionLabel" style="font-size:11px;color:rgba(255,255,255,.78);font-weight:700;margin-top:4px;text-shadow:0 2px 6px rgba(0,0,0,.45)">喵喵机</div>
-      <button id="resetLayoutBtn" onclick="resetHomeLayout()" data-miao-icon="refresh" aria-label="整理图标" style="position:absolute;right:52px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:none;color:var(--bar-text,#111827);width:28px;height:28px;border-radius:50%;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);" title="整理图标"></button>
-      <button id="addWidgetBtn" onclick="showWidgetPicker()" data-miao-icon="plus" aria-label="添加组件" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:none;color:var(--bar-text,#111827);width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);"></button>
-      </div>
-      <div class="app-grid" id="appGrid"></div>
-      <div class="page-dots" id="pageDots"></div>
-      <div class="dock" id="dockGrid"></div>
+      <div class="home-cottage" id="appGrid"></div>
+      <div class="page-dots" id="pageDots" style="display:none"></div>
+      <div class="cottage-bottom-nav" id="dockGrid"></div>
       <!-- 桌宠兔子 -->
       <div id="deskPet" class="desk-pet" style="display:none">
         <div class="pet-bubble" id="petBubble"></div>
@@ -5010,6 +5054,7 @@ const $$ = (sel, root=document)=>Array.from(root.querySelectorAll(sel));
 /* ===== 统一手绘线性图标：默认 UI 不再依赖 emoji，颜色跟随主题 ===== */
 const MIAO_ICON_PATHS={
   app:'<rect x="5" y="5" width="14" height="14" rx="4"/><path d="M9 9h6M9 13h4"/>',
+  home:'<path d="M4.5 11.5 12 5l7.5 6.5"/><path d="M6.5 10.5V19h11v-8.5"/><path d="M10 19v-5h4v5"/>',
   music:'<path d="M9 17V5l10-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="16.5" cy="15.5" r="2.5"/>',
   chat:'<path d="M5 7.5c0-2 1.8-3.5 4-3.5h6c2.2 0 4 1.5 4 3.5v3.7c0 2-1.8 3.5-4 3.5h-3.8L6.5 19v-4.3H9c-2.2 0-4-1.5-4-3.5z"/>',
   role:'<path d="M12 20s-7-4.3-7-9.4A3.7 3.7 0 0 1 11.7 8 3.7 3.7 0 0 1 19 10.6C19 15.7 12 20 12 20z"/>',
@@ -7307,102 +7352,79 @@ function renderWidget2x2(widgetId, item){
 }
 
 function renderHome(){
-  const COLS=4;
-  const dockApps=Miao.apps.filter(a=>a.dock);
-  let layout=getHomeLayout();
-  // 自愈：分开任何重叠的图标，防止"消失"
-  layout=healLayoutCollisions(layout);
-  saveHomeLayout(layout);
-
-  // 按page分组
-  const pageMap={};
-  layout.forEach(item=>{
-    if(!pageMap[item.page]) pageMap[item.page]=[];
-    pageMap[item.page].push(item);
-  });
-  const pageCount=Math.max(1, ...Object.keys(pageMap).map(Number))+1;
-  const occupied=getOccupied(layout);
-
-  // 渲染每页
   const grid=$("#appGrid");
-  grid.innerHTML=Array.from({length:pageCount},(_,p)=>{
-    const pageItems=pageMap[p]||[];
-    // 建坐标索引
-    const posMap={};
-    pageItems.forEach(item=>{ posMap[`${item.row},${item.col}`]=item; });
-    // 计算这页需要几行（多留2行空格，方便自由拖放到下方）
-    const maxRow=pageItems.reduce((max,item)=>{
-      const itemRows=item.size==="2x2"?item.row+2:item.row+1;
-      return Math.max(max,itemRows);
-    },2)+2;
-    // 逐格渲染
-    let cells="";
-    for(let r=0;r<maxRow;r++){
-      for(let c=0;c<COLS;c++){
-        const key=`${r},${c}`;
-        const item=posMap[key];
-        if(!item){
-          // 空格
-          cells+=`<div class="app-placeholder"></div>`;
-        } else if(item.type==="widget" && item.size==="2x2"){
-          // 2x2组件：用grid-column/row span，绑定长按/右键编辑菜单
-          cells+=`<div class="widget-cell-2x2" data-widget-id="${item.id}">${renderWidget2x2(item.id, item)}</div>`;
-        } else {
-          cells+=renderLayoutItem(item);
-        }
-      }
-    }
-    return `<div class="home-page" data-page="${p}">${cells}</div>`;
-  }).join("");
-
-  // 圆点
-  const dots=$("#pageDots");
-  if(dots){
-    dots.innerHTML=Array.from({length:pageCount},(_,i)=>
-      `<span class="dot${i===0?" active":""}" data-page="${i}"></span>`
-    ).join("");
-    dots.onclick=(e)=>{
-      const dot=e.target.closest(".dot");
-      if(!dot||!grid) return;
-      grid.scrollTo({left:parseInt(dot.dataset.page||0)*grid.offsetWidth, behavior:"smooth"});
-    };
-  }
-
-  // 滚动更新圆点
-  grid.onscroll=()=>{
-    const cur=Math.round(grid.scrollLeft/grid.offsetWidth);
-    $$(".dot").forEach((d,i)=>d.classList.toggle("active",i===cur));
-    // 更新时钟组件
-    updateWidgetClocks();
-  };
-
-  // widget长按/右键事件代理（统一在grid上监听）
-  if(grid){
-    let wpTimer=null;
-    grid.addEventListener("contextmenu",(e)=>{
-      const cell=e.target.closest(".widget-cell-2x2");
-      if(!cell) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const wid=cell.dataset.widgetId;
-      if(wid) try{ showWidgetMenu(e,wid); }catch(err){ console.warn(err); }
-    });
-    grid.addEventListener("touchstart",(e)=>{
-      // 组件触摸长按 → 交给拖拽系统处理，这里不再弹菜单
-    },{passive:true});
-    grid.addEventListener("touchend",()=>{ clearTimeout(wpTimer); },{passive:true});
-    grid.addEventListener("touchmove",()=>{ clearTimeout(wpTimer); },{passive:true});
-    // 注：组件的触摸长按已交给 initAppDragSort 统一处理（原地松手=编辑菜单，拖走=移动）
-  }
-
-  // dock
-  $("#dockGrid").innerHTML=dockApps.map(app=>`<div class="app-wrap" data-action="open-app" data-id="${app.id}"><div class="app-icon">${renderAppIcon(iconForApp(app))}</div></div>`).join("");
-
-  // 启动时钟实时更新
+  if(!grid) return;
+  const appById=id=>Miao.apps.find(a=>a.id===id)||{id,name:id,iconId:"app"};
+  const role=currentRole()||{};
+  const user=Storage.get("userProfile",{})||{};
+  const roleName=role.name||"Claude";
+  const userName=user.name||"Nai";
+  const days=Math.max(1, Math.floor((Date.now()-(Storage.get("cottageSinceAt",0)||Date.now()))/86400000)+1);
+  const note=Storage.get("cottageTodayNote","快中午了。记得吃饭，也记得把想说的话留在这里。");
+  const primary=[
+    {id:"wechat", title:"聊天", sub:"回到和 TA 的日常", icon:"chat"},
+    {id:"claude", title:"助手", sub:"文件、网页和工具", icon:"claude"},
+    {id:"memory", title:"回忆", sub:"关系、约定和长期记忆", icon:"memory"},
+    {id:"diary", title:"日记", sub:"把安静的话放进抽屉", icon:"diary"}
+  ];
+  const tools=[
+    {id:"listen", sub:"一起听歌"},
+    {id:"reading", sub:"书架和阅读"},
+    {id:"moments", sub:"动态和朋友圈"},
+    {id:"story", sub:"线下剧情"},
+    {id:"call", sub:"语音通话"},
+    {id:"roles", sub:"角色卡"},
+    {id:"worldbook", sub:"世界书"},
+    {id:"greetings", sub:"开场白"},
+    {id:"stickers", sub:"表情包"},
+    {id:"theme", sub:"主题装扮"},
+    {id:"api", sub:"模型和工具密钥"},
+    {id:"data", sub:"导入导出备份"},
+    {id:"settings", sub:"系统设置"},
+    {id:"pet", sub:"桌宠"},
+    {id:"shop", sub:"商城"},
+    {id:"eleme", sub:"外卖"}
+  ].map(x=>Object.assign({}, appById(x.id), x));
+  const card=(item)=>`<button class="cottage-card" data-action="open-app" data-id="${escapeAttr(item.id)}">
+    <span class="cottage-card-icon">${miaoIcon(item.icon||appById(item.id).iconId||"app")}</span>
+    <span class="cottage-card-title">${escapeHtml(item.title)}</span>
+    <span class="cottage-card-sub">${escapeHtml(item.sub)}</span>
+  </button>`;
+  const tool=(app)=>`<button class="cottage-tool" data-action="open-app" data-id="${escapeAttr(app.id)}">
+    <span class="cottage-tool-icon">${renderAppIcon(iconForApp(app))}</span>
+    <span><b>${escapeHtml(app.name)}</b><small>${escapeHtml(app.sub||"")}</small></span>
+    ${miaoIcon("chevron","miao-mini-icon")}
+  </button>`;
+  grid.innerHTML=`<div class="cottage-hero">
+      <div class="cottage-kicker">Together Since</div>
+      <div class="cottage-title">${escapeHtml(roleName)}<br>&amp; ${escapeHtml(userName)}</div>
+      <div class="cottage-sub">Welcome home.</div>
+      <div class="cottage-days"><b>${days}</b><span>days</span></div>
+      <div class="cottage-tape"></div>
+      <div class="cottage-visual">${miaoIcon("book")}</div>
+    </div>
+    <section class="cottage-note">
+      <div class="cottage-note-label">Today's Note</div>
+      <div class="cottage-note-text">${escapeHtml(note)}</div>
+    </section>
+    <div class="cottage-section-title">Home</div>
+    <div class="cottage-primary-grid">${primary.map(card).join("")}</div>
+    <details class="cottage-drawer">
+      <summary><span>小屋抽屉</span><span>Menu</span></summary>
+      <div class="cottage-tool-list">${tools.map(tool).join("")}</div>
+    </details>`;
+  const nav=[
+    {id:"wechat", label:"聊天", icon:"chat"},
+    {id:"memory", label:"回忆", icon:"memory"},
+    {id:"home", label:"首页", icon:"home", active:true},
+    {id:"reading", label:"小屋", icon:"book"},
+    {id:"me", label:"我们", icon:"user"}
+  ];
+  $("#dockGrid").innerHTML=nav.map(n=>`<button class="cottage-tab ${n.active?"active":""}" ${n.id==="home"?"data-action=\"go-home\"":`data-action="open-app" data-id="${escapeAttr(n.id)}"`}>
+    <span class="cottage-tab-icon">${miaoIcon(n.icon)}</span><span>${escapeHtml(n.label)}</span>
+  </button>`).join("");
   startClockUpdater();
   hydrateMiaoIcons(document);
-  // 挂载app拖拽排序
-  initAppDragSort();
 }
 
 // ===== app 拖拽排序（同页内重排，iOS触摸式）=====
