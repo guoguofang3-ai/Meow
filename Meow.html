@@ -4178,6 +4178,14 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
           </div>
         </details>
 
+        <details class="api-fold">
+          <summary><span>联网搜索 / 网页图片</span><small>Claude 助手</small></summary>
+          <div class="api-fold-body">
+            <div class="v3-sub">用于 Claude 的 web_search、read_webpage、view_web_image 工具。SerpAPI Key 只保存在本机；不填写时仍可读取指定网页，但不能搜索关键词。</div>
+            <label>SerpAPI Key</label><input id="serpApiKeyInput" placeholder="serpapi key" type="password">
+          </div>
+        </details>
+
 
 
         <details class="api-fold">
@@ -5842,6 +5850,9 @@ function ensureDefaults(){
   }
   if(!Storage.get("phoneActivity", null)){
     Storage.set("phoneActivity", {enabled:false, baseUrl:"", token:"", cooldownMinutes:5});
+  }
+  if(!Storage.get("webSearch", null)){
+    Storage.set("webSearch", {serpApiKey:""});
   }
   if(!Storage.get("geoWeather", null)){
     Storage.set("geoWeather", {wechatEnabled:false, claudeEnabled:false, weatherEnabled:false, locationEnabled:false, autoEnabled:true, precision:"exact", maxAgeMinutes:5, amapKey:""});
@@ -8189,6 +8200,9 @@ function wechatToolMeta(name,args={}){
     search_history:{label:"聊天记录",icon:"search",detail:args.query||"",verbRunning:"正在搜索",verbDone:"搜索了",verbError:"搜索失败："},
     read_file:{label:"文件",icon:"file",detail:args.filename||"",verbRunning:"正在读取",verbDone:"读取了",verbError:"读取失败："},
     search_file:{label:"文件",icon:"search",detail:[args.filename,args.query].filter(Boolean).join(" · "),verbRunning:"正在搜索",verbDone:"搜索了",verbError:"搜索失败："},
+    web_search:{label:"网页",icon:"search",detail:args.query||"",verbRunning:"正在搜索",verbDone:"搜索了",verbError:"搜索失败："},
+    read_webpage:{label:"网页",icon:"link",detail:args.url||args.link||"",verbRunning:"正在读取",verbDone:"读取了",verbError:"读取失败："},
+    view_web_image:{label:"网页图片",icon:"image",detail:args.question||args.image_url||args.url||"",verbRunning:"正在查看",verbDone:"查看了",verbError:"查看失败："},
     write_memory:{label:"记忆",icon:"memory_write",detail:args.title||args.category||"",verbRunning:"正在写入",verbDone:"写入了",verbError:"写入失败："},
     read_memory:{label:"记忆",icon:"memory",detail:args.query||args.category||"",verbRunning:"正在读取",verbDone:"读取了",verbError:"读取失败："},
     read_diary:{label:"日记",icon:"diary",detail:args.query||args.category||"",verbRunning:"正在读取",verbDone:"读取了",verbError:"读取失败："},
@@ -8220,6 +8234,9 @@ function summarizeWechatToolResult(name,result){
     const t=result.temperature!=null?`${Math.round(result.temperature)}°C`:"";
     return [t,result.weather].filter(Boolean).join(" ");
   }
+  if(name==="web_search" && result.count!=null) return `${result.count} 条`;
+  if(name==="read_webpage") return result.imageCount?`${result.imageCount} 张图`:(result.truncated?"已截断":"");
+  if(name==="view_web_image") return result.ok===false?(result.error||"失败"):"已分析";
   if(name==="printer_status") return result.connected?`已连接${result.busy?" · 打印中":""}`:"未连接";
   if(name==="printer_print") return result.ok===false?(result.error||"失败"):`${result.chars||0}字${result.truncated?" · 已截断":""}`;
   if(name==="search_history" && result.count!=null) return `${result.count} 条`;
@@ -9670,8 +9687,9 @@ async function callAIReply(){
     let userUrlNote="";
     const pastedUrl=extractBareUrl(newUser.content||"");
     if(pastedUrl){
-      if(!useStream) toast("正在读网页…");
+      const traceId=addWechatToolTrace("read_webpage",{url:pastedUrl});
       const page=await fetchWebPage(pastedUrl);
+      updateWechatToolTrace(traceId, page.ok?"done":"error", page.ok?(page.truncated?"已截断":""):page.error);
       userUrlNote = page.ok
         ? `\n\n【网页读取结果】user消息里的网址（${page.url}）内容如下${page.truncated?"（已截断）":""}，可结合它回复：\n${page.content}`
         : `\n\n【网页读取失败】user贴的网址没读成功（${page.error}），如有需要可告诉user读不了。`;
@@ -9683,11 +9701,11 @@ async function callAIReply(){
     if(wantUrl){
       if(useStream){
         const bubble=document.querySelector('[data-id="'+streamMsgId+'"] .bubble');
-        if(bubble) bubble.textContent="（正在读网页…）";
-      } else {
-        toast("正在读网页…");
+        if(bubble) bubble.textContent="";
       }
+      const traceId=addWechatToolTrace("read_webpage",{url:wantUrl});
       const page=await fetchWebPage(wantUrl);
+      updateWechatToolTrace(traceId, page.ok?"done":"error", page.ok?(page.truncated?"已截断":""):page.error);
       const note = page.ok
         ? `\n\n【网页读取结果】你刚才请求读取的网页（${page.url}）内容如下${page.truncated?"（已截断）":""}，请基于真实内容回复user，不要再输出[读取网页]指令：\n${page.content}`
         : `\n\n【网页读取失败】你请求读取的网页没读成功，原因：${page.error}。请如实告诉user读不了，不要再输出[读取网页]指令。`;
@@ -9844,6 +9862,69 @@ async function fetchWebPage(url){
     if(e.name==="AbortError") return {ok:false, error:"超时（网页太慢或无法访问）"};
     return {ok:false, error:"读取出错："+(e.message||e)};
   }
+}
+function extractWebPageImages(text, pageUrl){
+  const out=[], seen=new Set();
+  const base=String(pageUrl||"");
+  const add=(src, alt, nearby)=>{
+    src=String(src||"").trim();
+    if(!src || src.startsWith("data:") || src.startsWith("blob:")) return;
+    try{ src=new URL(src, base).href; }catch(e){}
+    if(!/^https?:\/\//i.test(src) || seen.has(src)) return;
+    seen.add(src);
+    out.push({id:"img"+out.length, src, alt:String(alt||"").trim().slice(0,120), nearbyText:String(nearby||"").replace(/\s+/g," ").trim().slice(0,180)});
+  };
+  const s=String(text||"");
+  s.replace(/!\[([^\]]*)\]\((https?:\/\/[^)\s]+)[^)]*\)/g,(m,alt,src)=>{ add(src,alt,""); return m; });
+  s.replace(/<img\b[^>]*>/gi,(tag)=>{
+    const src=(tag.match(/\bsrc=["']([^"']+)["']/i)||[])[1] || (tag.match(/\bdata-src=["']([^"']+)["']/i)||[])[1];
+    const alt=(tag.match(/\balt=["']([^"']*)["']/i)||[])[1] || (tag.match(/\btitle=["']([^"']*)["']/i)||[])[1] || "";
+    add(src,alt,"");
+    return tag;
+  });
+  s.replace(/https?:\/\/[^\s"'<>]+\.(?:png|jpe?g|webp|gif)(?:\?[^\s"'<>]*)?/gi,(src)=>{ add(src,"",""); return src; });
+  return out.slice(0,8);
+}
+async function readWebpageTool(args={}){
+  const page=await fetchWebPage(args.url||args.link||"");
+  if(!page.ok) return page;
+  const images=extractWebPageImages(page.content, page.url);
+  return {ok:true, url:page.url, content:page.content, truncated:!!page.truncated, images, imageCount:images.length};
+}
+async function webSearchTool(args={}){
+  const query=String(args.query||"").trim();
+  if(!query) return {ok:false,error:"搜索词为空"};
+  const cfg=Storage.get("webSearch",{})||{};
+  const key=String(cfg.serpApiKey||"").trim();
+  if(!key) return {ok:false,error:"未填写 SerpAPI Key，请先到 API 设置里填写"};
+  const cacheKey="webSearchCache."+query.toLowerCase();
+  const cached=Storage.get(cacheKey,null);
+  if(cached && Date.now()-(cached.at||0)<10*60*1000) return Object.assign({cached:true}, cached.data);
+  const url="https://serpapi.com/search.json?q="+encodeURIComponent(query)+"&api_key="+encodeURIComponent(key)+"&hl=zh-CN";
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),15000);
+  try{
+    const res=await fetch(url,{signal:ctrl.signal,headers:{"Accept":"application/json"}});
+    clearTimeout(timer);
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) return {ok:false,error:data.error||("搜索失败 HTTP "+res.status)};
+    const results=(data.organic_results||[]).slice(0,5).map(r=>({title:r.title||"",snippet:r.snippet||"",link:r.link||""})).filter(r=>r.link);
+    const out={ok:true,query,results,count:results.length};
+    Storage.set(cacheKey,{at:Date.now(),data:out});
+    return out;
+  }catch(e){
+    clearTimeout(timer);
+    return {ok:false,error:e.name==="AbortError"?"搜索超时":("搜索出错："+(e.message||e))};
+  }
+}
+async function viewWebImageTool(args={}){
+  const imageUrl=String(args.image_url||args.url||"").trim();
+  const question=String(args.question||"请描述这张网页图片。").slice(0,500);
+  if(!/^https?:\/\//i.test(imageUrl)) return {ok:false,error:"图片地址必须是公网 http/https URL"};
+  const api=Storage.get("api",{});
+  if(!api.apiUrl || !api.apiKey || !api.model) return {ok:false,error:"缺少聊天 API 配置"};
+  const text=await callSimpleChatAPI(api,[{role:"user",content:[{type:"image_url",image_url:{url:imageUrl}},{type:"text",text:question}]}],.2);
+  return {ok:true,image_url:imageUrl,question,description:String(text||"").slice(0,1600)};
 }
 
 // 从文本里抽出第一个 [读取网页:URL] 指令的URL
@@ -10459,6 +10540,8 @@ function renderApi(){
   const _pau=document.getElementById("phoneActivityUrlInput"); if(_pau) _pau.value=pa.baseUrl||"";
   const _pat=document.getElementById("phoneActivityTokenInput"); if(_pat) _pat.value=pa.token||"";
   const _pac=document.getElementById("phoneActivityCooldownInput"); if(_pac) _pac.value=String(pa.cooldownMinutes ?? 5);
+  const web=Storage.get("webSearch",{});
+  const _serp=document.getElementById("serpApiKeyInput"); if(_serp) _serp.value=web.serpApiKey||"";
   const gw=Storage.get("geoWeather",{});
   const _gww=document.getElementById("geoWeatherWechatEnabled"); if(_gww) _gww.checked=!!gw.wechatEnabled;
   const _gwc=document.getElementById("geoWeatherClaudeEnabled"); if(_gwc) _gwc.checked=!!gw.claudeEnabled;
@@ -10478,6 +10561,8 @@ function saveApiFromForm(){
   Storage.set("ttsApi", { provider:"elevenlabs", apiKey:(tk?tk.value.trim():""), voiceId:(tv?tv.value.trim():""), model:(tm?tm.value.trim():"eleven_v3")||"eleven_v3", mode:(tmode?tmode.value:"explicit")||"explicit" });
   const pae=document.getElementById("phoneActivityEnabled"), pau=document.getElementById("phoneActivityUrlInput"), pat=document.getElementById("phoneActivityTokenInput"), pac=document.getElementById("phoneActivityCooldownInput");
   Storage.set("phoneActivity", { enabled:!!(pae&&pae.checked), baseUrl:(pau?pau.value.trim():"").replace(/\/+$/,""), token:(pat?pat.value.trim():""), cooldownMinutes:Math.max(0, parseInt(pac&&pac.value)||5) });
+  const serp=document.getElementById("serpApiKeyInput");
+  Storage.set("webSearch", {serpApiKey:(serp?serp.value.trim():"")});
   const gww=document.getElementById("geoWeatherWechatEnabled"), gwc=document.getElementById("geoWeatherClaudeEnabled"), gwt=document.getElementById("geoWeatherWeatherEnabled"), gwl=document.getElementById("geoWeatherLocationEnabled"), gwa=document.getElementById("geoWeatherAutoEnabled"), gwp=document.getElementById("geoWeatherPrecisionInput"), gwm=document.getElementById("geoWeatherMaxAgeInput"), gwk=document.getElementById("geoWeatherAmapKeyInput");
   Storage.set("geoWeather", { wechatEnabled:!!(gww&&gww.checked), claudeEnabled:!!(gwc&&gwc.checked), weatherEnabled:!!(gwt&&gwt.checked), locationEnabled:!!(gwl&&gwl.checked), autoEnabled:gwa?!!gwa.checked:true, precision:(gwp&&gwp.value)||"exact", maxAgeMinutes:Math.max(0, parseInt(gwm&&gwm.value)||5), amapKey:(gwk&&gwk.value||"").trim() });
   const thoughtModeEl=document.getElementById("thoughtModeInput");
@@ -11473,6 +11558,9 @@ function describeClaudeToolCall(name,args){
   if(name==="read_phone_activity") return args.summary?"读取手机活动摘要":"读取手机活动记录";
   if(name==="get_user_location") return "查询位置";
   if(name==="get_weather") return args.location?`查询天气：${args.location}`:"查询当前位置天气";
+  if(name==="web_search") return `搜索网页：${args.query||""}`;
+  if(name==="read_webpage") return `读取网页：${args.url||args.link||""}`;
+  if(name==="view_web_image") return `查看网页图片：${args.question||args.image_url||args.url||""}`;
   if(name==="printer_status") return "查询打印机状态";
   if(name==="printer_print") return `打印纸条${args.text?`：${String(args.text).slice(0,28)}`:""}`;
   if(name==="device_status") return "查询设备状态";
@@ -11538,6 +11626,7 @@ function inferClaudeToolPolicy(history=getClaudeHistory()){
   const wantsDevice=/设备|配件|蓝牙|震动|模式|停止|连接状态|device_/i.test(text);
   const wantsPhoneActivity=/监控|手机活动|活动记录|app活动|App活动|屏幕使用|刚才.*干嘛|刚刚.*干嘛|查我|查一下我|是不是.*刷|有没有.*玩|read_phone_activity/i.test(text);
   const wantsGeoWeather=/天气|气温|下雨|下雪|空气质量|位置|定位|在哪|哪里|经纬度|get_weather|get_user_location/i.test(text);
+  const wantsWeb=/网页|网站|链接|网址|联网|搜索|查资料|搜一下|新闻|最新|图片|配图|截图|web_search|read_webpage|view_web_image|https?:\/\//i.test(text);
   const wantsCommand=/下任务|小任务|倒计时|提醒我|监督我|issue_command/i.test(text);
   const explicitTool=/工具|调用|读取|搜索|处理文件|改代码|查记录|监控/i.test(text);
   const fileMode=Storage.get("claudeFileMode", false);
@@ -11561,6 +11650,7 @@ function inferClaudeToolPolicy(history=getClaudeHistory()){
     device: !!(allToolsOpen || wantsDevice),
     phoneActivity,
     geoWeather: !!((allToolsOpen || wantsGeoWeather) && isGeoWeatherToolAllowed("claude")),
+    web: !!(allToolsOpen || wantsWeb),
     explicit: !!(explicitTool || allToolsOpen)
   };
 }
@@ -11586,6 +11676,11 @@ function buildClaudeToolUsePrompt(policy={}){
   if(policy.geoWeather){
     const gwLines=geoWeatherPromptLines("claude");
     if(gwLines) gwLines.split("\n").forEach(line=>lines.push(line));
+  }
+  if(policy.web){
+    lines.push("- web_search(query)：联网搜索关键词，返回少量标题/摘要/链接；需要 SerpAPI Key。不要用它读取正文。");
+    lines.push("- read_webpage(url)：读取指定网页文字，并列出最多8张网页图片候选；不要一次性要求看所有图片。");
+    lines.push("- view_web_image(image_url, question)：只在确实需要理解某张网页图片时调用，分析一张公网图片。优先先用 read_webpage 返回的 images 选择图片。");
   }
   if(policy.printer){
     lines.push(printerPromptLine(getClaudeMode()==="tool" ? "tool-claude" : "role-claude"));
@@ -13053,7 +13148,7 @@ async function callClaudeAI(api, ops){
       const opIndex=claudeOpsAdd(ops, describeClaudeToolCall(toolName, args), claudeToolIcon(toolName, args));
       let result;
       try{
-        if(seen>=8 && /^(read_file|search_file|search_history|read_memory|read_diary)$/.test(toolName)){
+        if(seen>=8 && /^(read_file|search_file|search_history|read_memory|read_diary|web_search|read_webpage|view_web_image)$/.test(toolName)){
           result={error:"检测到重复工具调用", hint:"同一个工具和参数已经重复调用很多次。请换关键词/换 offset，或基于已有结果直接回答。"};
         } else {
           result=await executeClaudeTool(toolName, args);
@@ -17210,6 +17305,11 @@ function getClaudeTools(policy={}){
   if(policy.commandTask!==false) add(commandTaskToolSchema());
   if(policy.phoneActivity) add(phoneActivityToolSchema());
   if(policy.geoWeather) geoWeatherToolSchemas("claude").forEach(add);
+  if(policy.web){
+    add({type:"function",function:{name:"web_search",description:"联网搜索关键词，返回最多5条网页结果（标题、摘要、链接）。只用于找资料/找链接，不读取网页正文。需要用户在设置里填写 SerpAPI Key。",parameters:{type:"object",properties:{query:{type:"string",description:"搜索关键词，尽量具体"}},required:["query"]}}});
+    add({type:"function",function:{name:"read_webpage",description:"读取指定网页的文字内容，并提取最多8张网页图片候选（src/alt/附近文字）。正文会截断，避免塞满上下文。",parameters:{type:"object",properties:{url:{type:"string",description:"要读取的网页 URL"}},required:["url"]}}});
+    add({type:"function",function:{name:"view_web_image",description:"理解一张网页图片。只在 read_webpage 返回的图片候选确实有用时调用，一次只看一张公网图片 URL，不要批量调用。",parameters:{type:"object",properties:{image_url:{type:"string",description:"公网图片 URL，通常来自 read_webpage 的 images[].src"},question:{type:"string",description:"想从图片里了解什么"}},required:["image_url","question"]}}});
+  }
   if(policy.file){
     add({
       type:"function",
@@ -17457,6 +17557,9 @@ async function executeWechatTool(name, args){
   if(name==="get_user_location" || name==="get_weather"){
     return await fetchGeoWeatherTool(name, args||{});
   }
+  if(name==="web_search"){ return await webSearchTool(args||{}); }
+  if(name==="read_webpage"){ return await readWebpageTool(args||{}); }
+  if(name==="view_web_image"){ return await viewWebImageTool(args||{}); }
   if(name==="read_file"){
     const filename=args.filename||"";
     const offset=parseInt(args.offset)||0;
@@ -17514,6 +17617,9 @@ async function executeClaudeTool(name, args){
   if(name==="issue_command"){ return issueCommandTask(args||{}, commandTaskScope()); }
   if(name==="read_phone_activity"){ return await fetchPhoneActivity(args||{}); }
   if(name==="get_user_location" || name==="get_weather"){ return await fetchGeoWeatherTool(name, args||{}); }
+  if(name==="web_search"){ return await webSearchTool(args||{}); }
+  if(name==="read_webpage"){ return await readWebpageTool(args||{}); }
+  if(name==="view_web_image"){ return await viewWebImageTool(args||{}); }
   if(name==="read_file"){
     args=args||{};
     const filename=args.filename||"";
