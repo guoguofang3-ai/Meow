@@ -3183,7 +3183,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
 .listen-track{flex:0 0 auto;text-align:center;margin:13px 0 4px;max-width:100%}
 .listen-title{font-size:18px;font-weight:900;letter-spacing:-.2px;color:var(--lt-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .listen-artist{font-size:12.5px;color:var(--lt-muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.listen-lyrics{flex:1;min-height:0;width:100%;overflow-y:auto;text-align:center;padding:8px 6px 14px;-webkit-overflow-scrolling:touch;mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);-webkit-mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent)}
+.listen-lyrics{position:relative;flex:1;min-height:0;width:100%;overflow-y:auto;text-align:center;padding:8px 6px 14px;-webkit-overflow-scrolling:touch;mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);-webkit-mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent)}
 .listen-lyric{font-size:15px;line-height:1.5;margin:13px 0;color:var(--lt-line);transition:color .25s,transform .25s;font-weight:600}
 .listen-lyric .lt-trans{display:block;font-size:12px;margin-top:3px;color:var(--lt-muted);font-weight:500}
 .listen-lyric.active{color:var(--lt-accent);font-weight:900;transform:scale(1.04)}
@@ -15087,10 +15087,13 @@ const MusicEngine={
   unlock(){
     if(this._unlocked||this._unlocking) return;
     this.init();
+    // 已经在放真实歌曲，说明早解锁过——直接标记，千万别再用静音 wav 去打断它
+    if(this.audio.src && !this.audio.paused){ this._unlocked=true; return; }
+    this._unlocked=true;   // 乐观标记：本次手势即视为已解锁，绝不重复执行（否则会打断正在播放的歌）
     const a=this.audio, pm=a.muted;
     this._unlocking=true; a.muted=true;
     a.src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
-    const fin=()=>{ try{ a.pause(); a.removeAttribute("src"); a.load(); }catch(e){} a.muted=pm; this._unlocked=true; this._unlocking=false; };
+    const fin=()=>{ try{ a.pause(); a.removeAttribute("src"); a.load(); }catch(e){} a.muted=pm; this._unlocking=false; };
     try{ const p=a.play(); if(p&&p.then) p.then(fin).catch(()=>{ a.muted=pm; this._unlocking=false; }); else fin(); }
     catch(e){ a.muted=pm; this._unlocking=false; }
   },
@@ -15219,7 +15222,7 @@ function listenWireOnce(){
     const act=b.getAttribute("data-listen-action");
     // 只在点遮罩“空白处”时关闭浮层；点输入框/按钮/内容不关、也不拦默认（保证能打字）
     if(act==="sheet-close"){ if(e.target&&e.target.id==="listenSheetMask") listenCloseSheet(); return; }
-    if(act==="chat-close"){ if(e.target&&e.target.id==="listenChatMask") listenChatClose(); return; }
+    if(act==="chat-close"){ if((b.tagName==="BUTTON")||(e.target&&e.target.id==="listenChatMask")) listenChatClose(); return; }
     try{ MusicEngine.unlock(); }catch(e2){}   // 在用户手势里解锁 iOS 音频
     if(act==="seek"){ const r=b.getBoundingClientRect(); if(r.width) MusicEngine.seekPct((e.clientX-r.left)/r.width); return; }
     e.preventDefault();
