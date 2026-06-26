@@ -193,7 +193,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .app-screen.wechat .wechat-head{margin-top:-1px}
 .home-screen .statusbar{color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.35)}
 /* 桌宠兔子 */
-.desk-pet{position:absolute;width:72px;height:86px;z-index:50;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.desk-pet{position:absolute;width:72px;height:86px;z-index:80;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .desk-pet:active{cursor:grabbing}
 .pet-body{width:100%;height:100%;transition:transform .15s;animation:petIdle 3.5s ease-in-out infinite;transform-origin:bottom center}
 .pet-body svg{width:100%;height:100%;display:block;filter:drop-shadow(0 4px 8px rgba(0,0,0,.2))}
@@ -214,14 +214,14 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   flex:1;
   min-height:0;
   overflow:auto;
-  padding:8px 24px 118px;
+  padding:calc(10px + env(safe-area-inset-top)) 24px 118px;
   color:#4e3d39;
   background:
     radial-gradient(circle at 18% 2%,rgba(255,255,255,.82),transparent 30%),
     radial-gradient(circle at 84% 16%,rgba(207,166,160,.18),transparent 28%),
     linear-gradient(160deg,#fbf5ea 0%,#f4e5dc 55%,#efe8dc 100%);
 }
-.cottage-hero{position:relative;padding:18px 0 10px;min-height:235px;}
+.cottage-hero{position:relative;padding:2px 0 8px;min-height:214px;}
 .cottage-kicker{font-family:Georgia,"Times New Roman",serif;letter-spacing:.32em;text-transform:uppercase;font-size:11px;color:#b79a91;margin-bottom:6px}
 .cottage-title{font-family:Georgia,"Times New Roman","Songti SC",serif;font-size:42px;line-height:.94;font-weight:650;letter-spacing:0;color:#3f312e}
 .cottage-sub{font-size:14px;color:#9b847c;margin-top:10px;letter-spacing:.08em}
@@ -231,10 +231,12 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .cottage-visual{position:absolute;right:-4px;top:70px;width:142px;height:142px;border-radius:34px;background:rgba(255,255,255,.38);border:1px solid rgba(255,255,255,.58);box-shadow:0 16px 38px rgba(111,86,80,.08);display:flex;align-items:center;justify-content:center;color:#cfa6a0;transform:rotate(-4deg);overflow:hidden}
 .cottage-visual svg{width:92px;height:92px;stroke-width:1.25}
 .cottage-tape{position:absolute;right:103px;top:58px;width:52px;height:18px;background:rgba(215,190,130,.32);border-radius:4px;transform:rotate(-15deg);box-shadow:0 4px 12px rgba(111,86,80,.06)}
-.cottage-note{position:relative;margin-top:8px;padding:17px 18px 16px;border-radius:24px;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.7);box-shadow:0 12px 34px rgba(111,86,80,.09);backdrop-filter:blur(18px) saturate(1.05);-webkit-backdrop-filter:blur(18px) saturate(1.05)}
+.cottage-note{position:relative;margin-top:2px;padding:13px 46px 12px 15px;border-radius:22px;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.7);box-shadow:0 10px 28px rgba(111,86,80,.075);backdrop-filter:blur(18px) saturate(1.05);-webkit-backdrop-filter:blur(18px) saturate(1.05)}
 .cottage-note:before{content:"";position:absolute;right:18px;top:-10px;width:34px;height:34px;border-radius:50%;background:#d7be82;opacity:.55;box-shadow:inset 0 0 0 8px rgba(255,255,255,.24)}
-.cottage-note-label{font-family:Georgia,"Times New Roman",serif;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#b79a91;margin-bottom:9px}
-.cottage-note-text{font-size:16px;line-height:1.72;color:#6f5650}
+.cottage-note-label{font-family:Georgia,"Times New Roman",serif;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#b79a91;margin-bottom:6px}
+.cottage-note-text{font-size:14px;line-height:1.55;color:#6f5650}
+.cottage-note-edit{position:absolute;right:11px;bottom:10px;width:32px;height:32px;border:0;border-radius:50%;background:rgba(207,166,160,.18);color:#8a6b64;display:flex;align-items:center;justify-content:center}
+.cottage-note-edit svg{width:16px;height:16px}
 .cottage-section-title{margin:24px 2px 10px;font-family:Georgia,"Times New Roman",serif;letter-spacing:.34em;text-transform:uppercase;font-size:12px;color:#b79a91}
 .cottage-primary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .cottage-card{border:0;text-align:left;border-radius:24px;padding:16px 15px;min-height:116px;background:rgba(255,255,255,.52);color:#6f5650;box-shadow:0 12px 28px rgba(111,86,80,.075);border:1px solid rgba(255,255,255,.66);display:flex;flex-direction:column;gap:10px}
@@ -3330,7 +3332,8 @@ body.multiselect-mode .msg{ cursor:pointer; }
 body{background:var(--memory-bg,linear-gradient(160deg,#f6f7fb,#eef2fb))!important;}
 .lock-screen,.home-screen,.app-screen{border-radius:0!important;}
 .lock-screen{padding-top:max(52px,env(safe-area-inset-top))!important;}
-.app-screen .statusbar,.home-screen .statusbar{padding-top:calc(10px + env(safe-area-inset-top))!important;height:calc(44px + env(safe-area-inset-top))!important;}
+.app-screen .statusbar{padding-top:calc(10px + env(safe-area-inset-top))!important;height:calc(44px + env(safe-area-inset-top))!important;}
+.home-screen .statusbar{display:none!important;}
 .header{padding-top:calc(10px + env(safe-area-inset-top))!important;}
 .wechat-head{margin-top:0!important;}
 .dock{margin-bottom:calc(10px + env(safe-area-inset-bottom))!important;}
@@ -3961,7 +3964,6 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
     </section>
 
     <section class="home-screen" id="homeScreen">
-      <div class="statusbar"><span id="homeStatusTime">9:41</span><span class="status-icons"><span class="signal"><i></i><i></i><i></i></span><span class="battery"></span></span></div>
       <div class="home-cottage" id="appGrid"></div>
       <div class="page-dots" id="pageDots" style="display:none"></div>
       <div class="cottage-bottom-nav" id="dockGrid"></div>
@@ -6076,6 +6078,8 @@ function bindEvents(){
     if(action==="open-sticky-note") addStickyNote();
     if(action==="add-sticky-note") addStickyNote();
     if(action==="save-sticky-note") saveStickyNoteFromModal();
+    if(action==="edit-cottage-note") editCottageNote();
+    if(action==="save-cottage-note") saveCottageNoteFromModal();
     if(action==="delete-sticky") deleteStickyNote(id);
     if(action==="save-diary-entry") saveDiaryEntryFromModal(id||"");
     if(action==="delete-diary") deleteDiary(id);
@@ -6762,7 +6766,7 @@ function renderAll(){
 }
 function updateClock(){
   const t=nowTime();
-  ["lockStatusTime","homeStatusTime","wechatStatusTime","lockTime"].forEach(id=>{ const el=$("#"+id); if(el) el.textContent=t; });
+  ["lockStatusTime","wechatStatusTime","lockTime"].forEach(id=>{ const el=$("#"+id); if(el) el.textContent=t; });
   $("#lockDate").textContent=todayText();
   $("#homeDate").textContent=todayText();
 }
@@ -7361,6 +7365,8 @@ function renderHome(){
   const userName=user.name||"Nai";
   const days=Math.max(1, Math.floor((Date.now()-(Storage.get("cottageSinceAt",0)||Date.now()))/86400000)+1);
   const note=Storage.get("cottageTodayNote","快中午了。记得吃饭，也记得把想说的话留在这里。");
+  const drawerOpen=!!Storage.get("cottageDrawerOpen",false);
+  const scrollTop=Number(Storage.get("cottageScrollTop",0)||0);
   const primary=[
     {id:"wechat", title:"聊天", sub:"回到和 TA 的日常", icon:"chat"},
     {id:"claude", title:"助手", sub:"文件、网页和工具", icon:"claude"},
@@ -7406,13 +7412,19 @@ function renderHome(){
     <section class="cottage-note">
       <div class="cottage-note-label">Today's Note</div>
       <div class="cottage-note-text">${escapeHtml(note)}</div>
+      <button class="cottage-note-edit" data-action="edit-cottage-note" aria-label="编辑便签">${miaoIcon("edit")}</button>
     </section>
     <div class="cottage-section-title">Home</div>
     <div class="cottage-primary-grid">${primary.map(card).join("")}</div>
-    <details class="cottage-drawer">
+    <details class="cottage-drawer" ${drawerOpen?"open":""}>
       <summary><span>小屋抽屉</span><span>Menu</span></summary>
       <div class="cottage-tool-list">${tools.map(tool).join("")}</div>
     </details>`;
+  grid.querySelector(".cottage-drawer")?.addEventListener("toggle",e=>{
+    Storage.set("cottageDrawerOpen", !!e.currentTarget.open);
+  });
+  grid.onscroll=()=>Storage.set("cottageScrollTop", grid.scrollTop||0);
+  if(scrollTop>0) requestAnimationFrame(()=>{ grid.scrollTop=scrollTop; });
   const nav=[
     {id:"wechat", label:"聊天", icon:"chat"},
     {id:"memory", label:"回忆", icon:"memory"},
@@ -7767,6 +7779,20 @@ function deleteStickyNote(id){
   saveStickyNotes(list);
   renderStickyNotes();
 }
+function editCottageNote(){
+  const text=Storage.get("cottageTodayNote","快中午了。记得吃饭，也记得把想说的话留在这里。");
+  openQuickModal(`<div class="quick-modal-title">Today's Note</div>
+    <textarea id="cottageNoteInput" rows="4" placeholder="写一张放在小屋首页的便签">${escapeHtml(text)}</textarea>
+    <div class="btn-row"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-cottage-note">保存</button></div>`);
+}
+function saveCottageNoteFromModal(){
+  const el=document.getElementById("cottageNoteInput");
+  const text=String(el?.value||"").trim();
+  Storage.set("cottageTodayNote", text || "今天也把话慢慢说完。");
+  closeQuickModal();
+  renderHome();
+  toast("首页便签已保存");
+}
 
 /* ===== 骰子 ===== */
 function rollDice(){
@@ -7855,7 +7881,7 @@ const DeskPet = {
     el._falling=true;
     this.stopBlink();
     this.setCry(true);
-    const host=el.offsetParent || el.parentElement;
+    const host=this.getContainer();
     const hr=host.getBoundingClientRect();
     const maxX=hr.width-72, floorY=hr.height-120;
     let x=parseFloat(el.style.left)||0, y=parseFloat(el.style.top)||0;
@@ -7908,7 +7934,7 @@ const DeskPet = {
       if(!dragging) return;
       if(Math.hypot(x-sx,y-sy)>5){ moved=true; el.classList.add("dragging"); }
       if(moved){
-        const host=el.offsetParent || el.parentElement;
+        const host=this.getContainer();
         const hr=host.getBoundingClientRect();
         const nx=x-hr.left-ox, ny=y-hr.top-oy;
         el.style.left=nx+"px"; el.style.top=ny+"px";
@@ -7935,12 +7961,22 @@ const DeskPet = {
         this.poke();
       }
     };
-    el.addEventListener("touchstart",(e)=>{ const t=e.touches[0]; down(t.clientX,t.clientY); },{passive:true});
-    el.addEventListener("touchmove",(e)=>{ if(dragging){ e.preventDefault(); const t=e.touches[0]; move(t.clientX,t.clientY); } },{passive:false});
-    el.addEventListener("touchend",up);
-    el.addEventListener("mousedown",(e)=>{ down(e.clientX,e.clientY); });
-    window.addEventListener("mousemove",(e)=>{ if(dragging) move(e.clientX,e.clientY); });
-    window.addEventListener("mouseup",up);
+    el.addEventListener("pointerdown",(e)=>{
+      if(e.button!=null && e.button!==0) return;
+      e.preventDefault();
+      try{ el.setPointerCapture(e.pointerId); }catch(err){}
+      down(e.clientX,e.clientY);
+    });
+    el.addEventListener("pointermove",(e)=>{
+      if(!dragging) return;
+      e.preventDefault();
+      move(e.clientX,e.clientY);
+    });
+    el.addEventListener("pointerup",(e)=>{
+      try{ el.releasePointerCapture(e.pointerId); }catch(err){}
+      up();
+    });
+    el.addEventListener("pointercancel",up);
   }
 };
 
