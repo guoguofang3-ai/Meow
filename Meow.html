@@ -5155,6 +5155,19 @@ function getActiveSessionId(kind){
 }
 function setActiveSessionId(kind,id){ Storage.set(activeSessionKey(kind),id); }
 function currentHistoryKey(kind){ return historyKeyForSession(kind,getActiveSessionId(kind)); }
+function currentSession(kind){
+  const id=getActiveSessionId(kind);
+  return getSessions(kind).find(s=>s.id===id) || null;
+}
+function setCurrentSessionTitle(kind,title){
+  const id=getActiveSessionId(kind);
+  const clean=String(title||"").replace(/\s+/g," ").trim();
+  if(!clean) return;
+  saveSessions(kind,getSessions(kind).map(s=>s.id===id?Object.assign({},s,{title:clean.slice(0,28),updatedAt:sessionNow()}):s));
+}
+function safeSessionFileName(s){
+  return String(s||"chat").replace(/[\\/:*?"<>|]/g," ").replace(/\s+/g," ").trim().slice(0,60)||"chat";
+}
 function touchSession(kind, messages){
   const active=getActiveSessionId(kind);
   const list=getSessions(kind);
@@ -10155,6 +10168,7 @@ function addError(text){
 function exportChatMd(){
   const role = currentRole();
   const h = getHistory();
+  const session = currentSession("wechat");
   const userName = getUserProfile().name || "我";
   const lines = [`# 与${role.name}的聊天记录\n`];
   for(const m of h){
@@ -10167,7 +10181,7 @@ function exportChatMd(){
   const blob = new Blob([lines.join("\n")], {type:"text/markdown"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `${role.name}_聊天记录.md`;
+  a.download = `${safeSessionFileName(role.name)}_${safeSessionFileName(session?.title||"chat")}_聊天记录.md`;
   a.click();
   toast("导出成功");
 }
@@ -10237,6 +10251,7 @@ function confirmImportChat(mode){
   if(mode==="replace") h = parsed;
   else h = [...parsed, ...h];
   saveHistory(h);
+  setCurrentSessionTitle("wechat", sessionTitleFromMessages(h, mode==="replace"?"导入聊天":"接入聊天"));
   Miao.state.pendingChatImport = null;
   $("#importChatMask").style.display = "none";
   renderChat();
@@ -11578,12 +11593,13 @@ window.cancelClaudeMulti=function(){ exitClaudeMulti(); };
 /* ===== Claude助手 导入/导出聊天记录 ===== */
 window.exportClaudeHistory=function(){
   const mode=getClaudeMode();
+  const session=currentSession("claude");
   const data={ _type:"miaoClaudeHistory", mode, exportedAt:Date.now(), history:getClaudeHistory() };
   const blob=new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
   a.href=url;
-  a.download=`claude_${mode}_chat_${new Date().toISOString().slice(0,10)}.json`;
+  a.download=`claude_${mode}_${safeSessionFileName(session?.title||"chat")}_${new Date().toISOString().slice(0,10)}.json`;
   document.body.appendChild(a); a.click();
   setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
   toast("已导出当前会话");
@@ -11598,6 +11614,7 @@ window.importClaudeHistory=async function(file){
     const cur=getClaudeHistory();
     const add=arr.filter(m=>m && m.id).map(m=>Object.assign({}, m, {id:uid("cmsg")}));
     saveClaudeHistory(cur.concat(add));
+    setCurrentSessionTitle("claude", sessionTitleFromMessages(getClaudeHistory(),"导入会话"));
     renderClaude();
     toast(`已导入 ${add.length} 条消息`);
   }catch(e){ toast("导入失败：文件格式不对"); }
