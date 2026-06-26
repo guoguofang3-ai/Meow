@@ -12070,6 +12070,7 @@ async function readTextFileInChunks(file, onProgress){
 async function addClaudeFileMessage(file){
   const h=getClaudeHistory();
   const id=uid("cmsg");
+  const historyKey=claudeKey();
   const scope=getClaudeIdentityScope();
   const mode=getClaudeMode();
   const roleId=Miao.state.currentRoleId||"";
@@ -12078,8 +12079,8 @@ async function addClaudeFileMessage(file){
   if(file.type.startsWith("image/") || /\.(png|jpg|jpeg|webp|gif)$/i.test(file.name)){
     const dataUrl=(typeof compressImageFile==="function") ? await compressImageFile(file,1200,.76) : await fileToDataUrl(file);
     const thumbUrl=(typeof compressImageFile==="function") ? await compressImageFile(file,360,.72) : dataUrl;
-    window.claudeFileContextMap[id]={kind:"image", name:file.name, type, size:file.size, dataUrl, scope, mode, roleId};
-    h.push({id, sender:"user", type:"file", content:`[上传图片:${file.name}]`, data:{kind:"image", name:file.name, type, size:file.size, thumbUrl, scope, mode, roleId}, createdAt:Date.now(), time:nowTime()});
+    window.claudeFileContextMap[id]={kind:"image", name:file.name, type, size:file.size, dataUrl, scope, mode, roleId, historyKey};
+    h.push({id, sender:"user", type:"file", content:`[上传图片:${file.name}]`, data:{kind:"image", name:file.name, type, size:file.size, thumbUrl, scope, mode, roleId, historyKey}, createdAt:Date.now(), time:nowTime()});
   }else{
     let record={chunks:[], text:"", total:0, words:0, sample:""};
     if(/\.(txt|md|html|json|svg|css|js|jsx|ts|tsx|py|java|c|cpp|h|hpp|rs|go|php|vue|svelte|xml|csv|yaml|yml|log)$/i.test(file.name) || /^text\//.test(file.type) || file.type==="application/json"){
@@ -12100,10 +12101,10 @@ async function addClaudeFileMessage(file){
       record={chunks:[text], text, total:text.length, words:countWords(text), sample:text};
     }
     const preview=String(record.sample||record.text||"").slice(0,1200);
-    window.claudeFileContextMap[id]={kind:"document", name:file.name, type, size:file.size, words:record.words, sample:preview, total:record.total, scope, mode, roleId};
+    window.claudeFileContextMap[id]={kind:"document", name:file.name, type, size:file.size, words:record.words, sample:preview, total:record.total, scope, mode, roleId, historyKey};
     const fileKey="claude_file_"+scope+"_"+id;
-    await putStoredFileRecord({name:fileKey, displayName:file.name, kind:"document", type, size:file.size, text:record.text, chunks:record.chunks, total:record.total, words:record.words, sample:record.sample, savedAt:Date.now(), scope, mode, roleId});
-    h.push({id, sender:"user", type:"file", content:`[上传文件:${file.name}]`, data:{kind:"document", name:file.name, fileKey, type, size:file.size, words:record.words, totalChars:record.total, chunks:record.chunks.length, preview, large:record.total>CLAUDE_SMALL_FILE_LIMIT, scope, mode, roleId}, createdAt:Date.now(), time:nowTime()});
+    await putStoredFileRecord({name:fileKey, displayName:file.name, kind:"document", type, size:file.size, text:record.text, chunks:record.chunks, total:record.total, words:record.words, sample:record.sample, savedAt:Date.now(), scope, mode, roleId, historyKey});
+    h.push({id, sender:"user", type:"file", content:`[上传文件:${file.name}]`, data:{kind:"document", name:file.name, fileKey, type, size:file.size, words:record.words, totalChars:record.total, chunks:record.chunks.length, preview, large:record.total>CLAUDE_SMALL_FILE_LIMIT, scope, mode, roleId, historyKey}, createdAt:Date.now(), time:nowTime()});
   }
   saveClaudeHistory(h);
   renderClaude();
@@ -21049,7 +21050,11 @@ init().catch(e=>{ console.error("[init]", e); renderAll(); });
     if(typeof parseCodeBlocks!=="function") return; // 解析器还没就绪，下次打开再迁移
     try{
       var keys=[];
-      try{ keys=(typeof allMiaoKeys==="function"?allMiaoKeys():[]).filter(function(k){ return k==="claudeHistory.tool"||/^claudeHistory\.role\./.test(k); }); }catch(e){}
+      try{
+        keys=(typeof allClaudeHistoryKeys==="function")
+          ? allClaudeHistoryKeys()
+          : (typeof allMiaoKeys==="function"?allMiaoKeys():[]).filter(function(k){ return String(k).startsWith("claudeHistory."); });
+      }catch(e){}
       var store=getStoreArray("claudeArtifactStore")||[];
       var have={}; store.forEach(function(r){ if(r&&r.key) have[r.key]=1; });
       var added=0;
