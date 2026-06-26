@@ -9907,7 +9907,7 @@ async function webSearchTool(args={}){
     ? proxy+"?q="+encodeURIComponent(query)
     : "https://serpapi.com/search.json?q="+encodeURIComponent(query)+"&api_key="+encodeURIComponent(key)+"&hl=zh-CN";
   const ctrl=new AbortController();
-  const timer=setTimeout(()=>ctrl.abort(),15000);
+  const timer=setTimeout(()=>ctrl.abort(),30000);
   try{
     const res=await fetch(url,{signal:ctrl.signal,headers:{"Accept":"application/json"}});
     clearTimeout(timer);
@@ -9922,7 +9922,7 @@ async function webSearchTool(args={}){
   }catch(e){
     clearTimeout(timer);
     const msg=e.name==="AbortError"?"搜索超时":("搜索出错："+(e.message||e));
-    return {ok:false,error:useProxy?msg+"；请检查 Worker 地址是否可访问、是否已部署 CORS 响应":msg+"；浏览器直连 SerpAPI 可能被 CORS 拦截，建议填写 Worker 代理地址"};
+    return {ok:false,error:useProxy?msg+"；请检查手机网络，或直接打开 Worker 地址加 ?q=test 测试":msg+"；浏览器直连 SerpAPI 可能被 CORS 拦截，建议填写 Worker 代理地址"};
   }
 }
 async function viewWebImageTool(args={}){
