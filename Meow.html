@@ -15308,30 +15308,30 @@ function miniBarWire(){
   const el=_mmbEl;
   MusicEngine.on("trackchange",miniBarSync).on("play",miniBarSync).on("pause",miniBarSync)
     .on("timeupdate",miniBarProgress).on("lyricchange",miniBarLyric).on("queuechange",miniBarSync);
-  // 点击（捕获阶段）：打开/播放暂停/下一首；拖动后不触发
-  document.addEventListener("click",function(e){
-    const b=e.target.closest && e.target.closest("[data-mmb]"); if(!b) return;
-    if(_mmbDragged){ _mmbDragged=false; return; }
-    const act=b.getAttribute("data-mmb");
-    try{ MusicEngine.unlock(); }catch(_){}
-    if(act==="open") openApp("listen");
-    else if(act==="toggle") MusicEngine.toggle();
-    else if(act==="next") MusicEngine.next();
-  },true);
-  // 竖向拖动（按钮区不触发），位置存 localStorage
-  let startY=0,startTop=0,dragging=false;
+  // 用 pointer 事件同时处理"点击"和"竖向拖动"：
+  // 关键——在 pointerdown(指针捕获前)就记下落点动作；setPointerCapture 后 e.target 会变成容器，不能在 up 时再取。
+  let startY=0,startTop=0,dragging=false,downAct=null;
   el.addEventListener("pointerdown",e=>{
-    if(e.target.closest("button")) return;
     dragging=true; _mmbDragged=false; startY=e.clientY; startTop=el.getBoundingClientRect().top;
+    const b=e.target.closest && e.target.closest("[data-mmb]");
+    downAct=b?b.getAttribute("data-mmb"):null;
     try{ el.setPointerCapture(e.pointerId); }catch(_){}
   });
   el.addEventListener("pointermove",e=>{
     if(!dragging) return;
-    const dy=e.clientY-startY; if(Math.abs(dy)>4) _mmbDragged=true;
-    const top=Math.max(56,Math.min(window.innerHeight-72,startTop+dy));
-    el.style.top=top+"px"; el.style.bottom="auto";
+    const dy=e.clientY-startY; if(Math.abs(dy)>5) _mmbDragged=true;
+    if(_mmbDragged){ const top=Math.max(56,Math.min(window.innerHeight-72,startTop+dy)); el.style.top=top+"px"; el.style.bottom="auto"; }
   });
-  el.addEventListener("pointerup",()=>{ if(!dragging) return; dragging=false; if(_mmbDragged){ try{ Storage.set("musicMiniBarTop",parseInt(_mmbEl.style.top)||0); }catch(_){} } });
+  el.addEventListener("pointerup",()=>{
+    if(!dragging) return; dragging=false;
+    if(_mmbDragged){ try{ Storage.set("musicMiniBarTop",parseInt(_mmbEl.style.top)||0); }catch(_){} return; }
+    if(!downAct) return;   // 未拖动=点击，执行落点动作
+    try{ MusicEngine.unlock(); }catch(_){}
+    if(downAct==="open") openApp("listen");
+    else if(downAct==="toggle") MusicEngine.toggle();
+    else if(downAct==="next") MusicEngine.next();
+  });
+  el.addEventListener("pointercancel",()=>{ dragging=false; });
 }
 function miniBarSync(){
   const el=ensureMiniBar(), t=MusicEngine.current;
