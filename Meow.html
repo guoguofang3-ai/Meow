@@ -385,6 +385,16 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .profile{display:flex;align-items:center;gap:10px;min-width:0}.profile-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;background:#ddd}.profile-copy{min-width:0}.profile-title-row,.chat-title-row{display:flex;align-items:center;gap:6px;min-width:0}.profile-title{font-size:17px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:188px}.profile-sub{font-size:11px;color:#666;display:flex;align-items:center;gap:5px;margin-top:2px}.online-dot{width:7px;height:7px;border-radius:50%;background:#2da44e;display:inline-block}
 .session-title-btn{width:26px;height:26px;border:0;border-radius:50%;background:color-mix(in srgb,var(--accent,#111827) 9%,rgba(255,255,255,.76));color:var(--bar-text,#111827);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:0 5px 16px rgba(0,0,0,.055)}
 .session-title-btn .miao-svg-icon{width:16px;height:16px}
+.wechat-head .profile{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);justify-content:center;max-width:58%;gap:8px}
+.wechat-head .profile-avatar{width:36px!important;height:36px!important}
+.wechat-head .profile-title{font-size:16px!important;max-width:132px!important}
+.wechat-head .profile-sub{font-size:10.5px!important}
+.wechat-head .session-title-btn,.claude-app>.header .session-title-btn{width:30px;height:30px;background:color-mix(in srgb,var(--bar-bg,#fff) 74%,var(--accent,#111827) 5%)!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 9%,transparent)!important;box-shadow:0 8px 22px rgba(38,31,22,.06)!important}
+.wechat-head .header-actions,.claude-head-actions{gap:6px}
+.wechat-head .header-actions .icon-btn,.claude-head-actions .icon-btn,.wechat-head>.icon-btn,.claude-app>.header>.icon-btn{width:34px!important;height:34px!important}
+.claude-app>.header{position:relative}
+.claude-app>.header .chat-title-row{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);justify-content:center;max-width:52%;text-align:center}
+.claude-app>.header .chat-title-row .header-title{font-size:17px;max-width:170px}
 .session-drawer-mask{position:fixed;inset:0;z-index:460;background:rgba(23,20,18,.18);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .22s ease}
 .session-drawer-mask.show{opacity:1;pointer-events:auto}
 .session-drawer{position:absolute;left:0;top:0;bottom:0;width:min(82vw,330px);padding:calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--bar-bg,#fbfaf7) 94%,white 6%);color:var(--bar-text,#272521);box-shadow:18px 0 48px rgba(25,20,17,.18);border-right:1px solid color-mix(in srgb,var(--bar-text,#272521) 10%,transparent);transform:translateX(-102%);transition:transform .25s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;gap:16px}
