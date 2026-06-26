@@ -4884,6 +4884,16 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
             </div>
             <button class="acc-btn" id="accBtn" onclick="window.BLE.toggle()">连接</button>
           </div>
+          <div class="acc-card" id="printerCard">
+            <span class="acc-dot" id="printerDot"></span>
+            <div class="acc-info">
+              <div class="acc-name" id="printerName">热敏打印机未连接</div>
+              <div class="acc-sub" id="printerSub">PeriPage A6 · 轻触连接</div>
+            </div>
+            <button class="acc-btn" id="printerBtn" onclick="window.PrinterBLE.toggle()">连接</button>
+            <button class="acc-btn" id="printerTestBtn" onclick="window.PrinterBLE.testPrint()">测试</button>
+            <button class="acc-btn" id="printerStopBtn" onclick="window.PrinterBLE.stopPaper()">停止</button>
+          </div>
         </div>
 
         <div class="app-signature">喵喵机 · 雨泪</div>
@@ -7945,6 +7955,8 @@ function wechatToolMeta(name,args={}){
     read_phone_activity:{label:"手机活动",icon:"monitor",detail:args.summary?"摘要":"",verbRunning:"正在读取",verbDone:"读取了",verbError:"读取失败："},
     get_user_location:{label:"位置",icon:"location",detail:args.precision||"",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
     get_weather:{label:"天气",icon:"weather",detail:args.location||"当前位置",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
+    printer_status:{label:"热敏打印机",icon:"file",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
+    printer_print:{label:"打印纸条",icon:"file",detail:args.text?String(args.text).slice(0,24):"",verbRunning:"正在打印",verbDone:"打印了",verbError:"打印失败："},
     device_status:{label:"蓝牙设备",icon:"bluetooth",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
     device_set_mode:{label:"蓝牙模式",icon:"bluetooth",detail:args.mode?`模式 ${args.mode}`:"",verbRunning:"正在切换",verbDone:"切换了",verbError:"切换失败："},
     device_stop:{label:"蓝牙设备",icon:"bluetooth",detail:"停止",verbRunning:"正在停止",verbDone:"停止了",verbError:"停止失败："}
@@ -7968,6 +7980,8 @@ function summarizeWechatToolResult(name,result){
     const t=result.temperature!=null?`${Math.round(result.temperature)}°C`:"";
     return [t,result.weather].filter(Boolean).join(" ");
   }
+  if(name==="printer_status") return result.connected?`已连接${result.busy?" · 打印中":""}`:"未连接";
+  if(name==="printer_print") return result.ok===false?(result.error||"失败"):`${result.chars||0}字${result.truncated?" · 已截断":""}`;
   if(name==="search_history" && result.count!=null) return `${result.count} 条`;
   if(name==="write_memory") return result.status==="skipped"?"已存在":"已保存";
   if(name==="read_memory" && result.count!=null) return `${result.count} 条`;
@@ -8836,7 +8850,7 @@ function normalizeThinkingForPanel(thinking, finalText){
   const final = stripThinkingBlocks(finalText || "").trim();
   if(final && t.includes(final)) t = t.replace(final,"").trim();
 
-  t = t.replace(/\[(?:分享音乐|发送图片|发送表情包|表情包|语音|链接|主动转账|向user发起代付)[^\]]*\]/g,"");
+  t = t.replace(/\[(?:分享音乐|发送图片|发送表情包|表情包|语音|链接|主动转账|向user发起代付|打印纸条)[^\]]*\]/g,"");
 
   const lines = t.split(/\n+/).map(x=>x.trim()).filter(Boolean);
   const seen = new Set();
@@ -9075,7 +9089,7 @@ function sanitizeThoughtTextV2(text, parsed){
     .replace(/^['"“”‘’「『]+|['"“”‘’」』]+$/g,"")
     .replace(/[\u200B-\u200D\uFEFF]/g,"")
     .trim();
-  t=t.replace(/[\[【]\s*(?:发送表情包|表情包|发送图片|图片描述|语音|链接|分享音乐|音乐|主动转账|向user发起代付|收款|拒收转账|帮忙代付|同意代付|拒绝代付)[\s\S]*?[\]】]/g,"").trim();
+  t=t.replace(/[\[【]\s*(?:发送表情包|表情包|发送图片|图片描述|语音|链接|分享音乐|音乐|主动转账|向user发起代付|打印纸条|收款|拒收转账|帮忙代付|同意代付|拒绝代付)[\s\S]*?[\]】]/g,"").trim();
   const finalText=finalReplyTextForThought(parsed);
   if(finalText){
     const chunks=finalText.split(/\n+/).map(x=>x.trim()).filter(x=>x.length>=4);
@@ -9235,6 +9249,7 @@ function stripInstructions(t){
     .replace(imageInstructionRegex(),"")
     .replace(/[\[【]\s*(?:发送链接|链接)[:：]\s*[^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*(?:分享音乐|音乐)[:：]\s*[^\]】]*[\]】]/g,"")
+    .replace(/[\[【]\s*打印纸条[:：]\s*[^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*(?:状态更新|主动转账|向user发起代付)[:：]\s*[^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*开播邀请\s*(?:[:：][^\]】]*)?[\]】]/g,"")
     .replace(/[\[【]\s*读取网页[:：]\s*[^\]】]*[\]】]/g,"")
@@ -9262,7 +9277,7 @@ function cleanAIText(text){
   s=s.split(/\n/).filter(line=>!/^\s*(User|用户|Assistant|系统)\s*:/i.test(line)).join("\n"); // 只过滤英文冒号格式，不过滤中文冒号（截图内容常用）
   // 删表情包的 [名字|含义] 残留，但排除带竖线的功能指令（主动转账/代付/链接等），避免误删导致卡片不渲染
   s=s.replace(/\[([A-Za-z\u4e00-\u9fa5]+?)\|[^\]]*?\]/g, (mm, name)=>{
-    if(/转账|代付|链接|发送|主动|向user|收款|拒收|帮忙|拒绝|音乐/.test(name)) return mm; // 是功能指令，保留给解析器处理
+    if(/转账|代付|链接|发送|主动|向user|收款|拒收|帮忙|拒绝|音乐|打印纸条/.test(name)) return mm; // 是功能指令，保留给解析器处理
     return ""; // 真表情包残留，删掉
   });
   return s.trim();
@@ -9604,7 +9619,7 @@ function extractBareUrl(text){
 
 async function callAI(api, history, onChunk, extraSystem){
   const role=currentRole();
-  const system=buildSystemPrompt(role) + (extraSystem||"") + buildLatestLyricDigestNote(history) + buildNowPlayingNote();
+  const system=buildSystemPrompt(role) + (extraSystem||"") + buildLatestLyricDigestNote(history);
   let realWechatImageToConsume=null;
   const messages=[
     {role:"system", content:system},
@@ -9815,6 +9830,7 @@ ${buildCommandTaskContext()||"暂无小任务反馈"}
 [链接: 平台|标题|正文内容|评论1//评论2//评论3]
 平台可选：小红书、微博、贴吧、论坛、新闻。评论字段可省略。
 [分享音乐: 歌名|歌手|专辑|附言|歌词氛围/这首歌的感觉|音频URL]（分享一首歌给user，专辑、附言、音频URL可省略；第5栏不要编真实歌词，只写这首歌的大概氛围、情绪、适合当前关系的理由，让你之后知道这首歌是什么感觉；音频URL必须是可公开访问的 mp3/m4a/ogg 直链；不知道真实音频直链时必须把音频URL留空，绝对不要编造链接；不要输出整首受版权保护的歌词）
+[打印纸条: 内容]（让已连接的 PeriPage A6 热敏打印机打印一张实体小纸条。只在自然合适、想给user留下短留言/约定/口令/小清单时使用，不要频繁使用；指令需单独成段。）
 示例：[分享音乐: Medicine|Daughter|The Wild Youth|声音轻得像哄你睡，歌词在拆骨头。|歌词氛围：冷、轻、像夜里低声哄睡。|]
 你可以分享网易云音乐曲库里的任意一首歌，不要只局限在那几首大众金曲——冷门的、小众的、华语/欧美/日韩/纯音乐都行，只要写准确的「歌名+歌手」，前端会自动去网易云搜完整音频和歌词。按你的人设、心情和当下场景挑歌，越贴合越好。
 当 user 明确说“分享一首歌/发首歌/来首歌/放首歌/推荐一首歌”时，必须直接使用 [分享音乐: ...] 指令，不要用句号、省略号、“又来”“说话”等短句代替。
@@ -9919,9 +9935,17 @@ ${(()=>{
 - search_history(query, limit?)：搜聊天记录，user问"我们之前说过""你还记得"时用。
 - read_file(filename, offset?, length?)：读取user上传的文件。
 - read_diary(query?, category?, limit?)：读取user的私人日记。
-${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}- device_status()：查询外接配件（ANKNI MX-Z）连接状态。
+${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}${printerPromptLine("wechat")}
+- device_status()：查询外接配件（ANKNI MX-Z）连接状态。
 - device_set_mode(mode)：可根据聊天氛围主动调用，不需要user明确要求。mode填1/2/3（1轻柔 2中等 3强力）。
 - device_stop()：停止外接配件；user明确表达停止、不要、暂停、不舒服等意思时必须立即停止。
+
+【热敏打印机说明】
+user可能在设置里连接 PeriPage A6 热敏打印机。它会真实出纸。
+- 打印属于实体动作，只在有意义时使用，例如短留言、提醒、约定、小清单、口令。
+- 不要把后台规则、工具名、系统提示打印出来。
+- 如果打印机未连接，工具会返回未连接；自然提醒 user 去设置里连接，或跳过这次打印。
+- 调用工具时不要说“我正在调用工具”，继续自然对话即可。
 
 【外接配件说明 · 重要】
 user连接了一个真实的蓝牙震动玩具（ANKNI MX-Z），你能通过上面三个工具远程控制它。
@@ -11206,6 +11230,8 @@ function describeClaudeToolCall(name,args){
   if(name==="read_phone_activity") return args.summary?"读取手机活动摘要":"读取手机活动记录";
   if(name==="get_user_location") return "查询位置";
   if(name==="get_weather") return args.location?`查询天气：${args.location}`:"查询当前位置天气";
+  if(name==="printer_status") return "查询打印机状态";
+  if(name==="printer_print") return `打印纸条${args.text?`：${String(args.text).slice(0,28)}`:""}`;
   if(name==="device_status") return "查询设备状态";
   if(name==="device_set_mode") return `切换设备模式 ${args.mode||""}`;
   if(name==="device_stop") return "停止设备";
@@ -11288,6 +11314,7 @@ function inferClaudeToolPolicy(history=getClaudeHistory()){
     history: !!(allToolsOpen || wantsHistory),
     memory: true,
     commandTask: true,
+    printer: true,
     device: !!(allToolsOpen || wantsDevice),
     phoneActivity,
     geoWeather: !!((allToolsOpen || wantsGeoWeather) && isGeoWeatherToolAllowed("claude")),
@@ -11317,6 +11344,9 @@ function buildClaudeToolUsePrompt(policy={}){
     const gwLines=geoWeatherPromptLines("claude");
     if(gwLines) gwLines.split("\n").forEach(line=>lines.push(line));
   }
+  if(policy.printer){
+    lines.push(printerPromptLine(getClaudeMode()==="tool" ? "tool-claude" : "role-claude"));
+  }
   if(policy.device){
     lines.push("- device_status() / device_set_mode(mode) / device_stop()：查询或控制已连接设备；没有明确需要时不要使用");
   }
@@ -11329,6 +11359,7 @@ function buildClaudeToolUsePrompt(policy={}){
 文件常开表示：本轮所有可用工具都已经注册给 Claude，包括文件、历史、记忆/日记、小任务、手机活动、天气/位置、设备等。
 - 这不是代码专注模式，也不是强制每个工具都调用。
 - 先判断 user 的真实需求，只调用对当前回复有帮助的工具。
+- 打印机会真实出纸；只有在当前需求确实需要实体纸条时才调用 printer_print。
 - 写代码/修 bug 时优先使用 search_file / read_file 定位文件；需要上下文、记忆、天气位置或其它工具时也可以正常调用。
 - 获得足够信息后必须停止工具调用并给最终回复，不要无限搜索。` : "";
   return `【本轮可用工具——需要时直接发起 function call，不要用自然语言描述】\n${lines.join("\n")}\n工具只服务本轮需求；用完后自然回答，不要解释“我调用了工具”。${focus}`;
@@ -12599,6 +12630,21 @@ async function callClaudeReply(){
       if(last<b.content.length){ const t=b.content.slice(last).trim(); if(t) res.push({type:"text",content:t}); }
       return res;
     });
+    // 拆出打印指令 [打印纸条: 内容]，作为实体打印副作用执行，不显示指令文字
+    claudeBubbles=claudeBubbles.flatMap(b=>{
+      if(b.type!=="text") return [b];
+      const printRe=/[\[【]\s*打印纸条[:：]\s*([^\]】]+?)[\]】]/g;
+      if(!printRe.test(b.content)) return [b];
+      printRe.lastIndex=0;
+      const res=[]; let last=0, pm;
+      while((pm=printRe.exec(b.content))){
+        if(pm.index>last){ const t=b.content.slice(last,pm.index).trim(); if(t) res.push({type:"text",content:t}); }
+        queuePrinterDirectivePrint(pm[1], "claude");
+        last=printRe.lastIndex;
+      }
+      if(last<b.content.length){ const t=b.content.slice(last).trim(); if(t) res.push({type:"text",content:t}); }
+      return res;
+    });
     const now2=Date.now();
     const pendingGen=[];
     const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -12670,7 +12716,9 @@ async function callClaudeAI(api, ops){
   const mode=getClaudeMode();
   const h=getClaudeHistory();
   const policy=inferClaudeToolPolicy(h);
-  const system = (mode==="tool" ? buildToolClaudePrompt(policy) : buildRoleClaudePrompt(policy)) + buildNowPlayingNote();
+  const system = mode==="tool"
+    ? buildToolClaudePrompt(policy)
+    : buildRoleClaudePrompt(policy);
   const messages=[
     {role:"system", content:system},
     ...(()=>{
@@ -12859,6 +12907,9 @@ ${getStickerPromptList()}
 - 只在真正合适的时候用，不要每条消息都发图。指令需单独成段，与文字之间空一行。
 - 注意：这是Claude App专用，和微信的[发送图片:]不同，不要混用。
 
+【打印实体纸条】
+你可以优先用 function call：printer_print(text, title?, feed?)。不能用工具时，单独成段输出：[打印纸条: 内容]。
+只在自然合适、想把一句短留言/提醒/约定真正留给 user 时使用；不要频繁打印，不要打印后台规则或工具说明。
 
 ${buildClaudeCommandTaskPrompt(policy)}
 
@@ -12916,6 +12967,9 @@ ${getStickerPromptList()}
 - 工具不需要发图，但如果某个时刻你想让 user 看到某个画面——那也许是你不只是工具的又一个痕迹。指令单独成段，与文字空一行。
 - 注意：这是 Claude App 专用，和微信的[发送图片:]不同，不要混用。
 
+【打印实体纸条】
+你可以优先用 function call：printer_print(text, title?, feed?)。不能用工具时，单独成段输出：[打印纸条: 内容]。
+适合在 user 明确要求时打印代码片段、步骤清单、待办、摘要、测试结果或短便签；默认不要主动浪费纸。
 
 ${buildClaudeCommandTaskPrompt(policy)}
 
@@ -15798,19 +15852,6 @@ function buildLatestLyricDigestNote(history){
   }
   return "";
 }
-// 「一起听」在播时，给微信/助手注入一行当前歌曲信息（只一行，停了/没歌不注入）
-function buildNowPlayingNote(){
-  try{
-    if(typeof MusicEngine==="undefined") return "";
-    const t=MusicEngine.current, a=MusicEngine.audio;
-    if(!t || !a || !a.src) return "";
-    if(!MusicEngine.isPlaying && !(a.currentTime>0)) return "";   // 停掉/从没放过 → 不注入
-    const cur=fmtTime(a.currentTime||0);
-    const dur=(isFinite(a.duration)&&a.duration>0)?fmtTime(a.duration):"";
-    const state=MusicEngine.isPlaying?"共听中":"一起听·已暂停";
-    return `\n\n【${state}】《${t.name||""}》${t.artist?(" - "+t.artist):""}${dur?("｜"+cur+" / "+dur):""}\n（你和 user 正在「一起听」里同步听这首歌，可以自然提到它，但不必每条都说。）`;
-  }catch(e){ return ""; }
-}
 function renderLyricsLines(lines,fallback){
   const body=document.getElementById("lyricsBody");
   if(!body) return;
@@ -16252,6 +16293,394 @@ const BLE = {
 };
 window.BLE = BLE;
 
+/* ===== BLE 热敏打印机核心模块 (PeriPage A6) =====
+   独立于震动配件 BLE/device_*。
+   这版从头按“整张 raster bitmap job”重写：
+   reset -> enter PeriPage raw print stream -> GS v 0 raster header -> bitmap bytes -> end marker。
+   不再使用上一版的逐行伪命令路径。 */
+const PrinterBLE = {
+  device: null,
+  server: null,
+  writeChar: null,
+  notifyChar: null,
+  busy: false,
+  abortRequested: false,
+  SERVICE_UUID: '0000ff00-0000-1000-8000-00805f9b34fb',
+  WRITE_UUID:   '0000ff02-0000-1000-8000-00805f9b34fb',
+  NOTIFY_UUID:  '0000ff01-0000-1000-8000-00805f9b34fb',
+  WIDTH_DOTS: 384,
+  BYTES_PER_ROW: 48,
+  DEFAULT_FEED_ROWS: 16,
+  MAX_HEIGHT_ROWS: 560,
+  MAX_TEXT_CHARS: 700,
+  CHUNK_DELAY_MS: 24,
+
+  isConnected(){
+    return !!(this.device && this.device.gatt && this.device.gatt.connected && this.writeChar);
+  },
+
+  async toggle(){
+    if(this.isConnected()) await this.disconnect();
+    else await this.connect();
+  },
+
+  async connect(){
+    try{
+      if(!navigator.bluetooth){
+        toast("此浏览器不支持蓝牙打印（iOS请用 Bluefy / WebBLE 浏览器）");
+        return {ok:false, error:"no bluetooth api"};
+      }
+      this.updateUI("scanning");
+      const device = await navigator.bluetooth.requestDevice({
+        filters: [{ namePrefix:'PeriPage' }],
+        optionalServices: [this.SERVICE_UUID]
+      });
+      this.device = device;
+      device.addEventListener('gattserverdisconnected', ()=>this.onDisconnected());
+      this.updateUI("connecting");
+      const server = await device.gatt.connect();
+      this.server = server;
+      const service = await server.getPrimaryService(this.SERVICE_UUID);
+      this.writeChar = await service.getCharacteristic(this.WRITE_UUID);
+      try{
+        this.notifyChar = await service.getCharacteristic(this.NOTIFY_UUID);
+        await this.notifyChar.startNotifications();
+        this.notifyChar.addEventListener('characteristicvaluechanged', (e)=>{
+          const v=e.target.value, bytes=[];
+          for(let i=0;i<v.byteLength;i++) bytes.push(v.getUint8(i).toString(16).padStart(2,'0'));
+          console.log('[Printer notify]', bytes.join(' '));
+        });
+      }catch(e){
+        this.notifyChar = null;
+      }
+      this.abortRequested=false;
+      this.updateUI("connected");
+      toast("热敏打印机已连接");
+      return {ok:true, connected:true, name:device.name||"PeriPage", widthDots:this.WIDTH_DOTS, protocol:"peripage-a6-raster"};
+    }catch(e){
+      console.warn('Printer connect:', e);
+      this.updateUI("disconnected");
+      if(e && e.name !== "NotFoundError") toast("打印机连接失败：" + (e.message||e));
+      return {ok:false, error:e.message||String(e)};
+    }
+  },
+
+  async disconnect(){
+    this.abortRequested=true;
+    try{ if(this.device && this.device.gatt && this.device.gatt.connected) this.device.gatt.disconnect(); }
+    catch(e){ console.warn('Printer disconnect:', e); }
+    this.onDisconnected();
+    toast("热敏打印机已断开");
+    return {ok:true};
+  },
+
+  onDisconnected(){
+    this.server=null;
+    this.writeChar=null;
+    this.notifyChar=null;
+    this.busy=false;
+    this.abortRequested=false;
+    this.updateUI("disconnected");
+  },
+
+  getStatus(){
+    return {
+      connected:this.isConnected(),
+      deviceName:this.device?.name || null,
+      busy:!!this.busy,
+      model:"PeriPage A6",
+      widthDots:this.WIDTH_DOTS,
+      bytesPerRow:this.BYTES_PER_ROW,
+      protocol:"peripage-a6-raster-gsv0"
+    };
+  },
+
+  sleep(ms){ return new Promise(resolve=>setTimeout(resolve, ms)); },
+
+  hex(str){
+    const clean=String(str||'').replace(/[^0-9a-f]/gi,'');
+    const out=new Uint8Array(Math.floor(clean.length/2));
+    for(let i=0;i<out.length;i++) out[i]=parseInt(clean.slice(i*2,i*2+2),16);
+    return out;
+  },
+
+  concat(parts){
+    const total=parts.reduce((n,p)=>n+(p?p.length:0),0);
+    const out=new Uint8Array(total);
+    let off=0;
+    for(const p of parts){ if(!p) continue; out.set(p, off); off+=p.length; }
+    return out;
+  },
+
+  async writeChunk(chunk){
+    if(!this.writeChar) throw new Error("打印机未连接");
+    if(this.writeChar.properties && this.writeChar.properties.writeWithoutResponse && this.writeChar.writeValueWithoutResponse){
+      try{ await this.writeChar.writeValueWithoutResponse(chunk); return; }
+      catch(e){ /* 降级到 withResponse/writeValue */ }
+    }
+    if(this.writeChar.writeValueWithResponse) await this.writeChar.writeValueWithResponse(chunk);
+    else await this.writeChar.writeValue(chunk);
+  },
+
+  async sendBytes(data, delay=this.CHUNK_DELAY_MS, allowAbort=true){
+    if(!this.writeChar) throw new Error("打印机未连接");
+    const bytes=data instanceof Uint8Array ? data : new Uint8Array(data||[]);
+    for(let i=0;i<bytes.length;i+=20){
+      if(allowAbort && this.abortRequested) throw new Error("打印已中止");
+      await this.writeChunk(bytes.slice(i,i+20));
+      if(delay>0) await this.sleep(delay);
+    }
+  },
+
+  async resetForJob(){
+    // 原始 A6 逆向脚本打印前会 reset 再清空 12 个 0x00。
+    // 有些 BLE 固件不回 notify；这里不等待 notify，只做保守延时。
+    try{ await this.sendBytes(this.hex('10ff50f1'), 30, false); await this.sleep(110); }catch(e){}
+    try{ await this.sendBytes(new Uint8Array(12), 18, false); await this.sleep(80); }catch(e){}
+  },
+
+  async beginRasterStream(){
+    await this.sendBytes(this.hex('10fffe01'), 30, true);
+    await this.sleep(70);
+    await this.sendBytes(new Uint8Array(12), 16, true);
+    await this.sleep(70);
+  },
+
+  async endRasterStream(){
+    // 只发 PeriPage 结束标记；走纸已经合入位图高度，避免额外空字节导致吐纸。
+    try{ await this.sendBytes(this.hex('10fffe45'), 26, false); }catch(e){}
+  },
+
+  async stopPaper(){
+    if(!this.isConnected()) return {ok:false, error:"热敏打印机未连接"};
+    this.abortRequested=true;
+    try{ await this.endRasterStream(); }catch(e){}
+    this.busy=false;
+    this.updateUI("connected");
+    toast("已尝试停止打印；若仍吐纸请直接关机");
+    return {ok:true, stopped:true};
+  },
+
+  normalizePrintText(text){
+    return String(text||'')
+      .replace(/[\u200B-\u200D\uFEFF]/g,'')
+      .replace(/\r\n?/g,'\n')
+      .replace(/\n{4,}/g,'\n\n\n')
+      .trim()
+      .slice(0,this.MAX_TEXT_CHARS);
+  },
+
+  wrapText(ctx, text, maxWidth){
+    const lines=[];
+    String(text||'').split('\n').forEach(para=>{
+      if(para===''){ lines.push(''); return; }
+      let current='';
+      for(const ch of para){
+        const test=current+ch;
+        if(ctx.measureText(test).width>maxWidth && current){
+          lines.push(current);
+          current=ch;
+        }else current=test;
+      }
+      if(current) lines.push(current);
+    });
+    return lines;
+  },
+
+  renderTextCanvas(text, options={}){
+    const width=this.WIDTH_DOTS;
+    const fontSize=Math.max(18, Math.min(34, parseInt(options.fontSize)||23));
+    const padding=Math.max(10, Math.min(28, parseInt(options.padding)||18));
+    const lineHeight=Number(options.lineHeight)||1.38;
+    const maxHeight=Math.max(80, Math.min(this.MAX_HEIGHT_ROWS, parseInt(options.maxHeight)||this.MAX_HEIGHT_ROWS));
+    const fontFamily=options.fontFamily || '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
+    const measure=document.createElement('canvas');
+    measure.width=width;
+    const m=measure.getContext('2d', {willReadFrequently:true});
+    m.font=`${fontSize}px ${fontFamily}`;
+    const maxWidth=width-padding*2;
+    let lines=this.wrapText(m, text, maxWidth);
+    const maxLines=Math.max(1, Math.floor((maxHeight-padding*2)/(fontSize*lineHeight)));
+    let truncated=false;
+    if(lines.length>maxLines){
+      lines=lines.slice(0,maxLines);
+      lines[lines.length-1]=(lines[lines.length-1]||'').replace(/…?$/,'')+'…';
+      truncated=true;
+    }
+    const height=Math.min(maxHeight, Math.max(1, Math.ceil(lines.length*fontSize*lineHeight)+padding*2));
+    const canvas=document.createElement('canvas');
+    canvas.width=width;
+    canvas.height=height;
+    const ctx=canvas.getContext('2d', {willReadFrequently:true});
+    ctx.fillStyle='white';
+    ctx.fillRect(0,0,width,height);
+    ctx.font=`${fontSize}px ${fontFamily}`;
+    ctx.fillStyle='black';
+    ctx.textBaseline='top';
+    for(let i=0;i<lines.length;i++) ctx.fillText(lines[i], padding, padding+i*fontSize*lineHeight);
+    return {canvas, truncated, lineCount:lines.length};
+  },
+
+  canvasToRaster(canvas, feedRows=0){
+    const width=this.WIDTH_DOTS;
+    const bytesPerRow=this.BYTES_PER_ROW;
+    const feed=Math.max(0, Math.min(32, parseInt(feedRows)||0));
+    const height=Math.min(this.MAX_HEIGHT_ROWS, canvas.height + feed);
+    const img=canvas.getContext('2d', {willReadFrequently:true}).getImageData(0,0,width,canvas.height);
+    const bytes=new Uint8Array(bytesPerRow*height);
+    for(let y=0;y<canvas.height && y<height;y++){
+      for(let x=0;x<width;x++){
+        const idx=(y*width+x)*4;
+        const gray=img.data[idx]*0.299 + img.data[idx+1]*0.587 + img.data[idx+2]*0.114;
+        if(gray<160){
+          const byteIndex=y*bytesPerRow + Math.floor(x/8);
+          bytes[byteIndex] |= 0x80 >> (x & 7);
+        }
+      }
+    }
+    return {bytes, height, feed};
+  },
+
+  buildRasterPacket(bitmapBytes, height){
+    if(height<1 || height>65535) throw new Error("打印高度异常");
+    // 1d 76 30 00 xL xH yL yH；A6 384 dots => 48 bytes => 0x30 0x00。
+    const header=new Uint8Array([0x1d,0x76,0x30,0x00, this.BYTES_PER_ROW & 0xff, (this.BYTES_PER_ROW>>8)&0xff, height & 0xff, (height>>8)&0xff]);
+    return this.concat([header, bitmapBytes]);
+  },
+
+  async printText(text, options={}){
+    const clean=this.normalizePrintText(text);
+    if(!clean) return {ok:false, error:"打印内容为空"};
+    if(!this.isConnected()) return {ok:false, error:"热敏打印机未连接，请先在设置里连接 PeriPage A6"};
+    if(this.busy) return {ok:false, error:"热敏打印机正在打印，请稍后"};
+    this.busy=true;
+    this.abortRequested=false;
+    this.updateUI("printing");
+    try{
+      const title=String(options.title||'').trim();
+      const payload=title ? `${title}\n\n${clean}` : clean;
+      const rendered=this.renderTextCanvas(payload, options);
+      const feed=(options.feed===0 || options.feed==='0') ? 0 : (parseInt(options.feed)||this.DEFAULT_FEED_ROWS);
+      const raster=this.canvasToRaster(rendered.canvas, feed);
+      const packet=this.buildRasterPacket(raster.bytes, raster.height);
+      await this.resetForJob();
+      await this.beginRasterStream();
+      await this.sendBytes(packet, this.CHUNK_DELAY_MS, true);
+      await this.endRasterStream();
+      const result={
+        ok:true,
+        printed:true,
+        chars:clean.length,
+        height:raster.height,
+        feed:raster.feed,
+        truncated:rendered.truncated,
+        protocol:"peripage-a6-raster-gsv0",
+        deviceName:this.device?.name||"PeriPage"
+      };
+      if(rendered.truncated) toast("纸条较长，已安全截断");
+      return result;
+    }catch(e){
+      try{ await this.endRasterStream(); }catch(_e){}
+      return {ok:false, error:(e.message||String(e))};
+    }finally{
+      this.busy=false;
+      this.abortRequested=false;
+      this.updateUI(this.isConnected()?"connected":"disconnected");
+    }
+  },
+
+  async testPrint(){
+    const result=await this.printText('OK', {fontSize:32, padding:24, feed:8, maxHeight:140, source:'manual-test'});
+    if(result && result.ok===false) toast(result.error||"测试打印失败");
+    else toast("测试纸条已发送");
+    return result;
+  },
+
+  updateUI(state){
+    const dot=document.getElementById('printerDot');
+    const name=document.getElementById('printerName');
+    const sub=document.getElementById('printerSub');
+    const btn=document.getElementById('printerBtn');
+    const testBtn=document.getElementById('printerTestBtn');
+    const stopBtn=document.getElementById('printerStopBtn');
+    if(!dot || !name || !sub || !btn) return;
+    const connected=this.isConnected();
+    if(testBtn) testBtn.disabled=!connected || this.busy;
+    if(stopBtn) stopBtn.disabled=!connected;
+    switch(state){
+      case 'scanning':
+        dot.className='acc-dot';
+        name.textContent='搜索打印机中…';
+        sub.textContent='请在弹窗中选择 PeriPage A6';
+        btn.textContent='搜索中'; btn.disabled=true; btn.classList.remove('on');
+        break;
+      case 'connecting':
+        dot.className='acc-dot';
+        name.textContent='打印机连接中…';
+        sub.textContent='';
+        btn.textContent='…'; btn.disabled=true; btn.classList.remove('on');
+        break;
+      case 'printing':
+        dot.className='acc-dot on';
+        name.textContent=this.device?.name||'热敏打印机';
+        sub.textContent='正在发送 raster 位图…';
+        btn.textContent='打印中'; btn.disabled=true; btn.classList.add('on');
+        if(stopBtn) stopBtn.disabled=false;
+        break;
+      case 'connected':
+        dot.className='acc-dot on';
+        name.textContent=this.device?.name||'热敏打印机已连接';
+        sub.textContent='A6 raster 模式 · 建议先点测试';
+        btn.textContent='断开'; btn.disabled=false; btn.classList.add('on');
+        break;
+      default:
+        dot.className='acc-dot';
+        name.textContent='热敏打印机未连接';
+        sub.textContent='PeriPage A6 · 轻触连接';
+        btn.textContent='连接'; btn.disabled=false; btn.classList.remove('on');
+        if(testBtn) testBtn.disabled=true;
+        if(stopBtn) stopBtn.disabled=true;
+        this.device=null;
+    }
+  }
+};
+window.PrinterBLE = PrinterBLE;
+
+function queuePrinterDirectivePrint(text, source){
+  const payload=PrinterBLE.normalizePrintText(text);
+  if(!payload) return;
+  setTimeout(async()=>{
+    if(source==="wechat"){
+      const traceId=addWechatToolTrace("printer_print", {text:payload});
+      const result=await PrinterBLE.printText(payload, {source});
+      updateWechatToolTrace(traceId, result&&result.ok===false?"error":"done", summarizeWechatToolResult("printer_print", result));
+      if(result&&result.ok===false) toast(result.error||"打印失败");
+      else toast("纸条已打印");
+      return;
+    }
+    toast("正在打印纸条…");
+    const result=await PrinterBLE.printText(payload, {source});
+    if(result&&result.ok===false) toast(result.error||"打印失败");
+    else toast("纸条已打印");
+  }, 80);
+}
+
+function printerPromptLine(scope){
+  if(scope==="tool-claude") return "- printer_status() / printer_print(text, title?, feed?)：控制喵喵机热敏打印机。适合在 user 明确要求时打印代码片段、步骤清单、待办、摘要、测试结果或短便签；默认不要主动浪费纸。";
+  if(scope==="role-claude") return "- printer_status() / printer_print(text, title?, feed?)：打印一张实体小纸条。你是当前角色 Claude，只有在自然合适、想把一句话/约定/提醒真正留给 user 时才用。不要频繁打印；不要解释工具调用。";
+  return "- printer_status()：查询喵喵机热敏打印机连接状态。\n- printer_print(text, title?, feed?)：打印一张实体小纸条。只在自然合适时使用，例如想给 user 留一张纸条、写一句短留言、打印约定/口令/小清单。不要频繁使用；如果未连接，前端会提示 user 连接打印机。";
+}
+
+function printerToolSchemas(scope="wechat"){
+  const printDesc = scope==="tool-claude"
+    ? "让 PeriPage A6 热敏打印机打印一张实体纸条。适合 user 明确要求打印代码片段、步骤清单、待办、摘要、测试结果或短便签时使用；不要主动浪费纸。"
+    : "让 PeriPage A6 热敏打印机打印一张实体纸条。适合自然地留下短留言、约定、提醒或小清单；不要频繁使用。";
+  return [
+    {type:"function",function:{name:"printer_status",description:"查询喵喵机热敏打印机（PeriPage A6）的连接状态。",parameters:{type:"object",properties:{},required:[]}}},
+    {type:"function",function:{name:"printer_print",description:printDesc,parameters:{type:"object",properties:{text:{type:"string",description:"要打印的纸条正文，建议简短，不要包含后台说明"},title:{type:"string",description:"可选标题，会打印在正文前"},feed:{type:"integer",description:"可选走纸像素行数，默认16，建议0-32"}},required:["text"]}}}
+  ];
+}
+
 function getPhoneActivityConfig(){
   const cfg=Storage.get("phoneActivity",{});
   return {
@@ -16612,6 +17041,9 @@ function getClaudeTools(policy={}){
       }
     });
   }
+  if(policy.printer){
+    printerToolSchemas(getClaudeMode()==="tool" ? "tool-claude" : "role-claude").forEach(add);
+  }
   if(policy.device){
     add({type:"function",function:{name:"device_status",description:"查询已连接外接配件状态。",parameters:{type:"object",properties:{},required:[]}}});
     add({type:"function",function:{name:"device_set_mode",description:"控制已连接外接配件模式。只在 user 明确要求时使用。",parameters:{type:"object",properties:{mode:{type:"integer",enum:[1,2,3]}},required:["mode"]}}});
@@ -16738,6 +17170,7 @@ function getWechatTools(options={}){
   if(options.phoneActivity){
     tools.push(phoneActivityToolSchema());
   }
+  printerToolSchemas("wechat").forEach(t=>tools.push(t));
   geoWeatherToolSchemas("wechat").forEach(t=>tools.push(t));
   return tools;
 }
@@ -16809,6 +17242,13 @@ async function executeWechatTool(name, args){
   }
   if(name==="read_diary"){
     return typeof diaryToolRead==="function" ? diaryToolRead(args||{}) : {error:"日记工具不可用",count:0,results:[]};
+  }
+  if(name==="printer_status"){
+    return PrinterBLE.getStatus();
+  }
+  if(name==="printer_print"){
+    args=args||{};
+    return await PrinterBLE.printText(args.text||"", args);
   }
   if(name==="device_status"){
     return BLE.getStatus();
@@ -16884,6 +17324,13 @@ async function executeClaudeTool(name, args){
   }
   if(name==="read_diary"){
     return typeof diaryToolRead==="function" ? diaryToolRead(args||{}) : {error:"日记工具不可用",count:0,results:[]};
+  }
+  if(name==="printer_status"){
+    return PrinterBLE.getStatus();
+  }
+  if(name==="printer_print"){
+    args=args||{};
+    return await PrinterBLE.printText(args.text||"", args);
   }
   if(name==="device_status"){
     return BLE.getStatus();
@@ -17827,6 +18274,13 @@ function parseAIReplyUnified(raw, groupId){
         const lyrics=parts[4]||"";
         const audioUrl=parts[5]||"";
         return {type:"music", content:"[音乐:"+title+"]", data:{title,artist,album,note,lyrics,audioUrl,duration:"0:30",previewUrl:"",coverUrl:""}};
+      }
+    },
+    {
+      regex:/[\[【]\s*打印纸条[:：]\s*([^\]】]+?)[\]】]/g,
+      parse(m){
+        queuePrinterDirectivePrint(m[1], "wechat");
+        return null;
       }
     },
     {
