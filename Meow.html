@@ -403,12 +403,13 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .session-new-btn .miao-svg-icon{width:18px;height:18px}
 .session-list-label{font-size:13px;font-weight:950;color:color-mix(in srgb,var(--bar-text,#272521) 52%,transparent);margin-top:2px}
 .session-list{display:flex;flex-direction:column;gap:4px;overflow:auto;min-height:0;padding-right:2px}
-.session-row{border:0;background:transparent;color:inherit;border-radius:14px;padding:11px 8px;display:grid;grid-template-columns:1fr 30px;gap:8px;align-items:center;text-align:left}
+.session-row{border:0;background:transparent;color:inherit;border-radius:14px;padding:11px 8px;display:grid;grid-template-columns:1fr 30px;gap:8px;align-items:center;text-align:left;-webkit-touch-callout:none;touch-action:manipulation}
 .session-row.active{background:color-mix(in srgb,var(--accent,#2f2a24) 10%,transparent)}
 .session-row-main{min-width:0}
 .session-row-title{font-size:15px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .session-row-meta{font-size:12px;font-weight:750;color:color-mix(in srgb,var(--bar-text,#272521) 45%,transparent);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .session-row-menu{width:30px;height:30px;border:0;border-radius:50%;background:transparent;color:color-mix(in srgb,var(--bar-text,#272521) 58%,transparent);display:flex;align-items:center;justify-content:center}
+.session-row-menu .miao-mini-icon{width:18px;height:18px}
 .session-empty{padding:18px 8px;color:color-mix(in srgb,var(--bar-text,#272521) 50%,transparent);font-size:13px;font-weight:800;line-height:1.5}
 .chat{flex:1;min-height:0;padding:12px 14px 8px;overflow:auto;scroll-behavior:auto}
 .date-chip,.system-card{margin:10px auto;padding:7px 12px;background:rgba(0,0,0,.06);color:#666;border-radius:999px;font-size:12px;width:max-content;max-width:92%;text-align:center;backdrop-filter:blur(10px)}
@@ -3305,7 +3306,6 @@ body{display:block!important;min-height:100vh!important;background:var(--memory-
 
 /* ===== iOS/PWA keyboard fit v2：键盘打开时锁住页面，用 visualViewport 裁剪应用高度，避免输入框/弹窗被顶到最上方 ===== */
 :root{--app-vh:100vh;--layout-vh:100vh;--visual-vh:100vh;--vv-top:0px;--keyboard-height:0px;--composer-kb-pad:0px;--safe-bottom:7px;}
-@supports (height:100dvh){:root{--app-vh:100dvh;}}
 html,body{width:100%!important;height:var(--app-vh)!important;min-height:var(--app-vh)!important;overflow:hidden!important;overscroll-behavior:none!important;}
 body{position:fixed!important;inset:0!important;}
 .phone-shell{height:var(--app-vh)!important;top:0!important;transform:translateY(var(--vv-top))!important;}
@@ -5197,7 +5197,7 @@ function renderSessionDrawer(kind){
       const meta=[s.pinned?"置顶":"",sessionTimeLabel(s.updatedAt),`${h.length} 条`].filter(Boolean).join(" · ");
       return `<button class="session-row ${s.id===active?"active":""}" data-action="switch-session" data-scope="${escapeAttr(kind)}" data-id="${escapeAttr(s.id)}">
         <span class="session-row-main"><span class="session-row-title">${escapeHtml(s.title||"Untitled")}</span><span class="session-row-meta">${escapeHtml(meta)}</span></span>
-        <span class="session-row-menu" data-action="session-menu" data-scope="${escapeAttr(kind)}" data-id="${escapeAttr(s.id)}">${miaoIcon("chevron","miao-mini-icon")}</span>
+        <span class="session-row-menu" data-action="session-menu" data-scope="${escapeAttr(kind)}" data-id="${escapeAttr(s.id)}">${miaoIcon("more","miao-mini-icon")}</span>
       </button>`;
     }).join(""):`<div class="session-empty">还没有旧聊天。</div>`}</div>
   </aside>`;
@@ -5211,17 +5211,22 @@ function openSessionDrawer(kind){
     mask.className="session-drawer-mask";
     document.body.appendChild(mask);
     mask.addEventListener("click",e=>{ if(e.target===mask) closeSessionDrawer(); });
+    bindSessionDrawerGestures(mask);
   }
+  bindSessionDrawerGestures(mask);
   renderSessionDrawer(kind||"wechat");
   mask.dataset.scope=kind||"wechat";
   requestAnimationFrame(()=>mask.classList.add("show"));
 }
 function closeSessionDrawer(){ document.getElementById("sessionDrawerMask")?.classList.remove("show"); }
+function refreshAfterSessionChange(kind){
+  if(kind==="wechat") renderChat();
+  else { renderClaude(); renderStory(); renderCall(); renderContextSettings(); }
+}
 function switchSession(kind,id){
   setActiveSessionId(kind,id);
   closeSessionDrawer();
-  if(kind==="wechat") renderChat();
-  else { renderClaude(); renderStory(); renderCall(); renderContextSettings(); }
+  refreshAfterSessionChange(kind);
 }
 function newSession(kind){
   const id=uid("conv");
@@ -5233,13 +5238,62 @@ function newSession(kind){
 }
 function sessionMenu(e,kind,id){
   e.preventDefault(); e.stopPropagation();
+  openSessionMenu(kind,id,e);
+}
+function openSessionMenu(kind,id,e){
   const list=getSessions(kind);
   const s=list.find(x=>x.id===id); if(!s) return;
   showMsgCtxMenu(e,[
     {label:"重命名",onClick:()=>{ const name=prompt("新的聊天标题",s.title||""); if(!name) return; saveSessions(kind,list.map(x=>x.id===id?Object.assign({},x,{title:name.trim()||x.title}):x)); openSessionDrawer(kind); }},
     {label:s.pinned?"取消置顶":"置顶",onClick:()=>{ saveSessions(kind,list.map(x=>x.id===id?Object.assign({},x,{pinned:!x.pinned,updatedAt:sessionNow()}):x)); openSessionDrawer(kind); }},
-    {label:"删除",danger:true,onClick:async()=>{ if(list.length<=1){ toast("至少保留一个聊天"); return; } if(!await askConfirm("删除这个聊天窗口？聊天记录会一起删除。")) return; Storage.remove(historyKeyForSession(kind,id)); const next=list.filter(x=>x.id!==id); saveSessions(kind,next); if(getActiveSessionId(kind)===id) setActiveSessionId(kind,next[0].id); openSessionDrawer(kind); if(kind==="wechat") renderChat(); else renderClaude(); }}
+    {label:"删除",danger:true,onClick:async()=>{ if(list.length<=1){ toast("至少保留一个聊天"); return; } if(!await askConfirm("删除这个聊天窗口？聊天记录会一起删除。")) return; Storage.remove(historyKeyForSession(kind,id)); const next=list.filter(x=>x.id!==id); saveSessions(kind,next); if(getActiveSessionId(kind)===id) setActiveSessionId(kind,next[0].id); openSessionDrawer(kind); refreshAfterSessionChange(kind); }}
   ]);
+}
+function bindSessionDrawerGestures(mask){
+  if(!mask || mask.dataset.sessionGestureBound==="1") return;
+  mask.dataset.sessionGestureBound="1";
+  let timer=null, startX=0, startY=0, longPressed=false;
+  const clear=()=>{ if(timer){ clearTimeout(timer); timer=null; } };
+  const rowFromEvent=(e)=>e.target&&e.target.closest&&e.target.closest(".session-row[data-id]");
+  const openFromRow=(row,e)=>{
+    if(!row) return;
+    longPressed=true;
+    clear();
+    if(e){ e.preventDefault(); e.stopPropagation(); }
+    openSessionMenu(row.dataset.scope||mask.dataset.scope||"wechat", row.dataset.id, e||{clientX:startX,clientY:startY,preventDefault(){},stopPropagation(){}});
+  };
+  mask.addEventListener("contextmenu",e=>{
+    const row=rowFromEvent(e);
+    if(!row) return;
+    openFromRow(row,e);
+  });
+  mask.addEventListener("touchstart",e=>{
+    const row=rowFromEvent(e);
+    if(!row || e.target.closest("[data-action='session-menu']")) return;
+    const t=e.touches&&e.touches[0]; if(!t) return;
+    startX=t.clientX; startY=t.clientY; longPressed=false; clear();
+    timer=setTimeout(()=>openFromRow(row,{clientX:startX,clientY:startY,preventDefault(){},stopPropagation(){}}),560);
+  },{passive:true});
+  mask.addEventListener("touchmove",e=>{
+    if(!timer) return;
+    const t=e.touches&&e.touches[0]; if(!t) return;
+    if(Math.abs(t.clientX-startX)>10 || Math.abs(t.clientY-startY)>10) clear();
+  },{passive:true});
+  ["touchend","touchcancel"].forEach(ev=>mask.addEventListener(ev,clear,{passive:true}));
+  mask.addEventListener("mousedown",e=>{
+    if(e.button!==0) return;
+    const row=rowFromEvent(e);
+    if(!row || e.target.closest("[data-action='session-menu']")) return;
+    startX=e.clientX; startY=e.clientY; longPressed=false; clear();
+    timer=setTimeout(()=>openFromRow(row,e),560);
+  });
+  mask.addEventListener("mousemove",e=>{ if(timer && (Math.abs(e.clientX-startX)>6 || Math.abs(e.clientY-startY)>6)) clear(); });
+  ["mouseup","mouseleave"].forEach(ev=>mask.addEventListener(ev,clear));
+  mask.addEventListener("click",e=>{
+    if(!longPressed) return;
+    e.preventDefault(); e.stopPropagation();
+    longPressed=false;
+  },true);
 }
 
 const Miao = {
@@ -6474,11 +6528,11 @@ function bindEvents(){
     const keyboardOpen=focused && keyboard>40;
     // 旧版只在聊天输入框聚焦时缩小 app，高亮/批注/导入等弹窗输入时仍使用整屏高度，
     // iOS 会把固定页面向上滚；这里统一用 visualViewport 高度作为应用高度。
-    const nextAppH=keyboardOpen ? h : layoutH;
+    const nextAppH=keyboardOpen ? h : "100vh";
     root.style.setProperty("--layout-vh", Math.max(320,Math.round(layoutH))+"px");
     root.style.setProperty("--visual-vh", h+"px");
     root.style.setProperty("--keyboard-height", keyboard+"px");
-    root.style.setProperty("--app-vh", Math.max(320,Math.round(nextAppH))+"px");
+    root.style.setProperty("--app-vh", typeof nextAppH==="string" ? nextAppH : Math.max(320,Math.round(nextAppH))+"px");
     root.style.setProperty("--vv-top", (keyboardOpen ? top : 0)+"px");
     root.style.setProperty("--composer-kb-pad", (keyboardOpen && inComposer ? 10 : 0)+"px");
     root.style.setProperty("--safe-bottom", (keyboardOpen ? 0 : 7)+"px");
