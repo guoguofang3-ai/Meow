@@ -9604,7 +9604,7 @@ function extractBareUrl(text){
 
 async function callAI(api, history, onChunk, extraSystem){
   const role=currentRole();
-  const system=buildSystemPrompt(role) + (extraSystem||"") + buildLatestLyricDigestNote(history);
+  const system=buildSystemPrompt(role) + (extraSystem||"") + buildLatestLyricDigestNote(history) + buildNowPlayingNote();
   let realWechatImageToConsume=null;
   const messages=[
     {role:"system", content:system},
@@ -12670,7 +12670,7 @@ async function callClaudeAI(api, ops){
   const mode=getClaudeMode();
   const h=getClaudeHistory();
   const policy=inferClaudeToolPolicy(h);
-  const system = mode==="tool" ? buildToolClaudePrompt(policy) : buildRoleClaudePrompt(policy);
+  const system = (mode==="tool" ? buildToolClaudePrompt(policy) : buildRoleClaudePrompt(policy)) + buildNowPlayingNote();
   const messages=[
     {role:"system", content:system},
     ...(()=>{
@@ -15797,6 +15797,19 @@ function buildLatestLyricDigestNote(history){
     }
   }
   return "";
+}
+// 「一起听」在播时，给微信/助手注入一行当前歌曲信息（只一行，停了/没歌不注入）
+function buildNowPlayingNote(){
+  try{
+    if(typeof MusicEngine==="undefined") return "";
+    const t=MusicEngine.current, a=MusicEngine.audio;
+    if(!t || !a || !a.src) return "";
+    if(!MusicEngine.isPlaying && !(a.currentTime>0)) return "";   // 停掉/从没放过 → 不注入
+    const cur=fmtTime(a.currentTime||0);
+    const dur=(isFinite(a.duration)&&a.duration>0)?fmtTime(a.duration):"";
+    const state=MusicEngine.isPlaying?"共听中":"一起听·已暂停";
+    return `\n\n【${state}】《${t.name||""}》${t.artist?(" - "+t.artist):""}${dur?("｜"+cur+" / "+dur):""}\n（你和 user 正在「一起听」里同步听这首歌，可以自然提到它，但不必每条都说。）`;
+  }catch(e){ return ""; }
 }
 function renderLyricsLines(lines,fallback){
   const body=document.getElementById("lyricsBody");
