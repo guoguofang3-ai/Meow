@@ -3169,7 +3169,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
   --lt-muted: color-mix(in srgb, var(--lt-text) 52%, transparent);
   --lt-line: color-mix(in srgb, var(--lt-text) 66%, transparent);
   --lt-accent: var(--accent,#c98aa6);
-  background:transparent!important;color:var(--lt-text);display:flex;flex-direction:column;
+  background:transparent!important;color:var(--lt-text);display:flex;flex-direction:column;overflow:hidden;touch-action:pan-y;
 }
 .listen-head{flex:0 0 auto;display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:8px;padding:calc(10px + env(safe-area-inset-top)) 12px 6px;}
 .listen-head-title{text-align:center;font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--lt-text)}
@@ -3183,7 +3183,7 @@ body.multiselect-mode .msg{ cursor:pointer; }
 .listen-track{flex:0 0 auto;text-align:center;margin:13px 0 4px;max-width:100%}
 .listen-title{font-size:18px;font-weight:900;letter-spacing:-.2px;color:var(--lt-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .listen-artist{font-size:12.5px;color:var(--lt-muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.listen-lyrics{position:relative;flex:1;min-height:0;width:100%;overflow-y:auto;text-align:center;padding:8px 6px 14px;-webkit-overflow-scrolling:touch;mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);-webkit-mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent)}
+.listen-lyrics{position:relative;flex:1;min-height:0;width:100%;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain;text-align:center;padding:8px 6px 14px;-webkit-overflow-scrolling:touch;mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent);-webkit-mask-image:linear-gradient(180deg,transparent,#000 14%,#000 86%,transparent)}
 .listen-lyric{font-size:15px;line-height:1.5;margin:13px 0;color:var(--lt-line);transition:color .25s,transform .25s;font-weight:600}
 .listen-lyric .lt-trans{display:block;font-size:12px;margin-top:3px;color:var(--lt-muted);font-weight:500}
 .listen-lyric.active{color:var(--lt-accent);font-weight:900;transform:scale(1.04)}
@@ -15149,6 +15149,15 @@ const MusicEngine={
     try{ await this.audio.play(); }
     catch(e){ try{ this.emit("pause"); }catch(_){}; if(typeof toast==="function") toast("点一下 ▶ 开始播放"); }
     this._loadLyrics(t);
+    if(t.id && !t.cover) this._fetchCover(t);
+  },
+  // 无封面时按 songId 取详情补封面（不阻塞播放）
+  _fetchCover(t){
+    if(typeof fetchNcmSongDetail!=="function") return;
+    fetchNcmSongDetail(t.id).then(det=>{
+      const pic=det&&((det.al&&det.al.picUrl)||(det.album&&det.album.picUrl));
+      if(pic){ t.cover=pic; if(this.current===t) this.emit("trackchange",t); }
+    }).catch(()=>{});
   },
   toggle(){ this.init(); if(!this.audio.src){ if(this.queue.length) this.playIndex(this.index<0?0:this.index); return; } if(this.audio.paused) this.audio.play().catch(()=>{}); else this.audio.pause(); },
   pause(){ if(this.audio&&!this.audio.paused) this.audio.pause(); },
@@ -15447,7 +15456,14 @@ function listenChatRender(typing){
   const box=document.getElementById("listenChatBody"); if(!box) return;
   const hist=getListenChat();
   if(!hist.length && !typing){ box.innerHTML='<div class="lc-empty">放首歌，一边听一边聊吧～<br>这里的对话和微信/助手是分开的。</div>'; return; }
-  let html=hist.map(m=>'<div class="lc-msg '+(m.role==="user"?"user":"assistant")+(m.error?" err":"")+'">'+escapeHtml(m.content||"")+'</div>').join("");
+  let html="";
+  hist.forEach(m=>{
+    const cls=(m.role==="user"?"user":"assistant")+(m.error?" err":"");
+    // 角色/用户回复里的换行 → 拆成多个气泡（有些角色爱分行）
+    const lines=String(m.content||"").split(/\n+/).map(s=>s.trim()).filter(Boolean);
+    if(!lines.length) return;
+    lines.forEach(line=>{ html+='<div class="lc-msg '+cls+'">'+escapeHtml(line)+'</div>'; });
+  });
   if(typing) html+='<div class="lc-typing">…</div>';
   box.innerHTML=html;
   box.scrollTop=box.scrollHeight;
