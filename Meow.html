@@ -11323,6 +11323,7 @@ function setClaudeMode(mode){
   const nextMode=mode==="tool"?"tool":"role";
   Storage.set("claudeMode", nextMode);
   renderClaude();
+  if(document.getElementById("sessionDrawerMask")?.classList.contains("show")) renderSessionDrawer("claude");
   renderStory();
   renderCall();
   renderContextSettings();
