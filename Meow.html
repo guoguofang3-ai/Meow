@@ -7451,11 +7451,14 @@ function renderHome(){
       {id:"pet", sub:"桌宠"}
     ]}
   ].map(g=>Object.assign({}, g, {items:g.items.map(x=>Object.assign({}, appById(x.id), x))}));
-  const card=(item)=>`<button class="cottage-card" data-action="open-app" data-id="${escapeAttr(item.id)}">
-    <span class="cottage-card-icon">${miaoIcon(item.icon||appById(item.id).iconId||"app")}</span>
+  const card=(item)=>{
+    const app=Object.assign({}, appById(item.id), {iconId:item.icon||appById(item.id).iconId||"app"});
+    return `<button class="cottage-card" data-action="open-app" data-id="${escapeAttr(item.id)}">
+    <span class="cottage-card-icon">${renderAppIcon(iconForApp(app))}</span>
     <span class="cottage-card-title">${escapeHtml(item.title)}</span>
     <span class="cottage-card-sub">${escapeHtml(item.sub)}</span>
   </button>`;
+  };
   const tool=(app)=>`<button class="cottage-tool" data-action="open-app" data-id="${escapeAttr(app.id)}">
     <span class="cottage-tool-icon">${renderAppIcon(iconForApp(app))}</span>
     <span><b>${escapeHtml(app.name)}</b><small>${escapeHtml(app.sub||"")}</small></span>
@@ -7498,9 +7501,13 @@ function renderHome(){
     {id:"reading", label:"小屋", icon:"book"},
     {id:"me", label:"我们", icon:"user"}
   ];
-  $("#dockGrid").innerHTML=nav.map(n=>`<button class="cottage-tab ${n.active?"active":""}" ${n.id==="home"?"data-action=\"go-home\"":`data-action="open-app" data-id="${escapeAttr(n.id)}"`}>
-    <span class="cottage-tab-icon">${miaoIcon(n.icon)}</span><span>${escapeHtml(n.label)}</span>
-  </button>`).join("");
+  $("#dockGrid").innerHTML=nav.map(n=>{
+    const app=n.id==="home" ? {id:"home", name:n.label, iconId:n.icon} : Object.assign({}, appById(n.id), {iconId:n.icon||appById(n.id).iconId});
+    const custom=iconForApp(app);
+    return `<button class="cottage-tab ${n.active?"active":""}" ${n.id==="home"?"data-action=\"go-home\"":`data-action="open-app" data-id="${escapeAttr(n.id)}"`}>
+    <span class="cottage-tab-icon">${renderAppIcon(custom)}</span><span>${escapeHtml(custom.name||n.label)}</span>
+  </button>`;
+  }).join("");
   startClockUpdater();
   hydrateMiaoIcons(document);
 }
