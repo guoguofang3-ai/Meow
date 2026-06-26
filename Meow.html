@@ -382,7 +382,28 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .toast{position:absolute;left:50%;bottom:94px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:999px;font-size:13px;z-index:500;display:none;max-width:88%;text-align:center}.toast.show{display:block}
 .wechat{background:var(--wechat-bg)}
 .wechat-head{margin:0;padding:10px 14px 12px;border-radius:0;background:var(--bar-bg,rgba(255,255,255,.92));backdrop-filter:blur(18px);border:none;border-bottom:1px solid rgba(0,0,0,.07);display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(50,60,80,.06);z-index:6;flex:0 0 auto;color:var(--bar-text,#111827);overflow:visible;position:relative}
-.profile{display:flex;align-items:center;gap:10px;min-width:0}.profile-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;background:#ddd}.profile-title{font-size:17px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:188px}.profile-sub{font-size:11px;color:#666;display:flex;align-items:center;gap:5px;margin-top:2px}.online-dot{width:7px;height:7px;border-radius:50%;background:#2da44e;display:inline-block}
+.profile{display:flex;align-items:center;gap:10px;min-width:0}.profile-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;background:#ddd}.profile-copy{min-width:0}.profile-title-row,.chat-title-row{display:flex;align-items:center;gap:6px;min-width:0}.profile-title{font-size:17px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:188px}.profile-sub{font-size:11px;color:#666;display:flex;align-items:center;gap:5px;margin-top:2px}.online-dot{width:7px;height:7px;border-radius:50%;background:#2da44e;display:inline-block}
+.session-title-btn{width:26px;height:26px;border:0;border-radius:50%;background:color-mix(in srgb,var(--accent,#111827) 9%,rgba(255,255,255,.76));color:var(--bar-text,#111827);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:0 5px 16px rgba(0,0,0,.055)}
+.session-title-btn .miao-svg-icon{width:16px;height:16px}
+.session-drawer-mask{position:fixed;inset:0;z-index:460;background:rgba(23,20,18,.18);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .22s ease}
+.session-drawer-mask.show{opacity:1;pointer-events:auto}
+.session-drawer{position:absolute;left:0;top:0;bottom:0;width:min(82vw,330px);padding:calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--bar-bg,#fbfaf7) 94%,white 6%);color:var(--bar-text,#272521);box-shadow:18px 0 48px rgba(25,20,17,.18);border-right:1px solid color-mix(in srgb,var(--bar-text,#272521) 10%,transparent);transform:translateX(-102%);transition:transform .25s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;gap:16px}
+.session-drawer-mask.show .session-drawer{transform:translateX(0)}
+.session-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.session-drawer-kicker{font-size:12px;font-weight:850;color:color-mix(in srgb,var(--bar-text,#272521) 52%,transparent)}
+.session-drawer-title{font-size:27px;line-height:1.05;font-weight:1000;letter-spacing:0}
+.session-drawer-close{width:38px;height:38px;border:0;border-radius:50%;background:color-mix(in srgb,var(--bar-text,#272521) 8%,transparent);color:inherit;display:flex;align-items:center;justify-content:center}
+.session-new-btn{height:48px;border:0;border-radius:999px;background:var(--accent,#2f2a24);color:#fff;font-size:16px;font-weight:1000;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 14px 28px color-mix(in srgb,var(--accent,#2f2a24) 20%,transparent)}
+.session-new-btn .miao-svg-icon{width:18px;height:18px}
+.session-list-label{font-size:13px;font-weight:950;color:color-mix(in srgb,var(--bar-text,#272521) 52%,transparent);margin-top:2px}
+.session-list{display:flex;flex-direction:column;gap:4px;overflow:auto;min-height:0;padding-right:2px}
+.session-row{border:0;background:transparent;color:inherit;border-radius:14px;padding:11px 8px;display:grid;grid-template-columns:1fr 30px;gap:8px;align-items:center;text-align:left}
+.session-row.active{background:color-mix(in srgb,var(--accent,#2f2a24) 10%,transparent)}
+.session-row-main{min-width:0}
+.session-row-title{font-size:15px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session-row-meta{font-size:12px;font-weight:750;color:color-mix(in srgb,var(--bar-text,#272521) 45%,transparent);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session-row-menu{width:30px;height:30px;border:0;border-radius:50%;background:transparent;color:color-mix(in srgb,var(--bar-text,#272521) 58%,transparent);display:flex;align-items:center;justify-content:center}
+.session-empty{padding:18px 8px;color:color-mix(in srgb,var(--bar-text,#272521) 50%,transparent);font-size:13px;font-weight:800;line-height:1.5}
 .chat{flex:1;min-height:0;padding:12px 14px 8px;overflow:auto;scroll-behavior:auto}
 .date-chip,.system-card{margin:10px auto;padding:7px 12px;background:rgba(0,0,0,.06);color:#666;border-radius:999px;font-size:12px;width:max-content;max-width:92%;text-align:center;backdrop-filter:blur(10px)}
 .system-card.error{background:#fff1f0;border:1px solid #ffd6d2;color:#b42318;border-radius:16px;width:auto}
@@ -3958,7 +3979,7 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
         <button class="icon-btn" data-action="go-home">‹</button>
         <div class="profile">
           <img class="profile-avatar" id="chatAvatar" alt="">
-          <div><div class="profile-title" id="chatName">默认角色</div><div class="profile-sub"><span class="online-dot"></span><span id="roleStatusText">在线</span></div></div>
+          <div class="profile-copy"><div class="profile-title-row"><div class="profile-title" id="chatName">默认角色</div><button class="session-title-btn" data-action="open-session-drawer" data-scope="wechat" data-miao-icon="note" aria-label="对话列表"></button></div><div class="profile-sub"><span class="online-dot"></span><span id="roleStatusText">在线</span></div></div>
         </div>
         <div class="header-actions">
           <button class="icon-btn" data-action="open-wallet" title="钱包"><svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -4433,7 +4454,7 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
     <section class="app-screen claude-app" id="claudeApp">
       <div class="header">
         <button class="icon-btn" data-action="go-home">‹</button>
-        <div class="header-title">Claude 文件助手</div>
+        <div class="chat-title-row"><div class="header-title">Claude 文件助手</div><button class="session-title-btn" data-action="open-session-drawer" data-scope="claude" data-miao-icon="note" aria-label="Claude 对话列表"></button></div>
         <div class="header-actions claude-head-actions">
           <button class="icon-btn claude-artifacts-btn" data-artifact-action="open" title="Artifacts" aria-label="Artifacts">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="none" aria-hidden="true">
@@ -5062,6 +5083,145 @@ try{
   window.miaoIcon=miaoIcon;
   window.hydrateMiaoIcons=hydrateMiaoIcons;
 }catch(e){}
+
+/* ===== Chat sessions: WeChat / Claude ===== */
+function sessionNow(){ return Date.now(); }
+function sessionTimeLabel(ts){
+  if(!ts) return "";
+  const d=new Date(ts), now=new Date();
+  const day=24*60*60*1000;
+  const startToday=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
+  if(ts>=startToday) return "今天";
+  if(ts>=startToday-day) return "昨天";
+  return `${d.getMonth()+1}/${d.getDate()}`;
+}
+function sessionTitleFromMessages(messages, fallback){
+  const first=(messages||[]).find(m=>m&&m.sender==="user"&&String(m.content||m.desc||"").trim());
+  const text=String(first?.content||first?.desc||"").replace(/\s+/g," ").trim();
+  return text ? text.slice(0,22) : (fallback||"新聊天");
+}
+function sessionScopeKey(kind){
+  if(kind==="wechat") return "wechat:"+((currentRole&&currentRole()?.id)||Miao.state.currentRoleId||"default");
+  const mode=typeof getClaudeMode==="function"?getClaudeMode():"role";
+  if(mode==="tool") return "claude:tool";
+  return "claude:role:"+((currentRole&&currentRole()?.id)||Miao.state.currentRoleId||"default");
+}
+function sessionStoreKey(kind){ return "chatSessions."+sessionScopeKey(kind); }
+function activeSessionKey(kind){ return "chatSessionActive."+sessionScopeKey(kind); }
+function baseHistoryKey(kind){
+  if(kind==="wechat") return Storage.roleKey("wechatHistory");
+  const mode=typeof getClaudeMode==="function"?getClaudeMode():"role";
+  return mode==="tool" ? "claudeHistory.tool" : Storage.roleKey("claudeHistory.role");
+}
+function historyKeyForSession(kind, id){
+  const base=baseHistoryKey(kind);
+  return id==="default" ? base : `${base}.session.${id}`;
+}
+function getSessions(kind){
+  const key=sessionStoreKey(kind);
+  let list=Storage.get(key,null);
+  const baseKey=baseHistoryKey(kind);
+  const old=Storage.get(baseKey,[]);
+  if(!Array.isArray(list)||!list.length){
+    const id="default";
+    list=[{id,title:sessionTitleFromMessages(old,kind==="wechat"?"旧聊天":"Untitled"),createdAt:sessionNow(),updatedAt:sessionNow(),pinned:false}];
+    Storage.set(key,list);
+    Storage.set(activeSessionKey(kind),id);
+  }
+  let changed=false;
+  list=list.map((s,i)=>{
+    const id=s.id||uid("conv");
+    if(id!==s.id) changed=true;
+    const hist=Storage.get(historyKeyForSession(kind,id),[]);
+    const title=s.title||sessionTitleFromMessages(hist,i===0?"旧聊天":"新聊天");
+    if(title!==s.title){ changed=true; }
+    return Object.assign({createdAt:sessionNow(),updatedAt:s.updatedAt||s.createdAt||sessionNow(),pinned:false},s,{id,title});
+  });
+  if(changed) Storage.set(key,list);
+  return list;
+}
+function saveSessions(kind,list){ Storage.set(sessionStoreKey(kind),list||[]); }
+function getActiveSessionId(kind){
+  const list=getSessions(kind);
+  let id=Storage.get(activeSessionKey(kind),"");
+  if(!list.some(s=>s.id===id)){ id=list[0]?.id||"default"; Storage.set(activeSessionKey(kind),id); }
+  return id;
+}
+function setActiveSessionId(kind,id){ Storage.set(activeSessionKey(kind),id); }
+function currentHistoryKey(kind){ return historyKeyForSession(kind,getActiveSessionId(kind)); }
+function touchSession(kind, messages){
+  const active=getActiveSessionId(kind);
+  const list=getSessions(kind);
+  const next=list.map(s=>{
+    if(s.id!==active) return s;
+    const title=(!s.title||s.title==="新聊天"||s.title==="Untitled"||s.title==="旧聊天") ? sessionTitleFromMessages(messages,s.title) : s.title;
+    return Object.assign({},s,{title,updatedAt:sessionNow()});
+  });
+  saveSessions(kind,next);
+}
+function renderSessionDrawer(kind){
+  const mask=document.getElementById("sessionDrawerMask");
+  if(!mask) return;
+  const active=getActiveSessionId(kind);
+  const list=getSessions(kind).slice().sort((a,b)=>(b.pinned-a.pinned)||((b.updatedAt||0)-(a.updatedAt||0)));
+  const roleName=(currentRole&&currentRole()?.name)||"当前角色";
+  const mode=kind==="wechat"?"微信":((typeof getClaudeMode==="function"&&getClaudeMode()==="tool")?"工具 Claude":`角色 Claude · ${roleName}`);
+  mask.innerHTML=`<aside class="session-drawer" role="dialog" aria-label="对话列表">
+    <div class="session-drawer-head">
+      <div><div class="session-drawer-kicker">${escapeHtml(mode)}</div><div class="session-drawer-title">Chats</div></div>
+      <button class="session-drawer-close" data-action="close-session-drawer" aria-label="关闭">${miaoIcon("close")}</button>
+    </div>
+    <button class="session-new-btn" data-action="new-session" data-scope="${escapeAttr(kind)}">${miaoIcon("plus")}<span>新聊天</span></button>
+    <div class="session-list-label">Recents</div>
+    <div class="session-list">${list.length?list.map(s=>{
+      const h=Storage.get(historyKeyForSession(kind,s.id),[]);
+      const meta=[s.pinned?"置顶":"",sessionTimeLabel(s.updatedAt),`${h.length} 条`].filter(Boolean).join(" · ");
+      return `<button class="session-row ${s.id===active?"active":""}" data-action="switch-session" data-scope="${escapeAttr(kind)}" data-id="${escapeAttr(s.id)}">
+        <span class="session-row-main"><span class="session-row-title">${escapeHtml(s.title||"Untitled")}</span><span class="session-row-meta">${escapeHtml(meta)}</span></span>
+        <span class="session-row-menu" data-action="session-menu" data-scope="${escapeAttr(kind)}" data-id="${escapeAttr(s.id)}">${miaoIcon("chevron","miao-mini-icon")}</span>
+      </button>`;
+    }).join(""):`<div class="session-empty">还没有旧聊天。</div>`}</div>
+  </aside>`;
+  hydrateMiaoIcons(mask);
+}
+function openSessionDrawer(kind){
+  let mask=document.getElementById("sessionDrawerMask");
+  if(!mask){
+    mask=document.createElement("div");
+    mask.id="sessionDrawerMask";
+    mask.className="session-drawer-mask";
+    document.body.appendChild(mask);
+    mask.addEventListener("click",e=>{ if(e.target===mask) closeSessionDrawer(); });
+  }
+  renderSessionDrawer(kind||"wechat");
+  mask.dataset.scope=kind||"wechat";
+  requestAnimationFrame(()=>mask.classList.add("show"));
+}
+function closeSessionDrawer(){ document.getElementById("sessionDrawerMask")?.classList.remove("show"); }
+function switchSession(kind,id){
+  setActiveSessionId(kind,id);
+  closeSessionDrawer();
+  if(kind==="wechat") renderChat();
+  else { renderClaude(); renderStory(); renderCall(); renderContextSettings(); }
+}
+function newSession(kind){
+  const id=uid("conv");
+  const list=getSessions(kind);
+  list.unshift({id,title:kind==="wechat"?"新聊天":"Untitled",createdAt:sessionNow(),updatedAt:sessionNow(),pinned:false});
+  saveSessions(kind,list);
+  switchSession(kind,id);
+  toast("已新建聊天");
+}
+function sessionMenu(e,kind,id){
+  e.preventDefault(); e.stopPropagation();
+  const list=getSessions(kind);
+  const s=list.find(x=>x.id===id); if(!s) return;
+  showMsgCtxMenu(e,[
+    {label:"重命名",onClick:()=>{ const name=prompt("新的聊天标题",s.title||""); if(!name) return; saveSessions(kind,list.map(x=>x.id===id?Object.assign({},x,{title:name.trim()||x.title}):x)); openSessionDrawer(kind); }},
+    {label:s.pinned?"取消置顶":"置顶",onClick:()=>{ saveSessions(kind,list.map(x=>x.id===id?Object.assign({},x,{pinned:!x.pinned,updatedAt:sessionNow()}):x)); openSessionDrawer(kind); }},
+    {label:"删除",danger:true,onClick:async()=>{ if(list.length<=1){ toast("至少保留一个聊天"); return; } if(!await askConfirm("删除这个聊天窗口？聊天记录会一起删除。")) return; Storage.remove(historyKeyForSession(kind,id)); const next=list.filter(x=>x.id!==id); saveSessions(kind,next); if(getActiveSessionId(kind)===id) setActiveSessionId(kind,next[0].id); openSessionDrawer(kind); if(kind==="wechat") renderChat(); else renderClaude(); }}
+  ]);
+}
 
 const Miao = {
   version:"2.0-base",
@@ -5782,6 +5942,11 @@ function bindEvents(){
     if(action==="open-settings") openApp("settings");
     if(action==="open-data") openApp("data");
     if(action==="open-memory") openApp("memory");
+    if(action==="open-session-drawer"){ openSessionDrawer(scope||btn.dataset.scope||"wechat"); return; }
+    if(action==="close-session-drawer"){ closeSessionDrawer(); return; }
+    if(action==="new-session"){ newSession(scope||btn.dataset.scope||"wechat"); return; }
+    if(action==="switch-session"){ switchSession(scope||btn.dataset.scope||"wechat", id); return; }
+    if(action==="session-menu"){ sessionMenu(e, scope||btn.dataset.scope||"wechat", id); return; }
     if(action==="set-memory-tab") setMemoryTab(id);
     if(action==="open-memory-entry") openMemoryEntryModal(id, btn.dataset.scope);
     if(action==="save-memory-entry") saveMemoryEntryFromModal();
@@ -7840,10 +8005,12 @@ function sendMessage(){
   const chat=$("#chat"); if(chat){ requestAnimationFrame(()=>{ chat.scrollTop=chat.scrollHeight; }); }
 }
 function getHistory(){
-  return Storage.get(Storage.roleKey("wechatHistory"), []);
+  return Storage.get(currentHistoryKey("wechat"), []);
 }
 function saveHistory(h){
-  Storage.set(Storage.roleKey("wechatHistory"), h || []);
+  const list=h || [];
+  Storage.set(currentHistoryKey("wechat"), list);
+  touchSession("wechat", list);
 }
 
 
@@ -10072,7 +10239,7 @@ function confirmImportChat(mode){
 
 async function clearChat(){
   if(!await askConfirm("只清空当前角色的微信聊天记录，确定继续？")) return;
-  Storage.remove(Storage.roleKey("wechatHistory"));
+  Storage.remove(currentHistoryKey("wechat"));
   // 防御性清理可能被外部检查工具/旧版迁移误用的旧 key
   localStorage.removeItem("chat_" + Miao.state.currentRoleId);
   localStorage.removeItem("chatHistory_" + Miao.state.currentRoleId);
@@ -11168,8 +11335,7 @@ function toggleClaudeFileMode(){
   toast(next?"文件工具已常开：适合连续改代码":"文件工具改为按需：日常聊天更轻");
 }
 function claudeKey(){
-  const mode=getClaudeMode();
-  return mode==="tool" ? "claudeHistory.tool" : Storage.roleKey("claudeHistory.role");
+  return currentHistoryKey("claude");
 }
 // 暴露给独立模块（如文件柜 IIFE）使用，保证读取作用域与保存作用域一致
 try{
@@ -11213,6 +11379,7 @@ function slimClaudeMessageForStorage(m){
 function saveClaudeHistory(list){
   const safe=(Array.isArray(list)?list:[]).slice(-180).map(slimClaudeMessageForStorage);
   Storage.set(claudeKey(), safe);
+  touchSession("claude", safe);
 }
 function claudeToolIcon(name,args){
   try{ return (wechatToolMeta(name,args||{})||{}).icon || (String(name||"").startsWith("device_")?"bluetooth":"command"); }
@@ -13430,6 +13597,7 @@ async function clearClaude(){
   const before=getClaudeHistory();
   await Promise.all(before.map(cleanupClaudeFileForMessage));
   Storage.remove(claudeKey());
+  touchSession("claude", []);
   Miao.state.claudeCodes={};
   renderClaude();
   renderStory();
