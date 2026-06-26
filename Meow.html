@@ -2265,6 +2265,35 @@ body{font-size:calc(14px * var(--font-scale));}
   padding:16px;
   box-shadow:0 18px 54px rgba(0,0,0,.25);
 }
+.theme-import-option{
+  display:flex!important;
+  align-items:center;
+  gap:10px;
+  margin:9px 0!important;
+  padding:10px 11px;
+  border-radius:16px;
+  background:#f7f4ef;
+  color:#4e3d39!important;
+  font-size:13px!important;
+}
+.theme-import-option input{
+  width:18px!important;
+  min-height:18px!important;
+  padding:0!important;
+  flex:0 0 auto;
+}
+.theme-rescue-actions{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin-top:14px;
+}
+.theme-rescue-actions .btn{
+  min-height:40px;
+  border-radius:18px;
+  padding:0 8px;
+  font-size:12px;
+}
 
 
 /* ===== v9.1 图标上传 ===== */
@@ -4288,7 +4317,7 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
     <section class="app-screen" id="themeApp">
       <div class="header theme-modern-header"><button class="icon-btn" data-action="go-home" data-miao-icon="back" aria-label="返回"></button><div class="header-title">美化中心</div><button class="icon-btn" data-action="export-theme" data-miao-icon="data" aria-label="导出主题"></button></div>
       <div class="content theme-modern-content">
-        <div class="theme-hero-card"><div class="theme-hero-title">外观工作台</div><div class="theme-hero-sub">先选主题，再微调颜色、字体、壁纸和图标。高级 CSS 收在后面，不会打乱基础设置。</div></div>
+        <div class="theme-hero-card"><div class="theme-hero-title">外观工作台</div><div class="theme-hero-sub">先选主题，再微调颜色、字体、壁纸和图标。高级 CSS 收在后面，不会打乱基础设置。</div><div class="theme-rescue-actions"><button class="btn" data-action="reset-icons">恢复图标</button><button class="btn" data-action="reset-cottage-decor">恢复小屋</button><button class="btn danger" data-action="reset-theme">恢复主题色</button></div></div>
         <div class="card theme-section-card theme-preset-card">
           <div class="v3-section-title">内置主题</div>
           <div class="v3-sub">主题会统一覆盖锁屏、主屏、Dock、微信、朋友圈、Claude、饿了么、剧情、通话、按钮、卡片和气泡。</div>
@@ -4449,6 +4478,9 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
       <div class="theme-import-box">
         <div class="quick-modal-title">导入主题预览</div>
         <div id="themeImportPreview" class="migration-result" style="display:block"></div>
+        <label class="theme-import-option"><input type="checkbox" id="themeImportApplyTheme" checked><span>导入主题颜色和 CSS</span></label>
+        <label class="theme-import-option"><input type="checkbox" id="themeImportApplyIcons"><span>导入图标设置</span></label>
+        <label class="theme-import-option"><input type="checkbox" id="themeImportApplyCottage" checked><span>导入小屋背景 / 主视觉</span></label>
         <div class="btn-row"><button class="btn" data-action="cancel-theme-import">取消</button><button class="btn primary" data-action="confirm-theme-import">确认导入</button></div>
       </div>
     </div>
@@ -10958,8 +10990,16 @@ function exportTheme(){
 }
 function previewThemeImport(data){
   const t=data.miaoThemeV9||data.theme||data;
-  Miao.state.pendingThemeImport={theme:t, icons:data.iconSettings||{}, cottageDecor:data.cottageDecor||null};
-  $("#themeImportPreview").textContent=`主题名：${t.name||"未命名主题"}\n主色：${t.accent||"未指定"}\n圆角：${t.radius||"默认"}\n包含图标设置：${data.iconSettings?"是":"否"}\n包含小屋装扮：${data.cottageDecor?"是":"否"}`;
+  const icons=data.iconSettings||null;
+  const cottageDecor=data.cottageDecor||null;
+  Miao.state.pendingThemeImport={theme:t, icons, cottageDecor};
+  $("#themeImportPreview").textContent=`主题名：${t.name||"未命名主题"}\n主色：${t.accent||"未指定"}\n圆角：${t.radius||"默认"}\n包含图标设置：${icons?Object.keys(icons).length+" 个":"否"}\n包含小屋装扮：${cottageDecor?"是":"否"}`;
+  const themeOpt=document.getElementById("themeImportApplyTheme");
+  const iconOpt=document.getElementById("themeImportApplyIcons");
+  const cottageOpt=document.getElementById("themeImportApplyCottage");
+  if(themeOpt) themeOpt.checked=true;
+  if(iconOpt){ iconOpt.checked=false; iconOpt.disabled=!icons; }
+  if(cottageOpt){ cottageOpt.checked=!!cottageDecor; cottageOpt.disabled=!cottageDecor; }
   $("#themeImportMask").classList.add("show");
 }
 function cancelThemeImport(){
@@ -10969,13 +11009,16 @@ function cancelThemeImport(){
 function confirmThemeImport(){
   const p=Miao.state.pendingThemeImport;
   if(!p) return;
-  saveThemeConfig(Object.assign({presetId:"imported"}, p.theme));
-  if(p.icons) Storage.set("iconSettings", p.icons);
-  if(p.cottageDecor) Storage.set("cottageDecor", Object.assign({bg:"", visualImage:"", decorEnabled:true}, p.cottageDecor));
+  const applyTheme=document.getElementById("themeImportApplyTheme")?.checked!==false;
+  const applyIcons=!!document.getElementById("themeImportApplyIcons")?.checked;
+  const applyCottage=!!document.getElementById("themeImportApplyCottage")?.checked;
+  if(applyTheme) saveThemeConfig(Object.assign({presetId:"imported"}, p.theme));
+  if(applyIcons && p.icons) Storage.set("iconSettings", p.icons);
+  if(applyCottage && p.cottageDecor) Storage.set("cottageDecor", Object.assign({bg:"", visualImage:"", decorEnabled:true}, p.cottageDecor));
   Miao.state.pendingThemeImport=null;
   $("#themeImportMask").classList.remove("show");
   renderAll();
-  toast("主题已导入");
+  toast("主题导入已应用");
 }
 function resetTheme(){
   saveThemeConfig(Object.assign({presetId:"simple"}, ((typeof V9_THEME_PRESETS!=="undefined" && V9_THEME_PRESETS.simple) ? V9_THEME_PRESETS.simple : (window.V9_THEME_PRESETS?.simple||{name:"默认简约",accent:"#111827"}))));
