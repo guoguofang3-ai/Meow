@@ -116,8 +116,6 @@
 </script>
 <style>
 :root{
-  --phone-w:min(430px,100vw);
-  --phone-h:min(920px,100vh);
   --accent:#111827;
   --accent-soft:rgba(17,24,39,.12);
   --bg:linear-gradient(160deg,#f6f7fb 0%,#e7ecf8 55%,#ffffff 100%);
@@ -134,9 +132,8 @@
 html,body{height:100%;margin:0}
 body{
   min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display:block;
+  overflow:hidden;
   background:radial-gradient(circle at 20% 10%,#fff 0,#dbe5f4 32%,#c8d2e2 100%);
   color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
@@ -144,23 +141,19 @@ body{
 button,input,textarea,select{font:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .phone-shell{
-  width:var(--phone-w);
-  height:var(--phone-h);
-  background:linear-gradient(145deg,#171717,#070707);
-  border-radius:48px;
-  padding:12px;
-  box-shadow:0 28px 80px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.06);
-  position:relative;
+  position:fixed;
+  inset:0;
+  width:100vw;
+  height:100vh;
+  background:transparent;
 }
-.phone-shell:before{content:"";position:absolute;left:50%;top:6px;transform:translateX(-50%);width:34%;height:5px;border-radius:999px;background:rgba(255,255,255,.12)}
 .screen{
+  width:100%;
   height:100%;
-  border-radius:38px;
   overflow:hidden;
   position:relative;
   background:var(--bg);
 }
-.dynamic-island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:122px;height:34px;background:#050505;border-radius:999px;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 .statusbar{
   height:44px;
   padding:12px 24px 0;
@@ -364,7 +357,6 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .app-name{font-size:12px;color:#fff;font-weight:650;text-shadow:0 2px 6px rgba(0,0,0,.55)}
 .dock{margin:0 18px 18px;padding:12px 16px;border-radius:30px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.30);box-shadow:0 16px 46px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.25);backdrop-filter:blur(28px) saturate(1.35);display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .dock .app-icon{width:56px;height:56px;margin-bottom:0}
-.home-indicator{height:18px;display:flex;justify-content:center;align-items:flex-start}.home-indicator:before{content:"";width:122px;height:5px;background:#111;border-radius:999px;opacity:.28}
 .header{padding:52px 14px 10px;background:var(--bar-bg,rgba(255,255,255,.92));backdrop-filter:blur(18px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;flex:0 0 auto;color:var(--bar-text,#111827)}
 .header-title{font-size:18px;font-weight:950;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .icon-btn{width:38px;height:38px;border:0;border-radius:50%;background:rgba(0,0,0,.055);color:#111;display:flex;align-items:center;justify-content:center;font-size:18px}
@@ -3286,15 +3278,8 @@ body.multiselect-mode .msg{ cursor:pointer; }
 .listen-chat-send{flex:0 0 auto;border:0;border-radius:999px;padding:0 16px;height:38px;font-weight:800;background:var(--accent,#c98aa6);color:#fff}
 .listen-chat-send:disabled{opacity:.5}
 
-/* ===== Shell-less UI v1: 去掉手机黑框 / 灵动岛 / 底部上滑条，只保留应用本体 ===== */
-:root{--phone-w:100vw;--phone-h:100vh;}
-body{display:block!important;min-height:100vh!important;background:var(--memory-bg,linear-gradient(160deg,#f6f7fb,#eef2fb))!important;overflow:hidden!important;}
-.phone-shell{width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;padding:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;inset:0!important;position:fixed!important;}
-.phone-shell:before{display:none!important;}
-.screen{width:100%!important;height:100%!important;border-radius:0!important;box-shadow:none!important;}
-.dynamic-island{display:none!important;}
-.home-indicator{display:none!important;height:0!important;min-height:0!important;padding:0!important;margin:0!important;}
-.home-indicator:before{display:none!important;}
+/* ===== Full-screen PWA shell: only keep safe-area rules, no fake phone frame ===== */
+body{background:var(--memory-bg,linear-gradient(160deg,#f6f7fb,#eef2fb))!important;}
 .lock-screen,.home-screen,.app-screen{border-radius:0!important;}
 .lock-screen{padding-top:max(52px,env(safe-area-inset-top))!important;}
 .app-screen .statusbar,.home-screen .statusbar{padding-top:calc(10px + env(safe-area-inset-top))!important;height:calc(44px + env(safe-area-inset-top))!important;}
@@ -3912,7 +3897,6 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 <body>
 <div class="phone-shell">
   <div class="screen" id="screen">
-    <div class="dynamic-island"></div>
     <div class="toast" id="toast"></div>
     <div class="command-task-layer hidden" id="commandTaskLayer"></div>
 
@@ -3976,7 +3960,6 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
           </svg>
         </div>
       </div>
-      <div class="home-indicator"></div>
     </section>
 
     <section class="app-screen wechat" id="wechatApp">
@@ -4048,7 +4031,6 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
           <div class="lyrics-controls"><span id="lyricsCur">0:00</span><button class="music-card-play" id="lyricsPlayBtn" onclick="toggleLyricsPlay()" aria-label="播放/暂停"><span class="music-play-icon"></span></button><span id="lyricsDur">0:00</span></div>
         </div>
       </div>
-      <div class="home-indicator"></div>
     </section>
 
 
@@ -4427,7 +4409,6 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
           <button class="story-send" data-action="send-story">➤</button>
         </div>
       </div>
-      <div class="home-indicator"></div>
     </section>
 
     <section class="app-screen call-app" id="callApp">
@@ -4451,7 +4432,6 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
           <button class="call-send" data-action="send-call-line" data-miao-icon="send" aria-label="发送"></button>
         </div>
       </div>
-      <div class="home-indicator"></div>
     </section>
 
     <section class="app-screen" id="contextSettingsApp">
@@ -4526,7 +4506,6 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
           <button class="artifacts-download-all" data-artifact-action="download-all">↓ Download all</button>
         </div>
       </div>
-      <div class="home-indicator"></div>
     </section>
 
     <div class="preview-mask" id="previewMask">
@@ -7786,7 +7765,7 @@ const DeskPet = {
   blinkTimer:null, bubbleTimer:null,
   isOn(){ return Storage.get("petEnabled", false); },
   setOn(v){ Storage.set("petEnabled", !!v); this.render(); },
-  getContainer(){ return document.querySelector(".phone-frame") || document.querySelector(".home-screen") || document.body; },
+  getContainer(){ return document.querySelector(".home-screen") || document.body; },
   getBounds(){
     try{
       const el=document.getElementById("deskPet");
