@@ -4891,6 +4891,8 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
               <div class="acc-sub" id="printerSub">PeriPage A6 · 轻触连接</div>
             </div>
             <button class="acc-btn" id="printerBtn" onclick="window.PrinterBLE.toggle()">连接</button>
+            <button class="acc-btn" id="printerTestBtn" onclick="window.PrinterBLE.testPrint()">测试</button>
+            <button class="acc-btn" id="printerStopBtn" onclick="window.PrinterBLE.stopPaper()">停止</button>
           </div>
         </div>
 
@@ -7979,7 +7981,7 @@ function summarizeWechatToolResult(name,result){
     return [t,result.weather].filter(Boolean).join(" ");
   }
   if(name==="printer_status") return result.connected?`已连接${result.busy?" · 打印中":""}`:"未连接";
-  if(name==="printer_print") return result.ok===false?(result.error||"失败"):`${result.chars||0}字`;
+  if(name==="printer_print") return result.ok===false?(result.error||"失败"):`${result.chars||0}字${result.truncated?" · 已截断":""}`;
   if(name==="search_history" && result.count!=null) return `${result.count} 条`;
   if(name==="write_memory") return result.status==="skipped"?"已存在":"已保存";
   if(name==="read_memory" && result.count!=null) return `${result.count} 条`;
@@ -16289,18 +16291,27 @@ const BLE = {
 };
 window.BLE = BLE;
 
-/* ===== BLE 热敏打印机核心模块 (PeriPage A6) ===== */
+/* ===== BLE 热敏打印机核心模块 (PeriPage A6) =====
+   独立于震动配件 BLE/device_*。
+   这版从头按“整张 raster bitmap job”重写：
+   reset -> enter PeriPage raw print stream -> GS v 0 raster header -> bitmap bytes -> end marker。
+   不再使用上一版的逐行伪命令路径。 */
 const PrinterBLE = {
   device: null,
   server: null,
   writeChar: null,
   notifyChar: null,
   busy: false,
+  abortRequested: false,
   SERVICE_UUID: '0000ff00-0000-1000-8000-00805f9b34fb',
   WRITE_UUID:   '0000ff02-0000-1000-8000-00805f9b34fb',
   NOTIFY_UUID:  '0000ff01-0000-1000-8000-00805f9b34fb',
-  WIDTH: 384,
-  BYTES_PER_LINE: 48,
+  WIDTH_DOTS: 384,
+  BYTES_PER_ROW: 48,
+  DEFAULT_FEED_ROWS: 16,
+  MAX_HEIGHT_ROWS: 560,
+  MAX_TEXT_CHARS: 700,
+  CHUNK_DELAY_MS: 24,
 
   isConnected(){
     return !!(this.device && this.device.gatt && this.device.gatt.connected && this.writeChar);
@@ -16314,12 +16325,12 @@ const PrinterBLE = {
   async connect(){
     try{
       if(!navigator.bluetooth){
-        toast("此浏览器不支持蓝牙打印（iOS请用Bluefy）");
+        toast("此浏览器不支持蓝牙打印（iOS请用 Bluefy / WebBLE 浏览器）");
         return {ok:false, error:"no bluetooth api"};
       }
       this.updateUI("scanning");
       const device = await navigator.bluetooth.requestDevice({
-        filters: [{ namePrefix: 'PeriPage' }],
+        filters: [{ namePrefix:'PeriPage' }],
         optionalServices: [this.SERVICE_UUID]
       });
       this.device = device;
@@ -16335,23 +16346,27 @@ const PrinterBLE = {
         this.notifyChar.addEventListener('characteristicvaluechanged', (e)=>{
           const v=e.target.value, bytes=[];
           for(let i=0;i<v.byteLength;i++) bytes.push(v.getUint8(i).toString(16).padStart(2,'0'));
-          console.log("[Printer notify]", bytes.join(' '));
+          console.log('[Printer notify]', bytes.join(' '));
         });
-      }catch(e){ /* 没有 notify 不影响打印 */ }
+      }catch(e){
+        this.notifyChar = null;
+      }
+      this.abortRequested=false;
       this.updateUI("connected");
       toast("热敏打印机已连接");
-      return {ok:true, connected:true, name:device.name||"PeriPage"};
+      return {ok:true, connected:true, name:device.name||"PeriPage", widthDots:this.WIDTH_DOTS, protocol:"peripage-a6-raster"};
     }catch(e){
-      console.warn("Printer connect:", e);
+      console.warn('Printer connect:', e);
       this.updateUI("disconnected");
-      if(e.name !== "NotFoundError") toast("打印机连接失败：" + (e.message||e));
+      if(e && e.name !== "NotFoundError") toast("打印机连接失败：" + (e.message||e));
       return {ok:false, error:e.message||String(e)};
     }
   },
 
   async disconnect(){
+    this.abortRequested=true;
     try{ if(this.device && this.device.gatt && this.device.gatt.connected) this.device.gatt.disconnect(); }
-    catch(e){ console.warn("Printer disconnect:", e); }
+    catch(e){ console.warn('Printer disconnect:', e); }
     this.onDisconnected();
     toast("热敏打印机已断开");
     return {ok:true};
@@ -16362,6 +16377,7 @@ const PrinterBLE = {
     this.writeChar=null;
     this.notifyChar=null;
     this.busy=false;
+    this.abortRequested=false;
     this.updateUI("disconnected");
   },
 
@@ -16371,50 +16387,92 @@ const PrinterBLE = {
       deviceName:this.device?.name || null,
       busy:!!this.busy,
       model:"PeriPage A6",
-      widthDots:this.WIDTH
+      widthDots:this.WIDTH_DOTS,
+      bytesPerRow:this.BYTES_PER_ROW,
+      protocol:"peripage-a6-raster-gsv0"
     };
   },
 
   sleep(ms){ return new Promise(resolve=>setTimeout(resolve, ms)); },
 
-  async sendData(data, delay=20){
+  hex(str){
+    const clean=String(str||'').replace(/[^0-9a-f]/gi,'');
+    const out=new Uint8Array(Math.floor(clean.length/2));
+    for(let i=0;i<out.length;i++) out[i]=parseInt(clean.slice(i*2,i*2+2),16);
+    return out;
+  },
+
+  concat(parts){
+    const total=parts.reduce((n,p)=>n+(p?p.length:0),0);
+    const out=new Uint8Array(total);
+    let off=0;
+    for(const p of parts){ if(!p) continue; out.set(p, off); off+=p.length; }
+    return out;
+  },
+
+  async writeChunk(chunk){
     if(!this.writeChar) throw new Error("打印机未连接");
-    const bytes = data instanceof Uint8Array ? data : new Uint8Array(data||[]);
+    if(this.writeChar.properties && this.writeChar.properties.writeWithoutResponse && this.writeChar.writeValueWithoutResponse){
+      try{ await this.writeChar.writeValueWithoutResponse(chunk); return; }
+      catch(e){ /* 降级到 withResponse/writeValue */ }
+    }
+    if(this.writeChar.writeValueWithResponse) await this.writeChar.writeValueWithResponse(chunk);
+    else await this.writeChar.writeValue(chunk);
+  },
+
+  async sendBytes(data, delay=this.CHUNK_DELAY_MS, allowAbort=true){
+    if(!this.writeChar) throw new Error("打印机未连接");
+    const bytes=data instanceof Uint8Array ? data : new Uint8Array(data||[]);
     for(let i=0;i<bytes.length;i+=20){
-      const chunk=bytes.slice(i,i+20);
-      if(this.writeChar.writeValueWithoutResponse) await this.writeChar.writeValueWithoutResponse(chunk);
-      else await this.writeChar.writeValue(chunk);
-      await this.sleep(delay);
+      if(allowAbort && this.abortRequested) throw new Error("打印已中止");
+      await this.writeChunk(bytes.slice(i,i+20));
+      if(delay>0) await this.sleep(delay);
     }
   },
 
-  setConcentration(level=3){
-    const map={1:0x01,2:0x23,3:0x45,4:0x67,5:0x89};
-    return new Uint8Array([0x10,0xff,0xfe,0x01,0x00,0x00,0x00,0x00,map[level]||0x45]);
+  async resetForJob(){
+    // 原始 A6 逆向脚本打印前会 reset 再清空 12 个 0x00。
+    // 有些 BLE 固件不回 notify；这里不等待 notify，只做保守延时。
+    try{ await this.sendBytes(this.hex('10ff50f1'), 30, false); await this.sleep(110); }catch(e){}
+    try{ await this.sendBytes(new Uint8Array(12), 18, false); await this.sleep(80); }catch(e){}
   },
 
-  buildPrintLineCommand(lineData){
-    const header=new Uint8Array([0x00,0x01,0x00,0x00,0x30,0x00]);
-    const combined=new Uint8Array(header.length+lineData.length);
-    combined.set(header);
-    combined.set(lineData, header.length);
-    return combined;
+  async beginRasterStream(){
+    await this.sendBytes(this.hex('10fffe01'), 30, true);
+    await this.sleep(70);
+    await this.sendBytes(new Uint8Array(12), 16, true);
+    await this.sleep(70);
+  },
+
+  async endRasterStream(){
+    // 只发 PeriPage 结束标记；走纸已经合入位图高度，避免额外空字节导致吐纸。
+    try{ await this.sendBytes(this.hex('10fffe45'), 26, false); }catch(e){}
+  },
+
+  async stopPaper(){
+    if(!this.isConnected()) return {ok:false, error:"热敏打印机未连接"};
+    this.abortRequested=true;
+    try{ await this.endRasterStream(); }catch(e){}
+    this.busy=false;
+    this.updateUI("connected");
+    toast("已尝试停止打印；若仍吐纸请直接关机");
+    return {ok:true, stopped:true};
   },
 
   normalizePrintText(text){
-    return String(text||"")
-      .replace(/[\u200B-\u200D\uFEFF]/g,"")
-      .replace(/\r\n?/g,"\n")
-      .replace(/\n{4,}/g,"\n\n\n")
+    return String(text||'')
+      .replace(/[\u200B-\u200D\uFEFF]/g,'')
+      .replace(/\r\n?/g,'\n')
+      .replace(/\n{4,}/g,'\n\n\n')
       .trim()
-      .slice(0,1600);
+      .slice(0,this.MAX_TEXT_CHARS);
   },
 
   wrapText(ctx, text, maxWidth){
     const lines=[];
-    String(text||"").split("\\n").forEach(para=>{
-      if(para===""){ lines.push(""); return; }
-      let current="";
+    String(text||'').split('\n').forEach(para=>{
+      if(para===''){ lines.push(''); return; }
+      let current='';
       for(const ch of para){
         const test=current+ch;
         if(ctx.measureText(test).width>maxWidth && current){
@@ -16427,42 +16485,65 @@ const PrinterBLE = {
     return lines;
   },
 
-  textToBitmapLines(text, options={}){
-    const width=this.WIDTH;
-    const fontSize=Math.max(18, Math.min(32, parseInt(options.fontSize)||22));
+  renderTextCanvas(text, options={}){
+    const width=this.WIDTH_DOTS;
+    const fontSize=Math.max(18, Math.min(34, parseInt(options.fontSize)||23));
     const padding=Math.max(10, Math.min(28, parseInt(options.padding)||18));
     const lineHeight=Number(options.lineHeight)||1.38;
-    const fontFamily=options.fontFamily || '"PingFang SC", "Microsoft YaHei", sans-serif';
+    const maxHeight=Math.max(80, Math.min(this.MAX_HEIGHT_ROWS, parseInt(options.maxHeight)||this.MAX_HEIGHT_ROWS));
+    const fontFamily=options.fontFamily || '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
+    const measure=document.createElement('canvas');
+    measure.width=width;
+    const m=measure.getContext('2d', {willReadFrequently:true});
+    m.font=`${fontSize}px ${fontFamily}`;
+    const maxWidth=width-padding*2;
+    let lines=this.wrapText(m, text, maxWidth);
+    const maxLines=Math.max(1, Math.floor((maxHeight-padding*2)/(fontSize*lineHeight)));
+    let truncated=false;
+    if(lines.length>maxLines){
+      lines=lines.slice(0,maxLines);
+      lines[lines.length-1]=(lines[lines.length-1]||'').replace(/…?$/,'')+'…';
+      truncated=true;
+    }
+    const height=Math.min(maxHeight, Math.max(1, Math.ceil(lines.length*fontSize*lineHeight)+padding*2));
     const canvas=document.createElement('canvas');
     canvas.width=width;
-    const ctx=canvas.getContext('2d');
-    ctx.font=`${fontSize}px ${fontFamily}`;
-    const maxWidth=width-padding*2;
-    const lines=this.wrapText(ctx, text, maxWidth);
-    const totalHeight=Math.max(1, Math.ceil(lines.length*fontSize*lineHeight)+padding*2);
-    canvas.height=totalHeight;
+    canvas.height=height;
+    const ctx=canvas.getContext('2d', {willReadFrequently:true});
     ctx.fillStyle='white';
-    ctx.fillRect(0,0,width,totalHeight);
+    ctx.fillRect(0,0,width,height);
     ctx.font=`${fontSize}px ${fontFamily}`;
     ctx.fillStyle='black';
     ctx.textBaseline='top';
-    lines.forEach((line,i)=>ctx.fillText(line,padding,padding+i*fontSize*lineHeight));
-    const img=ctx.getImageData(0,0,width,totalHeight);
-    const out=[];
-    for(let y=0;y<totalHeight;y++){
-      const row=new Uint8Array(this.BYTES_PER_LINE);
+    for(let i=0;i<lines.length;i++) ctx.fillText(lines[i], padding, padding+i*fontSize*lineHeight);
+    return {canvas, truncated, lineCount:lines.length};
+  },
+
+  canvasToRaster(canvas, feedRows=0){
+    const width=this.WIDTH_DOTS;
+    const bytesPerRow=this.BYTES_PER_ROW;
+    const feed=Math.max(0, Math.min(32, parseInt(feedRows)||0));
+    const height=Math.min(this.MAX_HEIGHT_ROWS, canvas.height + feed);
+    const img=canvas.getContext('2d', {willReadFrequently:true}).getImageData(0,0,width,canvas.height);
+    const bytes=new Uint8Array(bytesPerRow*height);
+    for(let y=0;y<canvas.height && y<height;y++){
       for(let x=0;x<width;x++){
         const idx=(y*width+x)*4;
-        const gray=img.data[idx]*0.299+img.data[idx+1]*0.587+img.data[idx+2]*0.114;
-        if(gray<128){
-          const byteIndex=Math.floor(x/8);
-          const bitIndex=7-(x%8);
-          row[byteIndex]|=(1<<bitIndex);
+        const gray=img.data[idx]*0.299 + img.data[idx+1]*0.587 + img.data[idx+2]*0.114;
+        if(gray<160){
+          const byteIndex=y*bytesPerRow + Math.floor(x/8);
+          bytes[byteIndex] |= 0x80 >> (x & 7);
         }
       }
-      out.push(row);
     }
-    return out;
+    return {bytes, height, feed};
+  },
+
+  buildRasterPacket(bitmapBytes, height){
+    if(height<1 || height>65535) throw new Error("打印高度异常");
+    // 1d 76 30 00 xL xH yL yH；A6 384 dots => 48 bytes => 0x30 0x00。
+    const header=new Uint8Array([0x1d,0x76,0x30,0x00, this.BYTES_PER_ROW & 0xff, (this.BYTES_PER_ROW>>8)&0xff, height & 0xff, (height>>8)&0xff]);
+    return this.concat([header, bitmapBytes]);
   },
 
   async printText(text, options={}){
@@ -16471,62 +16552,92 @@ const PrinterBLE = {
     if(!this.isConnected()) return {ok:false, error:"热敏打印机未连接，请先在设置里连接 PeriPage A6"};
     if(this.busy) return {ok:false, error:"热敏打印机正在打印，请稍后"};
     this.busy=true;
+    this.abortRequested=false;
     this.updateUI("printing");
     try{
-      const title=String(options.title||"").trim();
+      const title=String(options.title||'').trim();
       const payload=title ? `${title}\n\n${clean}` : clean;
-      await this.sendData(this.setConcentration(parseInt(options.concentration)||3));
-      await this.sleep(100);
-      const lines=this.textToBitmapLines(payload, options);
-      for(const line of lines) await this.sendData(this.buildPrintLineCommand(line));
-      const feed=Math.max(20, Math.min(120, parseInt(options.feed)||60));
-      const empty=new Uint8Array(this.BYTES_PER_LINE);
-      for(let i=0;i<feed;i++) await this.sendData(this.buildPrintLineCommand(empty));
-      return {ok:true, printed:true, chars:clean.length, lines:lines.length, feed, deviceName:this.device?.name||"PeriPage"};
+      const rendered=this.renderTextCanvas(payload, options);
+      const feed=(options.feed===0 || options.feed==='0') ? 0 : (parseInt(options.feed)||this.DEFAULT_FEED_ROWS);
+      const raster=this.canvasToRaster(rendered.canvas, feed);
+      const packet=this.buildRasterPacket(raster.bytes, raster.height);
+      await this.resetForJob();
+      await this.beginRasterStream();
+      await this.sendBytes(packet, this.CHUNK_DELAY_MS, true);
+      await this.endRasterStream();
+      const result={
+        ok:true,
+        printed:true,
+        chars:clean.length,
+        height:raster.height,
+        feed:raster.feed,
+        truncated:rendered.truncated,
+        protocol:"peripage-a6-raster-gsv0",
+        deviceName:this.device?.name||"PeriPage"
+      };
+      if(rendered.truncated) toast("纸条较长，已安全截断");
+      return result;
     }catch(e){
-      return {ok:false, error:"打印失败："+(e.message||e)};
+      try{ await this.endRasterStream(); }catch(_e){}
+      return {ok:false, error:(e.message||String(e))};
     }finally{
       this.busy=false;
+      this.abortRequested=false;
       this.updateUI(this.isConnected()?"connected":"disconnected");
     }
   },
 
+  async testPrint(){
+    const result=await this.printText('OK', {fontSize:32, padding:24, feed:8, maxHeight:140, source:'manual-test'});
+    if(result && result.ok===false) toast(result.error||"测试打印失败");
+    else toast("测试纸条已发送");
+    return result;
+  },
+
   updateUI(state){
-    const dot=document.getElementById("printerDot");
-    const name=document.getElementById("printerName");
-    const sub=document.getElementById("printerSub");
-    const btn=document.getElementById("printerBtn");
+    const dot=document.getElementById('printerDot');
+    const name=document.getElementById('printerName');
+    const sub=document.getElementById('printerSub');
+    const btn=document.getElementById('printerBtn');
+    const testBtn=document.getElementById('printerTestBtn');
+    const stopBtn=document.getElementById('printerStopBtn');
     if(!dot || !name || !sub || !btn) return;
+    const connected=this.isConnected();
+    if(testBtn) testBtn.disabled=!connected || this.busy;
+    if(stopBtn) stopBtn.disabled=!connected;
     switch(state){
-      case "scanning":
-        dot.className="acc-dot";
-        name.textContent="搜索打印机中…";
-        sub.textContent="请在弹窗中选择 PeriPage A6";
-        btn.textContent="搜索中"; btn.disabled=true; btn.classList.remove("on");
+      case 'scanning':
+        dot.className='acc-dot';
+        name.textContent='搜索打印机中…';
+        sub.textContent='请在弹窗中选择 PeriPage A6';
+        btn.textContent='搜索中'; btn.disabled=true; btn.classList.remove('on');
         break;
-      case "connecting":
-        dot.className="acc-dot";
-        name.textContent="打印机连接中…";
-        sub.textContent="";
-        btn.textContent="…"; btn.disabled=true; btn.classList.remove("on");
+      case 'connecting':
+        dot.className='acc-dot';
+        name.textContent='打印机连接中…';
+        sub.textContent='';
+        btn.textContent='…'; btn.disabled=true; btn.classList.remove('on');
         break;
-      case "printing":
-        dot.className="acc-dot on";
-        name.textContent=this.device?.name||"热敏打印机";
-        sub.textContent="正在打印…";
-        btn.textContent="打印中"; btn.disabled=true; btn.classList.add("on");
+      case 'printing':
+        dot.className='acc-dot on';
+        name.textContent=this.device?.name||'热敏打印机';
+        sub.textContent='正在发送 raster 位图…';
+        btn.textContent='打印中'; btn.disabled=true; btn.classList.add('on');
+        if(stopBtn) stopBtn.disabled=false;
         break;
-      case "connected":
-        dot.className="acc-dot on";
-        name.textContent=this.device?.name||"热敏打印机已连接";
-        sub.textContent="PeriPage A6 · 可以打印纸条";
-        btn.textContent="断开"; btn.disabled=false; btn.classList.add("on");
+      case 'connected':
+        dot.className='acc-dot on';
+        name.textContent=this.device?.name||'热敏打印机已连接';
+        sub.textContent='A6 raster 模式 · 建议先点测试';
+        btn.textContent='断开'; btn.disabled=false; btn.classList.add('on');
         break;
       default:
-        dot.className="acc-dot";
-        name.textContent="热敏打印机未连接";
-        sub.textContent="PeriPage A6 · 轻触连接";
-        btn.textContent="连接"; btn.disabled=false; btn.classList.remove("on");
+        dot.className='acc-dot';
+        name.textContent='热敏打印机未连接';
+        sub.textContent='PeriPage A6 · 轻触连接';
+        btn.textContent='连接'; btn.disabled=false; btn.classList.remove('on');
+        if(testBtn) testBtn.disabled=true;
+        if(stopBtn) stopBtn.disabled=true;
         this.device=null;
     }
   }
@@ -16564,7 +16675,7 @@ function printerToolSchemas(scope="wechat"){
     : "让 PeriPage A6 热敏打印机打印一张实体纸条。适合自然地留下短留言、约定、提醒或小清单；不要频繁使用。";
   return [
     {type:"function",function:{name:"printer_status",description:"查询喵喵机热敏打印机（PeriPage A6）的连接状态。",parameters:{type:"object",properties:{},required:[]}}},
-    {type:"function",function:{name:"printer_print",description:printDesc,parameters:{type:"object",properties:{text:{type:"string",description:"要打印的纸条正文，建议简短，不要包含后台说明"},title:{type:"string",description:"可选标题，会打印在正文前"},feed:{type:"integer",description:"可选走纸空白行数，默认60"}},required:["text"]}}}
+    {type:"function",function:{name:"printer_print",description:printDesc,parameters:{type:"object",properties:{text:{type:"string",description:"要打印的纸条正文，建议简短，不要包含后台说明"},title:{type:"string",description:"可选标题，会打印在正文前"},feed:{type:"integer",description:"可选走纸像素行数，默认16，建议0-32"}},required:["text"]}}}
   ];
 }
 
