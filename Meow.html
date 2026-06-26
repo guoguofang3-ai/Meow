@@ -228,6 +228,8 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .cottage-days{margin-top:18px;display:flex;align-items:flex-end;gap:8px;color:#6f5650}
 .cottage-days b{font-family:Georgia,"Times New Roman",serif;font-size:64px;line-height:.8;font-weight:480;letter-spacing:0}
 .cottage-days span{font-family:Georgia,"Times New Roman",serif;font-size:22px;font-style:italic;padding-bottom:5px}
+.cottage-days-btn{border:0;background:transparent;padding:0;text-align:left;color:inherit;display:inline-flex;align-items:flex-end;gap:8px;border-radius:18px}
+.cottage-days-btn:active{transform:scale(.985)}
 .cottage-visual{position:absolute;right:-4px;top:70px;width:142px;height:142px;border-radius:34px;background:rgba(255,255,255,.38);border:1px solid rgba(255,255,255,.58);box-shadow:0 16px 38px rgba(111,86,80,.08);display:flex;align-items:center;justify-content:center;color:#cfa6a0;transform:rotate(-4deg);overflow:hidden}
 .cottage-visual svg{width:92px;height:92px;stroke-width:1.25}
 .cottage-tape{position:absolute;right:103px;top:58px;width:52px;height:18px;background:rgba(215,190,130,.32);border-radius:4px;transform:rotate(-15deg);box-shadow:0 4px 12px rgba(111,86,80,.06)}
@@ -250,6 +252,9 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .cottage-drawer summary::-webkit-details-marker{display:none}
 .cottage-drawer summary span:last-child{font-family:Georgia,"Times New Roman",serif;color:#b79a91;font-weight:500}
 .cottage-tool-list{display:grid;gap:1px;padding:0 10px 12px}
+.cottage-tool-group{padding:5px 0 8px}
+.cottage-tool-group-title{display:flex;align-items:center;gap:9px;margin:8px 4px 5px;font-family:Georgia,"Times New Roman",serif;letter-spacing:.22em;text-transform:uppercase;font-size:10px;color:#b79a91}
+.cottage-tool-group-title:after{content:"";height:1px;flex:1;background:rgba(183,154,145,.22)}
 .cottage-tool{border:0;background:rgba(255,255,255,.42);color:#6f5650;text-align:left;display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:10px;padding:11px 12px;border-radius:16px;margin-top:7px}
 .cottage-tool-icon{width:36px;height:36px;border-radius:14px;background:rgba(245,235,221,.82)}
 .cottage-tool-icon svg{width:19px;height:19px}
@@ -6080,6 +6085,8 @@ function bindEvents(){
     if(action==="save-sticky-note") saveStickyNoteFromModal();
     if(action==="edit-cottage-note") editCottageNote();
     if(action==="save-cottage-note") saveCottageNoteFromModal();
+    if(action==="edit-cottage-since") editCottageSince();
+    if(action==="save-cottage-since") saveCottageSinceFromModal();
     if(action==="delete-sticky") deleteStickyNote(id);
     if(action==="save-diary-entry") saveDiaryEntryFromModal(id||"");
     if(action==="delete-diary") deleteDiary(id);
@@ -7363,7 +7370,8 @@ function renderHome(){
   const user=Storage.get("userProfile",{})||{};
   const roleName=role.name||"Claude";
   const userName=user.name||"Nai";
-  const days=Math.max(1, Math.floor((Date.now()-(Storage.get("cottageSinceAt",0)||Date.now()))/86400000)+1);
+  const sinceAt=Number(Storage.get("cottageSinceAt",0)||Date.now());
+  const days=Math.max(1, Math.floor((Date.now()-sinceAt)/86400000)+1);
   const note=Storage.get("cottageTodayNote","快中午了。记得吃饭，也记得把想说的话留在这里。");
   const drawerOpen=!!Storage.get("cottageDrawerOpen",false);
   const scrollTop=Number(Storage.get("cottageScrollTop",0)||0);
@@ -7373,24 +7381,35 @@ function renderHome(){
     {id:"memory", title:"回忆", sub:"关系、约定和长期记忆", icon:"memory"},
     {id:"diary", title:"日记", sub:"把安静的话放进抽屉", icon:"diary"}
   ];
-  const tools=[
-    {id:"listen", sub:"一起听歌"},
-    {id:"reading", sub:"书架和阅读"},
-    {id:"moments", sub:"动态和朋友圈"},
-    {id:"story", sub:"线下剧情"},
-    {id:"call", sub:"语音通话"},
-    {id:"roles", sub:"角色卡"},
-    {id:"worldbook", sub:"世界书"},
-    {id:"greetings", sub:"开场白"},
-    {id:"stickers", sub:"表情包"},
-    {id:"theme", sub:"主题装扮"},
-    {id:"api", sub:"模型和工具密钥"},
-    {id:"data", sub:"导入导出备份"},
-    {id:"settings", sub:"系统设置"},
-    {id:"pet", sub:"桌宠"},
-    {id:"shop", sub:"商城"},
-    {id:"eleme", sub:"外卖"}
-  ].map(x=>Object.assign({}, appById(x.id), x));
+  const toolGroups=[
+    {title:"Life", items:[
+      {id:"listen", sub:"一起听歌"},
+      {id:"reading", sub:"书架和阅读"},
+      {id:"moments", sub:"动态和朋友圈"},
+      {id:"story", sub:"线下剧情"},
+      {id:"call", sub:"语音通话"},
+      {id:"shop", sub:"商城"},
+      {id:"eleme", sub:"外卖"}
+    ]},
+    {title:"Bond", items:[
+      {id:"roles", sub:"角色卡"},
+      {id:"memory", sub:"长期记忆"},
+      {id:"diary", sub:"日记"},
+      {id:"worldbook", sub:"世界书"},
+      {id:"greetings", sub:"开场白"}
+    ]},
+    {title:"Tools", items:[
+      {id:"claude", sub:"文件、网页和工具"},
+      {id:"api", sub:"模型和工具密钥"},
+      {id:"data", sub:"导入导出备份"},
+      {id:"settings", sub:"系统设置"}
+    ]},
+    {title:"Dress", items:[
+      {id:"theme", sub:"主题装扮"},
+      {id:"stickers", sub:"表情包"},
+      {id:"pet", sub:"桌宠"}
+    ]}
+  ].map(g=>Object.assign({}, g, {items:g.items.map(x=>Object.assign({}, appById(x.id), x))}));
   const card=(item)=>`<button class="cottage-card" data-action="open-app" data-id="${escapeAttr(item.id)}">
     <span class="cottage-card-icon">${miaoIcon(item.icon||appById(item.id).iconId||"app")}</span>
     <span class="cottage-card-title">${escapeHtml(item.title)}</span>
@@ -7401,11 +7420,12 @@ function renderHome(){
     <span><b>${escapeHtml(app.name)}</b><small>${escapeHtml(app.sub||"")}</small></span>
     ${miaoIcon("chevron","miao-mini-icon")}
   </button>`;
+  const groupHtml=(group)=>`<div class="cottage-tool-group"><div class="cottage-tool-group-title">${escapeHtml(group.title)}</div>${group.items.map(tool).join("")}</div>`;
   grid.innerHTML=`<div class="cottage-hero">
       <div class="cottage-kicker">Together Since</div>
       <div class="cottage-title">${escapeHtml(roleName)}<br>&amp; ${escapeHtml(userName)}</div>
       <div class="cottage-sub">Welcome home.</div>
-      <div class="cottage-days"><b>${days}</b><span>days</span></div>
+      <button class="cottage-days cottage-days-btn" data-action="edit-cottage-since" aria-label="设置在一起日期"><b>${days}</b><span>days</span></button>
       <div class="cottage-tape"></div>
       <div class="cottage-visual">${miaoIcon("book")}</div>
     </div>
@@ -7418,7 +7438,7 @@ function renderHome(){
     <div class="cottage-primary-grid">${primary.map(card).join("")}</div>
     <details class="cottage-drawer" ${drawerOpen?"open":""}>
       <summary><span>小屋抽屉</span><span>Menu</span></summary>
-      <div class="cottage-tool-list">${tools.map(tool).join("")}</div>
+      <div class="cottage-tool-list">${toolGroups.map(groupHtml).join("")}</div>
     </details>`;
   grid.querySelector(".cottage-drawer")?.addEventListener("toggle",e=>{
     Storage.set("cottageDrawerOpen", !!e.currentTarget.open);
@@ -7792,6 +7812,30 @@ function saveCottageNoteFromModal(){
   closeQuickModal();
   renderHome();
   toast("首页便签已保存");
+}
+function cottageDateInputValue(ts){
+  const d=new Date(Number(ts)||Date.now());
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,"0");
+  const day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+function editCottageSince(){
+  const value=cottageDateInputValue(Storage.get("cottageSinceAt",Date.now()));
+  openQuickModal(`<div class="quick-modal-title">Together Since</div>
+    <label>在一起的日期</label><input id="cottageSinceInput" type="date" value="${escapeAttr(value)}">
+    <div class="v3-sub">首页天数会从这一天开始计算。只影响小屋首页显示，不改角色记忆。</div>
+    <div class="btn-row"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-cottage-since">保存</button></div>`);
+}
+function saveCottageSinceFromModal(){
+  const raw=String(document.getElementById("cottageSinceInput")?.value||"").trim();
+  if(!raw){ toast("请选择日期"); return; }
+  const ts=new Date(raw+"T00:00:00").getTime();
+  if(!Number.isFinite(ts)){ toast("日期格式不对"); return; }
+  Storage.set("cottageSinceAt", ts);
+  closeQuickModal();
+  renderHome();
+  toast("在一起日期已保存");
 }
 
 /* ===== 骰子 ===== */
