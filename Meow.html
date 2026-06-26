@@ -232,7 +232,12 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .cottage-days-btn:active{transform:scale(.985)}
 .cottage-visual{position:absolute;right:-4px;top:70px;width:142px;height:142px;border-radius:34px;background:rgba(255,255,255,.38);border:1px solid rgba(255,255,255,.58);box-shadow:0 16px 38px rgba(111,86,80,.08);display:flex;align-items:center;justify-content:center;color:#cfa6a0;transform:rotate(-4deg);overflow:hidden}
 .cottage-visual svg{width:92px;height:92px;stroke-width:1.25}
+.cottage-visual img{width:100%;height:100%;object-fit:cover;display:block}
 .cottage-tape{position:absolute;right:103px;top:58px;width:52px;height:18px;background:rgba(215,190,130,.32);border-radius:4px;transform:rotate(-15deg);box-shadow:0 4px 12px rgba(111,86,80,.06)}
+.cottage-decor{position:absolute;pointer-events:none;opacity:.42;color:#cfa6a0}
+.cottage-decor svg{width:100%;height:100%;stroke-width:1.15}
+.cottage-decor.flower{right:122px;top:160px;width:58px;height:58px;transform:rotate(18deg)}
+.cottage-decor.spark{right:14px;top:36px;width:34px;height:34px;color:#d7be82}
 .cottage-note{position:relative;margin-top:2px;padding:13px 46px 12px 15px;border-radius:22px;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.7);box-shadow:0 10px 28px rgba(111,86,80,.075);backdrop-filter:blur(18px) saturate(1.05);-webkit-backdrop-filter:blur(18px) saturate(1.05)}
 .cottage-note:before{content:"";position:absolute;right:18px;top:-10px;width:34px;height:34px;border-radius:50%;background:#d7be82;opacity:.55;box-shadow:inset 0 0 0 8px rgba(255,255,255,.24)}
 .cottage-note-label{font-family:Georgia,"Times New Roman",serif;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#b79a91;margin-bottom:6px}
@@ -265,6 +270,10 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .cottage-tab{border:0;background:transparent;color:#9b847c;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;padding:5px 2px;border-radius:20px;font-size:11px;font-weight:850}
 .cottage-tab.active{background:#3f3735;color:#fff;box-shadow:0 10px 24px rgba(63,55,53,.18)}
 .cottage-tab-icon svg{width:22px;height:22px}
+.cottage-preview{height:118px;border-radius:24px;background:var(--cottage-preview-bg,linear-gradient(160deg,#fbf5ea,#efe8dc));border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent);box-shadow:0 10px 26px rgba(70,50,42,.055);display:flex;align-items:center;justify-content:center;overflow:hidden;color:#cfa6a0}
+.cottage-preview img{width:100%;height:100%;object-fit:cover}
+.cottage-toggle-row{display:flex!important;align-items:center;gap:10px;margin:12px 0!important;padding:12px 13px;border-radius:18px;background:color-mix(in srgb,var(--bar-bg,#fff) 78%,var(--accent,#111827) 4%);border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent)}
+.cottage-toggle-row input{width:20px!important;min-height:20px!important;padding:0!important;flex:0 0 auto}
 .app-grid{
   display:flex;
   flex-direction:row;
@@ -4323,6 +4332,19 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
           <div class="btn-row"><button class="btn primary" data-action="save-icons">保存图标</button><button class="btn" data-action="reset-icons">恢复默认图标</button></div>
         </div>
 
+        <div class="card theme-section-card theme-cottage-card">
+          <div class="v3-section-title">小屋装扮</div>
+          <div class="v3-sub">只影响恋爱小屋首页。背景可以写 CSS，主视觉可以上传图片；不上传时使用线稿默认图。</div>
+          <label>小屋首页背景 CSS</label><textarea id="cottageBgInput" placeholder="linear-gradient(160deg,#fbf5ea,#efe8dc)"></textarea>
+          <div id="cottageVisualPreview" class="cottage-preview"></div>
+          <div class="btn-row">
+            <label class="btn file-btn">上传小屋主视觉<input type="file" accept="image/*" id="cottageVisualInput"></label>
+            <button class="btn danger" data-action="clear-cottage-visual">清除主视觉</button>
+          </div>
+          <label class="cottage-toggle-row"><input type="checkbox" id="cottageDecorEnabled"> <span>显示纸胶带 / 小花装饰</span></label>
+          <div class="btn-row"><button class="btn primary" data-action="save-cottage-decor">保存小屋装扮</button><button class="btn" data-action="reset-cottage-decor">恢复默认</button></div>
+        </div>
+
         <div class="card theme-section-card theme-wall-card">
           <div class="v3-section-title">锁屏/主屏壁纸</div>
           <div class="wall-grid" id="wallGrid"></div>
@@ -6349,6 +6371,9 @@ function bindEvents(){
     if(action==="save-icons") saveIconSettings();
     if(action==="reset-icons") resetIconSettings();
     if(action==="clear-icon-image") clearIconImage(id);
+    if(action==="save-cottage-decor") saveCottageDecorFromForm();
+    if(action==="clear-cottage-visual") clearCottageVisual();
+    if(action==="reset-cottage-decor") resetCottageDecor();
     if(action==="cancel-theme-import") cancelThemeImport();
     if(action==="confirm-theme-import") confirmThemeImport();
     if(action==="save-theme") { saveThemeFromState(); toast("主题已保存"); }
@@ -6454,6 +6479,21 @@ function bindEvents(){
       renderWallGrid();
       toast("当前锁屏/主屏壁纸已应用");
     }catch(err){ toast("壁纸设置失败："+err.message); }
+    e.target.value="";
+  });
+
+  $("#cottageVisualInput")?.addEventListener("change", async (e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    try{
+      const data=(typeof compressImageFile==="function") ? await compressImageFile(f,700,.76) : await fileToDataUrl(f);
+      if(data.length > 500000){ toast("图片太大，请换一张较小的图片（建议1MB以内）"); return; }
+      const cfg=getCottageDecor();
+      cfg.visualImage=data;
+      Storage.set("cottageDecor", cfg);
+      renderCottageDecorSettings();
+      renderHome();
+      toast("小屋主视觉已上传");
+    }catch(err){ toast("小屋主视觉上传失败："+err.message); }
     e.target.value="";
   });
 
@@ -7375,6 +7415,7 @@ function renderHome(){
   const note=Storage.get("cottageTodayNote","快中午了。记得吃饭，也记得把想说的话留在这里。");
   const drawerOpen=!!Storage.get("cottageDrawerOpen",false);
   const scrollTop=Number(Storage.get("cottageScrollTop",0)||0);
+  const decor=getCottageDecor();
   const primary=[
     {id:"wechat", title:"聊天", sub:"回到和 TA 的日常", icon:"chat"},
     {id:"claude", title:"助手", sub:"文件、网页和工具", icon:"claude"},
@@ -7421,13 +7462,18 @@ function renderHome(){
     ${miaoIcon("chevron","miao-mini-icon")}
   </button>`;
   const groupHtml=(group)=>`<div class="cottage-tool-group"><div class="cottage-tool-group-title">${escapeHtml(group.title)}</div>${group.items.map(tool).join("")}</div>`;
+  if(decor.bg) grid.style.background=decor.bg;
+  else grid.style.background="";
+  const visual=decor.visualImage ? `<img src="${escapeAttr(decor.visualImage)}" alt="">` : miaoIcon("book");
+  const decorHtml=decor.decorEnabled===false ? "" : `<div class="cottage-decor flower">${miaoIcon("theme")}</div><div class="cottage-decor spark">${miaoIcon("claude")}</div>`;
   grid.innerHTML=`<div class="cottage-hero">
       <div class="cottage-kicker">Together Since</div>
       <div class="cottage-title">${escapeHtml(roleName)}<br>&amp; ${escapeHtml(userName)}</div>
       <div class="cottage-sub">Welcome home.</div>
       <button class="cottage-days cottage-days-btn" data-action="edit-cottage-since" aria-label="设置在一起日期"><b>${days}</b><span>days</span></button>
       <div class="cottage-tape"></div>
-      <div class="cottage-visual">${miaoIcon("book")}</div>
+      ${decorHtml}
+      <div class="cottage-visual">${visual}</div>
     </div>
     <section class="cottage-note">
       <div class="cottage-note-label">Today's Note</div>
@@ -10746,6 +10792,7 @@ function renderThemes(){
   renderThemePresetGrid();
   renderThemeEditor();
   renderIconManager();
+  renderCottageDecorSettings();
 }
 function renderThemePresetGrid(){
   const presets = (typeof V9_THEME_PRESETS!=="undefined" && V9_THEME_PRESETS) ? V9_THEME_PRESETS : (window.V9_THEME_PRESETS||{});
@@ -10800,6 +10847,44 @@ function renderIconManager(){
       </div>
     </div>`;
   }).join("");
+}
+function getCottageDecor(){
+  return Object.assign({bg:"", visualImage:"", decorEnabled:true}, Storage.get("cottageDecor",{})||{});
+}
+function renderCottageDecorSettings(){
+  const cfg=getCottageDecor();
+  const bg=document.getElementById("cottageBgInput");
+  if(bg) bg.value=cfg.bg||"";
+  const chk=document.getElementById("cottageDecorEnabled");
+  if(chk) chk.checked=cfg.decorEnabled!==false;
+  const prev=document.getElementById("cottageVisualPreview");
+  if(prev){
+    prev.style.setProperty("--cottage-preview-bg", cfg.bg||"linear-gradient(160deg,#fbf5ea,#efe8dc)");
+    prev.innerHTML=cfg.visualImage ? `<img src="${escapeAttr(cfg.visualImage)}" alt="">` : miaoIcon("book");
+  }
+}
+function saveCottageDecorFromForm(){
+  const old=getCottageDecor();
+  const bg=String(document.getElementById("cottageBgInput")?.value||"").trim();
+  const decorEnabled=!!document.getElementById("cottageDecorEnabled")?.checked;
+  Storage.set("cottageDecor", Object.assign({}, old, {bg, decorEnabled}));
+  renderCottageDecorSettings();
+  renderHome();
+  toast("小屋装扮已保存");
+}
+function clearCottageVisual(){
+  const cfg=getCottageDecor();
+  delete cfg.visualImage;
+  Storage.set("cottageDecor", cfg);
+  renderCottageDecorSettings();
+  renderHome();
+  toast("小屋主视觉已清除");
+}
+function resetCottageDecor(){
+  Storage.remove("cottageDecor");
+  renderCottageDecorSettings();
+  renderHome();
+  toast("小屋装扮已恢复默认");
 }
 function applyThemePreset(id){
   const presets = (typeof V9_THEME_PRESETS!=="undefined" && V9_THEME_PRESETS) ? V9_THEME_PRESETS : (window.V9_THEME_PRESETS||{});
