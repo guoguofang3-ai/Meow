@@ -3567,6 +3567,17 @@ body.keyboard-open .reading-edit-modal textarea{max-height:min(30vh,calc(var(--v
   overflow-wrap:anywhere;
   word-break:break-word;
 }
+.wechat-tool-trace .wechat-tool-detail.long{
+  margin-left:0;
+  text-align:center;
+}
+.wechat-tool-trace .wechat-tool-inline-detail{
+  margin-left:4px;
+  font-weight:650;
+  color:color-mix(in srgb,var(--bar-text,#111827) 34%,transparent);
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
 .wechat-tool-trace.running{opacity:.58}
 .wechat-tool-trace.running .wechat-tool-mark svg{animation:wechatToolBreath 1.15s ease-in-out infinite}
 .wechat-tool-trace.error{color:color-mix(in srgb,#b42318 74%,var(--bar-text,#111827) 16%)}
@@ -8483,7 +8494,11 @@ function renderWechatToolTrace(m){
   const roleName=d.roleName || currentRole().name || "角色";
   const verb=state==="running"?(meta.verbRunning||"正在调取"):(state==="error"?(meta.verbError||"调取失败："):(meta.verbDone||"调取了"));
   const detail=d.note || meta.detail || "";
-  return `<div class="wechat-tool-trace ${escapeAttr(state)}" data-id="${escapeAttr(m.id||"")}"><span class="wechat-tool-mark">${miaoIcon(meta.icon,"miao-mini-icon")}</span><span class="wechat-tool-main"><span class="wechat-tool-role">${escapeHtml(roleName)}</span> ${escapeHtml(verb)}${escapeHtml(meta.label)}</span>${detail?`<span class="wechat-tool-detail">${escapeHtml(detail)}</span>`:""}</div>`;
+  const isReadWebpage=String(d.name||"")==="read_webpage";
+  const longDetail=isReadWebpage && String(detail).length>30;
+  const inlineDetail=detail && isReadWebpage && !longDetail ? `<span class="wechat-tool-inline-detail">${escapeHtml(detail)}</span>` : "";
+  const detailHtml=detail && (!isReadWebpage || longDetail) ? `<span class="wechat-tool-detail${longDetail?" long":""}">${escapeHtml(detail)}</span>` : "";
+  return `<div class="wechat-tool-trace ${escapeAttr(state)}" data-id="${escapeAttr(m.id||"")}"><span class="wechat-tool-mark">${miaoIcon(meta.icon,"miao-mini-icon")}</span><span class="wechat-tool-main"><span class="wechat-tool-role">${escapeHtml(roleName)}</span> ${escapeHtml(verb)}${escapeHtml(meta.label)}${inlineDetail}</span>${detailHtml}</div>`;
 }
 function addWechatToolTrace(name,args){
   try{
