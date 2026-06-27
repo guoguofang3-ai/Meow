@@ -3558,25 +3558,16 @@ body.keyboard-open .reading-edit-modal textarea{max-height:min(30vh,calc(var(--v
 .wechat-tool-trace .wechat-tool-mark svg{width:15px;height:15px;stroke-width:2.15}
 .wechat-tool-trace .wechat-tool-role{font-weight:900;color:color-mix(in srgb,var(--bar-text,#111827) 66%,var(--accent,#111827) 12%)}
 .wechat-tool-trace .wechat-tool-detail{
-  flex:0 0 100%;
-  max-width:100%;
-  margin-left:23px;
-  text-align:left;
   font-weight:650;
   color:color-mix(in srgb,var(--bar-text,#111827) 34%,transparent);
   overflow-wrap:anywhere;
   word-break:break-word;
 }
 .wechat-tool-trace .wechat-tool-detail.long{
-  margin-left:0;
+  display:block;
+  width:100%;
+  margin-top:2px;
   text-align:center;
-}
-.wechat-tool-trace .wechat-tool-inline-detail{
-  margin-left:4px;
-  font-weight:650;
-  color:color-mix(in srgb,var(--bar-text,#111827) 34%,transparent);
-  overflow-wrap:anywhere;
-  word-break:break-word;
 }
 .wechat-tool-trace.running{opacity:.58}
 .wechat-tool-trace.running .wechat-tool-mark svg{animation:wechatToolBreath 1.15s ease-in-out infinite}
@@ -8495,10 +8486,9 @@ function renderWechatToolTrace(m){
   const verb=state==="running"?(meta.verbRunning||"正在调取"):(state==="error"?(meta.verbError||"调取失败："):(meta.verbDone||"调取了"));
   const detail=d.note || meta.detail || "";
   const isReadWebpage=String(d.name||"")==="read_webpage";
-  const longDetail=isReadWebpage && String(detail).length>30;
-  const inlineDetail=detail && isReadWebpage && !longDetail ? `<span class="wechat-tool-inline-detail">${escapeHtml(detail)}</span>` : "";
-  const detailHtml=detail && (!isReadWebpage || longDetail) ? `<span class="wechat-tool-detail${longDetail?" long":""}">${escapeHtml(detail)}</span>` : "";
-  return `<div class="wechat-tool-trace ${escapeAttr(state)}" data-id="${escapeAttr(m.id||"")}"><span class="wechat-tool-mark">${miaoIcon(meta.icon,"miao-mini-icon")}</span><span class="wechat-tool-main"><span class="wechat-tool-role">${escapeHtml(roleName)}</span> ${escapeHtml(verb)}${escapeHtml(meta.label)}${inlineDetail}</span>${detailHtml}</div>`;
+  const longDetail=isReadWebpage && String(detail).length>34;
+  const detailHtml=detail ? `<span class="wechat-tool-detail${longDetail?" long":""}">${escapeHtml(detail)}</span>` : "";
+  return `<div class="wechat-tool-trace ${escapeAttr(state)}" data-id="${escapeAttr(m.id||"")}"><span class="wechat-tool-mark">${miaoIcon(meta.icon,"miao-mini-icon")}</span><span class="wechat-tool-main"><span class="wechat-tool-role">${escapeHtml(roleName)}</span> ${escapeHtml(verb)}${escapeHtml(meta.label)}</span>${detailHtml}</div>`;
 }
 function addWechatToolTrace(name,args){
   try{
@@ -9301,6 +9291,50 @@ function imageMsgFromDesc(desc){
   if(!desc) return null;
   return {type:"image_desc", content:"[图片描述:"+desc+"]", data:{description:desc}};
 }
+function getImageMemoryStore(){
+  if(!window.wechatImageMemory) window.wechatImageMemory={order:[], items:{}};
+  return window.wechatImageMemory;
+}
+function rememberWechatImage(msgId, dataUrl, thumbUrl, desc, meta={}){
+  if(!msgId || !dataUrl) return;
+  const store=getImageMemoryStore();
+  store.items[msgId]={
+    id:msgId,
+    thumbUrl:thumbUrl||dataUrl,
+    description:String(desc||"图片").slice(0,120),
+    title:String(meta.imageName||meta.title||desc||"图片").slice(0,80),
+    createdAt:Date.now(),
+    lastSeenAt:Date.now(),
+    hits:0
+  };
+  store.order=store.order.filter(id=>id!==msgId);
+  store.order.push(msgId);
+  while(store.order.length>4){
+    const oldId=store.order.shift();
+    delete store.items[oldId];
+    try{
+      if(window.wechatImageMap) delete window.wechatImageMap[oldId];
+    }catch(e){}
+  }
+}
+function touchWechatImageMemory(msgId){
+  const store=window.wechatImageMemory;
+  if(!store?.items?.[msgId]) return null;
+  const item=store.items[msgId];
+  item.lastSeenAt=Date.now();
+  item.hits=(item.hits||0)+1;
+  return item;
+}
+function getRecentWechatImageMemory(){
+  const store=window.wechatImageMemory;
+  if(!store || !Array.isArray(store.order) || !store.order.length) return null;
+  for(let i=store.order.length-1;i>=0;i--){
+    const id=store.order[i];
+    const item=store.items?.[id];
+    if(item) return item;
+  }
+  return null;
+}
 function consumeImageLeftovers(text, add){
   const re=imageInstructionRegex();
   return String(text||"").replace(re,function(match, desc){
@@ -10012,7 +10046,11 @@ function messageToAIContext(m){
     const cleanNote=String(d.note||"").replace(/\n*\[排查记录\][\s\S]*$/," ").trim();
     return `[音乐:${d.title||""}|${d.artist||""}${cleanNote?"|附言:"+cleanNote:""}${d.lyrics?"|歌词氛围:"+String(d.lyrics).slice(0,200):""}${d.audioUrl?"|有完整音频":""}]`;
   }
-  if(m.type==="image_desc") return `[图片描述:${d.description||m.content}]`;
+  if(m.type==="image_desc"){
+    const mem=getImageMemoryStore()?.items?.[m.id];
+    const hint=mem ? `|图片记忆:${mem.title||mem.description||""}` : "";
+    return `[图片描述:${d.description||m.content}${hint}]`;
+  }
   if(m.type==="transfer") return `[用户转账:${d.amount||""}|${d.note||""}|状态:${d.status||"pending"}]`;
   if(m.type==="delivery") return `[代付链接:${d.amount||""}|${d.item||""}|状态:${d.status||"pending"}]`;
   if(m.type==="role_transfer") return `[角色转账:${d.amount||""}|${d.note||""}|状态:${d.status||"pending"}]`;
@@ -10197,8 +10235,9 @@ async function callAI(api, history, onChunk, extraSystem){
       const valid=history.filter(m=>["text","sticker","image_desc","voice","link","music","transfer","delivery","received","paid","rejected","role_transfer","shop_share"].includes(m.type));
       // 按groupId合并同组气泡，groupId相同的角色回复合并成一条
       const grouped=[];
-      // 找最近一张有真实图片的消息id
-      const lastRealImgId=valid.slice().reverse().find(m=>m.type==="image_desc"&&m.data?.hasRealImage&&!m.data?.imageCleared)?.id||null;
+      // 找最近一张有真实图片的消息id；如果原图已清理，优先复用短期图片记忆里的缩略图
+      const lastRealImgMsg=valid.slice().reverse().find(m=>m.type==="image_desc"&&m.data?.hasRealImage);
+      const lastRealImgId=lastRealImgMsg?.id || null;
       realWechatImageToConsume=lastRealImgId;
       for(const m of valid){
         const apiRole=m.sender==="user"?"user":"assistant";
@@ -10207,8 +10246,10 @@ async function callAI(api, history, onChunk, extraSystem){
           last.content+=" "+messageToAIContext(m);
         } else {
           // 最近一张有真实图片：以multipart content发送
-          if(m.id===lastRealImgId && window.wechatImageMap?.[m.id]){
-            const dataUrl=window.wechatImageMap[m.id];
+          const directImg=window.wechatImageMap?.[m.id];
+          const memoryImg=(m.id===lastRealImgId && !directImg) ? getWechatImageMemoryUrl(m.id) : "";
+          const dataUrl=directImg || memoryImg;
+          if(m.id===lastRealImgId && dataUrl){
             grouped.push({role:apiRole, content:[
               {type:"image_url", image_url:{url:dataUrl}},
               {type:"text", text:messageToAIContext(m)}
@@ -18492,6 +18533,10 @@ function getWechatImageDisplayUrl(msgId, data){
   data=data||{};
   return (window.wechatImageMap&&window.wechatImageMap[msgId]) || data.thumbUrl || data.dataUrl || "";
 }
+function getWechatImageMemoryUrl(msgId){
+  const mem=window.wechatImageMemory?.items?.[msgId];
+  return mem?.thumbUrl || "";
+}
 function markWechatImageConsumed(msgId){
   if(!msgId) return;
   try{ if(window.wechatImageMap) delete window.wechatImageMap[msgId]; }catch(e){}
@@ -18595,6 +18640,7 @@ function submitImageDesc(){
       window.wechatImageMap[msgId]=dataUrl;
       const h=getHistory();
       const finalDesc=desc||(f.name||"图片");
+      rememberWechatImage(msgId, dataUrl, thumbUrl, finalDesc, {imageName:f.name||"图片"});
       h.push({id:msgId, groupId:uid("usergrp"), sender:"user", type:"image_desc", content:`[图片描述:${finalDesc}]`, data:{description:finalDesc, hasRealImage:true, imageCleared:false, imageName:f.name||"图片", imageType:f.type||"image", imageSize:f.size||0, thumbUrl}, read:false, createdAt:Date.now(), time:nowTime()});
       saveHistory(h);
       afterUserSpecialMessageSent();
@@ -18602,6 +18648,7 @@ function submitImageDesc(){
     reader.readAsDataURL(f);
   } else {
     const h=getHistory();
+    rememberWechatImage(msgId, "", "", desc||"图片", {imageName:"图片"});
     h.push({id:msgId, groupId:uid("usergrp"), sender:"user", type:"image_desc", content:`[图片描述:${desc}]`, data:{description:desc}, read:false, createdAt:Date.now(), time:nowTime()});
     saveHistory(h);
     afterUserSpecialMessageSent();
