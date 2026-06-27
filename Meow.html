@@ -4255,9 +4255,9 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
             <div class="v3-sub" style="margin-top:4px">不知道填什么就用默认：eleven_v3（语气标签更明显）</div>
             <label>朗读语言</label>
             <select id="ttsLanguageInput">
-              <option value="zh">中文优先</option>
+              <option value="en">英文优先</option>
               <option value="auto">自动判断</option>
-              <option value="en">英文</option>
+              <option value="zh">中文</option>
               <option value="">不指定</option>
             </select>
             <label>角色语音回复模式</label>
@@ -10408,7 +10408,7 @@ ${buildCommandTaskContext()||"暂无小任务反馈"}
 7. 不要写后台规则，不要解释指令，不要说“我格式写错了/我应该怎么回”。
 8. 如果输出语音，优先使用全角外层格式，方便内部使用 ElevenLabs v3 audio tags：
    【语音: [softly] [low voice] 我想你了。】
-   方括号里的英文只用于 ElevenLabs 语气标签；真正要朗读的话默认写中文。不要把中文台词拆成“英文原句 + 中文翻译”，除非 user 明确要英文语音。
+   方括号里的英文用于 ElevenLabs 语气标签；真正要朗读的话默认写英文，基本不要输出中文。不要把语音拆成“英文原句 + 中文翻译”，除非 user 明确要求中文语音或翻译。
 4. 表情包只能从"可用表情包"里按名称选择，不能编造。发送表情包指令后不要解释含义，不要加括号说明。
 5. 遇到用户转账/代付时，必须根据关系、上下文和人设自主决定是否收款/帮付。转账卡片上标注了付款来源（我的钱包/亲属卡），你可以根据来源做出反应。
 ${(()=>{
@@ -10742,7 +10742,7 @@ function renderApi(){
   const _tk=document.getElementById("ttsApiKeyInput"); if(_tk) _tk.value=ttsCfg.apiKey||"";
   const _tv=document.getElementById("ttsVoiceIdInput"); if(_tv) _tv.value=ttsCfg.voiceId||"";
   const _tm=document.getElementById("ttsModelInput"); if(_tm) _tm.value=ttsCfg.model||"eleven_v3";
-  const _tl=document.getElementById("ttsLanguageInput"); if(_tl) _tl.value=ttsCfg.language||"zh";
+  const _tl=document.getElementById("ttsLanguageInput"); if(_tl) _tl.value=ttsCfg.language||"en";
   const _tmode=document.getElementById("ttsModeInput"); if(_tmode) _tmode.value=ttsCfg.mode||"explicit";
   const _thoughtMode=document.getElementById("thoughtModeInput"); if(_thoughtMode) _thoughtMode.value=Storage.get("thoughtMode","balanced");
   const pa=Storage.get("phoneActivity",{});
@@ -10769,7 +10769,7 @@ function saveApiFromForm(){
   const iu=document.getElementById("imgApiUrlInput"), ik=document.getElementById("imgApiKeyInput"), im=document.getElementById("imgModelInput");
   Storage.set("imgApi", { url:(iu?iu.value.trim():""), key:(ik?ik.value.trim():""), model:(im?im.value.trim():"") });
   const tk=document.getElementById("ttsApiKeyInput"), tv=document.getElementById("ttsVoiceIdInput"), tm=document.getElementById("ttsModelInput"), tl=document.getElementById("ttsLanguageInput"), tmode=document.getElementById("ttsModeInput");
-  Storage.set("ttsApi", { provider:"elevenlabs", apiKey:(tk?tk.value.trim():""), voiceId:(tv?tv.value.trim():""), model:(tm?tm.value.trim():"eleven_v3")||"eleven_v3", language:(tl?tl.value:"zh"), mode:(tmode?tmode.value:"explicit")||"explicit" });
+  Storage.set("ttsApi", { provider:"elevenlabs", apiKey:(tk?tk.value.trim():""), voiceId:(tv?tv.value.trim():""), model:(tm?tm.value.trim():"eleven_v3")||"eleven_v3", language:(tl?tl.value:"en"), mode:(tmode?tmode.value:"explicit")||"explicit" });
   const pae=document.getElementById("phoneActivityEnabled"), pau=document.getElementById("phoneActivityUrlInput"), pat=document.getElementById("phoneActivityTokenInput"), pac=document.getElementById("phoneActivityCooldownInput");
   Storage.set("phoneActivity", { enabled:!!(pae&&pae.checked), baseUrl:(pau?pau.value.trim():"").replace(/\/+$/,""), token:(pat?pat.value.trim():""), cooldownMinutes:Math.max(0, parseInt(pac&&pac.value)||5) });
   const serp=document.getElementById("serpApiKeyInput"), wsp=document.getElementById("webSearchProxyInput");
@@ -18005,8 +18005,7 @@ function stripVoiceStageDirections(s){
 }
 function stripVoiceChineseTranslation(s){
   let t=String(s||"").trim();
-  const zh=t.match(/(?:^|\n|\r|[（(])\s*(?:中文(?:翻译)?|翻译|Chinese|CN)\s*[:：]\s*([\s\S]*?)(?:[）)]\s*)?$/iu);
-  if(zh && zh[1] && containsCJK(zh[1])) return zh[1].trim();
+  // Keep the English line for ElevenLabs; Chinese translation tails are removed below.
   // 推荐格式：English sentence.\n中文：中文翻译
   // 或：English sentence.（中文：中文翻译）
   t=t.replace(/\s*[（(]\s*(?:中文(?:翻译)?|翻译|Chinese|CN)\s*[:：][\s\S]*?[）)]\s*$/iu,"");
@@ -18034,7 +18033,7 @@ function getElevenLabsTTSConfig(){
   const apiKey=String(cfg.apiKey||"").trim();
   const voiceId=String(cfg.voiceId||"").trim();
   const model=String(cfg.model||"eleven_v3").trim()||"eleven_multilingual_v2";
-  const language=String(cfg.language||"zh").trim();
+  const language=String(cfg.language||"en").trim();
   if(!apiKey || !voiceId) return null;
   return {apiKey, voiceId, model, language};
 }
