@@ -17349,7 +17349,8 @@ async function fetchPhoneActivity(args={}){
     const data=await res.json();
     Storage.set("phoneActivityLastQueryAt",Date.now());
     if(summary) return {ok:true,summary:data};
-    const list=Array.isArray(data)?data.slice(0,limit):[];
+    const rawList=Array.isArray(data)?data:(Array.isArray(data.value)?data.value:(Array.isArray(data.records)?data.records:[]));
+    const list=rawList.slice(0,limit);
     return {ok:true,count:list.length,records:list};
   }catch(e){
     clearTimeout(timer);
