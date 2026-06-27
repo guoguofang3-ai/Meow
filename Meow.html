@@ -677,7 +677,7 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .role-item img{width:42px!important;height:42px!important;border-radius:14px!important}
 .role-name,.entry-name{font-size:13.5px!important}
 .role-desc,.entry-meta,.theme-sub,.v3-sub{font-size:11px!important;line-height:1.48!important}
-.claude-file-card{width:220px!important}
+.claude-file-card{width:min(286px,86vw)!important}
 .claude-file-preview{max-height:112px!important;font-size:11.5px!important;line-height:1.45!important}
 .diary-stat{border-radius:17px!important;padding:10px 11px!important}
 .diary-stat b{font-size:17px!important}
@@ -1958,14 +1958,18 @@ body.keyboard-open .quick-modal{max-height:calc(var(--visual-vh,100vh) - 24px);}
   font-size:13px!important;
   font-weight:900!important;
   color:var(--bar-text,#111827)!important;
-  display:flex!important;
-  align-items:center!important;
-  gap:6px!important;
+  display:block!important;
+  min-width:0!important;
+  line-height:1.25!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
 }
 .claude-file-meta{
   color:color-mix(in srgb,var(--bar-text,#111827) 52%,transparent)!important;
   font-size:11px!important;
   font-weight:650!important;
+  overflow-wrap:anywhere!important;
+  word-break:break-word!important;
 }
 .claude-file-preview{
   background:color-mix(in srgb,var(--accent,#111827) 5%,rgba(255,255,255,.7))!important;
@@ -1982,8 +1986,8 @@ body.keyboard-open .quick-modal{max-height:calc(var(--visual-vh,100vh) - 24px);}
 .claude-msg{margin:9px 0!important}.claude-chat{padding-bottom:10px!important;}
 
 .claude-file-card-v2{cursor:pointer!important;white-space:normal!important;}
-.claude-file-topline{display:grid;grid-template-columns:42px 1fr;gap:10px;align-items:center;}
-.claude-file-main{min-width:0;}
+.claude-file-topline{display:grid;grid-template-columns:42px minmax(0,1fr);gap:10px;align-items:center;}
+.claude-file-main{min-width:0;max-width:100%;overflow:hidden;}
 .claude-file-mini-icon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:var(--accent,#111827);color:#fff;font-size:22px;font-weight:1000;box-shadow:0 8px 18px color-mix(in srgb,var(--accent,#111827) 18%,transparent);}
 .claude-file-mini-icon.image{background:color-mix(in srgb,var(--accent,#111827) 78%,#fff 22%);}
 .claude-file-status{margin-top:5px;font-size:10px;line-height:1.35;color:color-mix(in srgb,var(--bar-text,#111827) 45%,transparent);font-weight:750;display:flex;align-items:center;gap:5px;}
@@ -3526,6 +3530,7 @@ body.keyboard-open .reading-edit-modal textarea{max-height:min(30vh,calc(var(--v
   display:flex;
   align-items:center;
   justify-content:center;
+  flex-wrap:wrap;
   gap:6px;
   color:color-mix(in srgb,var(--bar-text,#111827) 45%,var(--accent,#111827) 18%);
   font-size:12px;
@@ -3535,6 +3540,11 @@ body.keyboard-open .reading-edit-modal textarea{max-height:min(30vh,calc(var(--v
   opacity:.82;
   text-align:center;
   user-select:none;
+}
+.wechat-tool-trace .wechat-tool-main{
+  min-width:0;
+  max-width:100%;
+  white-space:nowrap;
 }
 .wechat-tool-trace .wechat-tool-mark{
   width:17px;
@@ -3547,7 +3557,16 @@ body.keyboard-open .reading-edit-modal textarea{max-height:min(30vh,calc(var(--v
 }
 .wechat-tool-trace .wechat-tool-mark svg{width:15px;height:15px;stroke-width:2.15}
 .wechat-tool-trace .wechat-tool-role{font-weight:900;color:color-mix(in srgb,var(--bar-text,#111827) 66%,var(--accent,#111827) 12%)}
-.wechat-tool-trace .wechat-tool-detail{font-weight:650;color:color-mix(in srgb,var(--bar-text,#111827) 34%,transparent);margin-left:2px}
+.wechat-tool-trace .wechat-tool-detail{
+  flex:0 0 100%;
+  max-width:100%;
+  margin-left:23px;
+  text-align:left;
+  font-weight:650;
+  color:color-mix(in srgb,var(--bar-text,#111827) 34%,transparent);
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
 .wechat-tool-trace.running{opacity:.58}
 .wechat-tool-trace.running .wechat-tool-mark svg{animation:wechatToolBreath 1.15s ease-in-out infinite}
 .wechat-tool-trace.error{color:color-mix(in srgb,#b42318 74%,var(--bar-text,#111827) 16%)}
@@ -4006,7 +4025,7 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 .role-item img{width:42px!important;height:42px!important;border-radius:14px!important;}
 .role-name,.entry-name{font-size:13.5px!important;}
 .role-desc,.entry-meta,.theme-sub,.v3-sub{font-size:11px!important;line-height:1.48!important;}
-.claude-file-card{width:220px!important;}
+.claude-file-card{width:min(286px,86vw)!important;}
 .claude-file-preview{max-height:112px!important;font-size:11.5px!important;line-height:1.45!important;}
 .diary-stat{border-radius:17px!important;padding:10px 11px!important;}
 .diary-stat b{font-size:17px!important;}
@@ -8459,7 +8478,7 @@ function renderWechatToolTrace(m){
   const roleName=d.roleName || currentRole().name || "角色";
   const verb=state==="running"?(meta.verbRunning||"正在调取"):(state==="error"?(meta.verbError||"调取失败："):(meta.verbDone||"调取了"));
   const detail=d.note || meta.detail || "";
-  return `<div class="wechat-tool-trace ${escapeAttr(state)}" data-id="${escapeAttr(m.id||"")}"><span class="wechat-tool-mark">${miaoIcon(meta.icon,"miao-mini-icon")}</span><span><span class="wechat-tool-role">${escapeHtml(roleName)}</span> ${escapeHtml(verb)}${escapeHtml(meta.label)}</span>${detail?`<span class="wechat-tool-detail">· ${escapeHtml(detail)}</span>`:""}</div>`;
+  return `<div class="wechat-tool-trace ${escapeAttr(state)}" data-id="${escapeAttr(m.id||"")}"><span class="wechat-tool-mark">${miaoIcon(meta.icon,"miao-mini-icon")}</span><span class="wechat-tool-main"><span class="wechat-tool-role">${escapeHtml(roleName)}</span> ${escapeHtml(verb)}${escapeHtml(meta.label)}</span>${detail?`<span class="wechat-tool-detail">${escapeHtml(detail)}</span>`:""}</div>`;
 }
 function addWechatToolTrace(name,args){
   try{
