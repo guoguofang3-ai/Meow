@@ -724,13 +724,16 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   gap:8px;
   cursor:pointer;
   user-select:none;
-  background:var(--role-bubble,#fff);
+  background:var(--role-bubble-bg,var(--role-bubble,#fff));
   color:var(--role-text,#333);
+  border:1px solid color-mix(in srgb,var(--role-text,#333) 8%,transparent);
+  box-shadow:0 8px 20px rgba(38,31,22,.055);
 }
 .voice-bubble.user-voice{
-  background:var(--user-bubble,#95ec69);
-  color:var(--user-text,#111);
+  background:var(--user-bubble-bg,var(--accent,#111827));
+  color:var(--user-text,#fff);
   flex-direction:row-reverse;
+  border-color:color-mix(in srgb,var(--user-text,#fff) 12%,transparent);
 }
 .voice-bubble .voice-wave{
   display:flex;
@@ -993,18 +996,31 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .money-card,.delivery-card,.paid-card,.received-card,.reject-card{
   min-width:198px;
   max-width:245px;
-  border-radius:20px;
+  border-radius:var(--miao-radius,20px);
   padding:14px;
-  box-shadow:0 12px 26px rgba(0,0,0,.12);
+  box-shadow:0 12px 26px rgba(38,31,22,.12);
   overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent);
 }
 .money-card.user-transfer{
-  background:linear-gradient(135deg,#ffb74d,#fb8c00);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent,#111827) 74%,#d7be82),color-mix(in srgb,var(--accent,#111827) 56%,#fff));
   color:#fff;
 }
 .money-card.role-transfer{
-  background:linear-gradient(135deg,#7aa7ff,#8c6cff);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--accent,#111827) 68%,#b9c5a9),color-mix(in srgb,var(--accent,#111827) 48%,#fff));
   color:#fff;
+}
+.delivery-card{
+  background:color-mix(in srgb,var(--bar-bg,#fff) 90%,#fff);
+  color:var(--bar-text,#111827);
+}
+.paid-card,.received-card{
+  background:linear-gradient(135deg,color-mix(in srgb,#2da44e 42%,var(--bar-bg,#fff)),color-mix(in srgb,var(--bar-bg,#fff) 88%,#fff));
+  color:color-mix(in srgb,#166534 70%,var(--bar-text,#111827));
+}
+.reject-card{
+  background:linear-gradient(135deg,color-mix(in srgb,#b42318 18%,var(--bar-bg,#fff)),color-mix(in srgb,var(--bar-bg,#fff) 90%,#fff));
+  color:color-mix(in srgb,#b42318 76%,var(--bar-text,#111827));
 }
 .money-title,.delivery-title{
   font-weight:950;
@@ -1027,26 +1043,27 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   border:0;
   border-radius:999px;
   padding:9px 12px;
-  background:rgba(255,255,255,.94);
-  color:#4c3fd1;
+  background:rgba(255,255,255,.86);
+  color:color-mix(in srgb,var(--accent,#111827) 82%,#4e3d39);
   font-weight:950;
+  box-shadow:0 6px 16px rgba(38,31,22,.08);
 }
 .delivery-card{
-  background:linear-gradient(135deg,#ff9a3d,#ff6a00);
-  color:#fff;
+  background:color-mix(in srgb,var(--bar-bg,#fff) 90%,#fff);
+  color:var(--bar-text,#111827);
 }
 .delivery-card .card-action-btn{
-  color:#ff6a00;
+  color:color-mix(in srgb,var(--accent,#111827) 82%,#4e3d39);
 }
 .paid-card,.received-card{
-  background:linear-gradient(135deg,#ecfff3,#d9fbe8);
-  color:#167543;
-  border:1px solid rgba(80,180,120,.28);
+  background:linear-gradient(135deg,color-mix(in srgb,#2da44e 42%,var(--bar-bg,#fff)),color-mix(in srgb,var(--bar-bg,#fff) 88%,#fff));
+  color:color-mix(in srgb,#166534 70%,var(--bar-text,#111827));
+  border:1px solid color-mix(in srgb,#2da44e 20%,transparent);
 }
 .reject-card{
-  background:linear-gradient(135deg,#fff1f0,#ffe4e1);
-  color:#b42318;
-  border:1px solid rgba(220,80,70,.22);
+  background:linear-gradient(135deg,color-mix(in srgb,#b42318 18%,var(--bar-bg,#fff)),color-mix(in srgb,var(--bar-bg,#fff) 90%,#fff));
+  color:color-mix(in srgb,#b42318 76%,var(--bar-text,#111827));
+  border:1px solid color-mix(in srgb,#b42318 18%,transparent);
 }
 .enhance-grid{
   display:grid;
@@ -4236,6 +4253,13 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
             <label>Voice ID</label><input id="ttsVoiceIdInput" placeholder="例如：21m00Tcm4TlvDq8ikWAM">
             <label>TTS 模型名称</label><input id="ttsModelInput" placeholder="eleven_v3">
             <div class="v3-sub" style="margin-top:4px">不知道填什么就用默认：eleven_v3（语气标签更明显）</div>
+            <label>朗读语言</label>
+            <select id="ttsLanguageInput">
+              <option value="zh">中文优先</option>
+              <option value="auto">自动判断</option>
+              <option value="en">英文</option>
+              <option value="">不指定</option>
+            </select>
             <label>角色语音回复模式</label>
             <select id="ttsModeInput">
               <option value="off">关闭真实语音（只保留文字语音）</option>
@@ -10383,9 +10407,8 @@ ${buildCommandTaskContext()||"暂无小任务反馈"}
 3. 只输出微信聊天内容；可以用双换行分成多条气泡。
 7. 不要写后台规则，不要解释指令，不要说“我格式写错了/我应该怎么回”。
 8. 如果输出语音，优先使用全角外层格式，方便内部使用 ElevenLabs v3 audio tags：
-   【语音: [softly] [low voice] I missed you.
-中文：我想你了。】
-   真正朗读的台词写英文；中文翻译只放在“中文：”后面。不要用中文当真实朗读台词。
+   【语音: [softly] [low voice] 我想你了。】
+   方括号里的英文只用于 ElevenLabs 语气标签；真正要朗读的话默认写中文。不要把中文台词拆成“英文原句 + 中文翻译”，除非 user 明确要英文语音。
 4. 表情包只能从"可用表情包"里按名称选择，不能编造。发送表情包指令后不要解释含义，不要加括号说明。
 5. 遇到用户转账/代付时，必须根据关系、上下文和人设自主决定是否收款/帮付。转账卡片上标注了付款来源（我的钱包/亲属卡），你可以根据来源做出反应。
 ${(()=>{
@@ -10719,6 +10742,7 @@ function renderApi(){
   const _tk=document.getElementById("ttsApiKeyInput"); if(_tk) _tk.value=ttsCfg.apiKey||"";
   const _tv=document.getElementById("ttsVoiceIdInput"); if(_tv) _tv.value=ttsCfg.voiceId||"";
   const _tm=document.getElementById("ttsModelInput"); if(_tm) _tm.value=ttsCfg.model||"eleven_v3";
+  const _tl=document.getElementById("ttsLanguageInput"); if(_tl) _tl.value=ttsCfg.language||"zh";
   const _tmode=document.getElementById("ttsModeInput"); if(_tmode) _tmode.value=ttsCfg.mode||"explicit";
   const _thoughtMode=document.getElementById("thoughtModeInput"); if(_thoughtMode) _thoughtMode.value=Storage.get("thoughtMode","balanced");
   const pa=Storage.get("phoneActivity",{});
@@ -10744,8 +10768,8 @@ function saveApiFromForm(){
   Storage.set("api", {apiUrl:$("#apiUrlInput").value.trim(), apiKey:$("#apiKeyInput").value.trim(), model:$("#modelInput").value.trim(), format:$("#apiFormatInput").value});
   const iu=document.getElementById("imgApiUrlInput"), ik=document.getElementById("imgApiKeyInput"), im=document.getElementById("imgModelInput");
   Storage.set("imgApi", { url:(iu?iu.value.trim():""), key:(ik?ik.value.trim():""), model:(im?im.value.trim():"") });
-  const tk=document.getElementById("ttsApiKeyInput"), tv=document.getElementById("ttsVoiceIdInput"), tm=document.getElementById("ttsModelInput"), tmode=document.getElementById("ttsModeInput");
-  Storage.set("ttsApi", { provider:"elevenlabs", apiKey:(tk?tk.value.trim():""), voiceId:(tv?tv.value.trim():""), model:(tm?tm.value.trim():"eleven_v3")||"eleven_v3", mode:(tmode?tmode.value:"explicit")||"explicit" });
+  const tk=document.getElementById("ttsApiKeyInput"), tv=document.getElementById("ttsVoiceIdInput"), tm=document.getElementById("ttsModelInput"), tl=document.getElementById("ttsLanguageInput"), tmode=document.getElementById("ttsModeInput");
+  Storage.set("ttsApi", { provider:"elevenlabs", apiKey:(tk?tk.value.trim():""), voiceId:(tv?tv.value.trim():""), model:(tm?tm.value.trim():"eleven_v3")||"eleven_v3", language:(tl?tl.value:"zh"), mode:(tmode?tmode.value:"explicit")||"explicit" });
   const pae=document.getElementById("phoneActivityEnabled"), pau=document.getElementById("phoneActivityUrlInput"), pat=document.getElementById("phoneActivityTokenInput"), pac=document.getElementById("phoneActivityCooldownInput");
   Storage.set("phoneActivity", { enabled:!!(pae&&pae.checked), baseUrl:(pau?pau.value.trim():"").replace(/\/+$/,""), token:(pat?pat.value.trim():""), cooldownMinutes:Math.max(0, parseInt(pac&&pac.value)||5) });
   const serp=document.getElementById("serpApiKeyInput"), wsp=document.getElementById("webSearchProxyInput");
@@ -17981,6 +18005,8 @@ function stripVoiceStageDirections(s){
 }
 function stripVoiceChineseTranslation(s){
   let t=String(s||"").trim();
+  const zh=t.match(/(?:^|\n|\r|[（(])\s*(?:中文(?:翻译)?|翻译|Chinese|CN)\s*[:：]\s*([\s\S]*?)(?:[）)]\s*)?$/iu);
+  if(zh && zh[1] && containsCJK(zh[1])) return zh[1].trim();
   // 推荐格式：English sentence.\n中文：中文翻译
   // 或：English sentence.（中文：中文翻译）
   t=t.replace(/\s*[（(]\s*(?:中文(?:翻译)?|翻译|Chinese|CN)\s*[:：][\s\S]*?[）)]\s*$/iu,"");
@@ -18008,8 +18034,9 @@ function getElevenLabsTTSConfig(){
   const apiKey=String(cfg.apiKey||"").trim();
   const voiceId=String(cfg.voiceId||"").trim();
   const model=String(cfg.model||"eleven_v3").trim()||"eleven_multilingual_v2";
+  const language=String(cfg.language||"zh").trim();
   if(!apiKey || !voiceId) return null;
-  return {apiKey, voiceId, model};
+  return {apiKey, voiceId, model, language};
 }
 async function elevenLabsTTS(text, cfg){
   const url="https://api.elevenlabs.io/v1/text-to-speech/"+encodeURIComponent(cfg.voiceId);
@@ -18018,6 +18045,8 @@ async function elevenLabsTTS(text, cfg){
     model_id:cfg.model||"eleven_v3",
     voice_settings:{stability:0.5, similarity_boost:0.75, style:0.5, use_speaker_boost:true}
   };
+  const lang=cfg.language==="auto" ? (containsCJK(text)?"zh":"en") : cfg.language;
+  if(lang) body.language_code=lang;
   const res=await fetch(url,{
     method:"POST",
     headers:{"Content-Type":"application/json","Accept":"audio/mpeg","xi-api-key":cfg.apiKey},
