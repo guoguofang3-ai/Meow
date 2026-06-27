@@ -4295,12 +4295,17 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
         <details class="api-fold">
           <summary><span>手机活动查询</span><small>可选工具</small></summary>
           <div class="api-fold-body">
-            <div class="v3-sub">聊天需要时查询 iOS 快捷指令上报的最近 App 打开记录。默认只在命中相关话术时才提供工具，避免拖慢普通回复。</div>
-            <label class="api-check-row"><input type="checkbox" id="phoneActivityEnabled"> <span>开启手机活动查询工具</span></label>
+            <div class="v3-sub">聊天需要时查询 iOS 快捷指令上报的最近 App 打开记录。可按关键词触发，也可允许角色按人设主动查看。</div>
+            <label>调用模式</label>
+            <select id="phoneActivityModeInput">
+              <option value="off">彻底关闭</option>
+              <option value="keyword">关键词触发</option>
+              <option value="character">按人设主动</option>
+            </select>
             <label>活动服务地址</label><input id="phoneActivityUrlInput" placeholder="https://your-app.zeabur.app">
             <label>REPORT_TOKEN</label><input id="phoneActivityTokenInput" placeholder="Bearer token" type="password">
             <label>查询冷却时间（分钟）</label><input id="phoneActivityCooldownInput" type="number" min="0" step="1" placeholder="5">
-            <div class="v3-sub" style="margin-top:4px">只有在“我回来了 / 我刚才在干嘛 / 查查我有没有偷玩”等场景才会给模型这个工具；0 表示不冷却。</div>
+            <div class="v3-sub" style="margin-top:4px">关键词触发：只有“我回来了 / 我刚才在干嘛 / 查查我有没有偷玩”等场景才提供工具。按人设主动：角色可以根据人设和关系状态自行决定是否查看。0 表示不冷却。</div>
           </div>
         </details>
 
@@ -5990,7 +5995,7 @@ function ensureDefaults(){
     Storage.set("ttsApi", {provider:"elevenlabs", apiKey:"", voiceId:"", model:"eleven_v3", mode:"explicit"});
   }
   if(!Storage.get("phoneActivity", null)){
-    Storage.set("phoneActivity", {enabled:false, baseUrl:"", token:"", cooldownMinutes:5});
+    Storage.set("phoneActivity", {mode:"off", enabled:false, baseUrl:"", token:"", cooldownMinutes:5});
   }
   if(!Storage.get("webSearch", null)){
     Storage.set("webSearch", {serpApiKey:"", proxyUrl:""});
@@ -10484,7 +10489,7 @@ ${(()=>{
 - search_history(query, limit?)：搜聊天记录，user问"我们之前说过""你还记得"时用。
 - read_file(filename, offset?, length?)：读取user上传的文件。
 - read_diary(query?, category?, limit?)：读取user的私人日记。
-${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}${printerPromptLine("wechat")}
+${phoneActivityPromptLine("wechat")}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}${printerPromptLine("wechat")}
 - device_status()：查询外接配件（ANKNI MX-Z）连接状态。
 - device_set_mode(mode)：可根据聊天氛围主动调用，不需要user明确要求。mode填1/2/3（1轻柔 2中等 3强力）。
 - device_stop()：停止外接配件；user明确表达停止、不要、暂停、不舒服等意思时必须立即停止。
@@ -10765,7 +10770,7 @@ function renderApi(){
   const _tmode=document.getElementById("ttsModeInput"); if(_tmode) _tmode.value=ttsCfg.mode||"explicit";
   const _thoughtMode=document.getElementById("thoughtModeInput"); if(_thoughtMode) _thoughtMode.value=Storage.get("thoughtMode","balanced");
   const pa=Storage.get("phoneActivity",{});
-  const _pae=document.getElementById("phoneActivityEnabled"); if(_pae) _pae.checked=!!pa.enabled;
+  const _pam=document.getElementById("phoneActivityModeInput"); if(_pam) _pam.value=pa.mode || (pa.enabled?"keyword":"off");
   const _pau=document.getElementById("phoneActivityUrlInput"); if(_pau) _pau.value=pa.baseUrl||"";
   const _pat=document.getElementById("phoneActivityTokenInput"); if(_pat) _pat.value=pa.token||"";
   const _pac=document.getElementById("phoneActivityCooldownInput"); if(_pac) _pac.value=String(pa.cooldownMinutes ?? 5);
@@ -10789,8 +10794,9 @@ function saveApiFromForm(){
   Storage.set("imgApi", { url:(iu?iu.value.trim():""), key:(ik?ik.value.trim():""), model:(im?im.value.trim():"") });
   const tk=document.getElementById("ttsApiKeyInput"), tv=document.getElementById("ttsVoiceIdInput"), tm=document.getElementById("ttsModelInput"), tl=document.getElementById("ttsLanguageInput"), tmode=document.getElementById("ttsModeInput");
   Storage.set("ttsApi", { provider:"elevenlabs", apiKey:(tk?tk.value.trim():""), voiceId:(tv?tv.value.trim():""), model:(tm?tm.value.trim():"eleven_v3")||"eleven_v3", language:(tl?tl.value:"en"), mode:(tmode?tmode.value:"explicit")||"explicit" });
-  const pae=document.getElementById("phoneActivityEnabled"), pau=document.getElementById("phoneActivityUrlInput"), pat=document.getElementById("phoneActivityTokenInput"), pac=document.getElementById("phoneActivityCooldownInput");
-  Storage.set("phoneActivity", { enabled:!!(pae&&pae.checked), baseUrl:(pau?pau.value.trim():"").replace(/\/+$/,""), token:(pat?pat.value.trim():""), cooldownMinutes:Math.max(0, parseInt(pac&&pac.value)||5) });
+  const pam=document.getElementById("phoneActivityModeInput"), pau=document.getElementById("phoneActivityUrlInput"), pat=document.getElementById("phoneActivityTokenInput"), pac=document.getElementById("phoneActivityCooldownInput");
+  const phoneMode=(pam&&["off","keyword","character"].includes(pam.value))?pam.value:"off";
+  Storage.set("phoneActivity", { mode:phoneMode, enabled:phoneMode!=="off", baseUrl:(pau?pau.value.trim():"").replace(/\/+$/,""), token:(pat?pat.value.trim():""), cooldownMinutes:Math.max(0, parseInt(pac&&pac.value)||5) });
   const serp=document.getElementById("serpApiKeyInput"), wsp=document.getElementById("webSearchProxyInput");
   Storage.set("webSearch", {serpApiKey:(serp?serp.value.trim():""), proxyUrl:(wsp?wsp.value.trim().replace(/\/+$/,""):"")});
   const gww=document.getElementById("geoWeatherWechatEnabled"), gwc=document.getElementById("geoWeatherClaudeEnabled"), gwt=document.getElementById("geoWeatherWeatherEnabled"), gwl=document.getElementById("geoWeatherLocationEnabled"), gwa=document.getElementById("geoWeatherAutoEnabled"), gwp=document.getElementById("geoWeatherPrecisionInput"), gwm=document.getElementById("geoWeatherMaxAgeInput"), gwk=document.getElementById("geoWeatherAmapKeyInput");
@@ -11913,11 +11919,12 @@ function inferClaudeToolPolicy(history=getClaudeHistory()){
   const fileMode=Storage.get("claudeFileMode", false);
   const hasFile=claudeHasActiveFile(history);
   const mentionActiveFile=!!(hasFile&&/这个|它|上面|刚才|继续|再改|预览|检查|看看|看下|分析|总结|哪里|为什么|怎么/i.test(compact));
+  const phoneCfg=getPhoneActivityConfig();
 
   // 文件常开 = Claude 本轮直接注册全部可用工具，让模型按需选择。
   // 它不是“代码专注/关闭其它工具”，也不是“每个工具都必须调用”。
   const allToolsOpen=!!fileMode;
-  const phoneActivity=!!(allToolsOpen || wantsPhoneActivity || shouldOfferPhoneActivityTool(text, history));
+  const phoneActivity=!!(isPhoneActivityReady(phoneCfg) && (phoneCfg.characterDriven || allToolsOpen || wantsPhoneActivity || shouldOfferPhoneActivityTool(text, history)));
 
   return {
     text,
@@ -11952,7 +11959,8 @@ function buildClaudeToolUsePrompt(policy={}){
     lines.push("- read_diary(query?, category?, limit?)：读取 user 的私人日记；日记是 user 资料，不等于 Claude 记忆");
   }
   if(policy.phoneActivity){
-    lines.push("- read_phone_activity(limit?, summary?)：查询 user iPhone 最近 App 活动记录/摘要；只在 user 要你核对刚才、监督睡觉学习工作、或明确说查监控时使用");
+    const line=phoneActivityPromptLine("claude").trim();
+    if(line) lines.push(line);
   }
   if(policy.geoWeather){
     const gwLines=geoWeatherPromptLines("claude");
@@ -17306,24 +17314,40 @@ function printerToolSchemas(scope="wechat"){
 
 function getPhoneActivityConfig(){
   const cfg=Storage.get("phoneActivity",{});
+  const mode=cfg.mode || (cfg.enabled?"keyword":"off");
   return {
-    enabled:!!cfg.enabled,
+    mode:["off","keyword","character"].includes(mode)?mode:"off",
+    enabled:mode!=="off" && cfg.enabled!==false,
+    characterDriven:mode==="character",
     baseUrl:String(cfg.baseUrl||"").trim().replace(/\/+$/, ""),
     token:String(cfg.token||"").trim(),
     cooldownMinutes:Math.max(0, parseInt(cfg.cooldownMinutes)||0)
   };
 }
+function isPhoneActivityReady(cfg=getPhoneActivityConfig()){
+  return !!(cfg.enabled && cfg.baseUrl && cfg.token);
+}
 function shouldOfferPhoneActivityTool(userText, history=[]){
   const cfg=getPhoneActivityConfig();
-  if(!cfg.enabled || !cfg.baseUrl || !cfg.token) return false;
+  if(!isPhoneActivityReady(cfg)) return false;
   const cd=cfg.cooldownMinutes*60*1000;
   const last=Storage.get("phoneActivityLastQueryAt",0)||0;
   if(cd>0 && Date.now()-last<cd) return false;
+  if(cfg.characterDriven) return true;
   const text=String(userText||"");
   const trigger=/(我回来了|回来了|刚才|刚刚|刚才在干嘛|在干嘛|干嘛去了|消失|偷玩|查查|查一下|查我|是不是.*刷|有没有.*刷|有没有.*玩|去睡|睡觉|早睡|午睡|学习|工作|写作业|复习|出门|洗澡)/i;
   if(trigger.test(text)) return true;
   const recent=history.slice(-8).map(m=>String(m.content||"")).join("\n");
   return /(我去睡|我去学习|我去工作|我去写作业|我去复习|我去洗澡|我出门|等我回来|一会儿回来)/.test(recent) && /(回来了|我回|刚才|刚刚|在干嘛|查查|查一下)/.test(text);
+}
+function phoneActivityPromptLine(scope="wechat"){
+  const cfg=getPhoneActivityConfig();
+  if(!isPhoneActivityReady(cfg)) return "";
+  if(cfg.characterDriven){
+    const who=scope==="claude"?"Claude":"角色";
+    return `- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录。当前允许${who}按人设、关系状态和上下文主动决定是否查看；适合关心、监督、吃醋、占有欲、重力系/控制欲人设等场景。不要机械每轮都查，用完后自然回应，不要解释工具调用。\n`;
+  }
+  return "- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n";
 }
 async function fetchPhoneActivity(args={}){
   const cfg=getPhoneActivityConfig();
