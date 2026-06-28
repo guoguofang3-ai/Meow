@@ -6216,13 +6216,14 @@ async function init(){
   $("#lockScreen").classList.remove("hidden");
   Miao.state.currentApp="home";
   renderAll();
+  pullRemoteProactiveMessages(true);
   updateClock();
   setInterval(updateClock, 30000);
   ProactiveMsg.reset();
   if(typeof checkDiaryUnlocks==="function"){
     checkDiaryUnlocks({silent:false});
     setInterval(()=>checkDiaryUnlocks({silent:false}), 60000);
-    document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) checkDiaryUnlocks({silent:false}); });
+    document.addEventListener("visibilitychange", ()=>{ if(!document.hidden){ checkDiaryUnlocks({silent:false}); pullRemoteProactiveMessages(false); } });
   }
   try{ DeskPet.initDrag(); DeskPet.render(); }catch(e){ console.warn("桌宠初始化失败", e); }
   checkBackupReminder();
@@ -6289,6 +6290,9 @@ function ensureDefaults(){
   }
   if(!Storage.get("phoneActivity", null)){
     Storage.set("phoneActivity", {enabled:false, baseUrl:"", token:"", cooldownMinutes:5});
+  }
+  if(!Storage.get("proactivePullLastAt", null)){
+    Storage.set("proactivePullLastAt", 0);
   }
   if(!Storage.get("webSearch", null)){
     Storage.set("webSearch", {serpApiKey:"1752f17b53d8c700fc684b15e052094535710748b91d36e1271c984b53f0acf5", proxyUrl:"https://meow-serpapi-proxy.guoguofang3.workers.dev"});
@@ -7165,6 +7169,7 @@ function openApp(id){
     const last = Storage.get("lastWechatVisit", 0);
     Storage.set("lastWechatVisit", now);
     Miao.state.lastWechatVisitMs = last;
+    pullRemoteProactiveMessages(true);
   }
   if(id==="diary"){
     ensureNotifyPermission();
@@ -8653,6 +8658,60 @@ const ProactiveMsg = {
     }
   }
 };
+
+async function pullRemoteProactiveMessages(force=false){
+  const cfg=getPhoneActivityConfig();
+  if(!cfg.enabled || !cfg.baseUrl || !cfg.token) return;
+  const now=Date.now();
+  const last=Number(Storage.get("proactivePullLastAt",0)||0);
+  if(!force && now-last<5*60*1000) return;
+  Storage.set("proactivePullLastAt", now);
+  try{
+    const res=await fetch(cfg.baseUrl+"/proactive/pending",{
+      method:"GET",
+      headers:{"Authorization":"Bearer "+cfg.token,"Accept":"application/json"}
+    });
+    if(!res.ok) return;
+    const data=await res.json();
+    const list=Array.isArray(data.messages)?data.messages:[];
+    if(!list.length) return;
+    const roles=getRoles();
+    const current=Miao.state.currentRoleId || roles[0]?.id || "default";
+    const ack=[];
+    list.slice().reverse().forEach(item=>{
+      const content=String(item.content||"").trim();
+      if(!content) return;
+      const targetRoleId=roles.some(r=>r.id===item.roleId) ? item.roleId : current;
+      const key=Storage.roleKey("wechatHistory", targetRoleId);
+      const h=Storage.get(key, []);
+      if(h.some(m=>m.data?.remoteProactiveId===item.id)){ ack.push(item.id); return; }
+      h.push({
+        id:uid("remote"),
+        groupId:uid("aigrp"),
+        sender:"assistant",
+        type:"text",
+        content,
+        read:false,
+        createdAt:new Date(item.createdAt||Date.now()).getTime()||Date.now(),
+        time:nowTime(),
+        data:{remoteProactiveId:item.id, source:item.source||"bark-cron", activity:item.activity||null}
+      });
+      Storage.set(key,h);
+      ack.push(item.id);
+    });
+    if(ack.length){
+      await fetch(cfg.baseUrl+"/proactive/pending/ack",{
+        method:"POST",
+        headers:{"Authorization":"Bearer "+cfg.token,"Content-Type":"application/json"},
+        body:JSON.stringify({ids:ack})
+      }).catch(()=>{});
+      if(Miao.state.currentApp==="wechat") renderChat();
+      else notifyMiao({app:"wechat",title:"有人想你了",body:"角色发来了新消息"});
+    }
+  }catch(e){
+    console.warn("拉取主动消息失败", e);
+  }
+}
 
 // ===== 轻量通知出口：微信主动消息 / 日记解封共用 =====
 // 注意：iOS（Safari / 主屏 PWA）不支持 new Notification() 构造函数，
