@@ -4359,6 +4359,14 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
   justify-content:flex-start!important;
 }
 .app-screen.wechat .group-meta-text{letter-spacing:.01em;}
+.app-screen.wechat .name-line{display:none!important;}
+.app-screen.wechat .msg{margin-top:5px!important;margin-bottom:5px!important;}
+.app-screen.wechat .msg:first-of-type{margin-top:0!important;}
+.app-screen.wechat .bubble-wrap{gap:0!important;}
+.app-screen.wechat .group-meta-line{margin-bottom:4px!important;}
+.claude-app .claude-name,.claude-app .name-line{display:none!important;}
+.claude-app .claude-msg{margin-top:7px!important;margin-bottom:7px!important;}
+
 .app-screen.wechat .read-line{justify-content:flex-end;color:rgba(78,67,57,.42)!important;}
 .app-screen.wechat .msg:not([data-first-role-group="1"]) .thinking-btn{display:none!important;}
 .app-screen.wechat .thinking-btn{
@@ -9493,7 +9501,6 @@ function renderMessage(m,h,idx){
     <img class="avatar" src="${avatar}" alt="">
     <div class="bubble-wrap">
       ${groupMeta}
-      ${(!isUser && isFirstInVisualGroup)?`<div class="name-line">${escapeHtml(role.name)}</div>`:""}
       ${m.quoteId ? renderQuoteBlock(m) : ""}
       ${renderMessageBody(m)}
       ${readLine}
@@ -13574,7 +13581,6 @@ function renderClaudeMessage(m){
     ${check}
     <div class="claude-avatar">${avatar}</div>
     <div class="claude-bwrap">
-      <div class="claude-name">${escapeHtml(name)}</div>
       ${renderClaudeBody(m)}
       <div class="time-line">${escapeHtml(m.time||"")}</div>
     </div>
