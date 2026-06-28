@@ -4486,6 +4486,33 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 .claude-composer{padding:7px 9px calc(8px + env(safe-area-inset-bottom))!important;gap:7px!important;}
 .claude-composer textarea{min-height:40px!important;border-radius:18px!important;padding:9px 12px!important;background:rgba(255,255,255,.78)!important;}
 .claude-invoke,.claude-send{width:40px!important;height:40px!important;min-width:40px!important;}
+
+
+/* ===== iOS 灵动岛安全区修复 2026-06-29 =====
+   微信顶栏中间的头像/昵称是 absolute + top:50%，旧写法会把它居中到整个顶栏，
+   在 iOS / external-file / PWA 中 env(safe-area-inset-top) 取 0 或偏小时会钻进灵动岛区域。
+   这里为微信页单独预留动态岛高度，并把头像组按“安全区底部 + 顶栏内容半高”定位。 */
+:root{
+  --miao-dynamic-island-reserve: max(env(safe-area-inset-top), 48px);
+}
+.app-screen.wechat .wechat-head{
+  padding-top:calc(var(--miao-dynamic-island-reserve) + 12px)!important;
+  min-height:calc(var(--miao-dynamic-island-reserve) + 58px)!important;
+}
+.app-screen.wechat .wechat-head .profile{
+  top:calc(var(--miao-dynamic-island-reserve) + 31px)!important;
+  transform:translate(-50%,-50%)!important;
+}
+.app-screen.wechat .wechat-head .wechat-left-actions,
+.app-screen.wechat .wechat-head .header-actions{
+  align-self:flex-start!important;
+  margin-top:0!important;
+}
+@supports (padding-top: env(safe-area-inset-top)){
+  .app-screen.wechat .wechat-head{
+    padding-top:calc(var(--miao-dynamic-island-reserve) + 12px)!important;
+  }
+}
 </style>
 <script>window.MIAO_BUILD="ClawdPetWechatControlV1";</script>
 </head>
