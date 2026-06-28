@@ -14567,7 +14567,7 @@ async function callClaudeReply(){
     saveClaudeHistory(h);
     if(typeof feedInnerEvent==="function"){
       const scope=getClaudeMode()==="tool" ? "claude:tool" : "role:"+(currentRole()?.id||Miao.state.currentRoleId||"default");
-      feedInnerEvent(scope, "assistant_reply", raw||"");
+      feedInnerEvent(scope, "assistant_reply", normalizedOutput||cleaned||reply||"");
     }
     renderClaude();
     markCommandFeedbackDelivered();
