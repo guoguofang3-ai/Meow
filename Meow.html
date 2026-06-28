@@ -1812,7 +1812,7 @@ body.keyboard-open .quick-modal{max-height:calc(var(--visual-vh,100vh) - 24px);}
   box-shadow:0 10px 22px color-mix(in srgb,var(--accent,#111827) 24%,transparent);
   font-size:18px;
 }
-.claude-invoke.busy,.claude-send.busy{opacity:.58;pointer-events:none;filter:saturate(.72)}
+.claude-invoke.busy,.claude-send.busy,.call-btn.busy,.send-btn.busy{opacity:.58;pointer-events:none;filter:saturate(.72)}
 .claude-send:active,.claude-invoke:active{transform:scale(.94)}
 .claude-app .claude-msg.user .claude-bubble{background:var(--user-bubble-bg,var(--accent))!important}
 .claude-app .claude-file-card,.claude-app .claude-ops-card{
@@ -7232,6 +7232,7 @@ function renderAll(){
   safeRun("日记渲染", renderDiary);
   safeRun("数据中心渲染", renderDataCenter);
   safeRun("线性图标渲染", hydrateMiaoIcons);
+  safeRun("微信输入状态", updateWechatComposerState);
   safeRun("指令任务渲染", renderCommandTaskLayer);
 }
 function updateClock(){
@@ -10452,6 +10453,18 @@ function hideTypingIndicator(){
   const row=document.getElementById("typingRow");
   if(row) row.remove();
 }
+function updateWechatComposerState(){
+  const busy=!!Miao.state.busy;
+  const call=document.querySelector('.call-btn[data-action="call-ai"]');
+  if(call){
+    call.classList.toggle("busy", busy);
+    call.innerHTML=busy ? "…" : miaoIcon("spark");
+    call.title=busy ? "等待回复中" : "召唤回复";
+    call.setAttribute("aria-label", call.title);
+  }
+  const send=document.querySelector('.send-btn[data-action="send-message"]');
+  if(send) send.classList.toggle("busy", false);
+}
 // 根据气泡内容估算"打字"时长（毫秒），短句快、长句稍慢，带上下限
 function typingDelayFor(msg){
   if(!msg) return 350;
@@ -10515,6 +10528,7 @@ async function callAIReply(){
     return;
   }
   Miao.state.busy=true;
+  updateWechatComposerState();
   // 流式：先插入一个临时气泡
   const useStream=Storage.get("streamEnabled",false);
   let streamMsgId=null;
@@ -10610,7 +10624,7 @@ ${page.content}`
       const hh=getHistory();
       const idx=hh.findIndex(m=>m.id===streamMsgId);
       let parsed=applyAutoVoiceMode(ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||""), newUser.content||"");
-      if(!parsed.length){ saveHistory(hh); renderChat(); Miao.state.busy=false; return; }
+      if(!parsed.length){ saveHistory(hh); renderChat(); Miao.state.busy=false; updateWechatComposerState(); return; }
       await prepareThoughtProcessForParsed(api, parsed, {newUser, rawReply:reply, groupId});
       if(idx>=0) hh.splice(idx,1,...parsed);
       else parsed.forEach(m=>hh.push(m));
@@ -10628,7 +10642,7 @@ ${page.content}`
       if(typeof feedInnerEvent==="function") feedInnerEvent("role:"+(currentRole()?.id||Miao.state.currentRoleId||"default"), "assistant_reply", Miao.state.lastAIContent||"");
     } else {
       let parsed=applyAutoVoiceMode(ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||""), newUser.content||"");
-      if(!parsed.length){ saveHistory(h); renderChat(); Miao.state.busy=false; return; }
+      if(!parsed.length){ saveHistory(h); renderChat(); Miao.state.busy=false; updateWechatComposerState(); return; }
       await prepareThoughtProcessForParsed(api, parsed, {newUser, rawReply:reply, groupId});
       // 逐条弹出，拟真人连发；callAI 期间可能已经写入工具调用轨迹，必须用最新历史，避免覆盖掉工具提示。
       await revealMessagesSequentially(getHistory(), parsed, groupId);
@@ -10651,6 +10665,7 @@ ${page.content}`
   }finally{
     hideTypingIndicator();
     Miao.state.busy=false;
+    updateWechatComposerState();
   }
 }
 function messageToAIContext(m){
