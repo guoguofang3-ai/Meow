@@ -19689,6 +19689,7 @@ async function executeClaudeTool(name, args){
     const entry={id:uid("mem"),title:args.title||"",type:args.category||"普通记忆",content:args.content||"",source:isTool?"工具Claude写入":`${currentRole()?.name||"角色"}Claude写入`,important:args.category==="关系节点"||args.category==="约定",locked:false,createdAt:Date.now(),time:nowTime()};
     if(isTool){ list.push(entry); saveToolMemories(list); }
     else { list.push(entry); saveMemories(list); }
+    nudgeInnerFromTrace(memoryInnerScope(isTool?"tool":"role"), "写入记忆："+entry.title, entry.important?"selfhood":"seen", entry.important ? .30 : .22, entry.important?"fixation":"flit");
     return {status:"saved", id:entry.id, title:entry.title};
   }
   if(name==="search_history"){
