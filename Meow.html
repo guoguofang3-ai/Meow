@@ -765,10 +765,25 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 }
 .msg.user .voice-text-toggle{align-self:flex-end}
 .voice-bubble.voice-real{position:relative}
-.voice-bubble.voice-real:after{
-  content:"▶";font-size:10px;opacity:.68;margin-left:2px;flex-shrink:0;
+.voice-play-ico{
+  width:16px;
+  height:16px;
+  margin-left:2px;
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  color:currentColor;
+  opacity:.72;
 }
-.voice-bubble.voice-real.playing:after{content:"❚❚"}
+.voice-play-ico .miao-svg-icon{
+  width:14px;
+  height:14px;
+  display:block;
+}
+.voice-play-ico .ico-pause{display:none}
+.voice-bubble.voice-real.playing .voice-play-ico .ico-play{display:none}
+.voice-bubble.voice-real.playing .voice-play-ico .ico-pause{display:inline-flex}
 .real-voice-panel{display:flex;flex-direction:column;gap:10px}
 .real-voice-tip{font-size:12px;color:#888;line-height:1.55}
 .real-voice-status{font-size:13px;color:#666;background:#f6f7fb;border-radius:14px;padding:10px 12px;line-height:1.5;min-height:40px}
@@ -1006,8 +1021,9 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   color:var(--bar-text,#111827);
 }
 .paid-card,.received-card{
-  background:linear-gradient(135deg,color-mix(in srgb,#2da44e 42%,var(--bar-bg,#fff)),color-mix(in srgb,var(--bar-bg,#fff) 88%,#fff));
-  color:color-mix(in srgb,#166534 70%,var(--bar-text,#111827));
+  --money-state-accent:color-mix(in srgb,var(--accent,#111827) 28%,#86c697);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--money-state-accent) 42%,var(--bar-bg,#fff)),color-mix(in srgb,var(--bar-bg,#fff) 88%,#fff));
+  color:color-mix(in srgb,var(--money-state-accent) 78%,var(--bar-text,#111827));
 }
 .reject-card{
   background:linear-gradient(135deg,color-mix(in srgb,#b42318 18%,var(--bar-bg,#fff)),color-mix(in srgb,var(--bar-bg,#fff) 90%,#fff));
@@ -1047,9 +1063,10 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
   color:color-mix(in srgb,var(--accent,#111827) 82%,#4e3d39);
 }
 .paid-card,.received-card{
-  background:linear-gradient(135deg,color-mix(in srgb,#2da44e 42%,var(--bar-bg,#fff)),color-mix(in srgb,var(--bar-bg,#fff) 88%,#fff));
-  color:color-mix(in srgb,#166534 70%,var(--bar-text,#111827));
-  border:1px solid color-mix(in srgb,#2da44e 20%,transparent);
+  --money-state-accent:color-mix(in srgb,var(--accent,#111827) 28%,#86c697);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--money-state-accent) 42%,var(--bar-bg,#fff)),color-mix(in srgb,var(--bar-bg,#fff) 88%,#fff));
+  color:color-mix(in srgb,var(--money-state-accent) 78%,var(--bar-text,#111827));
+  border:1px solid color-mix(in srgb,var(--money-state-accent) 20%,transparent);
 }
 .reject-card{
   background:linear-gradient(135deg,color-mix(in srgb,#b42318 18%,var(--bar-bg,#fff)),color-mix(in srgb,var(--bar-bg,#fff) 90%,#fff));
@@ -4367,26 +4384,27 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
   display:flex!important;
   flex-direction:column!important;
   justify-content:center!important;
+  gap:1px!important;
   transform:none!important;
 }
 .app-screen.wechat .profile-title{
   font-size:13px!important;
-  line-height:1.05!important;
+  line-height:1.02!important;
   font-weight:850!important;
   max-width:138px!important;
-  transform:translateY(-2px)!important;
+  transform:none!important;
 }
 .app-screen.wechat .profile-sub{
   font-size:9px!important;
-  line-height:1.05!important;
-  margin-top:1px!important;
+  line-height:1.02!important;
+  margin-top:0!important;
   opacity:.62!important;
-  transform:translateY(2px)!important;
+  transform:translateY(-1px)!important;
 }
 .app-screen.wechat .profile-title-row{
   gap:4px!important;
-  align-items:flex-start!important;
-  transform:translateY(-2px)!important;
+  align-items:flex-end!important;
+  transform:none!important;
 }
 .app-screen.wechat .icon-btn,
 .claude-head-actions .icon-btn,
@@ -4395,16 +4413,18 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 }
 .app-screen.wechat .session-title-btn,
 .claude-app>.header .session-title-btn{
-  width:19px!important;height:19px!important;
-  min-width:19px!important;min-height:19px!important;
+  width:18px!important;height:18px!important;
+  min-width:18px!important;min-height:18px!important;
   box-shadow:0 2px 8px rgba(38,31,22,.035)!important;
 }
 .app-screen.wechat .session-title-btn{
-  transform:translateY(-2px)!important;
+  align-self:flex-end!important;
+  margin-bottom:1px!important;
+  transform:none!important;
 }
 .app-screen.wechat .session-title-btn .miao-svg-icon,
 .claude-app>.header .session-title-btn .miao-svg-icon{
-  width:12px!important;height:12px!important;
+  width:13px!important;height:13px!important;
 }
 
 .app-screen.wechat .name-line{display:none!important;}
@@ -5144,7 +5164,7 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
         <div class="listen-times"><span id="listenCur">0:00</span><span id="listenDur">0:00</span></div>
         <div class="listen-btns">
           <button class="listen-ctrl" data-listen-action="prev" aria-label="上一首">‹‹</button>
-          <button class="listen-ctrl listen-play" id="listenPlayBtn" data-listen-action="toggle" aria-label="播放/暂停">▶</button>
+          <button class="listen-ctrl listen-play" id="listenPlayBtn" data-listen-action="toggle" aria-label="播放/暂停" data-miao-icon="play"></button>
           <button class="listen-ctrl" data-listen-action="next" aria-label="下一首">››</button>
         </div>
       </div>
@@ -5678,7 +5698,9 @@ const MIAO_ICON_PATHS={
   note:'<path d="M6 5h12v14H6z"/><path d="M9 9h6M9 13h5"/>',
   product:'<path d="M7 7h10v12H7z"/><path d="M9 7a3 3 0 0 1 6 0"/><path d="M10 12h4"/>',
   location:'<path d="M12 21s6-5.1 6-10.2A6 6 0 0 0 6 10.8C6 15.9 12 21 12 21z"/><circle cx="12" cy="10.8" r="2.2"/>',
-  weather:'<path d="M8.2 17.5h7.5a4 4 0 0 0 .4-8 5.2 5.2 0 0 0-10 1.7A3.3 3.3 0 0 0 8.2 17.5z"/><path d="M9 20l-1 1.5M13 20l-1 1.5M17 20l-1 1.5"/>'
+  weather:'<path d="M8.2 17.5h7.5a4 4 0 0 0 .4-8 5.2 5.2 0 0 0-10 1.7A3.3 3.3 0 0 0 8.2 17.5z"/><path d="M9 20l-1 1.5M13 20l-1 1.5M17 20l-1 1.5"/>',
+  play:'<path d="M8.5 6.7v10.6L16.8 12z"/>',
+  pause:'<path d="M9 6.8v10.4M15 6.8v10.4"/>'
 };
 function miaoIcon(name, cls){
   const key=MIAO_ICON_PATHS[name]?name:"app";
@@ -9859,6 +9881,7 @@ function renderMessageBody(m){
       <div class="voice-bubble${isUser?" user-voice":""}${hasAudio?" voice-real":""}" data-action="${hasAudio?"play-voice-audio":"toggle-voice-text"}" data-id="${escapeAttr(m.id)}">
         <div class="voice-wave">${waves}</div>
         <span class="voice-dur">${dur}"</span>
+        ${hasAudio?`<span class="voice-play-ico" aria-hidden="true"><span class="ico-play">${miaoIcon('play')}</span><span class="ico-pause">${miaoIcon('pause')}</span></span>`:""}
       </div>
       ${displayText?`<button class="voice-text-toggle" data-action="toggle-voice-text">转文字</button><div class="voice-text">${escapeHtml(displayText)}</div>`:""}
     </div>`;
@@ -9946,8 +9969,8 @@ function renderMessageBody(m){
   if(m.type==="delivery"){
     return `<div class="delivery-card"><div class="delivery-title">${d.fromShop?"商城代付链接":"外卖代付链接"}</div><div class="delivery-amount">¥${escapeHtml(d.amount||"0.00")}</div><div class="delivery-note">${escapeHtml(d.item||(d.fromShop?"商城订单":"外卖订单"))}</div><div class="delivery-note">状态：${d.status==="paid"?"已代付":d.status==="rejected"?"已拒绝":"等待对方处理"}</div>${d.status==="pending"?`<button class="card-action-btn" data-action="pay-delivery-manual" data-id="${m.id}">帮我付</button>`:""}</div>`;
   }
-  if(m.type==="paid") return `<div class="paid-card">我已帮忙代付<br><b>¥${escapeHtml(d.amount||"0.00")}</b></div>`;
-  if(m.type==="received") return `<div class="received-card">已收款<br><b>¥${escapeHtml(d.amount||"0.00")}</b></div>`;
+  if(m.type==="paid") return `<div class="paid-card"><div class="money-title">已帮付</div><div class="money-amount">¥${escapeHtml(d.amount||"0.00")}</div>${d.note?`<div class="money-note">${escapeHtml(d.note)}</div>`:""}</div>`;
+  if(m.type==="received") return `<div class="received-card"><div class="money-title">已收款</div><div class="money-amount">¥${escapeHtml(d.amount||"0.00")}</div>${d.note?`<div class="money-note">${escapeHtml(d.note)}</div>`:""}</div>`;
   if(m.type==="rejected") return `<div class="reject-card">${escapeHtml(m.content||"已拒绝")}</div>`;
   // 流式传输中的临时消息：优先显示已接收到的内容
   const streamContent=Miao.state.streamPartial?.[m.id];
@@ -17467,7 +17490,7 @@ function listenHighlightLyric(i){
 }
 function listenSyncPlayState(){
   const btn=document.getElementById("listenPlayBtn"), cover=document.getElementById("listenCover"), playing=MusicEngine.isPlaying;
-  if(btn) btn.textContent=playing?"⏸":"▶";
+  if(btn) btn.innerHTML=playing?miaoIcon('pause'):miaoIcon('play');
   if(cover) cover.classList.toggle("playing",playing);
 }
 function listenSyncProgress(){
@@ -17530,7 +17553,7 @@ function ensureMiniBar(){
   el.id="musicMiniBar"; el.className="music-mini-bar";
   el.innerHTML='<div class="mmb-cover" id="mmbCover" data-mmb="open"><span data-miao-icon="music"></span></div>'+
     '<div class="mmb-info" data-mmb="open"><div class="mmb-title" id="mmbTitle"></div><div class="mmb-lyric" id="mmbLyric"></div></div>'+
-    '<button class="mmb-btn play" id="mmbToggle" data-mmb="toggle" aria-label="播放/暂停">▶</button>'+
+    '<button class="mmb-btn play" id="mmbToggle" data-mmb="toggle" aria-label="播放/暂停">'+miaoIcon('play')+'</button>'+
     '<button class="mmb-btn" data-mmb="next" aria-label="下一首">››</button>'+
     '<div class="mmb-progress"><div class="mmb-progress-fill" id="mmbProgressFill"></div></div>';
   document.body.appendChild(el);
@@ -17578,7 +17601,7 @@ function miniBarSync(){
   const cover=document.getElementById("mmbCover"), title=document.getElementById("mmbTitle"), toggle=document.getElementById("mmbToggle");
   if(title) title.textContent=(t.name||"")+(t.artist?" · "+t.artist:"");
   if(cover){ if(t.cover){ cover.style.backgroundImage='url("'+t.cover+'")'; cover.classList.add("has-img"); } else { cover.style.backgroundImage=""; cover.classList.remove("has-img"); } cover.classList.toggle("spin",MusicEngine.isPlaying); }
-  if(toggle) toggle.textContent=MusicEngine.isPlaying?"⏸":"▶";
+  if(toggle) toggle.innerHTML=MusicEngine.isPlaying?miaoIcon('pause'):miaoIcon('play');
   miniBarLyric(MusicEngine.lyricIndex); miniBarProgress();
 }
 function miniBarLyric(i){
