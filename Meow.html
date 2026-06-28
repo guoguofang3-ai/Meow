@@ -4282,6 +4282,146 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 .diary-title{font-size:15.5px!important;}
 .diary-text{font-size:11.5px!important;line-height:1.7!important;max-height:116px!important;}
 
+
+
+/* ===== 微信/Claude 会话排版统一：更接近截图聊天形态 + 轮级 ThoughtProcess ===== */
+.wechat{background:linear-gradient(180deg,#f7f4ef 0%,#f5f1eb 100%)!important;}
+.app-screen.wechat .wechat-head{
+  padding:calc(8px + env(safe-area-inset-top)) 12px 8px!important;
+  min-height:calc(54px + env(safe-area-inset-top))!important;
+  background:color-mix(in srgb,var(--bar-bg,#fbfaf6) 82%,transparent)!important;
+  box-shadow:0 1px 0 rgba(42,36,28,.055),0 8px 22px rgba(38,31,22,.035)!important;
+}
+.app-screen.wechat .wechat-head .profile{max-width:62%!important;gap:8px!important;}
+.app-screen.wechat .profile-avatar{width:34px!important;height:34px!important;box-shadow:0 4px 14px rgba(38,31,22,.08);}
+.app-screen.wechat .profile-title{font-size:15px!important;font-weight:900!important;max-width:160px!important;}
+.app-screen.wechat .profile-sub{font-size:10px!important;opacity:.68!important;}
+.app-screen.wechat .icon-btn,.app-screen.wechat .session-title-btn{width:36px!important;height:36px!important;}
+.app-screen.wechat .chat{
+  padding:8px 10px 6px!important;
+  background:linear-gradient(180deg,#f7f4ef 0%,#f5f1eb 100%)!important;
+  -webkit-overflow-scrolling:touch;
+}
+.app-screen.wechat .date-chip{
+  margin:8px auto 10px!important;
+  padding:4px 9px!important;
+  border-radius:999px!important;
+  background:rgba(78,67,57,.08)!important;
+  color:rgba(78,67,57,.58)!important;
+  font-size:10.5px!important;
+  font-weight:760!important;
+}
+.app-screen.wechat .msg{gap:7px!important;margin:7px 0!important;align-items:flex-start!important;}
+.app-screen.wechat .msg.user{gap:7px!important;}
+.app-screen.wechat .avatar{
+  width:31px!important;height:31px!important;margin-top:1px!important;
+  box-shadow:0 2px 8px rgba(38,31,22,.07)!important;
+}
+.app-screen.wechat .bubble-wrap{max-width:82%!important;}
+.app-screen.wechat .msg.user .bubble-wrap{max-width:80%!important;}
+.app-screen.wechat .name-line{
+  margin:0 5px 2px!important;
+  font-size:calc(9.5px * var(--font-scale,1))!important;
+  color:rgba(78,67,57,.46)!important;
+}
+.app-screen.wechat .bubble{
+  padding:8px 10px!important;
+  border-radius:15px!important;
+  font-size:calc(13.5px * var(--font-scale,1))!important;
+  line-height:1.48!important;
+  box-shadow:0 3px 12px rgba(38,31,22,.04)!important;
+  border:1px solid rgba(78,67,57,.055)!important;
+}
+.app-screen.wechat .msg.role .bubble{
+  background:color-mix(in srgb,var(--role-bubble-bg,#fffdf8) 96%,transparent)!important;
+  color:var(--role-text,#332f2b)!important;
+  border-bottom-left-radius:5px!important;
+}
+.app-screen.wechat .msg.user .bubble{
+  background:color-mix(in srgb,var(--user-bubble-bg,#eadfd3) 92%,var(--accent,#111827) 8%)!important;
+  color:var(--user-text,#2d2925)!important;
+  border-bottom-right-radius:5px!important;
+}
+.app-screen.wechat .time-line,.app-screen.wechat .read-line{
+  margin:2px 6px 0!important;
+  min-height:20px;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  font-size:calc(9.5px * var(--font-scale,1))!important;
+  color:rgba(78,67,57,.42)!important;
+}
+.app-screen.wechat .group-meta-line{
+  margin:0 4px 6px 0!important;
+  min-height:auto!important;
+  gap:6px!important;
+  color:rgba(47,42,38,.58)!important;
+  justify-content:flex-start!important;
+}
+.app-screen.wechat .group-meta-text{letter-spacing:.01em;}
+.app-screen.wechat .read-line{justify-content:flex-end;color:rgba(78,67,57,.42)!important;}
+.app-screen.wechat .msg:not([data-first-role-group="1"]) .thinking-btn{display:none!important;}
+.app-screen.wechat .thinking-btn{
+  width:23px!important;height:23px!important;margin:0 0 0 2px!important;
+  background:rgba(255,255,255,.74)!important;
+  color:color-mix(in srgb,var(--accent,#8f776b) 62%,#8b8178)!important;
+  border:1px solid rgba(78,67,57,.08)!important;
+  box-shadow:0 4px 12px rgba(38,31,22,.055)!important;
+}
+.app-screen.wechat .thinking-btn.pending{opacity:.76;}
+.app-screen.wechat .thinking-btn:active{transform:scale(.94);background:rgba(255,255,255,.92)!important;}
+.app-screen.wechat .thinking-btn .think-drawn-icon{display:block!important;width:15px!important;height:12px!important;}
+.app-screen.wechat .composer-wrap{
+  background:color-mix(in srgb,var(--bar-bg,#fbfaf6) 88%,transparent)!important;
+  box-shadow:0 -1px 0 rgba(42,36,28,.055),0 -8px 24px rgba(38,31,22,.035)!important;
+}
+.app-screen.wechat .toolbar{padding:7px 9px 0!important;gap:6px!important;}
+.app-screen.wechat .chip-btn{padding:7px 11px!important;font-size:11.5px!important;}
+.app-screen.wechat .composer{padding:7px 9px calc(8px + env(safe-area-inset-bottom))!important;gap:7px!important;}
+.app-screen.wechat .composer textarea{
+  min-height:40px!important;border-radius:18px!important;padding:9px 12px!important;
+  background:rgba(255,255,255,.78)!important;
+}
+.app-screen.wechat .call-btn,.app-screen.wechat .send-btn{width:40px!important;height:40px!important;min-width:40px!important;}
+.wechat-real-image-card{max-width:min(250px,74vw)!important;border-radius:13px!important;background:#fff!important;box-shadow:0 5px 16px rgba(38,31,22,.075)!important;}
+.wechat-real-image-card img{max-height:310px!important;border-radius:13px 13px 0 0!important;}
+.wechat-real-image-caption{font-size:calc(10.5px * var(--font-scale,1))!important;padding:6px 8px!important;color:rgba(47,43,39,.66)!important;background:rgba(255,255,255,.86)!important;}
+.image-desc-card,.music-card,.link-card,.money-card,.delivery-card,.paid-card,.received-card,.reject-card{border-radius:15px!important;box-shadow:0 5px 16px rgba(38,31,22,.06)!important;}
+.sticker-msg-img{max-width:112px!important;max-height:112px!important;border-radius:14px!important;}
+.thinking-panel{
+  max-height:58%!important;
+  background:color-mix(in srgb,var(--bar-bg,#fffdf8) 96%,transparent)!important;
+  border-radius:24px 24px 0 0!important;
+}
+.thinking-panel-title{font-size:15px!important;color:var(--bar-text,#332f2b)!important;}
+.thinking-panel-body{font-size:calc(13px * var(--font-scale,1))!important;color:rgba(47,43,39,.76)!important;}
+.claude-app{background:linear-gradient(180deg,#f7f4ef,#f2eee7)!important;}
+.claude-app>.header{
+  padding:calc(9px + env(safe-area-inset-top)) 12px 8px!important;
+  min-height:calc(54px + env(safe-area-inset-top))!important;
+  background:color-mix(in srgb,var(--bar-bg,#fbfaf6) 84%,transparent)!important;
+}
+.claude-app>.header .chat-title-row{max-width:60%!important;}
+.claude-app>.header .header-title{font-size:15px!important;font-weight:920!important;}
+.claude-modebar{padding:7px 10px!important;gap:6px!important;background:rgba(255,255,255,.46)!important;}
+.claude-modebar button{padding:7px 8px!important;font-size:11.5px!important;}
+.claude-chat{padding:8px 10px 8px!important;background:linear-gradient(180deg,#f7f4ef,#f2eee7)!important;}
+.claude-msg{gap:7px!important;margin:7px 0!important;}
+.claude-avatar{width:31px!important;height:31px!important;box-shadow:0 2px 8px rgba(38,31,22,.07)!important;}
+.claude-bwrap{max-width:82%!important;}
+.claude-msg.user .claude-bwrap{max-width:80%!important;}
+.claude-name{font-size:calc(9.5px * var(--font-scale,1))!important;color:rgba(78,67,57,.46)!important;margin:0 5px 2px!important;}
+.claude-bubble{padding:8px 10px!important;border-radius:15px!important;font-size:calc(13.5px * var(--font-scale,1))!important;line-height:1.5!important;box-shadow:0 3px 12px rgba(38,31,22,.04)!important;}
+.claude-msg.assistant .claude-bubble{background:rgba(255,253,248,.96)!important;color:var(--role-text,#332f2b)!important;border-bottom-left-radius:5px!important;}
+.claude-msg.user .claude-bubble{background:color-mix(in srgb,var(--user-bubble-bg,#eadfd3) 92%,var(--accent,#111827) 8%)!important;color:var(--user-text,#2d2925)!important;border-bottom-right-radius:5px!important;}
+.claude-file-card{width:min(250px,74vw)!important;border-radius:15px!important;padding:10px!important;}
+.claude-file-preview{max-height:104px!important;border-radius:11px!important;}
+.claude-real-img{max-width:min(250px,74vw)!important;border-radius:13px!important;}
+.claude-composer-wrap{background:color-mix(in srgb,var(--bar-bg,#fbfaf6) 88%,transparent)!important;}
+.claude-toolbar{padding:7px 9px 0!important;gap:6px!important;}
+.claude-composer{padding:7px 9px calc(8px + env(safe-area-inset-bottom))!important;gap:7px!important;}
+.claude-composer textarea{min-height:40px!important;border-radius:18px!important;padding:9px 12px!important;background:rgba(255,255,255,.78)!important;}
+.claude-invoke,.claude-send{width:40px!important;height:40px!important;min-width:40px!important;}
 </style>
 <script>window.MIAO_BUILD="ClawdPetWechatControlV1";</script>
 </head>
@@ -9290,6 +9430,37 @@ document.addEventListener("input",function(e){
   syncQuizCustomInput();
 },true);
 
+function isWechatVisualGroupMessage(m){
+  if(!m) return false;
+  if(m.sender!=='user' && m.sender!=='role') return false;
+  if(['error','system','tool_trace','quiz','recalled'].includes(m.type)) return false;
+  return true;
+}
+function isSameWechatVisualGroup(a,b){
+  if(!isWechatVisualGroupMessage(a) || !isWechatVisualGroupMessage(b)) return false;
+  if(a.sender!==b.sender) return false;
+  const ag=a.groupId?String(a.groupId):'';
+  const bg=b.groupId?String(b.groupId):'';
+  if(ag && bg) return ag===bg;
+  if(a.sender==='role') return false;
+  return true;
+}
+function formatWechatGroupTime(m){
+  try{
+    const raw = m && (m.createdAt || m.created_at || m.ts || m.time);
+    const d = new Date(raw);
+    if(!isNaN(d.getTime())){
+      const M=d.getMonth()+1;
+      const D=d.getDate();
+      const hh=String(d.getHours()).padStart(2,'0');
+      const mm=String(d.getMinutes()).padStart(2,'0');
+      const ss=String(d.getSeconds()).padStart(2,'0');
+      return `${M}/${D} ${hh}:${mm}:${ss}`;
+    }
+  }catch(e){}
+  return String((m&&m.time)||'');
+}
+
 function renderMessage(m,h,idx){
   if(m.type==="error") return `<div class="system-card error err-dismissable"><span class="err-text">${escapeHtml(m.content)}</span><button class="err-close" onclick="dismissErrorMsg('${m.id}')" title="关闭">×</button></div>`;
   if(m.type==="recalled") return `<div class="recalled-msg"><div class="recalled-msg-inner">${escapeHtml(m.content||"你撤回了一条消息")}</div></div>`;
@@ -9305,17 +9476,27 @@ function renderMessage(m,h,idx){
   const isBlockedMsg=isUser && (m.blockedFail===true || (blockedNow && blockedAt && m.createdAt>=blockedAt));
   const cls=isUser?"user":"role";
   const avatar=isUser?(userProfile.avatar||Miao.defaults.avatar):(role.avatar||Miao.defaults.avatar);
+  const prev=h[idx-1];
   const next=h[idx+1];
-  const isLastInAssistantGroup = !isUser && (!next || next.sender!=="role" || next.groupId!==m.groupId);
-  return `<div class="msg ${cls}${isBlockedMsg?" blocked-msg":""}" data-id="${m.id}" data-group-id="${m.groupId||""}" data-sender="${m.sender}" data-last-role-group="${isLastInAssistantGroup ? "1" : "0"}">
+  const isFirstInVisualGroup=!isSameWechatVisualGroup(prev,m);
+  const isLastInVisualGroup=!isSameWechatVisualGroup(m,next);
+  const sameRoleGroup=!isUser && m.groupId;
+  const groupMsgs=sameRoleGroup ? h.filter(x=>x&&x.sender==="role"&&x.groupId===m.groupId) : [m];
+  const groupThoughtMsg=groupMsgs.find(x=>x&&x.thinking) || [...groupMsgs].reverse().find(x=>x&&x.type!=="system"&&x.type!=="quiz"&&x.type!=="tool_trace") || m;
+  const showGroupThought=!isUser && isFirstInVisualGroup && (groupThoughtMsg?.thinking || getThoughtMode()==="ondemand");
+  const thoughtTitle = groupThoughtMsg?.thinking ? "查看本轮 ThoughtProcess" : "按需生成本轮 ThoughtProcess";
+  const thoughtBtn = showGroupThought ? ` <button class="thinking-btn${groupThoughtMsg?.thinking?"":" pending"}" onclick="event.stopPropagation();openThinking('${groupThoughtMsg.id}')" title="${thoughtTitle}" aria-label="${thoughtTitle}"><span class="think-drawn-icon" aria-hidden="true"></span></button>` : "";
+  const groupMeta = (!isUser && isFirstInVisualGroup) ? `<div class="time-line group-meta-line"><span class="group-meta-text">${escapeHtml(formatWechatGroupTime(m))}</span>${thoughtBtn}</div>` : "";
+  const readLine = isUser && isLastInVisualGroup ? `<div class="read-line">${m.read?"已读":"未读"}</div>` : "";
+  return `<div class="msg ${cls}${isBlockedMsg?" blocked-msg":""}" data-id="${m.id}" data-group-id="${m.groupId||""}" data-sender="${m.sender}" data-first-role-group="${(!isUser && isFirstInVisualGroup) ? "1" : "0"}" data-last-role-group="${(!isUser && isLastInVisualGroup) ? "1" : "0"}">
     ${multiSelectMode?`<div class="multi-check${multiSelectedIds.has(m.id)?" checked":""}" onclick="toggleMultiSelect('${m.id}')"></div>`:""}
     <img class="avatar" src="${avatar}" alt="">
     <div class="bubble-wrap">
-      ${!isUser?`<div class="name-line">${escapeHtml(role.name)}</div>`:""}
+      ${groupMeta}
+      ${(!isUser && isFirstInVisualGroup)?`<div class="name-line">${escapeHtml(role.name)}</div>`:""}
       ${m.quoteId ? renderQuoteBlock(m) : ""}
       ${renderMessageBody(m)}
-      <div class="time-line">${escapeHtml(m.time||"")}${!isUser&&(m.thinking || getThoughtMode()==="ondemand")?` <button class="thinking-btn${m.thinking?"":" pending"}" onclick="openThinking('${m.id}')" title="${m.thinking?"查看 ThoughtProcess":"按需生成 ThoughtProcess"}" aria-label="${m.thinking?"查看 ThoughtProcess":"按需生成 ThoughtProcess"}"></button>`:""}</div>
-      ${isUser?`<div class="read-line">${m.read?"已读":"未读"}</div>`:""}
+      ${readLine}
     </div>
   </div>`;
 }
@@ -17817,29 +17998,34 @@ async function openThinking(msgId){
   const idx=h.findIndex(x=>x.id===msgId);
   const m=idx>=0?h[idx]:null;
   if(!m) return;
+  const group=m.groupId ? h.filter(x=>x&&x.groupId===m.groupId&&x.sender==="role") : [m];
+  const parsed=group.map(x=>Object.assign({},x));
+  const holder=group.find(x=>x&&x.thinking) || getThoughtTarget(parsed) || m;
+  const holderIdx=h.findIndex(x=>x.id===holder.id);
   const body=document.getElementById("thinkingBody");
   const mask=document.getElementById("thinkingMask");
   if(mask) mask.classList.add("show");
-  if(m.thinking){
-    if(body) body.textContent=normalizeThinkingForPanel(m.thinking, m.content||"");
+  const finalText=finalReplyTextForThought(parsed) || group.map(x=>x.content||"").join("\n");
+  if(holder.thinking){
+    if(body) body.textContent=normalizeThinkingForPanel(holder.thinking, finalText);
     return;
   }
   if(getThoughtMode()!=="ondemand"){
-    if(body) body.textContent="这条消息没有 ThoughtProcess。";
+    if(body) body.textContent="这一轮回复没有 ThoughtProcess。";
     return;
   }
+  const demandKey=m.groupId || holder.id || msgId;
   window._thoughtDemanding=window._thoughtDemanding||{};
-  if(window._thoughtDemanding[msgId]){
-    if(body) body.textContent="正在生成 ThoughtProcess…";
+  if(window._thoughtDemanding[demandKey]){
+    if(body) body.textContent="正在生成本轮 ThoughtProcess…";
     return;
   }
-  window._thoughtDemanding[msgId]=1;
-  if(body) body.textContent="正在生成 ThoughtProcess…";
+  window._thoughtDemanding[demandKey]=1;
+  if(body) body.textContent="正在生成本轮 ThoughtProcess…";
   try{
     const role=currentRole();
-    const prevUser=h.slice(0,idx).reverse().find(x=>x&&x.sender==="user") || null;
-    const parsed=(m.groupId?h.filter(x=>x&&x.groupId===m.groupId&&x.sender==="role"):[m]).map(x=>Object.assign({},x));
-    const thoughtContext=buildRecentThoughtContextFromHistory(h, prevUser, parsed, {targetIndex:idx});
+    const prevUser=h.slice(0,holderIdx>=0?holderIdx:idx).reverse().find(x=>x&&x.sender==="user") || null;
+    const thoughtContext=buildRecentThoughtContextFromHistory(h, prevUser, parsed, {targetIndex:holderIdx>=0?holderIdx:idx});
     const api=Storage.get("api",{});
     let thought="";
     if(api.apiUrl && api.apiKey && api.model){
@@ -17848,15 +18034,16 @@ async function openThinking(msgId){
     if(!thought) thought=fallbackThoughtTextV2(role, prevUser?.content||"", parsed, thoughtContext);
     thought=sanitizeThoughtTextV2(thought, parsed);
     if(thought){
-      updateThoughtInHistory(Miao.state.currentRoleId, msgId, thought);
-      const fresh=getHistory().find(x=>x.id===msgId);
+      updateThoughtInHistory(Miao.state.currentRoleId, holder.id, thought);
+      const fresh=getHistory().find(x=>x.id===holder.id);
       if(fresh) fresh.thinking=thought;
-      if(body) body.textContent=normalizeThinkingForPanel(thought, m.content||"");
+      holder.thinking=thought;
+      if(body) body.textContent=normalizeThinkingForPanel(thought, finalText);
     }else{
       if(body) body.textContent="暂时没有生成出 ThoughtProcess。";
     }
   }finally{
-    delete window._thoughtDemanding[msgId];
+    delete window._thoughtDemanding[demandKey];
   }
 }
 function closeThinking(e){
