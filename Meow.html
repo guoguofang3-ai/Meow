@@ -263,16 +263,17 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .cottage-drawer summary{list-style:none;display:flex;align-items:center;justify-content:space-between;padding:15px 16px;font-weight:950;color:#4e3d39}
 .cottage-drawer summary::-webkit-details-marker{display:none}
 .cottage-drawer summary span:last-child{font-family:Georgia,"Times New Roman",serif;color:#b79a91;font-weight:500}
-.cottage-tool-list{display:grid;gap:1px;padding:0 10px 12px}
+.cottage-tool-list{display:grid;gap:8px;padding:0 10px 12px}
 .cottage-tool-group{padding:5px 0 8px}
 .cottage-tool-group-title{display:flex;align-items:center;gap:9px;margin:8px 4px 5px;font-family:Georgia,"Times New Roman",serif;letter-spacing:.22em;text-transform:uppercase;font-size:10px;color:#b79a91}
 .cottage-tool-group-title:after{content:"";height:1px;flex:1;background:rgba(183,154,145,.22)}
-.cottage-tool{border:0;background:rgba(255,255,255,.42);color:#6f5650;text-align:left;display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:10px;padding:11px 12px;border-radius:16px;margin-top:7px}
-.cottage-tool-icon{width:36px;height:36px;border-radius:14px;background:rgba(245,235,221,.82)}
+.cottage-tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.cottage-tool{border:0;background:rgba(255,255,255,.42);color:#6f5650;text-align:left;display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:9px;padding:10px;border-radius:16px;min-height:66px}
+.cottage-tool-icon{width:34px;height:34px;border-radius:14px;background:rgba(245,235,221,.82);flex:0 0 auto}
 .cottage-tool-icon svg{width:19px;height:19px}
-.cottage-tool b{font-size:14px;color:#4e3d39}
-.cottage-tool small{display:block;font-size:11px;color:#a89289;margin-top:2px}
-.cottage-tool .miao-mini-icon{width:15px;height:15px;color:#cfa6a0}
+.cottage-tool b{display:block;min-width:0;font-size:13px;color:#4e3d39;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cottage-tool small{display:block;min-width:0;font-size:10px;line-height:1.35;color:#a89289;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cottage-tool .miao-mini-icon{display:none}
 .cottage-bottom-nav{position:absolute;left:22px;right:22px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:6;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:10px 12px;border-radius:32px;background:rgba(255,255,255,.66);border:1px solid rgba(255,255,255,.78);box-shadow:0 16px 40px rgba(111,86,80,.13);backdrop-filter:blur(22px) saturate(1.05);-webkit-backdrop-filter:blur(22px) saturate(1.05)}
 .cottage-tab{border:0;background:transparent;color:#9b847c;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;padding:5px 2px;border-radius:20px;font-size:11px;font-weight:850}
 .cottage-tab.active{background:#3f3735;color:#fff;box-shadow:0 10px 24px rgba(63,55,53,.18)}
@@ -7838,7 +7839,7 @@ function renderHome(){
     <span><b>${escapeHtml(app.name)}</b><small>${escapeHtml(app.sub||"")}</small></span>
     ${miaoIcon("chevron","miao-mini-icon")}
   </button>`;
-  const groupHtml=(group)=>`<div class="cottage-tool-group"><div class="cottage-tool-group-title">${escapeHtml(group.title)}</div>${group.items.map(tool).join("")}</div>`;
+  const groupHtml=(group)=>`<div class="cottage-tool-group"><div class="cottage-tool-group-title">${escapeHtml(group.title)}</div><div class="cottage-tool-grid">${group.items.map(tool).join("")}</div></div>`;
   if(decor.bg) grid.style.background=decor.bg;
   else grid.style.background="";
   const visual=decor.visualImage ? `<img src="${escapeAttr(decor.visualImage)}" alt="">` : miaoIcon("book");
