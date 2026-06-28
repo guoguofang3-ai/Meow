@@ -2795,6 +2795,9 @@ body{font-size:calc(14px * var(--font-scale));}
 .album-card{display:flex;gap:10px;border-radius:18px;padding:10px;background:rgba(255,255,255,.66);border:1px solid rgba(90,70,45,.06);box-shadow:0 8px 22px rgba(70,50,42,.045);}
 .album-thumb-btn{border:0;padding:0;background:transparent;flex:0 0 92px;}
 .album-thumb{width:92px;height:92px;object-fit:cover;border-radius:14px;display:block;background:#eee;}
+.album-thumb-placeholder{display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;color:#9b847c;font-size:12px;font-weight:900;line-height:1.35;}
+.album-thumb-btn.album-thumb-broken{width:92px;height:92px;border-radius:14px;background:#eee;color:#9b847c;display:flex;align-items:center;justify-content:center;}
+.album-thumb-btn.album-thumb-broken::after{content:"图片已过期";font-size:12px;font-weight:900;line-height:1.35;}
 .album-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;}
 .album-title-row{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;}
 .album-title{font-size:14px;font-weight:1000;line-height:1.3;}
@@ -12083,7 +12086,7 @@ function buildClaudeToolUsePrompt(policy={}){
     lines.push(`- write_memory(category, title, content)：写入${memScope}，重复标题自动跳过；本工具本轮真实可用，不要说没有写入记忆工具`);
     lines.push(`- read_memory(category?, query?, limit?)：读取${memScope}`);
     lines.push("- read_diary(query?, category?, limit?)：读取 user 的私人日记；日记是 user 资料，不等于 Claude 记忆");
-    lines.push("- save_album_photo(title?, summary?, note?, thumbUrl, imageName?, sourceMsgId?, sourceLabel?)：把 user 发来的真实图片存入相册；只在角色确实想保存时使用");
+    lines.push("- save_album_photo(title?, summary?, note?, thumbUrl?, imageName?, sourceMsgId?, sourceLabel?)：把 user 发来的真实图片存入相册；只在角色确实想保存时使用。thumbUrl 不知道就留空，不要编造标题/描述当图片地址");
     lines.push("- write_album_note(photoId, note)：给相册照片写随记或补一句话；适合看图后留痕");
     lines.push("- read_album(query?, limit?)：翻看相册里最近的照片、随记和评论；不要频繁翻，按需读取");
   }
@@ -17723,10 +17726,126 @@ function getAlbumEntries(){
   return Array.isArray(list)?list:[];
 }
 function saveAlbumEntries(list){ Storage.set(albumKey(), Array.isArray(list)?list:[]); }
-function albumThumbOf(item){ return item?.thumbUrl || item?.imageUrl || item?.dataUrl || item?.thumb || ""; }
+function albumRawThumbOf(item){ return item?.thumbUrl || item?.imageUrl || item?.dataUrl || item?.thumb || ""; }
+function isAlbumImageUrl(url){
+  const s=String(url||"").trim();
+  if(!s) return false;
+  if(/^data:image\//i.test(s)) return true;
+  if(/^blob:/i.test(s)) return true;
+  if(/^https?:\/\//i.test(s)) return true;
+  return false;
+}
+function findAlbumThumbById(id){
+  id=String(id||"").trim();
+  if(!id) return "";
+  try{
+    const u=window.wechatImageMap && window.wechatImageMap[id];
+    if(isAlbumImageUrl(u)) return u;
+  }catch(e){}
+  try{
+    const u=typeof getRecentImageMemoryThumb==="function" ? getRecentImageMemoryThumb(id) : "";
+    if(isAlbumImageUrl(u)) return u;
+  }catch(e){}
+  try{
+    const mem=(typeof getImageMemorySource==="function" ? getImageMemorySource() : []).find(x=>x&&x.id===id);
+    if(isAlbumImageUrl(mem?.thumbUrl)) return mem.thumbUrl;
+  }catch(e){}
+  try{
+    const h=typeof getHistory==="function" ? getHistory() : [];
+    const m=h.find(x=>x&&x.id===id);
+    const d=m?.data||{};
+    const u=(window.wechatImageMap&&window.wechatImageMap[id]) || d.thumbUrl || d.dataUrl || d.url || "";
+    if(isAlbumImageUrl(u)) return u;
+  }catch(e){}
+  try{
+    const h=typeof getClaudeHistory==="function" ? getClaudeHistory() : [];
+    const m=h.find(x=>x&&x.id===id);
+    const d=m?.data||{};
+    const u=(window.claudeFileContextMap&&window.claudeFileContextMap[id]?.dataUrl) || d.url || d.thumbUrl || d.dataUrl || "";
+    if(isAlbumImageUrl(u)) return u;
+  }catch(e){}
+  return "";
+}
+function latestAlbumMemoryThumb(){
+  try{
+    const list=typeof collectRecentImageMemory==="function" ? collectRecentImageMemory() : (typeof getImageMemorySource==="function" ? getImageMemorySource() : []);
+    for(let i=list.length-1;i>=0;i--){
+      const u=list[i]?.thumbUrl;
+      if(isAlbumImageUrl(u)) return u;
+    }
+  }catch(e){}
+  return "";
+}
+function latestWechatImageThumb(){
+  try{
+    const h=typeof getHistory==="function" ? getHistory() : [];
+    for(let i=h.length-1;i>=0;i--){
+      const m=h[i];
+      if(m?.type!=="image_desc") continue;
+      const d=m.data||{};
+      const u=(window.wechatImageMap&&window.wechatImageMap[m.id]) || d.thumbUrl || d.dataUrl || (typeof getRecentImageMemoryThumb==="function" ? getRecentImageMemoryThumb(m.id) : "");
+      if(isAlbumImageUrl(u)) return u;
+    }
+  }catch(e){}
+  return "";
+}
+function latestClaudeImageThumb(){
+  try{
+    const h=typeof getClaudeHistory==="function" ? getClaudeHistory() : [];
+    for(let i=h.length-1;i>=0;i--){
+      const m=h[i];
+      const d=m?.data||{};
+      if(!(m?.type==="file"&&d.kind==="image") && m?.type!=="image_gen") continue;
+      const u=(window.claudeFileContextMap&&window.claudeFileContextMap[m.id]?.dataUrl) || d.url || d.thumbUrl || d.dataUrl || "";
+      if(isAlbumImageUrl(u)) return u;
+    }
+  }catch(e){}
+  return "";
+}
+function resolveAlbumThumbUrl(raw={}, opts={}){
+  const direct=String(albumRawThumbOf(raw)||"").trim();
+  if(isAlbumImageUrl(direct)) return direct;
+  const ids=[];
+  [raw.sourceMsgId, raw.msgId, raw.sourceId].forEach(x=>{ if(x) ids.push(x); });
+  // 兼容旧坏数据：模型有时把 msg_xxx 写进 thumbUrl，而不是写真正 data URL。
+  if(direct && /^[a-z]+_[0-9a-z]+_/i.test(direct)) ids.push(direct);
+  for(const id of ids){
+    const u=findAlbumThumbById(id);
+    if(isAlbumImageUrl(u)) return u;
+  }
+  if(opts.allowLatest!==false){
+    const u=latestAlbumMemoryThumb() || latestWechatImageThumb() || latestClaudeImageThumb();
+    if(isAlbumImageUrl(u)) return u;
+  }
+  return "";
+}
+function albumThumbOf(item){ return resolveAlbumThumbUrl(item,{allowLatest:false}) || String(albumRawThumbOf(item)||"").trim(); }
+function repairAlbumBrokenThumbs(){
+  const list=Storage.get(albumKey(),[]);
+  if(!Array.isArray(list) || !list.length) return list||[];
+  let changed=false;
+  let usedLatest=false;
+  const fixed=list.map((item,idx)=>{
+    const direct=String(albumRawThumbOf(item)||"").trim();
+    if(isAlbumImageUrl(direct)) return item;
+    let thumb=resolveAlbumThumbUrl(item,{allowLatest:false});
+    // 刚保存坏图时通常就是列表第一张：允许只给第一张用最近图片兜底，避免旧坏数据批量串图。
+    if(!thumb && idx===0 && !usedLatest){
+      thumb=resolveAlbumThumbUrl(item,{allowLatest:true});
+      if(thumb) usedLatest=true;
+    }
+    if(isAlbumImageUrl(thumb) && thumb!==direct){
+      changed=true;
+      return Object.assign({}, item, {thumbUrl:thumb, updatedAt:Date.now()});
+    }
+    return item;
+  });
+  if(changed) saveAlbumEntries(fixed);
+  return fixed;
+}
 function normalizeAlbumItem(raw={}){
   const now=Date.now();
-  const thumb=String(albumThumbOf(raw)||"").trim();
+  const thumb=String(resolveAlbumThumbUrl(raw,{allowLatest:true})||"").trim();
   const title=String(raw.title||raw.summary||raw.note||raw.imageName||"照片").trim().slice(0,40);
   const summary=String(raw.summary||raw.note||raw.title||"").trim().slice(0,160);
   const note=String(raw.note||raw.summary||"").trim().slice(0,500);
@@ -17773,7 +17892,7 @@ function appendAlbumComment(id, text, author="user"){
   return {status:"saved",id,comments:comments.length};
 }
 function albumToolSchema(){
-  return {type:"function",function:{name:"save_album_photo",description:"角色把 user 发来的真实图片存进相册，并可附一句随记。只在确实想留下这张图时使用。",parameters:{type:"object",properties:{title:{type:"string",description:"相册标题"},summary:{type:"string",description:"图片摘要"},note:{type:"string",description:"角色写的随记"},thumbUrl:{type:"string",description:"图片缩略图或可保存的 data URL"},imageName:{type:"string",description:"图片文件名"},sourceMsgId:{type:"string",description:"来源消息 id"},sourceLabel:{type:"string",description:"来源说明"}},required:["thumbUrl"]}}};
+  return {type:"function",function:{name:"save_album_photo",description:"角色把 user 发来的真实图片存进相册，并可附一句随记。只在确实想留下这张图时使用；不知道真实图片 URL 时不要编造，前端会从最近图片或来源消息兜底。",parameters:{type:"object",properties:{title:{type:"string",description:"相册标题"},summary:{type:"string",description:"图片摘要"},note:{type:"string",description:"角色写的随记"},thumbUrl:{type:"string",description:"真实图片缩略图或 data:image/...；不知道就留空，不要填标题、描述或文件名"},imageName:{type:"string",description:"图片文件名"},sourceMsgId:{type:"string",description:"来源消息 id；知道时填写，不知道可留空"},sourceLabel:{type:"string",description:"来源说明"}},required:[]}}};
 }
 function writeAlbumNoteToolSchema(){
   return {type:"function",function:{name:"write_album_note",description:"给已保存的相册照片追加角色随记。",parameters:{type:"object",properties:{photoId:{type:"string",description:"相册照片 id"},note:{type:"string",description:"要写下的随记"}},required:["photoId","note"]}}};
@@ -17782,7 +17901,9 @@ function readAlbumToolSchema(){
   return {type:"function",function:{name:"read_album",description:"翻看相册里保存过的照片、随记和评论。返回轻量摘要，不把大图塞进上下文。",parameters:{type:"object",properties:{query:{type:"string",description:"关键词"},limit:{type:"integer",description:"返回条数，默认8，最多20"}},required:[]}}};
 }
 function albumSaveFromTool(args={}, sourceLabel){
-  return addAlbumEntry({title:args.title||args.summary||args.note||args.imageName,summary:args.summary,note:args.note,thumbUrl:args.thumbUrl,imageName:args.imageName,sourceMsgId:args.sourceMsgId,sourceLabel:args.sourceLabel||sourceLabel||"角色存图"});
+  args=args||{};
+  const thumb=resolveAlbumThumbUrl(args,{allowLatest:true});
+  return addAlbumEntry({title:args.title||args.summary||args.note||args.imageName,summary:args.summary,note:args.note,thumbUrl:thumb,imageName:args.imageName,sourceMsgId:args.sourceMsgId,sourceLabel:args.sourceLabel||sourceLabel||"角色存图"});
 }
 function albumWriteNoteFromTool(args={}, sourceLabel){
   const id=args.photoId||args.id||"";
@@ -17799,7 +17920,7 @@ function albumReadTool(args={}){
   const limit=Math.min(Math.max(parseInt(args.limit)||8,1),20);
   let list=getAlbumEntries();
   if(q) list=list.filter(x=>[x.title,x.summary,x.note,x.imageName,x.sourceLabel].join(" ").toLowerCase().includes(q));
-  const results=list.slice(0,limit).map(x=>({id:x.id,title:x.title,summary:x.summary,note:x.note,sourceLabel:x.sourceLabel,createdAt:x.createdAt,updatedAt:x.updatedAt,comments:(x.comments||[]).slice(-2),thumbHint:x.thumbUrl?"有缩略图":""}));
+  const results=list.slice(0,limit).map(x=>({id:x.id,title:x.title,summary:x.summary,note:x.note,sourceLabel:x.sourceLabel,createdAt:x.createdAt,updatedAt:x.updatedAt,comments:(x.comments||[]).slice(-2),thumbHint:isAlbumImageUrl(albumThumbOf(x))?"有缩略图":""}));
   return {count:results.length,results};
 }
 
@@ -20558,12 +20679,18 @@ function clearDiarySearch(){
   renderDiary();
 }
 function renderAlbumItem(item){
+  const thumb=albumThumbOf(item);
+  const hasThumb=isAlbumImageUrl(thumb);
+  const title=item.title||"照片";
   const notes=[item.summary,item.note].filter(Boolean).map(t=>`<div class="album-note">${escapeHtml(t)}</div>`).join("");
   const comments=(item.comments||[]).slice(-4).map(c=>`<div class="album-comment ${c.author==="role"?"role":"user"}"><b>${c.author==="role"?"角色":"你"}</b><span>${escapeHtml(c.text||"")}</span></div>`).join("");
+  const thumbHtml=hasThumb
+    ? `<img class="album-thumb" src="${escapeAttr(thumb)}" alt="${escapeAttr(title)}" onerror="this.style.display='none';this.parentElement.classList.add('album-thumb-broken')">`
+    : `<div class="album-thumb album-thumb-placeholder">图片待修复</div>`;
   return `<article class="album-card" data-id="${escapeAttr(item.id)}">
-    <button class="album-thumb-btn" data-action="open-album-item" data-id="${escapeAttr(item.id)}"><img class="album-thumb" src="${escapeAttr(item.thumbUrl)}" alt="${escapeAttr(item.title)}"></button>
+    <button class="album-thumb-btn" data-action="open-album-item" data-id="${escapeAttr(item.id)}">${thumbHtml}</button>
     <div class="album-body">
-      <div class="album-title-row"><div class="album-title">${escapeHtml(item.title||"照片")}</div><button class="icon-btn album-menu-btn" data-action="album-menu" data-id="${escapeAttr(item.id)}">⋯</button></div>
+      <div class="album-title-row"><div class="album-title">${escapeHtml(title)}</div><button class="icon-btn album-menu-btn" data-action="album-menu" data-id="${escapeAttr(item.id)}">⋯</button></div>
       <div class="album-meta">${escapeHtml(item.sourceLabel||"角色存图")}${item.imageName?" · "+escapeHtml(item.imageName):""}</div>
       ${notes}
       <div class="album-comment-list">${comments}</div>
@@ -20574,6 +20701,7 @@ function renderAlbumItem(item){
 function renderAlbum(){
   const box=$("#albumList");
   if(!box) return;
+  repairAlbumBrokenThumbs();
   const list=getAlbumEntries();
   if(!list.length){
     box.innerHTML=`<div class="album-empty"><div class="album-empty-title">还没有相册照片</div><div class="album-empty-sub">角色看见想留下的图，会自己存进这里。你也可以在每张图下评论。</div></div>`;
@@ -20582,8 +20710,11 @@ function renderAlbum(){
   box.innerHTML=list.map(renderAlbumItem).join("");
 }
 function openAlbumPreview(item){
-  const img=item?.thumbUrl||"";
-  if(!img) return;
+  const img=albumThumbOf(item);
+  if(!isAlbumImageUrl(img)){
+    toast("这张照片的图片数据已失效，重新让角色存一次即可修复");
+    return;
+  }
   const w=window.open("","_blank");
   if(w){
     w.document.write(`<title>${escapeHtml(item?.title||"照片")}</title><img src="${escapeAttr(img)}" style="max-width:100%;height:auto;display:block;margin:0 auto">`);
