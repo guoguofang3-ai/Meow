@@ -5558,7 +5558,7 @@ function openSessionMenu(kind,id,e){
   showMsgCtxMenu(e,[
     {label:"重命名",onClick:()=>{ const name=prompt("新的聊天标题",s.title||""); if(!name) return; saveSessions(kind,list.map(x=>x.id===id?Object.assign({},x,{title:name.trim()||x.title}):x)); openSessionDrawer(kind); }},
     {label:s.pinned?"取消置顶":"置顶",onClick:()=>{ saveSessions(kind,list.map(x=>x.id===id?Object.assign({},x,{pinned:!x.pinned,updatedAt:sessionNow()}):x)); openSessionDrawer(kind); }},
-    {label:"删除",danger:true,onClick:async()=>{ if(list.length<=1){ toast("至少保留一个聊天"); return; } if(!await askConfirm("删除这个聊天窗口？聊天记录会一起删除。")) return; Storage.remove(historyKeyForSession(kind,id)); const next=list.filter(x=>x.id!==id); saveSessions(kind,next); if(getActiveSessionId(kind)===id) setActiveSessionId(kind,next[0].id); openSessionDrawer(kind); refreshAfterSessionChange(kind); }}
+    {label:"删除",danger:true,onClick:async()=>{ if(list.length<=1){ toast("至少保留一个聊天"); return; } if(!await askConfirm("删除这个聊天窗口？聊天记录会一起删除。")) return; const doomed=Storage.get(historyKeyForSession(kind,id),[]); if(kind==="wechat") cleanupImageResourcesForMessages(doomed); else await Promise.all((Array.isArray(doomed)?doomed:[]).map(cleanupClaudeFileForMessage)); Storage.remove(historyKeyForSession(kind,id)); const next=list.filter(x=>x.id!==id); saveSessions(kind,next); if(getActiveSessionId(kind)===id) setActiveSessionId(kind,next[0].id); openSessionDrawer(kind); refreshAfterSessionChange(kind); }}
   ]);
 }
 function bindSessionDrawerGestures(mask){
@@ -8632,6 +8632,33 @@ function trimWechatImageRuntimePool(){
     Object.keys(window.wechatImageMap).forEach(id=>{ if(!keep.has(id)) delete window.wechatImageMap[id]; });
   }catch(e){}
 }
+function collectImageResourceIdsFromMessages(messages){
+  const arr=Array.isArray(messages) ? messages : (messages ? [messages] : []);
+  const ids=[];
+  arr.forEach(m=>{
+    if(!m || !m.id) return;
+    const d=m.data||{};
+    if(m.type==="image_desc" || (m.type==="file" && d.kind==="image")) ids.push(String(m.id));
+  });
+  return Array.from(new Set(ids));
+}
+function removeImageMemoryByIds(ids){
+  const idSet=new Set((Array.isArray(ids)?ids:[ids]).map(x=>String(x||"")).filter(Boolean));
+  if(!idSet.size) return 0;
+  const before=getImageMemorySource();
+  const next=before.filter(x=>x && !idSet.has(String(x.id||"")));
+  if(next.length!==before.length) saveImageMemorySource(next);
+  idSet.forEach(id=>{
+    try{ if(window.wechatImageMap) delete window.wechatImageMap[id]; }catch(e){}
+    try{ if(window.claudeFileContextMap) delete window.claudeFileContextMap[id]; }catch(e){}
+  });
+  return before.length-next.length;
+}
+function cleanupImageResourcesForMessages(messages){
+  const ids=collectImageResourceIdsFromMessages(messages);
+  if(!ids.length) return 0;
+  return removeImageMemoryByIds(ids);
+}
 
 
 /* ===== 动态状态文字 ===== */
@@ -9184,7 +9211,10 @@ window.toggleMultiSelect=toggleMultiSelect;
 
 window.deleteMultiSelected=function(){
   if(multiSelectedIds.size===0) return;
-  const h=getHistory().filter(m=>!multiSelectedIds.has(m.id));
+  const before=getHistory();
+  const removed=before.filter(m=>multiSelectedIds.has(m.id));
+  cleanupImageResourcesForMessages(removed);
+  const h=before.filter(m=>!multiSelectedIds.has(m.id));
   saveHistory(h);
   exitMultiSelect();
 };
@@ -11396,6 +11426,8 @@ function confirmImportChat(mode){
 
 async function clearChat(){
   if(!await askConfirm("只清空当前角色的微信聊天记录，确定继续？")) return;
+  const before=getHistory();
+  cleanupImageResourcesForMessages(before);
   Storage.remove(currentHistoryKey("wechat"));
   // 防御性清理可能被外部检查工具/旧版迁移误用的旧 key
   localStorage.removeItem("chat_" + Miao.state.currentRoleId);
@@ -11408,7 +11440,10 @@ async function clearChat(){
   toast("已清空当前聊天记录");
 }
 function deleteMessage(id){
-  let h=getHistory().filter(m=>m.id!==id);
+  const before=getHistory();
+  const target=before.find(m=>m.id===id);
+  cleanupImageResourcesForMessages(target);
+  const h=before.filter(m=>m.id!==id);
   saveHistory(h);
   renderChat();
 }
@@ -14834,6 +14869,7 @@ async function deleteClaudeFileCard(id){
 }
 async function cleanupClaudeFileForMessage(m){
   if(!m || m.type!=="file") return;
+  if(m.data?.kind==="image") cleanupImageResourcesForMessages(m);
   const key=m.data?.fileKey || (m.data?.kind==="document" ? m.data?.name : "");
   if(key) await deleteStoredFileRecord(key);
   if(window.claudeFileContextMap) delete window.claudeFileContextMap[m.id];
