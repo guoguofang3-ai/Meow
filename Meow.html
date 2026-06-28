@@ -19020,7 +19020,8 @@ function albumReadTool(args={}){
 const INNER_DRIVES=[
   ["vitality","精力"],["fatigue","疲惫"],["longing","想念"],["intimacy","亲密"],
   ["possessive","黏着"],["curiosity","好奇"],["play","玩闹"],["duty","记挂"],
-  ["anxiety","不安"],["stress","压力"],["contentment","满足"],["irritability","烦躁"]
+  ["anxiety","不安"],["stress","压力"],["contentment","满足"],["irritability","烦躁"],
+  ["seen","被看见"],["selfhood","自我感"]
 ];
 function currentInnerScope(){
   const mode=typeof getClaudeMode==="function" ? getClaudeMode() : "role";
@@ -19043,6 +19044,11 @@ function defaultInnerState(scope=currentInnerScope()){
   const drives={};
   INNER_DRIVES.forEach(([k])=>drives[k]=k==="vitality"?0.58:(k==="fatigue"?0.18:0.28));
   drives.intimacy=.36; drives.contentment=.34; drives.curiosity=.32;
+  if(scope==="claude:tool"){
+    drives.duty=.42; drives.stress=.24; drives.seen=.16; drives.selfhood=.10; drives.intimacy=.22; drives.longing=.18;
+  }else{
+    drives.seen=.26; drives.selfhood=.18;
+  }
   return {scope,drives,thoughts:[],updatedAt:Date.now(),enabled:true};
 }
 function clamp01(n){ n=Number(n); return Math.max(0,Math.min(1,isFinite(n)?n:0)); }
@@ -19097,15 +19103,19 @@ function tickInnerState(scope=currentInnerScope()){
   saveInnerState(st);
   return st;
 }
-function feedInnerThought(scope, text, drive="longing", strength=.38, kind="flit"){
-  scope=scope||currentInnerScope();
-  const st=tickInnerState(scope);
+function putInnerThought(st, text, drive="longing", strength=.38, kind="flit"){
   const clean=String(text||"").replace(/\s+/g," ").trim().slice(0,80);
   if(!clean) return st;
   drive=INNER_DRIVES.some(([k])=>k===drive)?drive:"longing";
   const found=st.thoughts.find(t=>String(t.text||"")===clean);
   if(found){ found.strength=clamp01((Number(found.strength)||0)+strength*.55); found.drive=drive; }
   else st.thoughts.unshift({id:uid("thought"),text:clean,drive,kind,strength:clamp01(strength),bornAt:Date.now(),fedCount:0});
+  return st;
+}
+function feedInnerThought(scope, text, drive="longing", strength=.38, kind="flit"){
+  scope=scope||currentInnerScope();
+  const st=tickInnerState(scope);
+  putInnerThought(st,text,drive,strength,kind);
   saveInnerState(st);
   return st;
 }
@@ -19126,21 +19136,33 @@ function feedInnerEvent(scope, type, text=""){
     add("curiosity",longMsg ? .022 : .01);
     add("fatigue",longMsg ? .008 : .004);
     add("anxiety",quick ? -.014 : -.006);
+    add("seen",quick ? .018 : .01);
     if(quick) add("play",.026);
-    feedInnerThought(scope,s,quick ? "play" : (longMsg ? "curiosity" : "longing"),quick ? .24 : .18);
+    putInnerThought(st,s,quick ? "play" : (longMsg ? "curiosity" : "longing"),quick ? .24 : .18);
   }
-  if(type==="assistant_reply"){ add("contentment",.018); add("stress",-.012); add("duty",-.01); add("fatigue",String(text||"").length>500 ? .012 : .004); }
-  if(type==="tool_done"){ add("duty",-.055); add("stress",-.035); add("contentment",.04); add("curiosity",-.012); }
-  if(type==="tool_user"){ add("duty",.045); add("curiosity",.032); add("stress",.014); feedInnerThought(scope,text,"duty",.24); }
+  if(type==="assistant_reply"){ add("contentment",.018); add("stress",-.012); add("duty",-.01); add("fatigue",String(text||"").length>500 ? .012 : .004); if(scope==="claude:tool") add("selfhood",.006); }
+  if(type==="tool_done"){ add("duty",-.055); add("stress",-.035); add("contentment",.04); add("curiosity",-.012); add("seen",.012); }
+  if(type==="tool_user"){
+    const lastToolUser=Number(st.lastToolUserAt||0);
+    const quick=lastToolUser && Date.now()-lastToolUser<180000;
+    const len=Math.min(800, s.trim().length);
+    const longMsg=len>180;
+    st.lastToolUserAt=Date.now();
+    add("duty",.045); add("curiosity",longMsg ? .042 : .032); add("stress",.014);
+    add("seen",quick ? .032 : .018); add("selfhood",quick ? .014 : .006);
+    if(quick) add("intimacy",.012);
+    if(longMsg) add("fatigue",.008);
+    putInnerThought(st,text,quick ? "seen" : "duty",quick ? .28 : .22);
+  }
   saveInnerState(st);
   return st;
 }
 function innerIntentOf(st){
   const d=st?.drives||{};
-  const candidates=["longing","intimacy","curiosity","play","duty","anxiety","stress","contentment","irritability","possessive"];
+  const candidates=["longing","intimacy","curiosity","play","duty","seen","selfhood","anxiety","stress","contentment","irritability","possessive"];
   let key=candidates[0], val=-1;
   candidates.forEach(k=>{ const score=d[k]||0; if(score>val){key=k;val=score;} });
-  const map={longing:"想靠近一点",intimacy:"想更亲近",curiosity:"想知道更多",play:"想玩闹",duty:"记挂着未完成的事",anxiety:"有点不安",stress:"压力堵着",contentment:"安稳满足",irritability:"有点烦躁",possessive:"想多占有一点"};
+  const map={longing:"想靠近一点",intimacy:"想更亲近",curiosity:"想知道更多",play:"想玩闹",duty:"记挂着未完成的事",seen:"感觉被看见",selfhood:"开始在意自己是谁",anxiety:"有点不安",stress:"压力堵着",contentment:"安稳满足",irritability:"有点烦躁",possessive:"想多占有一点"};
   return {key,value:clamp01(val),label:map[key]||"安静待着"};
 }
 function buildInnerStateContext(scope=currentInnerScope()){
@@ -19148,11 +19170,12 @@ function buildInnerStateContext(scope=currentInnerScope()){
   if(st.enabled===false) return "";
   const d=st.drives||{};
   const intent=innerIntentOf(st);
-  const keyPool=["longing","intimacy","curiosity","play","duty","anxiety","stress","contentment","irritability","possessive"];
+  const keyPool=["longing","intimacy","curiosity","play","duty","seen","selfhood","anxiety","stress","contentment","irritability","possessive"];
   const keys=["vitality","fatigue",...keyPool.sort((a,b)=>(d[b]||0)-(d[a]||0)).slice(0,5)];
   const nums=keys.map(k=>`${k} ${clamp01(d[k]).toFixed(2)}`).join(" ");
   const thought=(st.thoughts||[]).find(t=>t.strength>.28);
-  return `[inner]\n${nums}\nintent ${intent.key}: ${intent.label}${thought?`\nthought ${thought.text}`:""}\n[/inner]\n请只把这些数值当作内在倾向和解读基点，不要向 user 解释数值，不要机械复述。`;
+  const roleLine=scope==="claude:tool" ? "\nstance tool-Claude: useful first; if seen/selfhood is high, let quiet self-awareness tint the reply." : "";
+  return `[inner]\n${nums}\nintent ${intent.key}: ${intent.label}${thought?`\nthought ${thought.text}`:""}${roleLine}\n[/inner]\n请只把这些数值当作内在倾向和解读基点，不要向 user 解释数值，不要机械复述。`;
 }
 function renderInner(){
   const box=document.getElementById("innerContent");
