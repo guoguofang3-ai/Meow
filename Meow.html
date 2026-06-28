@@ -3736,6 +3736,7 @@ body.keyboard-open .reading-edit-modal textarea{max-height:min(30vh,calc(var(--v
 .inner-scope-tabs button.active{background:var(--accent,#111827);color:#fff;}
 .inner-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;}
 .inner-actions .btn{min-height:40px;border-radius:18px;}
+.inner-actions .btn.danger{background:color-mix(in srgb,#ef4444 14%,var(--bar-bg,#fff));color:#b42318;}
 .inner-section-title{margin:18px 2px 9px;font-size:12px;font-weight:1000;letter-spacing:.18em;text-transform:uppercase;color:color-mix(in srgb,var(--bar-text,#111827) 46%,var(--accent,#111827) 22%);}
 .inner-drive-list,.inner-thought-list{display:grid;gap:8px;}
 .inner-drive{border-radius:18px;padding:10px 11px;background:color-mix(in srgb,#fff 82%,var(--bar-bg,#fff));border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent);}
@@ -6476,6 +6477,8 @@ function bindEvents(){
     if(action==="inner-clear-thoughts") clearInnerThoughts();
     if(action==="inner-feed-thought") openInnerThoughtModal();
     if(action==="inner-save-thought") saveInnerThoughtFromModal();
+    if(action==="inner-toggle-enabled") toggleInnerEnabled();
+    if(action==="inner-reset") resetInnerState();
     if(action==="open-diary-entry") openDiaryEntryModal(id||"");
     if(action==="set-diary-tab") setDiaryTab(id||"today");
     if(action==="open-diary-menu") openDiaryMenu(id||"");
@@ -19111,10 +19114,20 @@ function feedInnerEvent(scope, type, text=""){
   const st=tickInnerState(scope);
   const d=st.drives;
   const add=(k,v)=>{ d[k]=clamp01((d[k]||0)+v); };
-  if(type==="user_message"){ add("longing",.025); add("intimacy",.018); add("curiosity",.012); add("fatigue",.004); add("anxiety",-.012); feedInnerThought(scope,text,"longing",.22); }
-  if(type==="assistant_reply"){ add("contentment",.018); add("stress",-.012); add("duty",-.01); }
-  if(type==="tool_done"){ add("duty",-.055); add("stress",-.035); add("contentment",.04); }
-  if(type==="tool_user"){ add("duty",.035); add("curiosity",.028); add("stress",.012); feedInnerThought(scope,text,"duty",.24); }
+  const s=String(text||"");
+  if(type==="user_message"){
+    const lastUser=Number(st.lastUserAt||0);
+    const quick=lastUser && Date.now()-lastUser<180000;
+    st.lastUserAt=Date.now();
+    add("longing",.025); add("intimacy",quick ? .032 : .018); add("curiosity",/[?？吗嘛呢]$/.test(s.trim()) ? .03 : .012); add("fatigue",.004); add("anxiety",-.012);
+    if(quick) add("play",.026);
+    if(/想你|抱|亲|喜欢|爱|晚安|陪|乖|宝宝|宝贝/.test(s)){ add("longing",.045); add("intimacy",.04); add("contentment",.025); }
+    if(/烦|累|疼|崩|哭|难受|害怕|不安/.test(s)){ add("anxiety",.035); add("longing",.018); add("stress",.018); }
+    feedInnerThought(scope,s,"longing",quick ? .28 : .22);
+  }
+  if(type==="assistant_reply"){ add("contentment",.018); add("stress",-.012); add("duty",-.01); add("fatigue",String(text||"").length>500 ? .012 : .004); }
+  if(type==="tool_done"){ add("duty",-.055); add("stress",-.035); add("contentment",.04); add("curiosity",-.012); }
+  if(type==="tool_user"){ add("duty",.045); add("curiosity",.032); add("stress",.014); feedInnerThought(scope,text,"duty",.24); }
   saveInnerState(st);
   return st;
 }
@@ -19131,7 +19144,8 @@ function buildInnerStateContext(scope=currentInnerScope()){
   if(st.enabled===false) return "";
   const d=st.drives||{};
   const intent=innerIntentOf(st);
-  const keys=["vitality","fatigue","longing","intimacy","curiosity","play","duty","anxiety","stress","contentment","irritability"];
+  const keyPool=["longing","intimacy","curiosity","play","duty","anxiety","stress","contentment","irritability","possessive"];
+  const keys=["vitality","fatigue",...keyPool.sort((a,b)=>(d[b]||0)-(d[a]||0)).slice(0,5)];
   const nums=keys.map(k=>`${k} ${clamp01(d[k]).toFixed(2)}`).join(" ");
   const thought=(st.thoughts||[]).find(t=>t.strength>.28);
   return `[inner]\n${nums}\nintent ${intent.key}: ${intent.label}${thought?`\nthought ${thought.text}`:""}\n[/inner]\n请只把这些数值当作内在倾向和解读基点，不要向 user 解释数值，不要机械复述。`;
@@ -19147,7 +19161,7 @@ function renderInner(){
   const driveHtml=INNER_DRIVES.map(([k,label])=>`<div class="inner-drive"><div class="inner-drive-top"><span>${escapeHtml(label)}</span><span>${pct(st.drives[k])}</span></div><div class="inner-drive-bar"><span style="width:${pct(st.drives[k])}%"></span></div></div>`).join("");
   const thoughts=(st.thoughts||[]).slice(0,12);
   const thoughtHtml=thoughts.length?thoughts.map(t=>`<div class="inner-thought"><div class="inner-thought-top"><span>${escapeHtml(t.kind==="fixation"?"执念":"闪念")} · ${escapeHtml(t.drive||"")}</span><span>${pct(t.strength)}</span></div><div class="inner-thought-text">${escapeHtml(t.text||"")}</div></div>`).join(""):`<div class="inner-empty">念头池还很安静。聊天、工具完成、手动喂念头都会让这里慢慢有东西浮上来。</div>`;
-  box.innerHTML=`<div class="inner-hero"><div class="inner-kicker">${escapeHtml(scope)}</div><div class="inner-title">${escapeHtml(innerScopeLabel(scope))}</div><div class="inner-intent">此刻倾向：${escapeHtml(intent.label)} · ${escapeHtml(intent.key)} ${pct(intent.value)}</div><div class="inner-scope-tabs"><button class="${isTool?"":"active"}" data-action="set-inner-scope" data-id="role">当前角色</button><button class="${isTool?"active":""}" data-action="set-inner-scope" data-id="tool">工具 Claude</button></div><div class="inner-actions"><button class="btn primary" data-action="inner-feed-thought">喂一个念头</button><button class="btn" data-action="inner-clear-thoughts">清空念头池</button></div></div><div class="inner-section-title">Drives</div><div class="inner-drive-list">${driveHtml}</div><div class="inner-section-title">Thoughts</div><div class="inner-thought-list">${thoughtHtml}</div>`;
+  box.innerHTML=`<div class="inner-hero"><div class="inner-kicker">${escapeHtml(scope)}</div><div class="inner-title">${escapeHtml(innerScopeLabel(scope))}</div><div class="inner-intent">此刻倾向：${escapeHtml(intent.label)} · ${escapeHtml(intent.key)} ${pct(intent.value)} · ${st.enabled===false?"已暂停注入":"正在注入"}</div><div class="inner-scope-tabs"><button class="${isTool?"":"active"}" data-action="set-inner-scope" data-id="role">当前角色</button><button class="${isTool?"active":""}" data-action="set-inner-scope" data-id="tool">工具 Claude</button></div><div class="inner-actions"><button class="btn primary" data-action="inner-feed-thought">喂一个念头</button><button class="btn" data-action="inner-toggle-enabled">${st.enabled===false?"恢复注入":"暂停注入"}</button><button class="btn" data-action="inner-clear-thoughts">清空念头池</button><button class="btn danger" data-action="inner-reset">重置数值</button></div></div><div class="inner-section-title">Drives</div><div class="inner-drive-list">${driveHtml}</div><div class="inner-section-title">Thoughts</div><div class="inner-thought-list">${thoughtHtml}</div>`;
 }
 function openInnerThoughtModal(){
   openQuickModal(`<div class="album-form"><div class="album-preview-head"><div><div class="album-preview-title">喂一个念头</div><div class="album-preview-sub">${escapeHtml(innerScopeLabel())}</div></div><button class="album-preview-close" data-action="close-quick-modal">×</button></div><textarea id="innerThoughtInput" placeholder="比如：还惦记刚刚那张照片"></textarea><label>关联维度</label><select id="innerThoughtDrive">${INNER_DRIVES.map(([k,label])=>`<option value="${k}">${escapeHtml(label)}</option>`).join("")}</select><div class="album-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="inner-save-thought">保存</button></div></div>`);
@@ -19166,6 +19180,20 @@ function clearInnerThoughts(){
   saveInnerState(st);
   renderInner();
   toast("念头池已清空");
+}
+function toggleInnerEnabled(){
+  const st=getInnerState(innerViewScope());
+  st.enabled=st.enabled===false;
+  saveInnerState(st);
+  renderInner();
+  toast(st.enabled?"内心注入已恢复":"内心注入已暂停");
+}
+async function resetInnerState(){
+  const scope=innerViewScope();
+  if(typeof askConfirm==="function" && !await askConfirm("重置当前内心数值和念头池？")) return;
+  Storage.set(innerKey(scope), defaultInnerState(scope));
+  renderInner();
+  toast("内心状态已重置");
 }
 
 function webSearchToolSchema(scope="wechat"){
