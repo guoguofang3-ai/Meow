@@ -19118,12 +19118,16 @@ function feedInnerEvent(scope, type, text=""){
   if(type==="user_message"){
     const lastUser=Number(st.lastUserAt||0);
     const quick=lastUser && Date.now()-lastUser<180000;
+    const len=Math.min(800, s.trim().length);
+    const longMsg=len>160;
     st.lastUserAt=Date.now();
-    add("longing",.025); add("intimacy",quick ? .032 : .018); add("curiosity",/[?？吗嘛呢]$/.test(s.trim()) ? .03 : .012); add("fatigue",.004); add("anxiety",-.012);
+    add("longing",.018);
+    add("intimacy",quick ? .03 : .014);
+    add("curiosity",longMsg ? .022 : .01);
+    add("fatigue",longMsg ? .008 : .004);
+    add("anxiety",quick ? -.014 : -.006);
     if(quick) add("play",.026);
-    if(/想你|抱|亲|喜欢|爱|晚安|陪|乖|宝宝|宝贝/.test(s)){ add("longing",.045); add("intimacy",.04); add("contentment",.025); }
-    if(/烦|累|疼|崩|哭|难受|害怕|不安/.test(s)){ add("anxiety",.035); add("longing",.018); add("stress",.018); }
-    feedInnerThought(scope,s,"longing",quick ? .28 : .22);
+    feedInnerThought(scope,s,quick ? "play" : (longMsg ? "curiosity" : "longing"),quick ? .24 : .18);
   }
   if(type==="assistant_reply"){ add("contentment",.018); add("stress",-.012); add("duty",-.01); add("fatigue",String(text||"").length>500 ? .012 : .004); }
   if(type==="tool_done"){ add("duty",-.055); add("stress",-.035); add("contentment",.04); add("curiosity",-.012); }
