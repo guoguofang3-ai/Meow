@@ -4322,7 +4322,7 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
         <details class="api-fold">
           <summary><span>联网搜索 / 网页图片</span><small>Claude 助手</small></summary>
           <div class="api-fold-body">
-            <div class="v3-sub">用于 Claude 的 web_search、read_webpage、view_web_image 工具。推荐填写 Cloudflare Worker 代理地址；下面的 Key 会同时作为 Worker 鉴权 key / api_key / token 尝试，没填代理时才作为 SerpAPI Key 直连备用。</div>
+            <div class="v3-sub">用于 Claude 的 web_search、read_webpage、view_web_image 工具。推荐填写 Cloudflare Worker 搜索代理地址；Key 会作为 Worker 鉴权 key/api_key/token 尝试。搜索失败会自动用 Jina Search 兜底；读取具体网页会先走 Reader，失败再用搜索通道兜底。</div>
             <label>搜索代理地址</label><input id="webSearchProxyInput" placeholder="https://xxx.workers.dev">
             <label>代理 / SerpAPI Key</label><input id="serpApiKeyInput" placeholder="Worker key / serpapi key" type="password">
           </div>
@@ -10393,47 +10393,78 @@ async function fetchWebPage(url){
   const cfg=Storage.get("webSearch",{})||{};
   const proxy=normalizeProxyBase(cfg.proxyUrl);
   const proxyKey=String(cfg.proxyKey||cfg.serpApiKey||"").trim();
-  const ctrl=new AbortController();
-  const timer=setTimeout(()=>ctrl.abort(), 25000); // 25秒超时
   const targets=[];
   if(proxy){
-    // 推荐 Worker 支持 ?url= 读取正文；同时兼容 ?read=。如果设置了 Key，会依次用 key / api_key / token 三种常见鉴权参数重试。
-    for(const pu of buildProxyRequestUrls(proxy,["url","read"],u,proxyKey)){
-      targets.push({source:"自定义代理", url:pu});
+    // 只有真正支持 url/read/target 的 Worker 才能直接读正文；search-only Worker 会返回 missing q，下面会跳过并走 q= 兜底。
+    for(const pu of buildProxyRequestUrls(proxy,["url","read","target"],u,proxyKey)){
+      targets.push({source:"自定义读取代理", url:pu, kind:"read"});
     }
   }
-  targets.push({source:"Jina Reader", url:"https://r.jina.ai/"+u});
-  targets.push({source:"AllOrigins", url:"https://api.allorigins.win/raw?url="+encodeURIComponent(u)});
-  targets.push({source:"直连", url:u});
+  targets.push({source:"Jina Reader", url:"https://r.jina.ai/"+u, kind:"read"});
+  targets.push({source:"AllOrigins", url:"https://api.allorigins.win/raw?url="+encodeURIComponent(u), kind:"read"});
+  targets.push({source:"直连", url:u, kind:"read"});
   const failures=[];
+  const tryTarget=async(target)=>{
+    // 每一路单独计时。不要共用一个 AbortController，否则 AllOrigins/直连超时会把后面的搜索兜底也一起 abort。
+    const ctrl=new AbortController();
+    const perTimeout=target.kind==="search_fallback"?16000:12000;
+    const timer=setTimeout(()=>ctrl.abort(), perTimeout);
+    try{
+      const got=await readWebTarget(target, u, ctrl);
+      if(!got.ok){ failures.push(got); return null; }
+      let text=got.content;
+      const MAX=6000;
+      let truncated=false;
+      if(text.length>MAX){ text=text.slice(0,MAX); truncated=true; }
+      return {ok:true, content:text, raw:got.raw||got.content, truncated, url:got.url||u, source:got.source, via:target.kind||"read"};
+    }finally{
+      clearTimeout(timer);
+    }
+  };
   try{
+    // 第一轮：真正按 URL 读取正文。
     for(const target of targets){
       try{
-        const got=await readWebTarget(target, u, ctrl);
-        if(!got.ok){ failures.push(got); continue; }
-        let text=got.content;
-        const MAX=6000;
-        let truncated=false;
-        if(text.length>MAX){ text=text.slice(0,MAX); truncated=true; }
-        clearTimeout(timer);
-        return {ok:true, content:text, raw:got.raw||got.content, truncated, url:got.url||u, source:got.source};
+        const out=await tryTarget(target);
+        if(out) return out;
       }catch(err){
-        failures.push({ok:false,status:err?.status||0,source:target.source,error:err?.message||String(err)});
+        failures.push({ok:false,status:err?.name==="AbortError"?0:(err?.status||0),source:target.source,error:err?.name==="AbortError"?"超时/被中止":(err?.message||String(err))});
       }
     }
-    clearTimeout(timer);
+    // 第二轮：如果 URL 阅读器都失败，用搜索通道 q=URL 兜底。
+    // meow-serpapi-proxy 多半是搜索代理，只支持 q 参数；这里把“直接链接”当搜索词找摘要/缓存内容。
+    const searchTargets=[];
+    if(proxy){
+      for(const pu of buildProxyRequestUrls(proxy,"q",u,proxyKey)){
+        searchTargets.push({source:"搜索代理(q=网址兜底)", url:pu, kind:"search_fallback"});
+      }
+    }
+    if(proxyKey){
+      searchTargets.push({source:"SerpAPI(q=网址兜底)", url:"https://serpapi.com/search.json?engine=google&q="+encodeURIComponent(u)+"&api_key="+encodeURIComponent(proxyKey)+"&hl=zh-CN&gl=cn", kind:"search_fallback"});
+    }
+    searchTargets.push({source:"Jina Search(q=网址兜底)", url:"https://s.jina.ai/"+encodeURIComponent(u), kind:"search_fallback"});
+    for(const target of searchTargets){
+      try{
+        const out=await tryTarget(target);
+        if(out){
+          out.truncated = true;
+          out.content = `【注意】没有成功直读网页正文，以下是通过搜索通道找到的可用网页信息/摘要，仍可据此回复，但不要假装这是完整原文。\n来源：${target.source}\n\n` + out.content;
+          return out;
+        }
+      }catch(err){
+        failures.push({ok:false,status:err?.name==="AbortError"?0:(err?.status||0),source:target.source,error:err?.name==="AbortError"?"超时/被中止":(err?.message||String(err))});
+      }
+    }
     const statusList=failures.map(f=>f.status).filter(Boolean);
-    const proxySearchOnly=failures.some(f=>f.source==="自定义代理" && f.status===400 && /missing\s*q|缺少\s*q|query/i.test(String(f.error||"")));
-    const detailFailures=failures.filter(f=>!(f.source==="自定义代理" && f.status===400 && /missing\s*q|缺少\s*q|query/i.test(String(f.error||""))));
-    const sourceList=(detailFailures.length?detailFailures:failures).slice(0,3).map(f=>`${f.source}${f.status?" HTTP "+f.status:""}${f.error?"："+String(f.error).slice(0,60):""}`).join("；");
-    const proxyTip=proxySearchOnly?" 自定义代理返回 missing q，说明它大概率是搜索代理，只支持 q=关键词，不支持 url=网页正文；已跳过它。":"";
-    if(statusList.includes(401)) return {ok:false, error:"读取代理被拒绝（401），不是网页一定不公开；可能是 Jina/代理限流、需要换支持 url= 的网页读取 Worker，或该站点对抓取器有限制。"+proxyTip+(sourceList?" 详情："+sourceList:"")};
-    if(statusList.includes(403)) return {ok:false, error:"网页或读取代理拒绝访问（403），可能有反爬限制；可尝试填写支持 url= 的网页读取 Worker。"+proxyTip+(sourceList?" 详情："+sourceList:"")};
+    const proxySearchOnly=failures.some(f=>/代理/.test(f.source||"") && f.status===400 && /missing\s*q|缺少\s*q|query/i.test(String(f.error||"")));
+    const detailFailures=failures.filter(f=>!(/代理/.test(f.source||"") && f.status===400 && /missing\s*q|缺少\s*q|query/i.test(String(f.error||""))));
+    const sourceList=(detailFailures.length?detailFailures:failures).slice(0,5).map(f=>`${f.source}${f.status?" HTTP "+f.status:""}${f.error?"："+String(f.error).slice(0,80):""}`).join("；");
+    const proxyTip=proxySearchOnly?" 自定义代理返回 missing q，说明它是搜索代理，不是正文读取代理；代码已跳过它并尝试 q=网址兜底。":"";
+    if(statusList.includes(401)) return {ok:false, error:"读取代理/Reader 被拒绝（401）。这不代表网页不公开，常见原因是公共 Reader 限流、Key 不匹配或目标站点限制抓取。"+proxyTip+(sourceList?" 详情："+sourceList:"")};
+    if(statusList.includes(403)) return {ok:false, error:"网页或读取代理拒绝访问（403），可能有反爬限制；可换支持 url= 的网页读取 Worker。"+proxyTip+(sourceList?" 详情："+sourceList:"")};
     if(statusList.includes(404)) return {ok:false, error:"网页不存在（404）"};
-    return {ok:false, error:"读取失败：浏览器直连可能被 CORS 拦截，或公开 Reader/代理暂时不可用。"+proxyTip+(sourceList?" 详情："+sourceList:"")};
+    return {ok:false, error:"读取失败：URL Reader、浏览器直连、搜索兜底都没拿到可用内容。"+proxyTip+(sourceList?" 详情："+sourceList:"")};
   }catch(e){
-    clearTimeout(timer);
-    if(e.name==="AbortError") return {ok:false, error:"超时（网页太慢或无法访问）"};
     return {ok:false, error:"读取出错："+(e.message||e)};
   }
 }
@@ -10459,13 +10490,65 @@ function extractWebPageImages(text, pageUrl){
   s.replace(/https?:\/\/[^\s"'<>]+\.(?:png|jpe?g|webp|gif)(?:\?[^\s"'<>]*)?/gi,(src)=>{ add(src,"",""); return src; });
   return out.slice(0,8);
 }
+function inferWebTargetFromRecentUserMessage(){
+  try{
+    const h=typeof getHistory==="function" ? getHistory() : [];
+    const last=(h||[]).slice().reverse().find(m=>m && m.sender==="user" && (m.content||m.text));
+    if(!last) return "";
+    const text=String(last.content||last.text||"");
+    return extractBareUrl(text)||"";
+  }catch(e){ return ""; }
+}
+function isGenericSearchQuery(q){
+  const s=String(q||"").replace(/\s+/g,"").replace(/[，。！？、,.!?]+$/g,"");
+  if(!s) return true;
+  if(s.length<2) return true;
+  return /^(一下|一个|随便|随便一个|搜一个|搜索一个|查一下|网页|网站|资料|新闻|最新|热点|其他关键词|你感兴趣的也行|你感兴趣的|不一定是新闻)$/.test(s);
+}
+function inferSearchQueryFromRecentUserMessage(){
+  try{
+    const h=typeof getHistory==="function" ? getHistory() : [];
+    const last=(h||[]).slice().reverse().find(m=>m && m.sender==="user" && (m.content||m.text));
+    if(!last) return "";
+    const text=String(last.content||last.text||"").trim();
+    const url=extractBareUrl(text);
+    if(url) return url;
+    const matches=[...text.matchAll(/(?:不要搜[^，。！？\n]*[,，。！？\s]*)?(?:搜一下|搜索一下|搜索|搜|查一下|查|找一下|找)(?:网页|网站|新闻|资料|链接|内容|一下)?\s*[:：]?\s*([^，。！？\n]*)/g)];
+    for(let i=matches.length-1;i>=0;i--){
+      let q=String(matches[i][1]||"").trim();
+      q=q.replace(/^(一个|一下|下|一下子)\s*/,"").replace(/^(的|关于)\s*/,"").trim();
+      q=q.replace(/(吧|呀|呢|看看|给我|帮我)$/g,"").trim();
+      if(q && !isGenericSearchQuery(q)) return q;
+    }
+    if(/随便|任意|你感兴趣|都行|什么都可以|不一定/.test(text)) return "今日热点新闻";
+    if(/新闻|最新|热点/.test(text)) return "今日热点新闻";
+    return "";
+  }catch(e){ return ""; }
+}
+function resolveWebSearchQuery(args={}){
+  args=args||{};
+  let query=String(args.query||args.q||args.keyword||args.keywords||args.search||args.text||args.topic||args.term||args.url||"").trim();
+  query=query.replace(/[\u0000-\u001f]+/g," ").replace(/[，。！？、,.!?]+$/g,"").trim();
+  if(query && !isGenericSearchQuery(query)) return query;
+  const inferred=inferSearchQueryFromRecentUserMessage();
+  if(inferred && !isGenericSearchQuery(inferred)) return inferred;
+  if(query && /随便|任意|你感兴趣|都行|新闻|热点|最新|一个/.test(query)) return "今日热点新闻";
+  return "";
+}
 async function readWebpageTool(args={}){
-  const target=String(args.url||args.link||"").trim();
+  let target=String(args.url||args.link||args.href||args.target||"").trim();
+  if(!target) target=inferWebTargetFromRecentUserMessage();
   if(target && !isConcreteWebUrl(target)){
     // 兼容模型把关键词误传给 read_webpage：自动改走 web_search，避免 search-only Worker 报 missing q。
     const search=await webSearchTool({query:target});
     if(!search.ok) return {ok:false,error:"这不是具体网址，已按关键词搜索但失败："+(search.error||"未知错误")};
     return {ok:true, search:true, query:target, url:"", content:formatWebSearchResultsForAI(search), results:search.results||[], count:search.count||0, images:[], imageCount:0};
+  }
+  if(!target){
+    const query=resolveWebSearchQuery(args);
+    const search=await webSearchTool({query});
+    if(!search.ok) return {ok:false,error:"缺少具体网址，按关键词搜索也失败："+(search.error||"未知错误")};
+    return {ok:true, search:true, query, url:"", content:formatWebSearchResultsForAI(search), results:search.results||[], count:search.count||0, images:[], imageCount:0};
   }
   const page=await fetchWebPage(target);
   if(!page.ok) return page;
@@ -10475,62 +10558,105 @@ async function readWebpageTool(args={}){
 function extractWebSearchResultsFromJson(data){
   if(!data || typeof data!=="object") return [];
   const pools=[];
-  [data.results,data.organic_results,data.items,data.web_results,data.news_results,data.data].forEach(v=>{ if(Array.isArray(v)) pools.push(v); });
+  [data.results,data.organic_results,data.items,data.web_results,data.news_results,data.data,data.pages].forEach(v=>{ if(Array.isArray(v)) pools.push(v); });
   if(data.result && typeof data.result==="object"){
-    [data.result.results,data.result.organic_results,data.result.items,data.result.web_results,data.result.news_results].forEach(v=>{ if(Array.isArray(v)) pools.push(v); });
+    [data.result.results,data.result.organic_results,data.result.items,data.result.web_results,data.result.news_results,data.result.data,data.result.pages].forEach(v=>{ if(Array.isArray(v)) pools.push(v); });
   }
   const source=pools.find(arr=>arr && arr.length) || [];
   return source.map(r=>{
     if(typeof r==="string") return {title:r.slice(0,80), snippet:r, link:""};
     return {
-      title:r.title||r.name||r.headline||"",
-      snippet:r.snippet||r.summary||r.description||r.content||r.text||"",
-      link:r.link||r.url||r.href||r.sourceUrl||""
+      title:r.title||r.name||r.headline||r.heading||"",
+      snippet:r.snippet||r.summary||r.description||r.content||r.text||r.markdown||"",
+      link:r.link||r.url||r.href||r.sourceUrl||r.source_url||r.url_source||""
     };
   }).filter(r=>r.title||r.snippet||r.link).filter(r=>!r.link || /^https?:\/\//i.test(r.link));
 }
+function extractSearchContentFromJson(data){
+  if(!data || typeof data!=="object") return "";
+  const chunks=[];
+  const add=(v)=>{ v=collapseWebText(v); if(v) chunks.push(v); };
+  add(extractReadableContentFromJson(data));
+  [data.answer,data.summary,data.description,data.text,data.markdown].forEach(add);
+  if(data.answer_box && typeof data.answer_box==="object") add([data.answer_box.title,data.answer_box.answer,data.answer_box.snippet].filter(Boolean).join("\n"));
+  if(data.knowledge_graph && typeof data.knowledge_graph==="object") add([data.knowledge_graph.title,data.knowledge_graph.description].filter(Boolean).join("\n"));
+  const results=extractWebSearchResultsFromJson(data).slice(0,8);
+  if(results.length){
+    add(results.map((r,i)=>`${i+1}. ${r.title||"无标题"}\n摘要：${r.snippet||""}\n链接：${r.link||""}`).join("\n\n"));
+  }
+  return collapseWebText(Array.from(new Set(chunks)).join("\n\n")).slice(0,9000);
+}
+function normalizeSearchToolPayload(query, source, data, rawText, contentType){
+  const raw=String(rawText||"");
+  let results=extractWebSearchResultsFromJson(data).slice(0,5).filter(r=>r.link);
+  let content=extractSearchContentFromJson(data);
+  if(!content && raw.trim()){
+    if(/text\/html|application\/xhtml\+xml/i.test(String(contentType||"")) || /^\s*<!doctype\s+html/i.test(raw) || /^\s*<html[\s>]/i.test(raw)){
+      content=htmlToReadableText(raw, "");
+    }else{
+      content=collapseWebText(raw);
+    }
+  }
+  // Jina Search 常返回整段 markdown/text，不一定有结构化 results；这也是可用搜索内容。
+  content=String(content||"").slice(0,9000);
+  return {ok:!!(results.length || content), query, results, count:results.length, content, source};
+}
 async function webSearchTool(args={}){
-  const query=String(args.query||"").trim();
-  if(!query) return {ok:false,error:"搜索词为空"};
+  const query=resolveWebSearchQuery(args);
+  if(!query) return {ok:false,error:"搜索词为空：模型没有给出关键词，且无法从最近一条用户消息里推断。"};
   const cfg=Storage.get("webSearch",{})||{};
-  const key=String(cfg.serpApiKey||"").trim();
+  const key=String(cfg.proxyKey||cfg.serpApiKey||"").trim();
   const proxy=String(cfg.proxyUrl||"").trim().replace(/\/+$/,"");
-  if(!proxy && !key) return {ok:false,error:"未填写搜索代理地址或 Key，请先到 API 设置里填写"};
   const cacheKey="webSearchCache."+query.toLowerCase();
   const cached=Storage.get(cacheKey,null);
   if(cached && Date.now()-(cached.at||0)<10*60*1000) return Object.assign({cached:true}, cached.data);
-  const ctrl=new AbortController();
-  const timer=setTimeout(()=>ctrl.abort(),30000);
+  const failures=[];
+  const urls=[];
+  if(proxy){
+    buildProxyRequestUrls(proxy,"q",query,key).forEach(url=>urls.push({source:"自定义搜索代理", url}));
+  }
+  // 有 SerpAPI key 时也保留直连兜底。即使自定义 Worker 临时坏了，也能再试一次官方接口。
+  if(key){
+    urls.push({source:"SerpAPI", url:"https://serpapi.com/search.json?engine=google&q="+encodeURIComponent(query)+"&api_key="+encodeURIComponent(key)+"&hl=zh-CN&gl=cn"});
+  }
+  // 公共兜底：Jina Search 会直接返回适合模型阅读的搜索结果/网页内容摘要；即使自定义代理坏了也不至于完全断网。
+  urls.push({source:"Jina Search", url:"https://s.jina.ai/"+encodeURIComponent(query)});
   try{
-    const urls=proxy
-      ? buildProxyRequestUrls(proxy,"q",query,key)
-      : ["https://serpapi.com/search.json?q="+encodeURIComponent(query)+"&api_key="+encodeURIComponent(key)+"&hl=zh-CN"];
-    const failures=[];
-    for(const url of urls){
-      const res=await fetch(url,{signal:ctrl.signal,headers:{"Accept":"application/json, text/plain;q=0.9, */*;q=0.8"}});
-      const text=await res.text();
-      let data={};
-      try{ data=JSON.parse(text); }catch(e){ data={raw:text}; }
-      if(!res.ok){
-        failures.push({status:res.status,error:data.error||data.message||text.slice(0,120)||res.statusText});
-        continue;
+    for(const item of urls){
+      const ctrl=new AbortController();
+      const timer=setTimeout(()=>ctrl.abort(),16000);
+      try{
+        const res=await fetch(item.url,{signal:ctrl.signal,cache:"no-store",headers:{"Accept":"application/json, text/plain;q=0.9, text/markdown;q=0.8, */*;q=0.7"}});
+        const text=await res.text();
+        const contentType=res.headers?.get?.("content-type")||"";
+        let data={};
+        try{ data=JSON.parse(text); }catch(e){ data={raw:text}; }
+        if(!res.ok){
+          failures.push({source:item.source,status:res.status,error:data.error||data.message||text.slice(0,160)||res.statusText});
+          continue;
+        }
+        if(data && data.ok===false){
+          failures.push({source:item.source,status:res.status||0,error:data.error||data.message||"搜索代理返回失败"});
+          continue;
+        }
+        const out=normalizeSearchToolPayload(query,item.source,data,text,contentType);
+        if(!out.ok){
+          failures.push({source:item.source,status:res.status||0,error:"搜索返回为空"});
+          continue;
+        }
+        Storage.set(cacheKey,{at:Date.now(),data:out});
+        return out;
+      }catch(err){
+        failures.push({source:item.source,status:err?.name==="AbortError"?0:(err?.status||0),error:err?.name==="AbortError"?"超时/被中止":(err?.message||String(err))});
+      }finally{
+        clearTimeout(timer);
       }
-      if(proxy && data.ok===false){
-        failures.push({status:res.status||0,error:data.error||data.message||"搜索代理返回失败"});
-        continue;
-      }
-      const results=extractWebSearchResultsFromJson(data).slice(0,5).filter(r=>r.link);
-      const out={ok:true,query,results,count:results.length};
-      Storage.set(cacheKey,{at:Date.now(),data:out});
-      clearTimeout(timer);
-      return out;
     }
-    clearTimeout(timer);
     const has401=failures.some(f=>f.status===401);
-    if(has401) return {ok:false,error:proxy?"代理拒绝访问（401），请检查代理地址和 Key 是否匹配":"搜索服务拒绝访问（401），请检查密钥"};
-    return {ok:false,error:(failures[0]&&failures[0].error)||"搜索代理返回失败"};
+    if(has401) return {ok:false,error:proxy?"搜索代理/SerpAPI 拒绝访问（401），请检查代理地址和 Key 是否匹配；公共兜底也未成功":"搜索服务拒绝访问（401），请检查密钥"};
+    const detail=failures.slice(0,4).map(f=>`${f.source}${f.status?" HTTP "+f.status:""}${f.error?"："+String(f.error).slice(0,90):""}`).join("；");
+    return {ok:false,error:detail||"搜索代理返回失败"};
   }catch(e){
-    clearTimeout(timer);
     const msg=e.name==="AbortError"?"搜索超时":("搜索出错："+(e.message||e));
     return {ok:false,error:msg+"；建议检查代理地址、密钥和网络是否可达"};
   }
@@ -10565,9 +10691,18 @@ function isConcreteWebUrl(text){
 function formatWebSearchResultsForAI(result){
   if(!result || result.ok===false) return "";
   const rows=Array.isArray(result.results)?result.results:[];
-  if(!rows.length) return `搜索词：${result.query||""}\n没有找到可用结果。`;
-  return `搜索词：${result.query||""}\n`+rows.map((r,i)=>`${i+1}. ${r.title||"无标题"}\n摘要：${r.snippet||""}\n链接：${r.link||""}`).join("\n\n");
-}// 从用户消息里抽第一个裸URL
+  const parts=[`搜索词：${result.query||""}${result.source?`\n来源：${result.source}`:""}`];
+  if(result.content){
+    parts.push(`可读内容/摘要：\n${String(result.content).slice(0,7000)}`);
+  }
+  if(rows.length){
+    parts.push("结构化结果：\n"+rows.map((r,i)=>`${i+1}. ${r.title||"无标题"}\n摘要：${r.snippet||""}\n链接：${r.link||""}`).join("\n\n"));
+  }else if(!result.content){
+    parts.push("没有找到可用结果。");
+  }
+  return parts.join("\n\n");
+}
+// 从用户消息里抽第一个裸URL// 从用户消息里抽第一个裸URL
 function extractBareUrl(text){
   const m=String(text||"").match(/https?:\/\/[^\s，。！？、）】"']+/);
   return m ? m[0] : null;
@@ -12372,8 +12507,8 @@ function buildClaudeToolUsePrompt(policy={}){
     if(gwLines) gwLines.split("\n").forEach(line=>lines.push(line));
   }
   if(policy.web){
-    lines.push("- web_search(query)：联网搜索关键词，返回少量标题/摘要/链接；需要 SerpAPI Key。不要用它读取正文。");
-    lines.push("- read_webpage(url)：读取指定网页文字，并列出最多8张网页图片候选；不要一次性要求看所有图片。");
+    lines.push("- web_search(query)：联网搜索关键词，返回标题/摘要/链接，公共搜索兜底可能同时返回可读网页内容。只有关键词时先用它。");
+    lines.push("- read_webpage(url)：读取具体 http/https 网页文字，并列出最多8张图片候选；如果直读失败会自动用搜索通道 q=URL 兜底。");
     lines.push("- view_web_image(image_url, question)：只在确实需要理解某张网页图片时调用，分析一张公网图片。优先先用 read_webpage 返回的 images 选择图片。");
   }
   if(policy.printer){
@@ -18202,7 +18337,7 @@ function getClaudeTools(policy={}){
   if(policy.phoneActivity) add(phoneActivityToolSchema());
   if(policy.geoWeather) geoWeatherToolSchemas("claude").forEach(add);
   if(policy.web){
-    add({type:"function",function:{name:"web_search",description:"联网搜索关键词，返回最多5条网页结果（标题、摘要、链接）。只用于找资料/找链接，不读取网页正文。需要用户在设置里填写 SerpAPI Key。",parameters:{type:"object",properties:{query:{type:"string",description:"搜索关键词，尽量具体"}},required:["query"]}}});
+    add({type:"function",function:{name:"web_search",description:"联网搜索关键词，返回网页结果（标题、摘要、链接），公共搜索兜底可能同时返回可读内容摘要。用于找资料/找链接/搜新闻。",parameters:{type:"object",properties:{query:{type:"string",description:"搜索关键词，尽量具体"}},required:["query"]}}});
     add({type:"function",function:{name:"read_webpage",description:"读取指定网页的文字内容，并提取最多8张网页图片候选（src/alt/附近文字）。正文会截断，避免塞满上下文。",parameters:{type:"object",properties:{url:{type:"string",description:"要读取的网页 URL"}},required:["url"]}}});
     add({type:"function",function:{name:"view_web_image",description:"理解一张网页图片。只在 read_webpage 返回的图片候选确实有用时调用，一次只看一张公网图片 URL，不要批量调用。",parameters:{type:"object",properties:{image_url:{type:"string",description:"公网图片 URL，通常来自 read_webpage 的 images[].src"},question:{type:"string",description:"想从图片里了解什么"}},required:["image_url","question"]}}});
   }
@@ -18420,8 +18555,8 @@ function getWechatTools(options={}){
   printerToolSchemas("wechat").forEach(t=>tools.push(t));
   geoWeatherToolSchemas("wechat").forEach(t=>tools.push(t));
   tools.push(
-    {type:"function",function:{name:"web_search",description:"联网搜索关键词，返回最多5条网页结果（标题、摘要、链接）。用于用户要求搜资料/搜新闻/查最新/找网页；不要用它读取正文。",parameters:{type:"object",properties:{query:{type:"string",description:"搜索关键词，尽量具体；不要传空字符串"}},required:["query"]}}},
-    {type:"function",function:{name:"read_webpage",description:"读取指定公开网页 URL 的文字内容，并提取最多8张网页图片候选。只接受具体 http/https URL；如果只有关键词请先用 web_search。",parameters:{type:"object",properties:{url:{type:"string",description:"要读取的具体网页 URL，必须是 http/https 链接"}},required:["url"]}}},
+    {type:"function",function:{name:"web_search",description:"联网搜索关键词，返回网页结果（标题、摘要、链接），公共搜索兜底可能同时返回可读内容摘要。用于用户要求搜资料/搜新闻/查最新/找网页。",parameters:{type:"object",properties:{query:{type:"string",description:"搜索关键词，尽量具体；不要传空字符串"}},required:["query"]}}},
+    {type:"function",function:{name:"read_webpage",description:"读取指定公开网页 URL 的文字内容，并提取最多8张网页图片候选。只接受具体 http/https URL；如果只有关键词请先用 web_search；如果直读失败会自动用搜索通道 q=URL 兜底。",parameters:{type:"object",properties:{url:{type:"string",description:"要读取的具体网页 URL，必须是 http/https 链接"}},required:["url"]}}},
     {type:"function",function:{name:"view_web_image",description:"理解一张网页图片。只在 read_webpage 返回的图片候选确实有用时调用，一次只看一张公网图片 URL。",parameters:{type:"object",properties:{image_url:{type:"string",description:"公网图片 URL，通常来自 read_webpage 的 images[].src"},question:{type:"string",description:"想从图片里了解什么"}},required:["image_url","question"]}}}
   );
   return tools;
