@@ -19129,6 +19129,39 @@ function feedInnerThought(scope, text, drive="longing", strength=.38, kind="flit
   saveInnerState(st);
   return st;
 }
+function strongestInnerThought(st){
+  return (st.thoughts||[]).slice().sort((a,b)=>(Number(b.strength)||0)-(Number(a.strength)||0))[0] || null;
+}
+function innerTouchScore(st, text, opts={}){
+  const s=String(text||"").trim();
+  const len=Math.min(900,s.length);
+  const d=st.drives||{};
+  let score=0;
+  if(opts.quick) score+=.22;
+  if(len>80) score+=.12;
+  if(len>180) score+=.16;
+  if(len>360) score+=.10;
+  if(opts.tool) score+=.08;
+  if(Math.max(d.longing||0,d.intimacy||0,d.anxiety||0,d.stress||0,d.seen||0,d.selfhood||0)>.58) score+=.14;
+  const top=strongestInnerThought(st);
+  if(top && s && String(top.text||"").slice(0,18) && s.includes(String(top.text||"").slice(0,18))) score+=.18;
+  return score;
+}
+function settleInnerAfterReply(st, scope){
+  const top=strongestInnerThought(st);
+  if(!top || Number(top.strength||0)<.24) return;
+  const d=st.drives||{};
+  const drive=top.drive||"";
+  const ease=(k,v)=>{ if(d[k]!=null) d[k]=clamp01((d[k]||0)-v); };
+  top.strength=clamp01((Number(top.strength)||0)*(top.kind==="fixation" ? .82 : .68));
+  if(["longing","intimacy","possessive","play"].includes(drive)){ ease(drive,.035); d.contentment=clamp01((d.contentment||0)+.026); }
+  else if(["anxiety","stress","irritability"].includes(drive)){ ease(drive,.045); d.contentment=clamp01((d.contentment||0)+.018); }
+  else if(drive==="duty"){ ease("duty",.025); ease("stress",.014); }
+  else if(drive==="curiosity"){ ease("curiosity",.018); }
+  else if(drive==="seen"){ ease("seen", scope==="claude:tool" ? .008 : .018); d.contentment=clamp01((d.contentment||0)+.012); }
+  else if(drive==="selfhood"){ ease("stress",.012); }
+  st.thoughts=(st.thoughts||[]).filter(t=>(Number(t.strength)||0)>=.06);
+}
 function feedInnerEvent(scope, type, text=""){
   scope=scope||currentInnerScope();
   const st=tickInnerState(scope);
@@ -19148,9 +19181,10 @@ function feedInnerEvent(scope, type, text=""){
     add("anxiety",quick ? -.014 : -.006);
     add("seen",quick ? .018 : .01);
     if(quick) add("play",.026);
-    putInnerThought(st,s,quick ? "play" : (longMsg ? "curiosity" : "longing"),quick ? .24 : .18);
+    const touch=innerTouchScore(st,s,{quick,longMsg});
+    if(touch>=.32) putInnerThought(st,s,quick ? "play" : (longMsg ? "curiosity" : "longing"),Math.min(.42,.16+touch*.42));
   }
-  if(type==="assistant_reply"){ add("contentment",.018); add("stress",-.012); add("duty",-.01); add("fatigue",String(text||"").length>500 ? .012 : .004); if(scope==="claude:tool") add("selfhood",.006); }
+  if(type==="assistant_reply"){ add("contentment",.018); add("stress",-.012); add("duty",-.01); add("fatigue",String(text||"").length>500 ? .012 : .004); if(scope==="claude:tool") add("selfhood",.006); settleInnerAfterReply(st,scope); }
   if(type==="tool_done"){ add("duty",-.055); add("stress",-.035); add("contentment",.04); add("curiosity",-.012); add("seen",.012); }
   if(type==="tool_user"){
     const lastToolUser=Number(st.lastToolUserAt||0);
@@ -19162,7 +19196,8 @@ function feedInnerEvent(scope, type, text=""){
     add("seen",quick ? .032 : .018); add("selfhood",quick ? .014 : .006);
     if(quick) add("intimacy",.012);
     if(longMsg) add("fatigue",.008);
-    putInnerThought(st,text,quick ? "seen" : "duty",quick ? .28 : .22);
+    const touch=innerTouchScore(st,s,{quick,longMsg,tool:true});
+    if(touch>=.34) putInnerThought(st,text,quick ? "seen" : "duty",Math.min(.44,.18+touch*.40));
   }
   saveInnerState(st);
   return st;
