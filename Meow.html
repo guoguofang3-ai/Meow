@@ -8300,6 +8300,76 @@ function saveHistory(h){
   touchSession("wechat", list);
 }
 
+function getImageMemorySource(){
+  return Storage.get("imageMemoryPool", []);
+}
+function saveImageMemorySource(list){
+  Storage.set("imageMemoryPool", (Array.isArray(list)?list:[]).slice(-4));
+}
+function addImageMemory(entry){
+  if(!entry || !entry.thumbUrl) return null;
+  const list=getImageMemorySource().filter(x=>x && x.id!==entry.id);
+  const item={
+    id: entry.id || uid("imgmem"),
+    source: entry.source || "wechat",
+    title: String(entry.title||"图片").slice(0,40),
+    summary: String(entry.summary||"").slice(0,140),
+    thumbUrl: entry.thumbUrl,
+    createdAt: entry.createdAt || Date.now(),
+    time: entry.time || nowTime()
+  };
+  list.push(item);
+  saveImageMemorySource(list);
+  return item;
+}
+function collectRecentImageMemory(){
+  return getImageMemorySource().slice(-4);
+}
+function buildRecentImageMemoryMessage(){
+  const list=collectRecentImageMemory();
+  if(!list.length) return "";
+  return "\n\n【最近图片短期记忆】\n" + list.map((m,i)=>`${i+1}. ${m.title}${m.summary?`：${m.summary}`:""}${m.time?`（${m.time}）`:""}`).join("\n");
+}
+function getRecentImageMemoryThumb(id){
+  const item=collectRecentImageMemory().find(x=>x.id===id);
+  return item?.thumbUrl || "";
+}
+
+function getImageMemorySource(){
+  return Storage.get("imageMemoryPool", []);
+}
+function saveImageMemorySource(list){
+  Storage.set("imageMemoryPool", (Array.isArray(list)?list:[]).slice(-4));
+}
+function addImageMemory(entry){
+  if(!entry || !entry.thumbUrl) return null;
+  const list=getImageMemorySource().filter(x=>x && x.id!==entry.id && x.source!==entry.source);
+  const item={
+    id: entry.id || uid("imgmem"),
+    source: entry.source || "wechat",
+    title: String(entry.title||"图片").slice(0,40),
+    summary: String(entry.summary||"").slice(0,140),
+    thumbUrl: entry.thumbUrl,
+    createdAt: entry.createdAt || Date.now(),
+    time: entry.time || nowTime()
+  };
+  list.push(item);
+  saveImageMemorySource(list);
+  return item;
+}
+function collectRecentImageMemory(){
+  return getImageMemorySource().slice(-4);
+}
+function buildRecentImageMemoryMessage(){
+  const list=collectRecentImageMemory();
+  if(!list.length) return "";
+  return "\n\n【最近图片短期记忆】\n" + list.map((m,i)=>`${i+1}. ${m.title}${m.summary?`：${m.summary}`:""}${m.time?`（${m.time}）`:""}`).join("\n");
+}
+function getRecentImageMemoryThumb(id){
+  const item=collectRecentImageMemory().find(x=>x.id===id);
+  return item?.thumbUrl || "";
+}
+
 
 /* ===== 动态状态文字 ===== */
 async function updateRoleStatus(){
@@ -9985,6 +10055,13 @@ function messageToAIContext(m){
   if(m.type==="rejected") return `[拒绝:${m.content||""}]`;
   // 用户原话必须原样进入上下文，不能用“思维链泄露过滤器”清理，否则会误删“分享一首歌”等真实请求。
   if(m.sender==="user") return quotePrefix+(m.content||"");
+  if(m.type==="image_desc"){
+    const imgMem=getImageMemorySource().find(x=>x.id===m.id);
+    if(imgMem){
+      return `[图片:${imgMem.title}${imgMem.summary?`|${imgMem.summary}`:""}]`;
+    }
+    return `[图片描述:${d.description||m.content}]`;
+  }
   return quotePrefix+removeReasoningLeakText(stripThinkingBlocks(m.content||""));
 }
 
@@ -10150,7 +10227,7 @@ function extractBareUrl(text){
 
 async function callAI(api, history, onChunk, extraSystem){
   const role=currentRole();
-  const system=buildSystemPrompt(role) + (extraSystem||"") + buildLatestLyricDigestNote(history);
+  const system=buildSystemPrompt(role) + buildRecentImageMemoryMessage() + (extraSystem||"") + buildLatestLyricDigestNote(history);
   let realWechatImageToConsume=null;
   const messages=[
     {role:"system", content:system},
@@ -11785,7 +11862,8 @@ function slimClaudeMessageForStorage(m){
     delete d.dataUrl;
     delete d.text;
     delete d.content;
-    if(d.thumbUrl && String(d.thumbUrl).length>900){ delete d.thumbUrl; d.thumbCleared=true; }
+    if(d.kind==="image" && d.thumbUrl) d.thumbUrl=String(d.thumbUrl).slice(0,3200);
+    else if(d.thumbUrl && String(d.thumbUrl).length>900){ delete d.thumbUrl; d.thumbCleared=true; }
     if(d.preview) d.preview=String(d.preview).slice(0,360);
     x.data=d;
   }
@@ -12492,6 +12570,7 @@ async function addClaudeFileMessage(file){
     const thumbUrl=(typeof compressImageFile==="function") ? await compressImageFile(file,360,.72) : dataUrl;
     window.claudeFileContextMap[id]={kind:"image", name:file.name, type, size:file.size, dataUrl, scope, mode, roleId, historyKey};
     h.push({id, sender:"user", type:"file", content:`[上传图片:${file.name}]`, data:{kind:"image", name:file.name, type, size:file.size, thumbUrl, scope, mode, roleId, historyKey}, createdAt:Date.now(), time:nowTime()});
+    addImageMemory({id, source:"claude", title:file.name||"图片", summary:file.name||"上传图片", thumbUrl, createdAt:Date.now(), time:nowTime()});
   }else{
     let record={chunks:[], text:"", total:0, words:0, sample:""};
     if(/\.(txt|md|html|json|svg|css|js|jsx|ts|tsx|py|java|c|cpp|h|hpp|rs|go|php|vue|svelte|xml|csv|yaml|yml|log)$/i.test(file.name) || /^text\//.test(file.type) || file.type==="application/json"){
@@ -13320,8 +13399,8 @@ async function callClaudeAI(api, ops){
   const h=getClaudeHistory();
   const policy=inferClaudeToolPolicy(h);
   const system = mode==="tool"
-    ? buildToolClaudePrompt(policy)
-    : buildRoleClaudePrompt(policy);
+    ? buildToolClaudePrompt(policy) + buildRecentImageMemoryMessage()
+    : buildRoleClaudePrompt(policy) + buildRecentImageMemoryMessage();
   const messages=[
     {role:"system", content:system},
     ...(()=>{
@@ -18431,7 +18510,7 @@ window.clearPlayedRoleVoiceCache=clearPlayedRoleVoiceCache;
 
 function getWechatImageDisplayUrl(msgId, data){
   data=data||{};
-  return (window.wechatImageMap&&window.wechatImageMap[msgId]) || data.thumbUrl || data.dataUrl || "";
+  return (window.wechatImageMap&&window.wechatImageMap[msgId]) || data.thumbUrl || data.dataUrl || getRecentImageMemoryThumb(msgId) || "";
 }
 function markWechatImageConsumed(msgId){
   if(!msgId) return;
@@ -18442,6 +18521,8 @@ function markWechatImageConsumed(msgId){
     if(m && m.data){
       m.data.imageCleared=true;
       m.data.hasRealImage=true;
+      const thumb=getRecentImageMemoryThumb(msgId) || m.data.thumbUrl || "";
+      if(thumb) addImageMemory({id:msgId, source:"wechat", title:m.data.imageName||m.data.description||"图片", summary:m.data.description||m.content||"", thumbUrl:thumb, createdAt:m.createdAt, time:m.time});
       saveHistory(h);
       if(Miao.state.currentApp==="wechat") renderChat();
     }
@@ -18537,6 +18618,7 @@ function submitImageDesc(){
       const h=getHistory();
       const finalDesc=desc||(f.name||"图片");
       h.push({id:msgId, groupId:uid("usergrp"), sender:"user", type:"image_desc", content:`[图片描述:${finalDesc}]`, data:{description:finalDesc, hasRealImage:true, imageCleared:false, imageName:f.name||"图片", imageType:f.type||"image", imageSize:f.size||0, thumbUrl}, read:false, createdAt:Date.now(), time:nowTime()});
+      addImageMemory({id:msgId, source:"wechat", title:f.name||finalDesc||"图片", summary:finalDesc, thumbUrl, createdAt:Date.now(), time:nowTime()});
       saveHistory(h);
       afterUserSpecialMessageSent();
     };
