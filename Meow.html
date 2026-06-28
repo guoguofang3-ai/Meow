@@ -8629,7 +8629,10 @@ function summarizeWechatToolResult(name,result){
     const t=result.temperature!=null?`${Math.round(result.temperature)}°C`:"";
     return [t,result.weather].filter(Boolean).join(" ");
   }
-  if(name==="web_search" && result.count!=null) return `${result.count} 条`;
+  if(name==="web_search" && result.count!=null){
+    const q=String(result.query||result.finalQuery||"").trim();
+    return q ? `${q} · ${result.count} 条` : `${result.count} 条`;
+  }
   if(name==="read_webpage") return result.imageCount?`${result.imageCount} 张图`:(result.truncated?"已截断":"");
   if(name==="view_web_image") return result.ok===false?(result.error||"失败"):"已分析";
   if(name==="printer_status") return result.connected?`已连接${result.busy?" · 打印中":""}`:"未连接";
@@ -10110,11 +10113,12 @@ async function callAIReply(){
       }
       const traceId=addWechatToolTrace("web_search",{query:wantSearch});
       const search=await webSearchTool({query:wantSearch});
-      updateWechatToolTrace(traceId, search.ok?"done":"error", search.ok?`${search.count||0} 条`:search.error);
+      const finalSearchQuery=String(search.query||wantSearch||"").trim();
+      updateWechatToolTrace(traceId, search.ok?"done":"error", search.ok?(finalSearchQuery?`${finalSearchQuery} · ${search.count||0} 条`:`${search.count||0} 条`):search.error);
       const note = search.ok
         ? `
 
-【联网搜索结果】你刚才请求搜索「${wantSearch}」，真实搜索结果如下。请基于这些结果回复user；如还需要打开某条结果正文，可以再输出[读取网页:具体链接]，不要把关键词当网址：
+【联网搜索结果】你刚才请求搜索「${wantSearch}」，最终实际搜索词是「${finalSearchQuery||wantSearch}」。真实搜索结果如下。请基于这些结果回复user；如还需要打开某条结果正文，可以再输出[读取网页:具体链接]，不要把关键词当网址：
 ${formatWebSearchResultsForAI(search)}`
         : `
 
@@ -10499,11 +10503,76 @@ function inferWebTargetFromRecentUserMessage(){
     return extractBareUrl(text)||"";
   }catch(e){ return ""; }
 }
+function cleanSearchQueryCandidate(text){
+  let s=String(text||"").trim();
+  s=s.replace(/[\u0000-\u001f]+/g," ").replace(/\s+/g," ").trim();
+  s=s.replace(/^[\s"'“”‘’「」『』《》【】\[\]{}()（）]+|[\s"'“”‘’「」『』《》【】\[\]{}()（）]+$/g,"");
+  s=s.replace(/[，。！？、,.!?；;：:]+$/g,"").trim();
+  s=s.replace(/^(?:请|帮我|给我|麻烦你)?\s*(?:联网搜索|网页搜索|搜索网页|搜索一下|搜一下|搜索|搜|查一下|查询|查|找一下|找|检索|看一下|看看)\s*/i,"").trim();
+  s=s.replace(/^(?:一个|一下|下|一下子|的|关于|有关|一下关于)\s*/i,"").trim();
+  s=s.replace(/(?:吧|呀|呢|看看|给我|帮我|试试|测试一下|测试|结果正常吗|正常吗|行不行|可以吗)$/g,"").trim();
+  return s.replace(/[，。！？、,.!?；;：:]+$/g,"").trim().slice(0,120);
+}
 function isGenericSearchQuery(q){
-  const s=String(q||"").replace(/\s+/g,"").replace(/[，。！？、,.!?]+$/g,"");
+  const s=String(q||"").replace(/\s+/g,"").replace(/[，。！？、,.!?；;：:]+$/g,"");
   if(!s) return true;
   if(s.length<2) return true;
-  return /^(一下|一个|随便|随便一个|搜一个|搜索一个|查一下|网页|网站|资料|新闻|最新|热点|其他关键词|你感兴趣的也行|你感兴趣的|不一定是新闻)$/.test(s);
+  return /^(一下|一个|下|的|链接的|随便|随便一个|任意|任意一个|搜一个|搜索一个|查一下|搜一下|网页|网站|资料|新闻|最新|热点|其他关键词|关键词|query|搜索词|你感兴趣的也行|你感兴趣的|感兴趣的|你想看的|想看的|不一定是新闻|公开新闻|有意思的|好玩的|都行|什么都可以|结果正常吗|搜索结果正常吗|功能测试|测试搜索)$/.test(s);
+}
+function looksLikeMetaSearchTest(q){
+  const s=String(q||"").replace(/\s+/g,"");
+  return /结果正常|正常吗|功能|测试|bug|有没有问题|能不能搜|搜得到吗|返回缓存|缓存结果|字段|传参|代理|query/i.test(s);
+}
+function extractSearchQueryFromReasonField(text){
+  const raw=String(text||"").trim();
+  if(!raw) return "";
+  const patterns=[
+    /(?:最终实际搜索词|实际搜索词|搜索关键词|关键词|query)\s*(?:是|为|=|:|：)\s*[「『“\"']?([^\n，。；;」』”\"']{2,100})/i,
+    /(?:联网搜索|网页搜索|搜索网页|搜索一下|搜一下|搜索|搜|查询|查一下|查|检索|找一下|找)\s*[「『“\"']?([^\n，。；;」』”\"']{2,100})/i,
+    /(?:想看|想了解|感兴趣的是|会感兴趣)\s*[「『“\"']?([^\n，。；;」』”\"']{2,100})/i,
+    /[「『“\"']([^\n」』”\"']{2,100})[」』”\"']/
+  ];
+  for(const re of patterns){
+    const m=raw.match(re);
+    if(m){
+      const q=cleanSearchQueryCandidate(m[1]||"");
+      if(q && !isGenericSearchQuery(q) && !looksLikeMetaSearchTest(q)) return q;
+    }
+  }
+  const short=cleanSearchQueryCandidate(raw);
+  if(short && short.length<=60 && !isGenericSearchQuery(short) && !looksLikeMetaSearchTest(short)) return short;
+  return "";
+}
+function searchQueryScore(q, source){
+  const s=cleanSearchQueryCandidate(q);
+  if(!s || isGenericSearchQuery(s)) return -1000;
+  let score=Math.min(s.length,28);
+  if(/\d{4}|最新|新闻|资讯|报告|研究|漏洞|安全|AI|人工智能|政策|发布|更新|趋势|事件|名单|价格|天气|赛程/i.test(s)) score+=12;
+  if(/[\u4e00-\u9fa5]{2,}/.test(s)) score+=4;
+  if(/^(reason|intent|purpose|goal|why|description)$/i.test(source||"")) score+=6;
+  if(looksLikeMetaSearchTest(s)) score-=60;
+  if(/你|我|user|哥哥|刚才|这次|那个|这个/.test(s) && s.length<12) score-=18;
+  return score;
+}
+function personaInterestSearchQuery(){
+  try{
+    const role=typeof currentRole==="function" ? (currentRole()||{}) : {};
+    const t=[role.name,role.description,role.personality,role.scenario,role.systemPrompt,role.firstMes].filter(Boolean).join(" ");
+    const rules=[
+      [/网络安全|漏洞|黑客|渗透|代码|程序|开发|工程师|计算机|赛博|技术|AI|人工智能|机器人/i,"最新网络安全漏洞新闻"],
+      [/财经|金融|股票|基金|投资|商业|交易|银行/i,"今日财经市场新闻"],
+      [/音乐|乐队|歌手|唱歌|作曲|钢琴|吉他/i,"最新音乐资讯"],
+      [/电影|导演|演员|影视|剧本|戏剧/i,"最新电影资讯"],
+      [/游戏|电竞|主机|手游|Steam|玩家/i,"最新游戏行业资讯"],
+      [/动漫|漫画|二次元|番剧|声优/i,"最新动漫资讯"],
+      [/文学|小说|写作|诗|作家|书店/i,"最新文学作品与作家新闻"],
+      [/医学|医生|医疗|心理|药|健康|护理/i,"最新健康医疗资讯"],
+      [/时尚|穿搭|美妆|设计|艺术|摄影/i,"最新设计艺术资讯"],
+      [/历史|考古|博物馆|人文/i,"最新历史考古发现"]
+    ];
+    for(const [re,q] of rules){ if(re.test(t)) return q; }
+  }catch(e){}
+  return "";
 }
 function inferSearchQueryFromRecentUserMessage(){
   try{
@@ -10515,24 +10584,36 @@ function inferSearchQueryFromRecentUserMessage(){
     if(url) return url;
     const matches=[...text.matchAll(/(?:不要搜[^，。！？\n]*[,，。！？\s]*)?(?:搜一下|搜索一下|搜索|搜|查一下|查|找一下|找)(?:网页|网站|新闻|资料|链接|内容|一下)?\s*[:：]?\s*([^，。！？\n]*)/g)];
     for(let i=matches.length-1;i>=0;i--){
-      let q=String(matches[i][1]||"").trim();
-      q=q.replace(/^(一个|一下|下|一下子)\s*/,"").replace(/^(的|关于)\s*/,"").trim();
-      q=q.replace(/(吧|呀|呢|看看|给我|帮我)$/g,"").trim();
-      if(q && !isGenericSearchQuery(q)) return q;
+      const q=cleanSearchQueryCandidate(matches[i][1]||"");
+      if(q && !isGenericSearchQuery(q) && !looksLikeMetaSearchTest(q)) return q;
     }
-    if(/随便|任意|你感兴趣|都行|什么都可以|不一定/.test(text)) return "今日热点新闻";
-    if(/新闻|最新|热点/.test(text)) return "今日热点新闻";
+    if(/随便|任意|你感兴趣|感兴趣|都行|什么都可以|不一定/.test(text)) return personaInterestSearchQuery();
     return "";
   }catch(e){ return ""; }
 }
 function resolveWebSearchQuery(args={}){
   args=args||{};
-  let query=String(args.query||args.q||args.keyword||args.keywords||args.search||args.text||args.topic||args.term||args.url||"").trim();
-  query=query.replace(/[\u0000-\u001f]+/g," ").replace(/[，。！？、,.!?]+$/g,"").trim();
-  if(query && !isGenericSearchQuery(query)) return query;
+  const candidates=[];
+  const directFields=["query","q","keyword","keywords","search","text","topic","term","url"];
+  directFields.forEach(k=>{
+    if(args[k]!=null){
+      const q=cleanSearchQueryCandidate(args[k]);
+      candidates.push({q,source:k,score:searchQueryScore(q,k)});
+    }
+  });
+  const reasonFields=["reason","intent","purpose","goal","why","description","desc","rationale"];
+  reasonFields.forEach(k=>{
+    if(args[k]!=null){
+      const q=extractSearchQueryFromReasonField(args[k]);
+      candidates.push({q,source:k,score:searchQueryScore(q,k)});
+    }
+  });
+  candidates.sort((a,b)=>b.score-a.score);
+  if(candidates[0] && candidates[0].score>0) return candidates[0].q;
   const inferred=inferSearchQueryFromRecentUserMessage();
   if(inferred && !isGenericSearchQuery(inferred)) return inferred;
-  if(query && /随便|任意|你感兴趣|都行|新闻|热点|最新|一个/.test(query)) return "今日热点新闻";
+  const persona=personaInterestSearchQuery();
+  if(persona) return persona;
   return "";
 }
 async function readWebpageTool(args={}){
@@ -10542,13 +10623,13 @@ async function readWebpageTool(args={}){
     // 兼容模型把关键词误传给 read_webpage：自动改走 web_search，避免 search-only Worker 报 missing q。
     const search=await webSearchTool({query:target});
     if(!search.ok) return {ok:false,error:"这不是具体网址，已按关键词搜索但失败："+(search.error||"未知错误")};
-    return {ok:true, search:true, query:target, url:"", content:formatWebSearchResultsForAI(search), results:search.results||[], count:search.count||0, images:[], imageCount:0};
+    return {ok:true, search:true, query:search.query||target, requestedQuery:target, url:"", content:formatWebSearchResultsForAI(search), results:search.results||[], count:search.count||0, images:[], imageCount:0};
   }
   if(!target){
     const query=resolveWebSearchQuery(args);
     const search=await webSearchTool({query});
     if(!search.ok) return {ok:false,error:"缺少具体网址，按关键词搜索也失败："+(search.error||"未知错误")};
-    return {ok:true, search:true, query, url:"", content:formatWebSearchResultsForAI(search), results:search.results||[], count:search.count||0, images:[], imageCount:0};
+    return {ok:true, search:true, query:search.query||query, requestedQuery:query, url:"", content:formatWebSearchResultsForAI(search), results:search.results||[], count:search.count||0, images:[], imageCount:0};
   }
   const page=await fetchWebPage(target);
   if(!page.ok) return page;
@@ -10951,6 +11032,7 @@ ${buildCommandTaskContext()||"暂无小任务反馈"}
 
 【联网搜索 / 读网页】
 - user 让你“搜一下 / 查资料 / 搜新闻 / 找网页 / 最新消息”时，优先使用 function call：web_search(query)。如果模型环境没成功调用工具，可兜底单独输出：[搜索网页:关键词]。
+- user 说“随便搜一个 / 搜你感兴趣的 / 你想看的也行”时，必须先按你的人设、职业、兴趣生成一个具体搜索词，再调用 web_search；不要把“感兴趣的、你想看的、结果正常吗”这类用户原话当 query。
 - 只有 user 给出具体 http/https 链接，或你已经从搜索结果拿到具体链接时，才使用 read_webpage(url) 或兜底输出：[读取网页:具体URL]。
 - 不要把“新华网、知乎、搜一下网页”这类关键词硬写成 [读取网页:关键词]，那不是网址，会导致代理报 missing q。
 - 读取网页只能读公开网页；需要登录的页面（小红书、微博等）读不了，读不到时系统会告诉你。
@@ -13980,7 +14062,12 @@ async function callClaudeAI(api, ops){
         } else {
           result=await executeClaudeTool(toolName, args);
         }
-        claudeOpsDone(ops, opIndex, !(result&&result.error), result&&result.error?String(result.error).slice(0,80):"");
+        let opNote=result&&result.error?String(result.error).slice(0,80):"";
+        if(toolName==="web_search" && result && !result.error){
+          const q=String(result.query||"").trim();
+          opNote=q ? `${q}${result.count!=null?` · ${result.count}条`:""}` : (result.count!=null?`${result.count}条`:"");
+        }
+        claudeOpsDone(ops, opIndex, !(result&&result.error), opNote);
       }catch(e){
         result={error:e.message||String(e)};
         claudeOpsDone(ops, opIndex, false, result.error);
@@ -18337,7 +18424,7 @@ function getClaudeTools(policy={}){
   if(policy.phoneActivity) add(phoneActivityToolSchema());
   if(policy.geoWeather) geoWeatherToolSchemas("claude").forEach(add);
   if(policy.web){
-    add({type:"function",function:{name:"web_search",description:"联网搜索关键词，返回网页结果（标题、摘要、链接），公共搜索兜底可能同时返回可读内容摘要。用于找资料/找链接/搜新闻。",parameters:{type:"object",properties:{query:{type:"string",description:"搜索关键词，尽量具体"}},required:["query"]}}});
+    add({type:"function",function:{name:"web_search",description:"联网搜索关键词，返回网页结果（标题、摘要、链接），公共搜索兜底可能同时返回可读内容摘要。用于找资料/找链接/搜新闻。",parameters:{type:"object",properties:{query:{type:"string",description:"最终实际搜索词，必须具体。user说‘随便/你感兴趣的’时，按当前角色人设自行拟定具体关键词，不要原样传用户泛话。"},reason:{type:"string",description:"可选：为什么按这个关键词搜索，用于排查。"}},required:["query"]}}});
     add({type:"function",function:{name:"read_webpage",description:"读取指定网页的文字内容，并提取最多8张网页图片候选（src/alt/附近文字）。正文会截断，避免塞满上下文。",parameters:{type:"object",properties:{url:{type:"string",description:"要读取的网页 URL"}},required:["url"]}}});
     add({type:"function",function:{name:"view_web_image",description:"理解一张网页图片。只在 read_webpage 返回的图片候选确实有用时调用，一次只看一张公网图片 URL，不要批量调用。",parameters:{type:"object",properties:{image_url:{type:"string",description:"公网图片 URL，通常来自 read_webpage 的 images[].src"},question:{type:"string",description:"想从图片里了解什么"}},required:["image_url","question"]}}});
   }
@@ -18555,7 +18642,7 @@ function getWechatTools(options={}){
   printerToolSchemas("wechat").forEach(t=>tools.push(t));
   geoWeatherToolSchemas("wechat").forEach(t=>tools.push(t));
   tools.push(
-    {type:"function",function:{name:"web_search",description:"联网搜索关键词，返回网页结果（标题、摘要、链接），公共搜索兜底可能同时返回可读内容摘要。用于用户要求搜资料/搜新闻/查最新/找网页。",parameters:{type:"object",properties:{query:{type:"string",description:"搜索关键词，尽量具体；不要传空字符串"}},required:["query"]}}},
+    {type:"function",function:{name:"web_search",description:"联网搜索关键词，返回网页结果（标题、摘要、链接），公共搜索兜底可能同时返回可读内容摘要。用于用户要求搜资料/搜新闻/查最新/找网页。",parameters:{type:"object",properties:{query:{type:"string",description:"最终实际搜索词，必须具体；不要传空字符串。user说‘随便/你感兴趣的’时，按当前角色人设自行拟定具体关键词，不要原样传用户泛话。"},reason:{type:"string",description:"可选：为什么按这个关键词搜索，用于排查。"}},required:["query"]}}},
     {type:"function",function:{name:"read_webpage",description:"读取指定公开网页 URL 的文字内容，并提取最多8张网页图片候选。只接受具体 http/https URL；如果只有关键词请先用 web_search；如果直读失败会自动用搜索通道 q=URL 兜底。",parameters:{type:"object",properties:{url:{type:"string",description:"要读取的具体网页 URL，必须是 http/https 链接"}},required:["url"]}}},
     {type:"function",function:{name:"view_web_image",description:"理解一张网页图片。只在 read_webpage 返回的图片候选确实有用时调用，一次只看一张公网图片 URL。",parameters:{type:"object",properties:{image_url:{type:"string",description:"公网图片 URL，通常来自 read_webpage 的 images[].src"},question:{type:"string",description:"想从图片里了解什么"}},required:["image_url","question"]}}}
   );
