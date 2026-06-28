@@ -626,9 +626,11 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 }
 .action-sheet-item.danger{
   color:#d6383a;
-  background:rgba(255,232,232,.46);
+  background:transparent;
 }
-.action-sheet-item.danger:active{background:rgba(255,218,218,.75)}
+.action-sheet-item.danger:active{
+  background:color-mix(in srgb,var(--accent,#111827) 10%,rgba(255,255,255,.55));
+}
 .action-sheet-divider{
   height:1px;
   margin:6px 8px;
@@ -4410,18 +4412,18 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 }
 .app-screen.wechat .profile-title-row{gap:4px!important;align-items:center!important;}
 .app-screen.wechat .session-title-btn{
-  width:24px!important;height:24px!important;
-  min-width:24px!important;min-height:24px!important;
-  box-shadow:0 4px 12px rgba(38,31,22,.045)!important;
+  width:21px!important;height:21px!important;
+  min-width:21px!important;min-height:21px!important;
+  box-shadow:0 3px 10px rgba(38,31,22,.04)!important;
 }
 .claude-app>.header .session-title-btn{
-  width:24px!important;height:24px!important;
-  min-width:24px!important;min-height:24px!important;
-  box-shadow:0 4px 12px rgba(38,31,22,.045)!important;
+  width:21px!important;height:21px!important;
+  min-width:21px!important;min-height:21px!important;
+  box-shadow:0 3px 10px rgba(38,31,22,.04)!important;
 }
 .app-screen.wechat .session-title-btn .miao-svg-icon,
 .claude-app>.header .session-title-btn .miao-svg-icon{
-  width:12px!important;height:12px!important;
+  width:10px!important;height:10px!important;
 }
 .app-screen.wechat .icon-btn,.claude-head-actions .icon-btn,.claude-app>.header>.icon-btn{
   width:36px!important;height:36px!important;
