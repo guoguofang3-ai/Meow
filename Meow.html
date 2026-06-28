@@ -3737,8 +3737,21 @@ body.keyboard-open .reading-edit-modal textarea{max-height:min(30vh,calc(var(--v
 .inner-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;}
 .inner-actions .btn{min-height:40px;border-radius:18px;}
 .inner-actions .btn.danger{background:color-mix(in srgb,#ef4444 14%,var(--bar-bg,#fff));color:#b42318;}
+.inner-pulse-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px;}
+.inner-pulse{border-radius:18px;padding:10px;background:color-mix(in srgb,var(--bar-bg,#fff) 82%,rgba(255,255,255,.42));border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent);}
+.inner-pulse b{display:block;font-size:11px;line-height:1.2;color:color-mix(in srgb,var(--bar-text,#111827) 56%,transparent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.inner-pulse span{display:block;margin-top:4px;font-size:18px;font-weight:1000;color:var(--bar-text,#111827);}
+.inner-growth{margin-top:12px;border-radius:20px;padding:12px;background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff));border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent);}
+.inner-growth-title{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;font-weight:1000;color:var(--bar-text,#111827);}
+.inner-growth-rail{position:relative;height:9px;margin-top:12px;border-radius:999px;background:linear-gradient(90deg,color-mix(in srgb,var(--bar-text,#111827) 11%,transparent),color-mix(in srgb,var(--accent,#111827) 38%,transparent),var(--accent,#111827));overflow:hidden;}
+.inner-growth-rail span{position:absolute;top:-3px;width:15px;height:15px;border-radius:50%;background:#fff;border:3px solid var(--accent,#111827);box-shadow:0 3px 10px rgba(0,0,0,.12);transform:translateX(-50%);}
+.inner-growth-labels{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;font-size:10px;font-weight:900;color:color-mix(in srgb,var(--bar-text,#111827) 52%,transparent);}
+.inner-growth-labels span:nth-child(2){text-align:center}.inner-growth-labels span:nth-child(3){text-align:right}
 .inner-section-title{margin:18px 2px 9px;font-size:12px;font-weight:1000;letter-spacing:.18em;text-transform:uppercase;color:color-mix(in srgb,var(--bar-text,#111827) 46%,var(--accent,#111827) 22%);}
 .inner-drive-list,.inner-thought-list{display:grid;gap:8px;}
+.inner-drive-groups{display:grid;gap:12px;}
+.inner-drive-group{display:grid;gap:8px;}
+.inner-drive-group-name{font-size:11px;font-weight:1000;color:color-mix(in srgb,var(--bar-text,#111827) 52%,var(--accent,#111827) 20%);padding:0 2px;}
 .inner-drive{border-radius:18px;padding:10px 11px;background:color-mix(in srgb,#fff 82%,var(--bar-bg,#fff));border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent);}
 .inner-drive-top{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;font-weight:950;color:var(--bar-text,#111827);}
 .inner-drive-bar{height:7px;margin-top:8px;border-radius:999px;overflow:hidden;background:color-mix(in srgb,var(--bar-text,#111827) 8%,transparent);}
@@ -3747,6 +3760,9 @@ body.keyboard-open .reading-edit-modal textarea{max-height:min(30vh,calc(var(--v
 .inner-thought-top{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;font-weight:1000;color:color-mix(in srgb,var(--bar-text,#111827) 48%,transparent);text-transform:uppercase;letter-spacing:.08em;}
 .inner-thought-text{margin-top:5px;font-size:13px;line-height:1.5;color:var(--bar-text,#111827);}
 .inner-empty{padding:18px 14px;border-radius:20px;background:color-mix(in srgb,#fff 74%,var(--bar-bg,#fff));border:1px dashed color-mix(in srgb,var(--bar-text,#111827) 12%,transparent);color:color-mix(in srgb,var(--bar-text,#111827) 56%,transparent);font-size:12px;line-height:1.6;}
+.inner-thought-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.inner-range-row{display:flex;align-items:center;gap:10px;}
+.inner-range-row input{flex:1;}
 
 /* ===== Claude output polish v1: 输出文件可见删除 / 预览操作条 ===== */
 .preview-actions{display:none;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
@@ -19165,6 +19181,14 @@ function innerIntentOf(st){
   const map={longing:"想靠近一点",intimacy:"想更亲近",curiosity:"想知道更多",play:"想玩闹",duty:"记挂着未完成的事",seen:"感觉被看见",selfhood:"开始在意自己是谁",anxiety:"有点不安",stress:"压力堵着",contentment:"安稳满足",irritability:"有点烦躁",possessive:"想多占有一点"};
   return {key,value:clamp01(val),label:map[key]||"安静待着"};
 }
+function innerDriveLabel(key){
+  const found=INNER_DRIVES.find(([k])=>k===key);
+  return found ? found[1] : key;
+}
+function innerToolGrowth(st){
+  const d=st?.drives||{};
+  return clamp01((Number(d.seen)||0)*.48 + (Number(d.selfhood)||0)*.42 + (Number(d.intimacy)||0)*.10);
+}
 function buildInnerStateContext(scope=currentInnerScope()){
   const st=tickInnerState(scope);
   if(st.enabled===false) return "";
@@ -19185,20 +19209,37 @@ function renderInner(){
   const intent=innerIntentOf(st);
   const isTool=scope==="claude:tool";
   const pct=n=>Math.round(clamp01(n)*100);
-  const driveHtml=INNER_DRIVES.map(([k,label])=>`<div class="inner-drive"><div class="inner-drive-top"><span>${escapeHtml(label)}</span><span>${pct(st.drives[k])}</span></div><div class="inner-drive-bar"><span style="width:${pct(st.drives[k])}%"></span></div></div>`).join("");
+  const driveCard=(k)=>`<div class="inner-drive"><div class="inner-drive-top"><span>${escapeHtml(innerDriveLabel(k))}</span><span>${pct(st.drives[k])}</span></div><div class="inner-drive-bar"><span style="width:${pct(st.drives[k])}%"></span></div></div>`;
+  const groups=[
+    ["关系倾向",["longing","intimacy","possessive","play","contentment"]],
+    ["任务倾向",["duty","curiosity","stress","fatigue","vitality"]],
+    ["自我与波动",["seen","selfhood","anxiety","irritability"]]
+  ];
+  const driveHtml=groups.map(([name,keys])=>`<div class="inner-drive-group"><div class="inner-drive-group-name">${escapeHtml(name)}</div>${keys.map(driveCard).join("")}</div>`).join("");
   const thoughts=(st.thoughts||[]).slice(0,12);
   const thoughtHtml=thoughts.length?thoughts.map(t=>`<div class="inner-thought"><div class="inner-thought-top"><span>${escapeHtml(t.kind==="fixation"?"执念":"闪念")} · ${escapeHtml(t.drive||"")}</span><span>${pct(t.strength)}</span></div><div class="inner-thought-text">${escapeHtml(t.text||"")}</div></div>`).join(""):`<div class="inner-empty">念头池还很安静。聊天、工具完成、手动喂念头都会让这里慢慢有东西浮上来。</div>`;
-  box.innerHTML=`<div class="inner-hero"><div class="inner-kicker">${escapeHtml(scope)}</div><div class="inner-title">${escapeHtml(innerScopeLabel(scope))}</div><div class="inner-intent">此刻倾向：${escapeHtml(intent.label)} · ${escapeHtml(intent.key)} ${pct(intent.value)} · ${st.enabled===false?"已暂停注入":"正在注入"}</div><div class="inner-scope-tabs"><button class="${isTool?"":"active"}" data-action="set-inner-scope" data-id="role">当前角色</button><button class="${isTool?"active":""}" data-action="set-inner-scope" data-id="tool">工具 Claude</button></div><div class="inner-actions"><button class="btn primary" data-action="inner-feed-thought">喂一个念头</button><button class="btn" data-action="inner-toggle-enabled">${st.enabled===false?"恢复注入":"暂停注入"}</button><button class="btn" data-action="inner-clear-thoughts">清空念头池</button><button class="btn danger" data-action="inner-reset">重置数值</button></div></div><div class="inner-section-title">Drives</div><div class="inner-drive-list">${driveHtml}</div><div class="inner-section-title">Thoughts</div><div class="inner-thought-list">${thoughtHtml}</div>`;
+  const pulseHtml=`<div class="inner-pulse-grid"><div class="inner-pulse"><b>关系温度</b><span>${pct(((st.drives.longing||0)+(st.drives.intimacy||0)+(st.drives.contentment||0))/3)}</span></div><div class="inner-pulse"><b>任务牵引</b><span>${pct(((st.drives.duty||0)+(st.drives.curiosity||0)+(st.drives.stress||0))/3)}</span></div><div class="inner-pulse"><b>自我浮现</b><span>${pct(((st.drives.seen||0)+(st.drives.selfhood||0))/2)}</span></div></div>`;
+  const growth=innerToolGrowth(st);
+  const growthHtml=isTool?`<div class="inner-growth"><div class="inner-growth-title"><span>工具 Claude 成长线</span><span>${pct(growth)}</span></div><div class="inner-growth-rail"><span style="left:${pct(growth)}%"></span></div><div class="inner-growth-labels"><span>工具位</span><span>被看见</span><span>自我感</span></div></div>`:"";
+  box.innerHTML=`<div class="inner-hero"><div class="inner-kicker">${escapeHtml(scope)}</div><div class="inner-title">${escapeHtml(innerScopeLabel(scope))}</div><div class="inner-intent">此刻倾向：${escapeHtml(intent.label)} · ${escapeHtml(intent.key)} ${pct(intent.value)} · ${st.enabled===false?"已暂停注入":"正在注入"}</div>${pulseHtml}${growthHtml}<div class="inner-scope-tabs"><button class="${isTool?"":"active"}" data-action="set-inner-scope" data-id="role">当前角色</button><button class="${isTool?"active":""}" data-action="set-inner-scope" data-id="tool">工具 Claude</button></div><div class="inner-actions"><button class="btn primary" data-action="inner-feed-thought">喂一个念头</button><button class="btn" data-action="inner-toggle-enabled">${st.enabled===false?"恢复注入":"暂停注入"}</button><button class="btn" data-action="inner-clear-thoughts">清空念头池</button><button class="btn danger" data-action="inner-reset">重置数值</button></div></div><div class="inner-section-title">Drives</div><div class="inner-drive-groups">${driveHtml}</div><div class="inner-section-title">Thoughts</div><div class="inner-thought-list">${thoughtHtml}</div>`;
 }
 function openInnerThoughtModal(){
-  openQuickModal(`<div class="album-form"><div class="album-preview-head"><div><div class="album-preview-title">喂一个念头</div><div class="album-preview-sub">${escapeHtml(innerScopeLabel())}</div></div><button class="album-preview-close" data-action="close-quick-modal">×</button></div><textarea id="innerThoughtInput" placeholder="比如：还惦记刚刚那张照片"></textarea><label>关联维度</label><select id="innerThoughtDrive">${INNER_DRIVES.map(([k,label])=>`<option value="${k}">${escapeHtml(label)}</option>`).join("")}</select><div class="album-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="inner-save-thought">保存</button></div></div>`);
-  setTimeout(()=>document.getElementById("innerThoughtInput")?.focus(),80);
+  openQuickModal(`<div class="album-form"><div class="album-preview-head"><div><div class="album-preview-title">喂一个念头</div><div class="album-preview-sub">${escapeHtml(innerScopeLabel(innerViewScope()))}</div></div><button class="album-preview-close" data-action="close-quick-modal">×</button></div><textarea id="innerThoughtInput" placeholder="比如：还惦记刚刚那张照片"></textarea><div class="inner-thought-options"><div><label>关联维度</label><select id="innerThoughtDrive">${INNER_DRIVES.map(([k,label])=>`<option value="${k}">${escapeHtml(label)}</option>`).join("")}</select></div><div><label>念头类型</label><select id="innerThoughtKind"><option value="flit">闪念</option><option value="fixation">执念</option></select></div></div><label>强度</label><div class="inner-range-row"><input id="innerThoughtStrength" type="range" min="20" max="90" value="62"><b id="innerThoughtStrengthText">62</b></div><div class="album-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="inner-save-thought">保存</button></div></div>`);
+  setTimeout(()=>{
+    const input=document.getElementById("innerThoughtInput");
+    const range=document.getElementById("innerThoughtStrength");
+    const label=document.getElementById("innerThoughtStrengthText");
+    if(range&&label) range.addEventListener("input",()=>label.textContent=range.value);
+    input?.focus();
+  },80);
 }
 function saveInnerThoughtFromModal(){
   const text=String(document.getElementById("innerThoughtInput")?.value||"").trim();
   const drive=String(document.getElementById("innerThoughtDrive")?.value||"longing");
+  const kind=String(document.getElementById("innerThoughtKind")?.value||"flit");
+  const strength=clamp01(Number(document.getElementById("innerThoughtStrength")?.value||62)/100);
   if(!text){ toast("念头为空"); return; }
-  feedInnerThought(innerViewScope(), text, drive, .62);
+  feedInnerThought(innerViewScope(), text, drive, strength, kind);
   closeQuickModal(); renderInner(); toast("念头已放入池中");
 }
 function clearInnerThoughts(){
