@@ -18702,11 +18702,54 @@ function phoneActivityToolSchema(){
 }
 
 function albumKey(){ return "album.entries"; }
-function getAlbumEntries(){
+function albumRoleOwnerScope(){
+  const role=(typeof currentRole==="function" ? currentRole() : null) || {};
+  const roleId=role.id || Miao.state.currentRoleId || "default";
+  return "role:"+roleId;
+}
+function albumCurrentOwnerScope(){
+  const app=Miao?.state?.currentApp || "";
+  const mode=typeof getClaudeMode==="function" ? getClaudeMode() : "role";
+  if(app==="claude" && mode==="tool") return "claude:tool";
+  return albumRoleOwnerScope();
+}
+function albumEntryOwnerScope(item){
+  return String(item?.ownerScope || item?.scope || item?.albumScope || "").trim();
+}
+function albumIsToolOwner(scope){ return String(scope||"")==="claude:tool"; }
+function albumEntryVisible(item, scope=albumCurrentOwnerScope()){
+  const owner=albumEntryOwnerScope(item);
+  if(owner) return owner===scope;
+  return !albumIsToolOwner(scope);
+}
+function getAllAlbumEntries(){
   const list=Storage.get(albumKey(),[]);
   return Array.isArray(list)?list:[];
 }
+function getAlbumEntries(scope=albumCurrentOwnerScope()){
+  return getAllAlbumEntries().filter(item=>albumEntryVisible(item, scope));
+}
 function saveAlbumEntries(list){ Storage.set(albumKey(), Array.isArray(list)?list:[]); }
+function trimAlbumEntries(list, limitPerOwner=80){
+  const counts={};
+  return (Array.isArray(list)?list:[]).filter(item=>{
+    const scope=albumEntryOwnerScope(item) || "legacy";
+    counts[scope]=(counts[scope]||0)+1;
+    return counts[scope]<=limitPerOwner;
+  });
+}
+function migrateAlbumOwnerScopes(scope=albumCurrentOwnerScope()){
+  if(albumIsToolOwner(scope)) return getAllAlbumEntries();
+  const list=getAllAlbumEntries();
+  let changed=false;
+  const next=list.map(item=>{
+    if(!item || albumEntryOwnerScope(item)) return item;
+    changed=true;
+    return Object.assign({}, item, {ownerScope:scope, updatedAt:Date.now()});
+  });
+  if(changed) saveAlbumEntries(next);
+  return next;
+}
 function albumRawThumbOf(item){ return item?.thumbUrl || item?.imageUrl || item?.dataUrl || item?.thumb || ""; }
 function isAlbumImageUrl(url){
   const s=String(url||"").trim();
@@ -18802,11 +18845,13 @@ function resolveAlbumThumbUrl(raw={}, opts={}){
 }
 function albumThumbOf(item){ return resolveAlbumThumbUrl(item,{allowLatest:false}) || String(albumRawThumbOf(item)||"").trim(); }
 function repairAlbumBrokenThumbs(){
+  const scope=albumCurrentOwnerScope();
   const list=Storage.get(albumKey(),[]);
   if(!Array.isArray(list) || !list.length) return list||[];
   let changed=false;
   let usedLatest=false;
   const fixed=list.map((item,idx)=>{
+    if(!albumEntryVisible(item, scope)) return item;
     const direct=String(albumRawThumbOf(item)||"").trim();
     if(isAlbumImageUrl(direct)) return item;
     let thumb=resolveAlbumThumbUrl(item,{allowLatest:false});
@@ -18838,6 +18883,7 @@ function normalizeAlbumItem(raw={}){
     thumbUrl:thumb,
     imageName:String(raw.imageName||raw.name||raw.filename||"").trim().slice(0,80),
     sourceMsgId:String(raw.sourceMsgId||"").trim(),
+    ownerScope:String(raw.ownerScope||raw.scope||albumCurrentOwnerScope()),
     sourceLabel:String(raw.sourceLabel||raw.source||"角色存图").trim().slice(0,40),
     comments:Array.isArray(raw.comments)?raw.comments.map(c=>({id:String(c.id||uid("albcom")),author:String(c.author||"user"),text:String(c.text||"").trim().slice(0,300),time:String(c.time||nowTime())})).filter(c=>c.text):[],
     createdAt:Number(raw.createdAt||now)||now,
@@ -18847,16 +18893,18 @@ function normalizeAlbumItem(raw={}){
 function addAlbumEntry(raw={}){
   const item=normalizeAlbumItem(raw);
   if(!item.thumbUrl) return {error:"缺少图片"};
-  const list=getAlbumEntries();
-  const same=list.find(x=>x.sourceMsgId&&item.sourceMsgId&&x.sourceMsgId===item.sourceMsgId) || list.find(x=>x.thumbUrl===item.thumbUrl&&x.title===item.title);
+  const list=getAllAlbumEntries();
+  const scoped=list.filter(x=>albumEntryVisible(x, item.ownerScope));
+  const same=scoped.find(x=>x.sourceMsgId&&item.sourceMsgId&&x.sourceMsgId===item.sourceMsgId) || scoped.find(x=>x.thumbUrl===item.thumbUrl&&x.title===item.title);
   if(same) return {status:"skipped",reason:"已存在",id:same.id,title:same.title};
   list.unshift(item);
-  saveAlbumEntries(list.slice(0,80));
-  return {status:"saved",id:item.id,title:item.title,count:list.length};
+  saveAlbumEntries(trimAlbumEntries(list));
+  return {status:"saved",id:item.id,title:item.title,count:scoped.length+1};
 }
 function updateAlbumEntry(id,patch={}){
-  const list=getAlbumEntries();
-  const idx=list.findIndex(x=>x.id===id);
+  const scope=albumCurrentOwnerScope();
+  const list=getAllAlbumEntries();
+  const idx=list.findIndex(x=>x.id===id && albumEntryVisible(x, scope));
   if(idx<0) return null;
   list[idx]={...list[idx],...patch,updatedAt:Date.now()};
   saveAlbumEntries(list);
@@ -18884,7 +18932,7 @@ function readAlbumToolSchema(){
 function albumSaveFromTool(args={}, sourceLabel){
   args=args||{};
   const thumb=resolveAlbumThumbUrl(args,{allowLatest:true});
-  return addAlbumEntry({title:args.title||args.summary||args.note||args.imageName,summary:args.summary,note:args.note,thumbUrl:thumb,imageName:args.imageName,sourceMsgId:args.sourceMsgId,sourceLabel:args.sourceLabel||sourceLabel||"角色存图"});
+  return addAlbumEntry({title:args.title||args.summary||args.note||args.imageName,summary:args.summary,note:args.note,thumbUrl:thumb,imageName:args.imageName,sourceMsgId:args.sourceMsgId,sourceLabel:args.sourceLabel||sourceLabel||"角色存图",ownerScope:albumCurrentOwnerScope()});
 }
 function albumWriteNoteFromTool(args={}, sourceLabel){
   const id=args.photoId||args.id||"";
@@ -18897,6 +18945,7 @@ function albumWriteNoteFromTool(args={}, sourceLabel){
   return {status:"saved",id,note:note.slice(0,120)};
 }
 function albumReadTool(args={}){
+  migrateAlbumOwnerScopes();
   const rawQuery=String(args.query||"").trim();
   const q=rawQuery.toLowerCase();
   const limit=Math.min(Math.max(parseInt(args.limit)||8,1),20);
@@ -21759,6 +21808,7 @@ function renderAlbumItem(item){
 function renderAlbum(){
   const box=$("#albumList");
   if(!box) return;
+  migrateAlbumOwnerScopes();
   repairAlbumBrokenThumbs();
   const list=getAlbumEntries();
   const strip=document.querySelector(".album-strip");
@@ -21861,8 +21911,9 @@ async function albumRoleComment(id, userText=""){
     const prompt=`这是相册里的一张照片。请以 ${role.name||"当前角色"} 的口吻，在照片评论区回复 user 一句。要像聊天评论，不要总结报告，不要超过70字。\n\n标题：${item.title||"照片"}\n摘要：${item.summary||""}\n随记：${item.note||""}\n最新评论：\n${recent||userText||"user想听你说一句"}`;
     const raw=await callSimpleChatAPI(api,[{role:"system",content:buildSystemPrompt(role)},{role:"user",content:prompt}],.58);
     const text=removeReasoningLeakText(stripThinkingBlocks(raw||"")).replace(/^[\"“]|[\"”]$/g,"").trim().slice(0,120) || "我看到了。";
-    const list=getAlbumEntries();
-    const target=list.find(x=>x.id===id);
+    const scope=albumCurrentOwnerScope();
+    const list=getAllAlbumEntries();
+    const target=list.find(x=>x.id===id && albumEntryVisible(x, scope));
     if(target){
       if(!Array.isArray(target.comments)) target.comments=[];
       target.comments.push({id:uid("albcom"),author:"role",roleId:role.id,roleName:role.name||"角色",text, time:nowTime()});
@@ -21879,7 +21930,8 @@ async function deleteAlbumItem(id){
   const item=getAlbumEntries().find(x=>x.id===id);
   if(!item){ toast("这张照片已经不在了"); renderAlbum(); return; }
   if(!await askConfirm(`确定删除「${item.title||"照片"}」？\n随记和评论也会一起删除。`)) return;
-  saveAlbumEntries(getAlbumEntries().filter(x=>x.id!==id));
+  const scope=albumCurrentOwnerScope();
+  saveAlbumEntries(getAllAlbumEntries().filter(x=>!(x.id===id && albumEntryVisible(x, scope))));
   closeQuickModal();
   renderAlbum();
   toast("相册照片已删除");
