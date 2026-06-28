@@ -4352,7 +4352,7 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
   color:rgba(78,67,57,.42)!important;
 }
 .app-screen.wechat .group-meta-line{
-  margin:-4px 4px 5px 0!important;
+  margin:-3px 4px 3px 43px!important;
   min-height:auto!important;
   gap:6px!important;
   color:rgba(47,42,38,.58)!important;
@@ -4429,9 +4429,10 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 
 .app-screen.wechat .name-line{display:none!important;}
 .app-screen.wechat .msg{margin-top:6px!important;margin-bottom:7px!important;}
+.app-screen.wechat .group-meta-line + .msg{margin-top:0!important;}
 .app-screen.wechat .msg:first-of-type{margin-top:0!important;}
 .app-screen.wechat .bubble-wrap{gap:0!important;}
-.app-screen.wechat .group-meta-line{margin-bottom:5px!important;}
+.app-screen.wechat .group-meta-line{margin-bottom:3px!important;}
 .claude-app .claude-name,.claude-app .name-line{display:none!important;}
 .claude-app .claude-msg{margin-top:7px!important;margin-bottom:7px!important;}
 
@@ -9585,11 +9586,10 @@ function renderMessage(m,h,idx){
   const thoughtBtn = showGroupThought ? ` <button class="thinking-btn${groupThoughtMsg?.thinking?"":" pending"}" onclick="event.stopPropagation();openThinking('${groupThoughtMsg.id}')" title="${thoughtTitle}" aria-label="${thoughtTitle}"><svg class="think-cloud-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M5.8 13.9h7.2a2.8 2.8 0 0 0 .15-5.6 4.05 4.05 0 0 0-7.6 1.2 2.25 2.25 0 0 0 .25 4.4Z" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : "";
   const groupMeta = (!isUser && isFirstInRoleGroup) ? `<div class="time-line group-meta-line"><span class="group-meta-text">${escapeHtml(formatWechatGroupTime(m))}</span>${thoughtBtn}</div>` : "";
   const readLine = isUser && isLastInVisualGroup ? `<div class="read-line">${m.read?"已读":"未读"}</div>` : "";
-  return `<div class="msg ${cls}${isBlockedMsg?" blocked-msg":""}" data-id="${m.id}" data-group-id="${m.groupId||""}" data-sender="${m.sender}" data-first-role-group="${(!isUser && isFirstInRoleGroup) ? "1" : "0"}" data-last-role-group="${(!isUser && isLastInVisualGroup) ? "1" : "0"}">
+  return `${groupMeta}<div class="msg ${cls}${isBlockedMsg?" blocked-msg":""}" data-id="${m.id}" data-group-id="${m.groupId||""}" data-sender="${m.sender}" data-first-role-group="${(!isUser && isFirstInRoleGroup) ? "1" : "0"}" data-last-role-group="${(!isUser && isLastInVisualGroup) ? "1" : "0"}">
     ${multiSelectMode?`<div class="multi-check${multiSelectedIds.has(m.id)?" checked":""}" onclick="toggleMultiSelect('${m.id}')"></div>`:""}
     <img class="avatar" src="${avatar}" alt="">
     <div class="bubble-wrap">
-      ${groupMeta}
       ${m.quoteId ? renderQuoteBlock(m) : ""}
       ${renderMessageBody(m)}
       ${readLine}
