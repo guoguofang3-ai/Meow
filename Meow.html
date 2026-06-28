@@ -216,10 +216,13 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   overflow:auto;
   padding:calc(10px + env(safe-area-inset-top)) 24px 118px;
   color:#4e3d39;
-  background:
+  background:var(--cottage-bg,
     radial-gradient(circle at 18% 2%,rgba(255,255,255,.82),transparent 30%),
     radial-gradient(circle at 84% 16%,rgba(207,166,160,.18),transparent 28%),
-    linear-gradient(160deg,#fbf5ea 0%,#f4e5dc 55%,#efe8dc 100%);
+    linear-gradient(160deg,#fbf5ea 0%,#f4e5dc 55%,#efe8dc 100%));
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
 }
 .cottage-hero{position:relative;padding:2px 0 8px;min-height:214px;}
 .cottage-kicker{font-family:Georgia,"Times New Roman",serif;letter-spacing:.32em;text-transform:uppercase;font-size:11px;color:#b79a91;margin-bottom:6px}
@@ -2238,29 +2241,55 @@ body{font-size:calc(14px * var(--font-scale));}
   line-height:1.5;
   white-space:pre-wrap;
 }
+.icon-manager-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:10px 0 8px;
+}
+.icon-manager-hint{
+  font-size:12px;
+  color:color-mix(in srgb,var(--bar-text,#111827) 55%,transparent);
+  line-height:1.45;
+}
 .icon-manager-grid{
   display:grid;
-  grid-template-columns:1fr;
+  grid-template-columns:repeat(2,minmax(0,1fr));
   gap:10px;
   margin-top:10px;
 }
+.icon-manager-grid.collapsed .icon-manager-item:nth-child(n+7){
+  display:none;
+}
 .icon-manager-item{
   display:grid;
-  grid-template-columns:48px 1fr 1fr;
+  grid-template-columns:44px minmax(0,1fr);
   gap:8px;
   align-items:center;
   padding:10px;
-  border:1px solid #eee;
+  border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent);
   border-radius:18px;
-  background:#fff;
+  background:color-mix(in srgb,var(--bar-bg,#fff) 88%,#fff);
+  min-width:0;
 }
 .icon-manager-preview{
   width:44px;height:44px;border-radius:14px;background:var(--accent);color:#fff;
   display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:950;
+  overflow:hidden;
 }
 .icon-manager-item input{
   padding:8px 9px;
   border-radius:12px;
+  min-width:0;
+  grid-column:1 / -1;
+}
+.icon-manager-item input[data-icon-field="name"]{
+  grid-column:2;
+}
+.icon-manager-toggle{
+  min-width:92px;
+  white-space:nowrap;
 }
 .theme-import-mask{
   position:absolute;
@@ -2314,9 +2343,6 @@ body{font-size:calc(14px * var(--font-scale));}
 
 
 /* ===== v9.1 图标上传 ===== */
-.icon-manager-item{
-  grid-template-columns:48px 1fr 1fr!important;
-}
 .icon-upload-row{
   grid-column:1 / -1;
   display:flex;
@@ -2335,6 +2361,34 @@ body{font-size:calc(14px * var(--font-scale));}
   height:100%;
   object-fit:cover;
   display:block;
+}
+.cottage-bg-preview{
+  margin-top:8px;
+  position:relative;
+}
+.cottage-bg-preview:after{
+  content:"小屋背景预览";
+  position:absolute;
+  left:10px;
+  bottom:8px;
+  padding:4px 8px;
+  border-radius:999px;
+  background:rgba(255,255,255,.78);
+  color:#666;
+  font-size:10px;
+  font-weight:900;
+}
+.cottage-visual-preview:after{
+  content:"主视觉卡片预览";
+  position:absolute;
+  left:10px;
+  bottom:8px;
+  padding:4px 8px;
+  border-radius:999px;
+  background:rgba(255,255,255,.78);
+  color:#666;
+  font-size:10px;
+  font-weight:900;
 }
 
 
@@ -4567,17 +4621,27 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
         <div class="card theme-section-card theme-icon-card">
           <div class="v3-section-title">App 图标管理</div>
           <div class="v3-sub">可修改主屏显示名称和图标 emoji / 字母。不会改动 App 功能。</div>
-          <div id="iconManagerGrid" class="icon-manager-grid"></div>
+          <div class="icon-manager-toolbar">
+            <div class="icon-manager-hint" id="iconManagerHint">默认显示前 6 个，展开后可管理全部 App。</div>
+            <button class="btn icon-manager-toggle" id="iconManagerToggle" data-action="toggle-icon-manager">展开全部</button>
+          </div>
+          <div id="iconManagerGrid" class="icon-manager-grid collapsed"></div>
           <div class="btn-row"><button class="btn primary" data-action="save-icons">保存图标</button><button class="btn" data-action="reset-icons">恢复默认图标</button></div>
         </div>
 
         <div class="card theme-section-card theme-cottage-card">
           <div class="v3-section-title">小屋装扮</div>
-          <div class="v3-sub">只影响恋爱小屋首页。背景可以写 CSS，主视觉可以上传图片；不上传时使用线稿默认图。</div>
-          <label>小屋首页背景 CSS</label><textarea id="cottageBgInput" placeholder="linear-gradient(160deg,#fbf5ea,#efe8dc)"></textarea>
-          <div id="cottageVisualPreview" class="cottage-preview"></div>
+          <div class="v3-sub">小屋背景是真正铺在首页底下的背景；主视觉只是右上角那张装饰卡片。可以写 CSS，也可以上传高清图片。</div>
+          <label>小屋首页背景 CSS / 图片</label><textarea id="cottageBgInput" placeholder="linear-gradient(160deg,#fbf5ea,#efe8dc) 或 url(...) center/cover no-repeat"></textarea>
+          <div id="cottageBgPreview" class="cottage-preview cottage-bg-preview"></div>
           <div class="btn-row">
-            <label class="btn file-btn">上传小屋主视觉<input type="file" accept="image/*" id="cottageVisualInput"></label>
+            <label class="btn file-btn">上传小屋背景图<input type="file" accept="image/*" id="cottageBgImageInput"></label>
+            <button class="btn danger" data-action="clear-cottage-bg">清除小屋背景</button>
+          </div>
+          <label>小屋主视觉卡片</label>
+          <div id="cottageVisualPreview" class="cottage-preview cottage-visual-preview"></div>
+          <div class="btn-row">
+            <label class="btn file-btn">上传主视觉卡片<input type="file" accept="image/*" id="cottageVisualInput"></label>
             <button class="btn danger" data-action="clear-cottage-visual">清除主视觉</button>
           </div>
           <label class="cottage-toggle-row"><input type="checkbox" id="cottageDecorEnabled"> <span>显示纸胶带 / 小花装饰</span></label>
@@ -4588,12 +4652,12 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
           <div class="v3-section-title">锁屏/主屏壁纸</div>
           <div class="wall-grid" id="wallGrid"></div>
           <div class="btn-row"><label class="btn file-btn">上传当前锁屏/主屏壁纸<input type="file" accept="image/*" id="wallpaperInput"></label><button class="btn danger" data-action="clear-wallpaper">清除壁纸</button></div>
-          <div style="font-size:12px;color:#777;line-height:1.5;margin-top:8px">锁屏/主屏壁纸只影响锁屏和主屏，不会污染微信聊天背景。</div>
+          <div style="font-size:12px;color:#777;line-height:1.5;margin-top:8px">高清保存。会应用到锁屏和主屏/小屋首页；如果单独设置了小屋背景，则小屋背景优先。不会污染微信聊天背景。</div>
         </div>
 
         <div class="card theme-section-card theme-chatwall-card">
           <div class="v3-section-title">聊天背景图</div>
-          <div class="v3-sub">按当前角色独立保存，只影响微信聊天区域。优先级高于主题里的微信背景 CSS。</div>
+          <div class="v3-sub">按当前角色独立保存，只影响微信聊天区域。现在使用高清保存，优先级高于主题里的微信背景 CSS。</div>
           <div id="chatWallpaperPreview" class="chat-wallpaper-preview"></div>
           <div class="btn-row">
             <label class="btn file-btn">上传当前角色聊天背景<input type="file" accept="image/*" id="chatWallpaperInput"></label>
@@ -6031,6 +6095,30 @@ async function compressImageFile(file, maxSize=200, quality=.78){
   // jpeg 体积更小；透明图标/头像透明度会被白底替代，这是为了存储稳定
   return canvas.toDataURL("image/jpeg", quality);
 }
+async function imageFileToDataUrlForSurface(file, opts={}){
+  // 壁纸 / 聊天背景 / 小屋背景使用：比头像和图标保留更高清，但仍做上限控制。
+  if(!file || !file.type || !file.type.startsWith("image/")) return fileToDataUrl(file);
+  const maxChars=Number(opts.maxChars||2800000);
+  const baseSize=Number(opts.maxSize||1800);
+  const baseQuality=Number(opts.quality||0.9);
+  const tries=[
+    [baseSize, baseQuality],
+    [Math.min(baseSize,1600), Math.min(baseQuality,.88)],
+    [1400,.86],
+    [1200,.84],
+    [1000,.82]
+  ];
+  let last="";
+  for(const [size,q] of tries){
+    const data=await compressImageFile(file,size,q);
+    last=data;
+    if(!maxChars || data.length<=maxChars) return data;
+  }
+  return last;
+}
+function dataImageToBackground(data){
+  return data ? `url("${String(data).replace(/"/g,"%22")}") center/cover no-repeat` : "";
+}
 function slimText(text, maxLen=6000){
   text=String(text||"");
   if(text.length<=maxLen) return text;
@@ -6635,8 +6723,10 @@ function bindEvents(){
     if(action==="reset-theme") resetTheme();
     if(action==="save-icons") saveIconSettings();
     if(action==="reset-icons") resetIconSettings();
+    if(action==="toggle-icon-manager") toggleIconManager();
     if(action==="clear-icon-image") clearIconImage(id);
     if(action==="save-cottage-decor") saveCottageDecorFromForm();
+    if(action==="clear-cottage-bg") clearCottageBg();
     if(action==="clear-cottage-visual") clearCottageVisual();
     if(action==="reset-cottage-decor") resetCottageDecor();
     if(action==="cancel-theme-import") cancelThemeImport();
@@ -6737,27 +6827,41 @@ function bindEvents(){
   $("#wallpaperInput").addEventListener("change", async (e)=>{
     const f=e.target.files[0]; if(!f) return;
     try{
-      const data=(typeof compressImageFile==="function") ? await compressImageFile(f,600,.72) : await fileToDataUrl(f);
-      if(data.length > 400000){ toast("图片太大，请换一张较小的图片（建议1MB以内）"); return; }
-      Storage.set(Storage.roleKey("wallpaper"), {type:"image", value:`url("${data}")`});
+      const data=(typeof imageFileToDataUrlForSurface==="function") ? await imageFileToDataUrlForSurface(f,{maxSize:1800,quality:.9,maxChars:3000000}) : await fileToDataUrl(f);
+      Storage.set(Storage.roleKey("wallpaper"), {type:"image", value:dataImageToBackground(data)});
       applyVisuals();
       renderWallGrid();
-      toast("当前锁屏/主屏壁纸已应用");
+      renderCottageDecorSettings();
+      toast("当前锁屏/主屏壁纸已高清应用");
     }catch(err){ toast("壁纸设置失败："+err.message); }
+    e.target.value="";
+  });
+
+  $("#cottageBgImageInput")?.addEventListener("change", async (e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    try{
+      const data=(typeof imageFileToDataUrlForSurface==="function") ? await imageFileToDataUrlForSurface(f,{maxSize:1800,quality:.9,maxChars:3000000}) : await fileToDataUrl(f);
+      const cfg=getCottageDecor();
+      cfg.bg=dataImageToBackground(data);
+      Storage.set("cottageDecor", cfg);
+      renderCottageDecorSettings();
+      renderHome();
+      applyVisuals();
+      toast("小屋背景图已高清上传");
+    }catch(err){ toast("小屋背景上传失败："+err.message); }
     e.target.value="";
   });
 
   $("#cottageVisualInput")?.addEventListener("change", async (e)=>{
     const f=e.target.files[0]; if(!f) return;
     try{
-      const data=(typeof compressImageFile==="function") ? await compressImageFile(f,700,.76) : await fileToDataUrl(f);
-      if(data.length > 500000){ toast("图片太大，请换一张较小的图片（建议1MB以内）"); return; }
+      const data=(typeof imageFileToDataUrlForSurface==="function") ? await imageFileToDataUrlForSurface(f,{maxSize:1200,quality:.88,maxChars:1600000}) : await fileToDataUrl(f);
       const cfg=getCottageDecor();
       cfg.visualImage=data;
       Storage.set("cottageDecor", cfg);
       renderCottageDecorSettings();
       renderHome();
-      toast("小屋主视觉已上传");
+      toast("小屋主视觉已高清上传");
     }catch(err){ toast("小屋主视觉上传失败："+err.message); }
     e.target.value="";
   });
@@ -6765,13 +6869,12 @@ function bindEvents(){
   $("#chatWallpaperInput")?.addEventListener("change", async (e)=>{
     const f=e.target.files[0]; if(!f) return;
     try{
-      const data=(typeof compressImageFile==="function") ? await compressImageFile(f,600,.72) : await fileToDataUrl(f);
-      if(data.length > 400000){ toast("图片太大，请换一张较小的图片（建议1MB以内）"); return; }
+      const data=(typeof imageFileToDataUrlForSurface==="function") ? await imageFileToDataUrlForSurface(f,{maxSize:1800,quality:.9,maxChars:3000000}) : await fileToDataUrl(f);
       saveRoleChatWallpaper(data);
       applyVisuals();
       renderChatWallpaperPreview();
       renderChat();
-      toast("聊天背景已上传");
+      toast("聊天背景已高清上传");
     }catch(err){ toast("聊天背景上传失败："+err.message); }
     e.target.value="";
   });
@@ -7106,8 +7209,11 @@ function applyVisuals(){
   document.documentElement.style.setProperty("--nickname-text", t.nicknameText || "#5b4c52");
   const wall=getRoleWallpaper();
   const wallBg = wall?.value || t.homeBg || "linear-gradient(180deg,#fbfaf7,#f0ede6)";
+  const cottageCfg = (typeof getCottageDecor==="function") ? getCottageDecor() : {};
+  const cottageBg = cottageCfg.bg || wallBg;
   document.documentElement.style.setProperty("--home-bg", wallBg);
   document.documentElement.style.setProperty("--lock-bg", wallBg);
+  document.documentElement.style.setProperty("--cottage-bg", cottageBg);
   document.documentElement.style.setProperty("--bar-bg", t.barBg ? hexToRgba(t.barBg, (t.barAlpha||85)/100) : "rgba(255,255,255,0.92)");
   document.documentElement.style.setProperty("--bar-text", t.barText||"#111827");
   renderBarStickers(t);
@@ -9888,13 +9994,13 @@ function thoughtTemplateBank(){
     }
   };
 }
-function fallbackThoughtTextV2(role, userText, parsed){
+function fallbackThoughtTextV2(role, userText, parsed, thoughtContext){
   const style=getThoughtStyleForRole(role);
   const archetype=inferThoughtArchetype([style,role?.personality,role?.description,role?.systemPrompt].join("\n"));
-  const scene=classifyThoughtScene(userText, parsed);
+  const scene=classifyThoughtScene([thoughtContext,userText].filter(Boolean).join("\n"), parsed);
   const bank=thoughtTemplateBank();
   const pool=(bank[archetype]&&bank[archetype][scene]) || (bank[archetype]&&bank[archetype].casual) || bank.restrained.casual;
-  return autoThinkingPick(pool, [role?.id, role?.name, scene, userText, (parsed||[]).map(m=>m.content).join("|")].join("|"));
+  return autoThinkingPick(pool, [role?.id, role?.name, scene, thoughtContext, userText, (parsed||[]).map(m=>m.content).join("|")].join("|"));
 }
 function finalReplyTextForThought(parsed){
   return (parsed||[]).filter(m=>m && m.sender!=="user" && m.type!=="system").map(m=>{
@@ -9951,25 +10057,79 @@ function summarizeParsedForThought(parsed){
     return `${m.type||"消息"}：${m.content||""}`;
   }).join("\n").slice(0,1200);
 }
-function buildThoughtPrompt(role, newUser, parsed){
-  const style=getThoughtStyleForRole(role);
-  const scene=classifyThoughtScene(newUser?.content||"", parsed);
-  const userName=(getUserProfile().name||"user");
-  return `【任务】\n为聊天界面的 ThoughtProcess 生成“角色内心独白”。这不是推理日志，也不是回复计划，只是角色在发出这组消息前后一闪而过的内心。\n\n【角色】\n名字：${role?.name||"角色"}\n描述：${role?.description||""}\n性格：${role?.personality||""}\n场景：${role?.scenario||""}\n\n【该角色的思维链风格】\n${style}\n\n【当前场景分类】\n${scene}\n\n【${userName}刚发来的内容】\n${newUser?.content||""}\n\n【角色即将/已经发出的正式微信内容】\n${summarizeParsedForThought(parsed)}\n\n【硬性输出要求】\n只输出内心独白本身，不要标题，不要引号，不要JSON，不要标签。\n不能复述正式微信内容，不能出现特殊指令。\n不能出现“用户/角色/我应该/我需要/适合/回复/回应/格式/指令/系统/模型/前端/规则/分析/计划/推理”等机械词。\n不要emoji。长度完全服从角色风格：冷淡可极短，话多可一小段，默认1-3句。`;
+function compactThoughtLine(text, maxLen){
+  const s=String(text||"")
+    .replace(/[\r\n\t]+/g," ")
+    .replace(/\s{2,}/g," ")
+    .trim();
+  const n=maxLen||180;
+  return s.length>n ? s.slice(0,n-1)+"…" : s;
 }
-async function callThoughtAI(api, role, newUser, parsed){
+function thoughtMessageSummary(m){
+  if(!m) return "";
+  if(m.type==="tool_trace" || m.type==="quiz") return "";
+  const roleName=(currentRole&&currentRole()?.name)||"角色";
+  const who=m.sender==="user" ? (getUserProfile().name||"user") : (m.sender==="role" ? roleName : "系统");
+  let body="";
+  try{ body=messageToAIContext(m); }catch(e){ body=m.content||""; }
+  body=compactThoughtLine(body, 180);
+  if(!body) return "";
+  return `${who}：${body}`;
+}
+function buildRecentThoughtContextFromHistory(history, anchorUser, parsed, opts){
+  const h=Array.isArray(history)?history:[];
+  const options=opts||{};
+  const limit=Math.max(4, Math.min(12, options.limit||8));
+  let anchorIdx=-1;
+  if(anchorUser&&anchorUser.id) anchorIdx=h.findIndex(x=>x&&x.id===anchorUser.id);
+  if(anchorIdx<0 && anchorUser&&anchorUser.createdAt){
+    anchorIdx=h.findIndex(x=>x&&x.sender==="user"&&x.createdAt===anchorUser.createdAt&&String(x.content||"")===String(anchorUser.content||""));
+  }
+  if(anchorIdx<0 && typeof options.targetIndex==="number"){
+    for(let i=Math.min(options.targetIndex-1,h.length-1); i>=0; i--){
+      if(h[i]&&h[i].sender==="user"){ anchorIdx=i; break; }
+    }
+  }
+  if(anchorIdx<0){
+    for(let i=h.length-1;i>=0;i--){ if(h[i]&&h[i].sender==="user"){ anchorIdx=i; break; } }
+  }
+  if(anchorIdx<0) return "";
+  const start=Math.max(0, anchorIdx-limit+1);
+  const lines=h.slice(start, anchorIdx+1).map(thoughtMessageSummary).filter(Boolean);
+  const currentUser=anchorUser?.content ? `${getUserProfile().name||"user"}：${compactThoughtLine(anchorUser.content,180)}` : "";
+  if(currentUser && !lines.includes(currentUser)) lines.push(currentUser);
+  return lines.join("\n").slice(0,1400);
+}
+function ensureThoughtContext(ctx, parsed, opts){
+  const c=ctx||{};
+  if(c.thoughtContext) return c.thoughtContext;
+  let thoughtContext="";
+  try{ thoughtContext=buildRecentThoughtContextFromHistory(getHistory(), c.newUser, parsed, opts||{}); }catch(e){ thoughtContext=""; }
+  if(ctx) ctx.thoughtContext=thoughtContext;
+  return thoughtContext;
+}
+function buildThoughtPrompt(role, newUser, parsed, thoughtContext){
+  const style=getThoughtStyleForRole(role);
+  const scene=classifyThoughtScene([thoughtContext,newUser?.content||""].filter(Boolean).join("\n"), parsed);
+  const userName=(getUserProfile().name||"user");
+  const contextBlock=String(thoughtContext||"").trim()
+    ? `\n\n【最近聊天上下文】\n${String(thoughtContext).trim()}\n（如果刚发来的内容很短，例如“81”“嗯”“那个呢”“继续”，必须结合这里理解它指代什么。）`
+    : "";
+  return `【任务】\n为聊天界面的 ThoughtProcess 生成“角色内心独白”。这不是推理日志，也不是回复计划，只是角色在发出这组消息前后一闪而过的内心。\n\n【角色】\n名字：${role?.name||"角色"}\n描述：${role?.description||""}\n性格：${role?.personality||""}\n场景：${role?.scenario||""}\n\n【该角色的思维链风格】\n${style}\n\n【当前场景分类】\n${scene}${contextBlock}\n\n【${userName}刚发来的内容】\n${newUser?.content||""}\n\n【角色即将/已经发出的正式微信内容】\n${summarizeParsedForThought(parsed)}\n\n【硬性输出要求】\n只输出内心独白本身，不要标题，不要引号，不要JSON，不要标签。\n可以利用最近上下文理解短句指代，但不能逐条复述聊天记录。\n不能复述正式微信内容，不能出现特殊指令。\n不能出现“用户/角色/我应该/我需要/适合/回复/回应/格式/指令/系统/模型/前端/规则/分析/计划/推理”等机械词。\n不要emoji。长度完全服从角色风格：冷淡可极短，话多可一小段，默认1-3句。`;
+}
+async function callThoughtAI(api, role, newUser, parsed, thoughtContext){
   if(!api?.apiUrl || !api?.apiKey || !api?.model) return "";
   const url=normalizeChatUrl(api.apiUrl);
   const system="你只生成角色扮演界面的 ThoughtProcess：角色内心独白。禁止输出推理过程、回复计划、系统规则、格式说明。";
   const body={
     model:api.model,
-    messages:[{role:"system",content:system},{role:"user",content:buildThoughtPrompt(role,newUser,parsed)}],
+    messages:[{role:"system",content:system},{role:"user",content:buildThoughtPrompt(role,newUser,parsed,thoughtContext)}],
     temperature:.9,
     max_tokens:160
   };
   if(api.format==="bedrock"){
     body.system=system;
-    body.messages=[{role:"user",content:buildThoughtPrompt(role,newUser,parsed)}];
+    body.messages=[{role:"user",content:buildThoughtPrompt(role,newUser,parsed,thoughtContext)}];
   }
   const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+api.apiKey},body:JSON.stringify(body)});
   if(!res.ok) return "";
@@ -9978,13 +10138,14 @@ async function callThoughtAI(api, role, newUser, parsed){
 }
 async function buildThoughtProcessForParsed(api, parsed, ctx){
   const role=currentRole();
+  const thoughtContext=ensureThoughtContext(ctx||{}, parsed);
   let text="";
   try{
-    text=await callThoughtAI(api, role, ctx?.newUser, parsed);
+    text=await callThoughtAI(api, role, ctx?.newUser, parsed, thoughtContext);
     text=sanitizeThoughtTextV2(text, parsed);
   }catch(e){ text=""; }
-  if(!text) text=fallbackThoughtTextV2(role, ctx?.newUser?.content||"", parsed);
-  return sanitizeThoughtTextV2(text, parsed) || fallbackThoughtTextV2(role, ctx?.newUser?.content||"", parsed);
+  if(!text) text=fallbackThoughtTextV2(role, ctx?.newUser?.content||"", parsed, thoughtContext);
+  return sanitizeThoughtTextV2(text, parsed) || fallbackThoughtTextV2(role, ctx?.newUser?.content||"", parsed, thoughtContext);
 }
 async function attachThoughtProcessToParsed(api, parsed, ctx){
   if(!Array.isArray(parsed) || !parsed.length) return parsed;
@@ -10005,7 +10166,8 @@ function attachFallbackThoughtProcessToParsed(parsed, ctx){
   const target=getThoughtTarget(parsed);
   if(!target) return parsed;
   const role=currentRole();
-  const thought=fallbackThoughtTextV2(role, ctx?.newUser?.content||"", parsed);
+  const thoughtContext=ensureThoughtContext(ctx||{}, parsed);
+  const thought=fallbackThoughtTextV2(role, ctx?.newUser?.content||"", parsed, thoughtContext);
   if(thought) target.thinking=thought;
   return parsed;
 }
@@ -10032,14 +10194,16 @@ function scheduleThoughtProcessRefresh(api, parsed, ctx){
   const target=getThoughtTarget(parsed);
   if(!target) return;
   const roleId=Miao.state.currentRoleId;
+  const safeCtx=ctx||{};
+  const thoughtContextSnapshot=ensureThoughtContext(safeCtx, parsed);
   const roleSnapshot=JSON.parse(JSON.stringify(currentRole()||{}));
-  const userSnapshot=JSON.parse(JSON.stringify(ctx?.newUser||{}));
+  const userSnapshot=JSON.parse(JSON.stringify(safeCtx?.newUser||{}));
   const parsedSnapshot=JSON.parse(JSON.stringify(parsed||[]));
   const targetId=target.id;
   setTimeout(async()=>{
     let text="";
     try{
-      text=await callThoughtAI(api, roleSnapshot, userSnapshot, parsedSnapshot);
+      text=await callThoughtAI(api, roleSnapshot, userSnapshot, parsedSnapshot, thoughtContextSnapshot);
       text=sanitizeThoughtTextV2(text, parsedSnapshot);
     }catch(e){ text=""; }
     // API失败时保留本地fallback，不再阻塞/报错
@@ -11733,10 +11897,28 @@ function renderThemeEditor(){
   set("themeBarAlphaInput", t.barAlpha||85);
   set("themeBarTextInput", t.barText||"#111827");
 }
+function iconManagerExpanded(){
+  return !!Storage.get("iconManagerExpanded", false);
+}
+function toggleIconManager(){
+  Storage.set("iconManagerExpanded", !iconManagerExpanded());
+  renderIconManager();
+}
+function updateIconManagerChrome(total){
+  const expanded=iconManagerExpanded();
+  const toggle=document.getElementById("iconManagerToggle");
+  const hint=document.getElementById("iconManagerHint");
+  if(toggle) toggle.textContent=expanded ? "收起" : "展开全部";
+  if(hint) hint.textContent=expanded ? `已展开全部 ${total||0} 个 App，左右两列管理。` : `默认显示前 6 个，共 ${total||0} 个；展开后可管理全部 App。`;
+}
 function renderIconManager(){
   const box=$("#iconManagerGrid");
   if(!box) return;
   const icons=Storage.get("iconSettings", {});
+  const expanded=iconManagerExpanded();
+  box.classList.toggle("expanded", expanded);
+  box.classList.toggle("collapsed", !expanded);
+  updateIconManagerChrome(Miao.apps.length);
   box.innerHTML=Miao.apps.map(app=>{
     const a=Object.assign({}, app, icons[app.id]||{});
     return `<div class="icon-manager-item" data-id="${app.id}">
@@ -11759,9 +11941,17 @@ function renderCottageDecorSettings(){
   if(bg) bg.value=cfg.bg||"";
   const chk=document.getElementById("cottageDecorEnabled");
   if(chk) chk.checked=cfg.decorEnabled!==false;
+  const bgPrev=document.getElementById("cottageBgPreview");
+  const t=typeof getThemeConfig==="function" ? getThemeConfig() : {};
+  const wall=typeof getRoleWallpaper==="function" ? getRoleWallpaper() : null;
+  const fallbackBg=wall?.value || t.homeBg || "linear-gradient(160deg,#fbf5ea,#efe8dc)";
+  if(bgPrev){
+    bgPrev.style.setProperty("--cottage-preview-bg", cfg.bg||fallbackBg);
+    bgPrev.innerHTML="";
+  }
   const prev=document.getElementById("cottageVisualPreview");
   if(prev){
-    prev.style.setProperty("--cottage-preview-bg", cfg.bg||"linear-gradient(160deg,#fbf5ea,#efe8dc)");
+    prev.style.setProperty("--cottage-preview-bg", "linear-gradient(160deg,#fbf5ea,#efe8dc)");
     prev.innerHTML=cfg.visualImage ? `<img src="${escapeAttr(cfg.visualImage)}" alt="">` : miaoIcon("book");
   }
 }
@@ -11770,9 +11960,19 @@ function saveCottageDecorFromForm(){
   const bg=String(document.getElementById("cottageBgInput")?.value||"").trim();
   const decorEnabled=!!document.getElementById("cottageDecorEnabled")?.checked;
   Storage.set("cottageDecor", Object.assign({}, old, {bg, decorEnabled}));
+  applyVisuals();
   renderCottageDecorSettings();
   renderHome();
   toast("小屋装扮已保存");
+}
+function clearCottageBg(){
+  const cfg=getCottageDecor();
+  delete cfg.bg;
+  Storage.set("cottageDecor", cfg);
+  applyVisuals();
+  renderCottageDecorSettings();
+  renderHome();
+  toast("小屋背景已清除，将跟随锁屏/主屏壁纸或主题背景");
 }
 function clearCottageVisual(){
   const cfg=getCottageDecor();
@@ -11784,6 +11984,7 @@ function clearCottageVisual(){
 }
 function resetCottageDecor(){
   Storage.remove("cottageDecor");
+  applyVisuals();
   renderCottageDecorSettings();
   renderHome();
   toast("小屋装扮已恢复默认");
@@ -11929,12 +12130,14 @@ function applyWall(id){
   else Storage.set(Storage.roleKey("wallpaper"), {id:w.id, type:"preset", value:w.bg});
   applyVisuals();
   renderWallGrid();
+  renderCottageDecorSettings();
   toast("锁屏/主屏壁纸已应用");
 }
 function clearWallpaper(){
   Storage.remove(Storage.roleKey("wallpaper"));
   applyVisuals();
   renderWallGrid();
+  renderCottageDecorSettings();
   toast("已清除当前锁屏/主屏壁纸");
 }
 
@@ -17414,12 +17617,13 @@ async function openThinking(msgId){
     const role=currentRole();
     const prevUser=h.slice(0,idx).reverse().find(x=>x&&x.sender==="user") || null;
     const parsed=(m.groupId?h.filter(x=>x&&x.groupId===m.groupId&&x.sender==="role"):[m]).map(x=>Object.assign({},x));
+    const thoughtContext=buildRecentThoughtContextFromHistory(h, prevUser, parsed, {targetIndex:idx});
     const api=Storage.get("api",{});
     let thought="";
     if(api.apiUrl && api.apiKey && api.model){
-      try{ thought=await callThoughtAI(api, role, prevUser, parsed); }catch(e){ thought=""; }
+      try{ thought=await callThoughtAI(api, role, prevUser, parsed, thoughtContext); }catch(e){ thought=""; }
     }
-    if(!thought) thought=fallbackThoughtTextV2(role, prevUser?.content||"", parsed);
+    if(!thought) thought=fallbackThoughtTextV2(role, prevUser?.content||"", parsed, thoughtContext);
     thought=sanitizeThoughtTextV2(thought, parsed);
     if(thought){
       updateThoughtInHistory(Miao.state.currentRoleId, msgId, thought);
