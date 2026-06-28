@@ -445,13 +445,14 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .toast{position:absolute;left:50%;bottom:94px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:999px;font-size:13px;z-index:500;display:none;max-width:88%;text-align:center}.toast.show{display:block}
 .wechat{background:var(--wechat-bg)}
 .wechat-head{margin:0;padding:10px 14px 12px;border-radius:0;background:var(--bar-bg,rgba(255,255,255,.92));backdrop-filter:blur(18px);border:none;border-bottom:1px solid rgba(0,0,0,.07);display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(50,60,80,.06);z-index:6;flex:0 0 auto;color:var(--bar-text,#111827);overflow:visible;position:relative}
+.wechat-left-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto;z-index:2}
 .profile{display:flex;align-items:center;gap:10px;min-width:0}.profile-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;background:#ddd}.profile-copy{min-width:0}.profile-title-row,.chat-title-row{display:flex;align-items:center;gap:6px;min-width:0}.profile-title{font-size:17px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:188px}.profile-sub{font-size:11px;color:#666;display:flex;align-items:center;gap:5px;margin-top:2px}.online-dot{width:7px;height:7px;border-radius:50%;background:#2da44e;display:inline-block}
-.session-title-btn{width:26px;height:26px;border:0;border-radius:50%;background:color-mix(in srgb,var(--accent,#111827) 9%,rgba(255,255,255,.76));color:var(--bar-text,#111827);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:0 5px 16px rgba(0,0,0,.055)}
-.session-title-btn .miao-svg-icon{width:16px;height:16px}
-.wechat-head .profile{position:absolute;left:50%;transform:translateX(-50%);justify-content:center;max-width:58%;gap:10px}
-.wechat-head .session-title-btn,.claude-app>.header .session-title-btn{background:color-mix(in srgb,var(--bar-bg,#fff) 74%,var(--accent,#111827) 5%)!important;border:1px solid color-mix(in srgb,var(--bar-text,#111827) 9%,transparent)!important;box-shadow:0 8px 22px rgba(38,31,22,.06)!important}
-.wechat-head .header-actions,.claude-head-actions{gap:6px}
-.wechat-head .header-actions .icon-btn,.claude-head-actions .icon-btn,.wechat-head>.icon-btn,.claude-app>.header>.icon-btn{width:38px!important;height:38px!important}
+.session-title-btn{width:36px;height:36px;border:0;border-radius:50%;background:color-mix(in srgb,var(--bar-bg,#fff) 74%,var(--accent,#111827) 5%);color:var(--bar-text,#111827);display:inline-flex;align-items:center;justify-content:center;flex:0 0 36px;box-shadow:0 8px 22px rgba(38,31,22,.06)}
+.session-title-btn .miao-svg-icon{width:18px;height:18px;overflow:visible}
+.wechat-head .profile{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);justify-content:center;max-width:58%;gap:10px;z-index:1}
+.wechat-head .header-actions,.claude-head-actions{gap:6px;z-index:2}
+.wechat-head .icon-btn,.claude-head-actions .icon-btn,.claude-app>.header>.icon-btn{width:36px;height:36px;flex:0 0 36px}
+.wechat-left-actions .session-title-btn{background:rgba(0,0,0,.055);box-shadow:none}
 .claude-app>.header{position:relative}
 .claude-app>.header .chat-title-row{position:absolute;left:50%;transform:translateX(-50%);justify-content:center;max-width:52%;text-align:center}
 .session-drawer-mask{position:fixed;inset:0;z-index:460;background:rgba(23,20,18,.18);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .22s ease}
@@ -4372,59 +4373,56 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 .app-screen.wechat .thinking-btn .think-drawn-icon{display:none!important;}
 .app-screen.wechat .thinking-btn.pending{opacity:.64;}
 .app-screen.wechat .thinking-btn:active{transform:scale(.92);background:transparent!important;}
-/* 微信 / Claude 顶栏最终尺寸：集中维护，避免旧规则互相覆盖 */
+/* 微信 / Claude 顶栏尺寸：新窗口按钮跟顶栏图标统一 */
 .app-screen.wechat .wechat-head{
-  padding:calc(10px + env(safe-area-inset-top)) 14px 8px!important;
-  min-height:calc(54px + env(safe-area-inset-top))!important;
-  background:color-mix(in srgb,var(--bar-bg,#fbfaf6) 82%,transparent)!important;
-  box-shadow:0 1px 0 rgba(42,36,28,.055),0 8px 22px rgba(38,31,22,.035)!important;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 8px;
+  min-height:calc(54px + env(safe-area-inset-top));
 }
-.app-screen.wechat .wechat-head .profile{max-width:58%!important;gap:7px!important;}
+.app-screen.wechat .wechat-head .profile{max-width:58%;gap:7px;}
 .app-screen.wechat .profile-copy{
-  display:flex!important;
-  flex-direction:column!important;
-  justify-content:center!important;
-  gap:1px!important;
-  transform:none!important;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:4px;
+  transform:none;
 }
 .app-screen.wechat .profile-title{
-  font-size:13px!important;
-  line-height:1.02!important;
-  font-weight:850!important;
-  max-width:138px!important;
-  transform:none!important;
+  font-size:13px;
+  line-height:1.02;
+  font-weight:850;
+  max-width:138px;
+  transform:none;
 }
 .app-screen.wechat .profile-sub{
-  font-size:9px!important;
-  line-height:1.02!important;
-  margin-top:0!important;
-  opacity:.62!important;
-  transform:translateY(-1px)!important;
+  font-size:9px;
+  line-height:1.02;
+  margin-top:0;
+  opacity:.62;
+  transform:none;
 }
 .app-screen.wechat .profile-title-row{
-  gap:4px!important;
-  align-items:flex-end!important;
-  transform:none!important;
+  gap:0;
+  align-items:center;
+  transform:none;
 }
 .app-screen.wechat .icon-btn,
 .claude-head-actions .icon-btn,
-.claude-app>.header>.icon-btn{
-  width:36px!important;height:36px!important;
+.claude-app>.header>.icon-btn,
+.claude-app>.header .session-title-btn{
+  width:36px;
+  height:36px;
+  flex-basis:36px;
 }
 .app-screen.wechat .session-title-btn,
 .claude-app>.header .session-title-btn{
-  width:18px!important;height:18px!important;
-  min-width:18px!important;min-height:18px!important;
-  box-shadow:0 2px 8px rgba(38,31,22,.035)!important;
-}
-.app-screen.wechat .session-title-btn{
-  align-self:flex-end!important;
-  margin-bottom:1px!important;
-  transform:none!important;
+  min-width:36px;
+  min-height:36px;
 }
 .app-screen.wechat .session-title-btn .miao-svg-icon,
 .claude-app>.header .session-title-btn .miao-svg-icon{
-  width:13px!important;height:13px!important;
+  width:18px;
+  height:18px;
+  overflow:visible;
 }
 
 .app-screen.wechat .name-line{display:none!important;}
@@ -4557,10 +4555,13 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
     <section class="app-screen wechat" id="wechatApp">
       <div class="statusbar"><span id="wechatStatusTime">9:41</span><span class="status-icons"><span class="signal"><i></i><i></i><i></i></span><span class="battery"></span></span></div>
       <div class="wechat-head" id="wechatHead">
-        <button class="icon-btn" data-action="go-home">‹</button>
+        <div class="wechat-left-actions">
+          <button class="icon-btn" data-action="go-home">‹</button>
+          <button class="icon-btn session-title-btn" data-action="open-session-drawer" data-scope="wechat" data-miao-icon="note" aria-label="对话列表"></button>
+        </div>
         <div class="profile">
           <img class="profile-avatar" id="chatAvatar" alt="">
-          <div class="profile-copy"><div class="profile-title-row"><div class="profile-title" id="chatName">默认角色</div><button class="session-title-btn" data-action="open-session-drawer" data-scope="wechat" data-miao-icon="note" aria-label="对话列表"></button></div><div class="profile-sub"><span class="online-dot"></span><span id="roleStatusText">在线</span></div></div>
+          <div class="profile-copy"><div class="profile-title-row"><div class="profile-title" id="chatName">默认角色</div></div><div class="profile-sub"><span class="online-dot"></span><span id="roleStatusText">在线</span></div></div>
         </div>
         <div class="header-actions">
           <button class="icon-btn" data-action="open-wallet" title="钱包"><svg width="18" height="18" viewBox="0 0 18 18" fill="none">
