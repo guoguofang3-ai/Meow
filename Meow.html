@@ -4352,7 +4352,7 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
   color:rgba(78,67,57,.42)!important;
 }
 .app-screen.wechat .group-meta-line{
-  margin:0 4px 6px 0!important;
+  margin:-4px 4px 5px 0!important;
   min-height:auto!important;
   gap:6px!important;
   color:rgba(47,42,38,.58)!important;
@@ -4360,21 +4360,30 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 }
 .app-screen.wechat .group-meta-text{letter-spacing:.01em;}
 .app-screen.wechat .thinking-btn{
-  width:19px!important;height:19px!important;
-  min-width:19px!important;min-height:19px!important;
+  width:16px!important;height:16px!important;
+  min-width:16px!important;min-height:16px!important;
   margin:0 0 0 1px!important;
-  border-radius:999px!important;
-  background:rgba(255,255,255,.62)!important;
-  border:1px solid rgba(78,67,57,.06)!important;
-  box-shadow:0 2px 8px rgba(38,31,22,.04)!important;
+  padding:0!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:rgba(126,116,108,.78)!important;
 }
+.app-screen.wechat .thinking-btn::before,
+.app-screen.wechat .thinking-btn::after{content:none!important;display:none!important;}
 .app-screen.wechat .thinking-btn .think-cloud-icon{
   display:block!important;
-  width:11px!important;height:11px!important;
+  width:12px!important;height:12px!important;
   margin:0 auto;
   overflow:visible;
 }
 .app-screen.wechat .thinking-btn .think-drawn-icon{display:none!important;}
+.app-screen.wechat .thinking-btn.pending{opacity:.64;}
+.app-screen.wechat .thinking-btn:active{transform:scale(.92);background:transparent!important;}
 .app-screen.wechat .wechat-head{
   padding:calc(10px + env(safe-area-inset-top)) 14px 8px!important;
   min-height:calc(54px + env(safe-area-inset-top))!important;
@@ -4400,7 +4409,11 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
   transform:translateY(-1px);
 }
 .app-screen.wechat .profile-title-row{gap:4px!important;align-items:center!important;}
-.app-screen.wechat .session-title-btn,
+.app-screen.wechat .session-title-btn{
+  width:24px!important;height:24px!important;
+  min-width:24px!important;min-height:24px!important;
+  box-shadow:0 4px 12px rgba(38,31,22,.045)!important;
+}
 .claude-app>.header .session-title-btn{
   width:24px!important;height:24px!important;
   min-width:24px!important;min-height:24px!important;
@@ -4415,25 +4428,15 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 }
 
 .app-screen.wechat .name-line{display:none!important;}
-.app-screen.wechat .msg{margin-top:5px!important;margin-bottom:5px!important;}
+.app-screen.wechat .msg{margin-top:6px!important;margin-bottom:7px!important;}
 .app-screen.wechat .msg:first-of-type{margin-top:0!important;}
 .app-screen.wechat .bubble-wrap{gap:0!important;}
-.app-screen.wechat .group-meta-line{margin-bottom:4px!important;}
+.app-screen.wechat .group-meta-line{margin-bottom:5px!important;}
 .claude-app .claude-name,.claude-app .name-line{display:none!important;}
 .claude-app .claude-msg{margin-top:7px!important;margin-bottom:7px!important;}
 
 .app-screen.wechat .read-line{justify-content:flex-end;color:rgba(78,67,57,.42)!important;}
 .app-screen.wechat .msg:not([data-first-role-group="1"]) .thinking-btn{display:none!important;}
-.app-screen.wechat .thinking-btn{
-  width:23px!important;height:23px!important;margin:0 0 0 2px!important;
-  background:rgba(255,255,255,.74)!important;
-  color:color-mix(in srgb,var(--accent,#8f776b) 62%,#8b8178)!important;
-  border:1px solid rgba(78,67,57,.08)!important;
-  box-shadow:0 4px 12px rgba(38,31,22,.055)!important;
-}
-.app-screen.wechat .thinking-btn.pending{opacity:.76;}
-.app-screen.wechat .thinking-btn:active{transform:scale(.94);background:rgba(255,255,255,.92)!important;}
-.app-screen.wechat .thinking-btn .think-drawn-icon{display:block!important;width:15px!important;height:12px!important;}
 .app-screen.wechat .composer-wrap{
   background:color-mix(in srgb,var(--bar-bg,#fbfaf6) 88%,transparent)!important;
   box-shadow:0 -1px 0 rgba(42,36,28,.055),0 -8px 24px rgba(38,31,22,.035)!important;
@@ -9524,6 +9527,37 @@ function formatWechatGroupTime(m){
   return String((m&&m.time)||'');
 }
 
+function getWechatRoleGroupMeta(h, idx){
+  const cur=h&&h[idx];
+  if(!cur || cur.sender!=="role") return null;
+  const groupId=cur.groupId?String(cur.groupId):"";
+  let start=idx, end=idx;
+  if(groupId){
+    while(start>0){
+      const prev=h[start-1];
+      if(!(prev && prev.sender==="role" && String(prev.groupId||"")===groupId)) break;
+      start--;
+    }
+    while(end<h.length-1){
+      const next=h[end+1];
+      if(!(next && next.sender==="role" && String(next.groupId||"")===groupId)) break;
+      end++;
+    }
+  }
+  let anchor=null;
+  for(let i=start;i<=end;i++){
+    const item=h[i];
+    if(item && item.thinking){ anchor=item; break; }
+  }
+  if(!anchor){
+    for(let i=end;i>=start;i--){
+      const item=h[i];
+      if(item && !["system","quiz","tool_trace"].includes(item.type)){ anchor=item; break; }
+    }
+  }
+  return {start,end,anchor:anchor||cur};
+}
+
 function renderMessage(m,h,idx){
   if(m.type==="error") return `<div class="system-card error err-dismissable"><span class="err-text">${escapeHtml(m.content)}</span><button class="err-close" onclick="dismissErrorMsg('${m.id}')" title="关闭">×</button></div>`;
   if(m.type==="recalled") return `<div class="recalled-msg"><div class="recalled-msg-inner">${escapeHtml(m.content||"你撤回了一条消息")}</div></div>`;
@@ -9543,15 +9577,15 @@ function renderMessage(m,h,idx){
   const next=h[idx+1];
   const isFirstInVisualGroup=!isSameWechatVisualGroup(prev,m);
   const isLastInVisualGroup=!isSameWechatVisualGroup(m,next);
-  const sameRoleGroup=!isUser && m.groupId;
-  const groupMsgs=sameRoleGroup ? h.filter(x=>x&&x.sender==="role"&&x.groupId===m.groupId) : [m];
-  const groupThoughtMsg=groupMsgs.find(x=>x&&x.thinking) || [...groupMsgs].reverse().find(x=>x&&x.type!=="system"&&x.type!=="quiz"&&x.type!=="tool_trace") || m;
-  const showGroupThought=!isUser && isFirstInVisualGroup && (groupThoughtMsg?.thinking || getThoughtMode()==="ondemand");
+  const roleGroupMeta=!isUser ? getWechatRoleGroupMeta(h, idx) : null;
+  const isFirstInRoleGroup=!!(roleGroupMeta && idx===roleGroupMeta.start);
+  const groupThoughtMsg=roleGroupMeta ? roleGroupMeta.anchor : m;
+  const showGroupThought=!isUser && isFirstInRoleGroup && (groupThoughtMsg?.thinking || getThoughtMode()==="ondemand");
   const thoughtTitle = groupThoughtMsg?.thinking ? "查看本轮 ThoughtProcess" : "按需生成本轮 ThoughtProcess";
-  const thoughtBtn = showGroupThought ? ` <button class="thinking-btn${groupThoughtMsg?.thinking?"":" pending"}" onclick="event.stopPropagation();openThinking('${groupThoughtMsg.id}')" title="${thoughtTitle}" aria-label="${thoughtTitle}"><svg class="think-cloud-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M6.2 14.4h6.9a2.95 2.95 0 0 0 .25-5.89 4.2 4.2 0 0 0-7.85 1.18 2.45 2.45 0 0 0 .7 4.71Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : "";
-  const groupMeta = (!isUser && isFirstInVisualGroup) ? `<div class="time-line group-meta-line"><span class="group-meta-text">${escapeHtml(formatWechatGroupTime(m))}</span>${thoughtBtn}</div>` : "";
+  const thoughtBtn = showGroupThought ? ` <button class="thinking-btn${groupThoughtMsg?.thinking?"":" pending"}" onclick="event.stopPropagation();openThinking('${groupThoughtMsg.id}')" title="${thoughtTitle}" aria-label="${thoughtTitle}"><svg class="think-cloud-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M5.8 13.9h7.2a2.8 2.8 0 0 0 .15-5.6 4.05 4.05 0 0 0-7.6 1.2 2.25 2.25 0 0 0 .25 4.4Z" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : "";
+  const groupMeta = (!isUser && isFirstInRoleGroup) ? `<div class="time-line group-meta-line"><span class="group-meta-text">${escapeHtml(formatWechatGroupTime(m))}</span>${thoughtBtn}</div>` : "";
   const readLine = isUser && isLastInVisualGroup ? `<div class="read-line">${m.read?"已读":"未读"}</div>` : "";
-  return `<div class="msg ${cls}${isBlockedMsg?" blocked-msg":""}" data-id="${m.id}" data-group-id="${m.groupId||""}" data-sender="${m.sender}" data-first-role-group="${(!isUser && isFirstInVisualGroup) ? "1" : "0"}" data-last-role-group="${(!isUser && isLastInVisualGroup) ? "1" : "0"}">
+  return `<div class="msg ${cls}${isBlockedMsg?" blocked-msg":""}" data-id="${m.id}" data-group-id="${m.groupId||""}" data-sender="${m.sender}" data-first-role-group="${(!isUser && isFirstInRoleGroup) ? "1" : "0"}" data-last-role-group="${(!isUser && isLastInVisualGroup) ? "1" : "0"}">
     ${multiSelectMode?`<div class="multi-check${multiSelectedIds.has(m.id)?" checked":""}" onclick="toggleMultiSelect('${m.id}')"></div>`:""}
     <img class="avatar" src="${avatar}" alt="">
     <div class="bubble-wrap">
@@ -17888,7 +17922,7 @@ function mergeTranslatedLyrics(mainLines, transLines){
   return main.map(line=>{
     let best=null, diff=999;
     for(const t of trans){
-      const d=Math.abs(t.time-line.time);
+      const d=Math.abs(t.time - line.time);
       if(d<diff){diff=d;best=t;}
     }
     return {...line, trans:(best&&diff<0.85)?best.text:""};
