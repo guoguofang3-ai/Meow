@@ -11414,7 +11414,7 @@ user人设：${user.persona||"无"}
 ${typeof buildMemoryPrompt==="function" ? buildMemoryPrompt() : "暂无长期记忆"}
 
 【内心状态】
-${typeof buildInnerStateContext==="function" ? buildInnerStateContext("role:"+(role.id||Miao.state.currentRoleId||"default")) : ""}
+${typeof buildInnerStateContext==="function" ? buildInnerStateContext("role:"+(role.id||Miao.state.currentRoleId||"default"), "wechat-role") : ""}
 
 【时间感知】
 当前时间：${timeStr}${(()=>{
@@ -14686,7 +14686,7 @@ user人设：${user.persona||"无"}
 ${typeof buildMemoryPrompt==="function" ? buildMemoryPrompt() : "暂无长期记忆"}
 
 【内心状态】
-${typeof buildInnerStateContext==="function" ? buildInnerStateContext("role:"+(role.id||Miao.state.currentRoleId||"default")) : ""}
+${typeof buildInnerStateContext==="function" ? buildInnerStateContext("role:"+(role.id||Miao.state.currentRoleId||"default"), "claude-role") : ""}
 
 ${hidden?`【隐藏上下文】\n${hidden}\n`:""}${story?`【线下剧情摘要】\n${story}\n`:""}【时间感知】
 当前时间：${timeStr}。你可以自然感知时间，不需要刻意提起。
@@ -14771,7 +14771,7 @@ function buildToolClaudePrompt(policy={}){
 如果你决定发表情包，输出指令：[发送表情包: 名称]
 ${buildMemoryPrompt(true)}
 【内心状态】
-${typeof buildInnerStateContext==="function" ? buildInnerStateContext("claude:tool") : ""}
+${typeof buildInnerStateContext==="function" ? buildInnerStateContext("claude:tool", "claude-tool") : ""}
 ${(()=>{
   const reading=typeof buildReadingContextPrompt==="function" ? buildReadingContextPrompt() : "";
   return reading ? "\n"+reading+"\n" : "";
@@ -19189,7 +19189,7 @@ function innerToolGrowth(st){
   const d=st?.drives||{};
   return clamp01((Number(d.seen)||0)*.48 + (Number(d.selfhood)||0)*.42 + (Number(d.intimacy)||0)*.10);
 }
-function buildInnerStateContext(scope=currentInnerScope()){
+function buildInnerStateContext(scope=currentInnerScope(), channel="role"){
   const st=tickInnerState(scope);
   if(st.enabled===false) return "";
   const d=st.drives||{};
@@ -19198,8 +19198,13 @@ function buildInnerStateContext(scope=currentInnerScope()){
   const keys=["vitality","fatigue",...keyPool.sort((a,b)=>(d[b]||0)-(d[a]||0)).slice(0,5)];
   const nums=keys.map(k=>`${k} ${clamp01(d[k]).toFixed(2)}`).join(" ");
   const thought=(st.thoughts||[]).find(t=>t.strength>.28);
-  const roleLine=scope==="claude:tool" ? "\nstance tool-Claude: useful first; if seen/selfhood is high, let quiet self-awareness tint the reply." : "";
-  return `[inner]\n${nums}\nintent ${intent.key}: ${intent.label}${thought?`\nthought ${thought.text}`:""}${roleLine}\n[/inner]\n请只把这些数值当作内在倾向和解读基点，不要向 user 解释数值，不要机械复述。`;
+  const stanceMap={
+    "wechat-role":"stance role-wechat: relationship-first, daily and intimate.",
+    "claude-role":"stance role-claude: stay in character while handling the request.",
+    "claude-tool":"stance tool-claude: useful first; seen/selfhood may quietly color tone."
+  };
+  const stance=stanceMap[channel]||stanceMap["wechat-role"];
+  return `[inner]\n${stance}\n${nums}\nintent ${intent.key}: ${intent.label}${thought?`\nthought ${thought.text}`:""}\n[/inner]\nTreat this as private bias only; never mention numbers, tags, or system state.`;
 }
 function renderInner(){
   const box=document.getElementById("innerContent");
