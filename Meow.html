@@ -3530,6 +3530,146 @@ body.keyboard-open .reading-edit-modal textarea{max-height:min(30vh,calc(var(--v
 .temp-storage-actions button.danger{background:#ffe8e6;color:#b42318;}
 
 
+
+
+/* ===== Album UI Theme Fix v1：跟随主题 / 无跳窗预览 / 操作按钮 ===== */
+.album-app{
+  background:var(--album-bg,var(--wechat-bg,var(--bg)))!important;
+  color:var(--bar-text,#111827)!important;
+}
+.album-app .album-header{
+  background:color-mix(in srgb,var(--bar-bg,#fff) 88%,transparent)!important;
+  color:var(--bar-text,#111827)!important;
+  border-bottom:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)!important;
+  box-shadow:0 8px 24px rgba(38,31,22,.045)!important;
+}
+.album-content{
+  background:transparent!important;
+  padding:14px 16px calc(92px + env(safe-area-inset-bottom))!important;
+}
+.album-strip-title{
+  color:var(--bar-text,#111827)!important;
+  letter-spacing:-.02em;
+}
+.album-strip-sub{
+  font-size:11px;
+  font-weight:800;
+  color:color-mix(in srgb,var(--bar-text,#111827) 46%,transparent);
+  margin-top:3px;
+}
+.album-list{gap:12px!important;}
+.album-card{
+  position:relative;
+  display:grid!important;
+  grid-template-columns:98px minmax(0,1fr);
+  gap:12px!important;
+  border-radius:24px!important;
+  padding:12px!important;
+  background:color-mix(in srgb,var(--bar-bg,#fff) 86%,rgba(255,255,255,.38))!important;
+  border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)!important;
+  box-shadow:0 14px 34px rgba(38,31,22,.065)!important;
+  backdrop-filter:blur(18px) saturate(1.08);
+  -webkit-backdrop-filter:blur(18px) saturate(1.08);
+  overflow:hidden;
+}
+.album-card:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:radial-gradient(circle at 12% 10%,color-mix(in srgb,var(--accent,#111827) 10%,transparent),transparent 34%);
+  opacity:.55;
+}
+.album-thumb-btn{
+  position:relative;
+  z-index:1;
+  width:98px!important;
+  height:98px!important;
+  flex:0 0 98px!important;
+  border-radius:20px!important;
+  overflow:hidden;
+  background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff))!important;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bar-text,#111827) 7%,transparent),0 10px 24px rgba(38,31,22,.07);
+}
+.album-thumb{width:100%!important;height:100%!important;border-radius:20px!important;object-fit:cover!important;background:transparent!important;}
+.album-thumb-placeholder{color:color-mix(in srgb,var(--bar-text,#111827) 46%,var(--accent,#111827) 20%)!important;background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff))!important;}
+.album-thumb-btn.album-thumb-broken{width:98px!important;height:98px!important;border-radius:20px!important;background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff))!important;color:color-mix(in srgb,var(--bar-text,#111827) 44%,transparent)!important;}
+.album-body{position:relative;z-index:1;gap:7px!important;}
+.album-title-row{align-items:flex-start!important;}
+.album-title{font-size:15px!important;color:var(--bar-text,#111827)!important;letter-spacing:-.02em;}
+.album-menu-btn{width:32px!important;height:32px!important;background:color-mix(in srgb,var(--bar-text,#111827) 7%,var(--bar-bg,#fff))!important;color:color-mix(in srgb,var(--bar-text,#111827) 58%,transparent)!important;}
+.album-meta,.album-note,.album-comment{color:color-mix(in srgb,var(--bar-text,#111827) 58%,transparent)!important;}
+.album-note{
+  background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff))!important;
+  border:1px solid color-mix(in srgb,var(--bar-text,#111827) 6%,transparent);
+  border-radius:16px!important;
+  padding:8px 10px!important;
+  color:color-mix(in srgb,var(--bar-text,#111827) 86%,transparent)!important;
+}
+.album-comment{
+  background:color-mix(in srgb,var(--bar-text,#111827) 4%,var(--bar-bg,#fff));
+  border-radius:14px;
+  padding:6px 8px;
+}
+.album-comment.role{
+  background:color-mix(in srgb,var(--accent,#111827) 10%,var(--bar-bg,#fff));
+}
+.album-comment.role b{color:color-mix(in srgb,var(--accent,#111827) 82%,var(--bar-text,#111827))!important;}
+.album-actions{gap:7px!important;padding-top:4px!important;}
+.album-actions .chip-btn,.album-action-btn{
+  border:0;
+  min-height:30px;
+  border-radius:999px;
+  padding:7px 10px;
+  font-size:11px;
+  font-weight:950;
+  background:color-mix(in srgb,var(--bar-text,#111827) 7%,var(--bar-bg,#fff))!important;
+  color:color-mix(in srgb,var(--bar-text,#111827) 70%,var(--accent,#111827) 18%)!important;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+}
+.album-actions .chip-btn.primary,.album-action-btn.primary{background:var(--accent,#111827)!important;color:#fff!important;}
+.album-actions .chip-btn.danger,.album-action-btn.danger{background:color-mix(in srgb,#ef4444 14%,var(--bar-bg,#fff))!important;color:#b42318!important;}
+.album-empty{
+  border-radius:24px!important;
+  background:color-mix(in srgb,var(--bar-bg,#fff) 78%,rgba(255,255,255,.4))!important;
+  border:1px dashed color-mix(in srgb,var(--bar-text,#111827) 14%,transparent)!important;
+  color:var(--bar-text,#111827)!important;
+}
+.quick-modal.album-quick-modal{
+  width:min(390px,calc(100vw - 28px))!important;
+  max-width:390px!important;
+  max-height:min(82vh,720px)!important;
+  overflow:auto!important;
+  border-radius:28px!important;
+  padding:14px!important;
+  background:color-mix(in srgb,var(--bar-bg,#fff) 94%,rgba(255,255,255,.35))!important;
+  color:var(--bar-text,#111827)!important;
+  border:1px solid color-mix(in srgb,var(--bar-text,#111827) 9%,transparent)!important;
+  box-shadow:0 24px 68px rgba(38,31,22,.24)!important;
+  backdrop-filter:blur(26px) saturate(1.12);
+  -webkit-backdrop-filter:blur(26px) saturate(1.12);
+}
+.album-preview-modal{display:flex;flex-direction:column;gap:12px;}
+.album-preview-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.album-preview-title{font-size:18px;font-weight:1000;letter-spacing:-.03em;line-height:1.2;}
+.album-preview-sub{font-size:11px;font-weight:800;color:color-mix(in srgb,var(--bar-text,#111827) 48%,transparent);margin-top:4px;line-height:1.45;}
+.album-preview-close{width:36px;height:36px;border:0;border-radius:50%;background:color-mix(in srgb,var(--bar-text,#111827) 7%,var(--bar-bg,#fff));color:var(--bar-text,#111827);font-size:20px;font-weight:900;flex:0 0 auto;}
+.album-preview-imgbox{border-radius:24px;background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff));border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent);padding:8px;display:flex;align-items:center;justify-content:center;min-height:180px;max-height:56vh;overflow:hidden;}
+.album-preview-imgbox img{max-width:100%;max-height:calc(56vh - 16px);width:auto;height:auto;object-fit:contain;border-radius:18px;display:block;}
+.album-preview-text{display:grid;gap:8px;}
+.album-preview-actions,.album-edit-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.album-preview-actions .btn,.album-edit-actions .btn,.album-menu-list button{min-height:42px;border-radius:18px;font-size:12px;font-weight:950;}
+.album-form{display:grid;gap:10px;}
+.album-form textarea{min-height:112px;border-radius:20px;background:color-mix(in srgb,var(--bar-bg,#fff) 92%,#fff);color:var(--bar-text,#111827);border:1px solid color-mix(in srgb,var(--bar-text,#111827) 10%,transparent);}
+.album-menu-list{display:grid;gap:8px;margin-top:12px;}
+.album-menu-list button{border:0;background:color-mix(in srgb,var(--bar-text,#111827) 6%,var(--bar-bg,#fff));color:var(--bar-text,#111827);text-align:left;padding:11px 12px;}
+.album-menu-list button.primary{background:var(--accent,#111827);color:#fff;}
+.album-menu-list button.danger{background:color-mix(in srgb,#ef4444 15%,var(--bar-bg,#fff));color:#b42318;}
+.album-modal-tip{font-size:11px;line-height:1.55;color:color-mix(in srgb,var(--bar-text,#111827) 50%,transparent);}
+
 /* ===== Claude output polish v1: 输出文件可见删除 / 预览操作条 ===== */
 .preview-actions{display:none;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
 .preview-actions.show{display:flex;}
@@ -6207,9 +6347,13 @@ function bindEvents(){
     if(action==="delete-memory") deleteMemory(id,btn.dataset.scope);
     if(action==="album-reload") renderAlbum();
     if(action==="open-album-item"){ const item=getAlbumEntries().find(x=>x.id===id); if(item) openAlbumPreview(item); }
-    if(action==="album-menu"){ const item=getAlbumEntries().find(x=>x.id===id); if(item) albumPromptAction(item); }
-    if(action==="album-add-note") albumPromptNote(id);
-    if(action==="album-add-comment") albumPromptComment(id);
+    if(action==="album-menu") openAlbumMenu(id);
+    if(action==="album-add-note") openAlbumNoteModal(id);
+    if(action==="album-save-note") albumSaveNoteFromModal(id);
+    if(action==="album-add-comment") openAlbumCommentModal(id);
+    if(action==="album-save-comment") await albumSaveCommentFromModal(id, btn.dataset.roleReply==="1");
+    if(action==="album-role-comment") await albumRoleComment(id);
+    if(action==="album-delete") await deleteAlbumItem(id);
     if(action==="open-diary-entry") openDiaryEntryModal(id||"");
     if(action==="set-diary-tab") setDiaryTab(id||"today");
     if(action==="open-diary-menu") openDiaryMenu(id||"");
@@ -8641,9 +8785,9 @@ function summarizeWechatToolResult(name,result){
   if(name==="write_memory") return result.status==="skipped"?"已存在":"已保存";
   if(name==="read_memory" && result.count!=null) return `${result.count} 条`;
   if(name==="read_diary" && result.count!=null) return `${result.count} 条`;
-  if(name==="save_album_photo") return result.status==="saved" ? "已存" : (result.reason||"");
-  if(name==="write_album_note") return result.status==="saved" ? "已写" : (result.reason||"");
-  if(name==="read_album" && result.count!=null) return `${result.count} 张`;
+  if(name==="save_album_photo") return result.status==="saved" ? (result.title?`${result.title} · 已存`:"已存") : (result.reason||"");
+  if(name==="write_album_note") return result.status==="saved" ? "已写随记" : (result.reason||"");
+  if(name==="read_album" && result.count!=null){ const q=String(result.query||"").trim(); return q?`${q} · ${result.count} 张`:`${result.count} 张`; }
   if(name==="read_file" && result.length!=null) return `${result.length} 字`;
   if(name==="device_status") return result.connected?`已连接${result.modeText?" · "+result.modeText:""}`:"未连接";
   if(name==="device_set_mode") return result.ok===false?"失败":(result.mode!=null?`模式${result.mode}`:"已切换");
@@ -10511,68 +10655,68 @@ function cleanSearchQueryCandidate(text){
   s=s.replace(/^(?:请|帮我|给我|麻烦你)?\s*(?:联网搜索|网页搜索|搜索网页|搜索一下|搜一下|搜索|搜|查一下|查询|查|找一下|找|检索|看一下|看看)\s*/i,"").trim();
   s=s.replace(/^(?:一个|一下|下|一下子|的|关于|有关|一下关于)\s*/i,"").trim();
   s=s.replace(/(?:吧|呀|呢|看看|给我|帮我|试试|测试一下|测试|结果正常吗|正常吗|行不行|可以吗)$/g,"").trim();
-  return s.replace(/[，。！？、,.!?；;：:]+$/g,"").trim().slice(0,120);
+  return s.replace(/[，。！？、,.!?；;：:]+$/g,"").trim().slice(0,140);
 }
 function isGenericSearchQuery(q){
   const s=String(q||"").replace(/\s+/g,"").replace(/[，。！？、,.!?；;：:]+$/g,"");
-  if(!s) return true;
-  if(s.length<2) return true;
-  return /^(一下|一个|下|的|链接的|随便|随便一个|任意|任意一个|搜一个|搜索一个|查一下|搜一下|网页|网站|资料|新闻|最新|热点|其他关键词|关键词|query|搜索词|你感兴趣的也行|你感兴趣的|感兴趣的|你想看的|想看的|不一定是新闻|公开新闻|有意思的|好玩的|都行|什么都可以|结果正常吗|搜索结果正常吗|功能测试|测试搜索)$/.test(s);
+  if(!s || s.length<2) return true;
+  return /^(一下|一个|下|的|链接的|随便|随便一个|任意|任意一个|搜一个|搜索一个|查一下|搜一下|网页|网站|资料|新闻|最新|热点|其他关键词|关键词|query|搜索词|你感兴趣的也行|你感兴趣的|感兴趣的|你想看的|你想搜的|想搜的|你想找的|你想查的|不一定是新闻|公开新闻|有意思的|好玩的|都行|什么都可以|结果正常吗|搜索结果正常吗|功能测试|测试搜索|测试一下|试试)$/.test(s);
 }
 function looksLikeMetaSearchTest(q){
   const s=String(q||"").replace(/\s+/g,"");
-  return /结果正常|正常吗|功能|测试|bug|有没有问题|能不能搜|搜得到吗|返回缓存|缓存结果|字段|传参|代理|query/i.test(s);
+  return /结果正常|正常吗|功能|测试|bug|有没有问题|能不能搜|搜得到吗|返回缓存|缓存结果|字段|传参|代理|query|schema|工具定义|新版|最新版|更新版本/i.test(s);
 }
 function extractSearchQueryFromReasonField(text){
   const raw=String(text||"").trim();
   if(!raw) return "";
   const patterns=[
-    /(?:最终实际搜索词|实际搜索词|搜索关键词|关键词|query)\s*(?:是|为|=|:|：)\s*[「『“\"']?([^\n，。；;」』”\"']{2,100})/i,
-    /(?:联网搜索|网页搜索|搜索网页|搜索一下|搜一下|搜索|搜|查询|查一下|查|检索|找一下|找)\s*[「『“\"']?([^\n，。；;」』”\"']{2,100})/i,
-    /(?:想看|想了解|感兴趣的是|会感兴趣)\s*[「『“\"']?([^\n，。；;」』”\"']{2,100})/i,
-    /[「『“\"']([^\n」』”\"']{2,100})[」』”\"']/
+    /(?:最终实际搜索词|实际搜索词|搜索关键词|关键词|query)\s*(?:是|为|=|:|：)\s*[「『“\"']?([^\n，。；;」』”\"']{2,120})/i,
+    /(?:联网搜索|网页搜索|搜索网页|搜索一下|搜一下|搜索|搜|查询|查一下|查|检索|找一下|找)\s*[「『“\"']?([^\n，。；;」』”\"']{2,120})/i,
+    /(?:想看|想了解|感兴趣的是|会感兴趣|我感兴趣|他感兴趣|她感兴趣)\s*[「『“\"']?([^\n，。；;」』”\"']{2,120})/i,
+    /[「『“\"']([^\n」』”\"']{2,120})[」』”\"']/
   ];
   for(const re of patterns){
     const m=raw.match(re);
-    if(m){
-      const q=cleanSearchQueryCandidate(m[1]||"");
-      if(q && !isGenericSearchQuery(q) && !looksLikeMetaSearchTest(q)) return q;
-    }
+    if(!m) continue;
+    const q=cleanSearchQueryCandidate(m[1]||"");
+    if(q && !isGenericSearchQuery(q) && !looksLikeMetaSearchTest(q)) return q;
   }
+  // reason 很短且像一个主题时，也允许把它当 query；但排除“为什么搜/测试功能”这类元说明。
   const short=cleanSearchQueryCandidate(raw);
-  if(short && short.length<=60 && !isGenericSearchQuery(short) && !looksLikeMetaSearchTest(short)) return short;
+  if(short && short.length<=70 && !isGenericSearchQuery(short) && !looksLikeMetaSearchTest(short)) return short;
   return "";
 }
-function searchQueryScore(q, source){
-  const s=cleanSearchQueryCandidate(q);
-  if(!s || isGenericSearchQuery(s)) return -1000;
-  let score=Math.min(s.length,28);
-  if(/\d{4}|最新|新闻|资讯|报告|研究|漏洞|安全|AI|人工智能|政策|发布|更新|趋势|事件|名单|价格|天气|赛程/i.test(s)) score+=12;
-  if(/[\u4e00-\u9fa5]{2,}/.test(s)) score+=4;
-  if(/^(reason|intent|purpose|goal|why|description)$/i.test(source||"")) score+=6;
-  if(looksLikeMetaSearchTest(s)) score-=60;
-  if(/你|我|user|哥哥|刚才|这次|那个|这个/.test(s) && s.length<12) score-=18;
-  return score;
-}
-function personaInterestSearchQuery(){
+function currentRoleProfileText(){
   try{
     const role=typeof currentRole==="function" ? (currentRole()||{}) : {};
-    const t=[role.name,role.description,role.personality,role.scenario,role.systemPrompt,role.firstMes].filter(Boolean).join(" ");
-    const rules=[
-      [/网络安全|漏洞|黑客|渗透|代码|程序|开发|工程师|计算机|赛博|技术|AI|人工智能|机器人/i,"最新网络安全漏洞新闻"],
-      [/财经|金融|股票|基金|投资|商业|交易|银行/i,"今日财经市场新闻"],
-      [/音乐|乐队|歌手|唱歌|作曲|钢琴|吉他/i,"最新音乐资讯"],
-      [/电影|导演|演员|影视|剧本|戏剧/i,"最新电影资讯"],
-      [/游戏|电竞|主机|手游|Steam|玩家/i,"最新游戏行业资讯"],
-      [/动漫|漫画|二次元|番剧|声优/i,"最新动漫资讯"],
-      [/文学|小说|写作|诗|作家|书店/i,"最新文学作品与作家新闻"],
-      [/医学|医生|医疗|心理|药|健康|护理/i,"最新健康医疗资讯"],
-      [/时尚|穿搭|美妆|设计|艺术|摄影/i,"最新设计艺术资讯"],
-      [/历史|考古|博物馆|人文/i,"最新历史考古发现"]
-    ];
-    for(const [re,q] of rules){ if(re.test(t)) return q; }
-  }catch(e){}
-  return "";
+    return [role.name,role.description,role.personality,role.scenario,role.systemPrompt,role.firstMes,role.prompt,role.background,role.notes]
+      .filter(Boolean).map(x=>String(x)).join("\n").slice(0,6000);
+  }catch(e){ return ""; }
+}
+function personaInterestSearchQuery(){
+  const t=currentRoleProfileText();
+  const rules=[
+    [/网络安全|漏洞|黑客|渗透|代码|程序|开发|工程师|计算机|赛博|技术|AI|人工智能|机器人/i,"最新网络安全漏洞新闻"],
+    [/猫|流浪猫|宠物|动物|兽医|猫咖|猫舍/i,"最新猫咪救助和宠物新闻"],
+    [/财经|金融|股票|基金|投资|商业|交易|银行/i,"今日财经市场新闻"],
+    [/音乐|乐队|歌手|唱歌|作曲|钢琴|吉他/i,"最新音乐资讯"],
+    [/电影|导演|演员|影视|剧本|戏剧/i,"最新电影资讯"],
+    [/游戏|电竞|主机|手游|Steam|玩家/i,"最新游戏行业资讯"],
+    [/动漫|漫画|二次元|番剧|声优/i,"最新动漫资讯"],
+    [/文学|小说|写作|诗|作家|书店/i,"最新文学作品与作家新闻"],
+    [/医学|医生|医疗|心理|药|健康|护理/i,"最新健康医疗资讯"],
+    [/时尚|穿搭|美妆|设计|艺术|摄影/i,"最新设计艺术资讯"],
+    [/历史|考古|博物馆|人文/i,"最新历史考古发现"],
+    [/法律|律师|法院|案件|犯罪|侦探|刑侦/i,"最新法律案件新闻"]
+  ];
+  for(const [re,q] of rules){ if(re.test(t)) return q; }
+  const roleName=cleanSearchQueryCandidate((t.split(/\n/).find(Boolean)||"").slice(0,30));
+  if(roleName && !isGenericSearchQuery(roleName)) return `${roleName} 可能感兴趣的最新资讯`;
+  return "今日有意思的科技文化新闻";
+}
+function openEndedSearchRequested(text){
+  const s=String(text||"").replace(/\s+/g,"");
+  return /随便|任意|你感兴趣|感兴趣|你想看|想看的|你想搜|想搜的|你想找|想找的|都行|什么都可以|不一定|你决定|你自己选|你来定/.test(s);
 }
 function inferSearchQueryFromRecentUserMessage(){
   try{
@@ -10587,54 +10731,45 @@ function inferSearchQueryFromRecentUserMessage(){
       const q=cleanSearchQueryCandidate(matches[i][1]||"");
       if(q && !isGenericSearchQuery(q) && !looksLikeMetaSearchTest(q)) return q;
     }
-    if(/随便|任意|你感兴趣|感兴趣|都行|什么都可以|不一定/.test(text)) return personaInterestSearchQuery();
+    if(openEndedSearchRequested(text)) return personaInterestSearchQuery();
     return "";
   }catch(e){ return ""; }
+}
+function scoreResolvedSearchCandidate(q, source){
+  const s=cleanSearchQueryCandidate(q);
+  if(!s || isGenericSearchQuery(s)) return -1000;
+  let score=Math.min(s.length,32);
+  if(/^(query|q|keyword|keywords|search|topic|term|text|url)$/i.test(source||"")) score+=30;
+  if(/^(reason|intent|purpose|goal|why|description|desc|rationale)$/i.test(source||"")) score+=18;
+  if(/\d{4}|最新|新闻|资讯|报告|研究|漏洞|安全|AI|人工智能|政策|发布|更新|趋势|事件|名单|价格|天气|赛程/i.test(s)) score+=12;
+  if(/[\u4e00-\u9fa5]{2,}/.test(s)) score+=4;
+  if(looksLikeMetaSearchTest(s)) score-=80;
+  if(/你|我|user|哥哥|刚才|这次|那个|这个/.test(s) && s.length<12) score-=22;
+  return score;
 }
 function resolveWebSearchQuery(args={}){
   args=args||{};
   const candidates=[];
-  const directFields=["query","q","keyword","keywords","search","text","topic","term","url"];
-  directFields.forEach(k=>{
-    if(args[k]!=null){
-      const q=cleanSearchQueryCandidate(args[k]);
-      candidates.push({q,source:k,score:searchQueryScore(q,k)});
-    }
-  });
-  const reasonFields=["reason","intent","purpose","goal","why","description","desc","rationale"];
-  reasonFields.forEach(k=>{
-    if(args[k]!=null){
-      const q=extractSearchQueryFromReasonField(args[k]);
-      candidates.push({q,source:k,score:searchQueryScore(q,k)});
-    }
-  });
+  const addCandidate=(q,source)=>{
+    q=cleanSearchQueryCandidate(q);
+    candidates.push({q,source,score:scoreResolvedSearchCandidate(q,source)});
+  };
+  // 这一块是重写后的核心：工具定义必须有 query；如果某些模型/API 仍然只给 reason，也把 reason 当一等候选处理。
+  ["query","q","keyword","keywords","search","topic","term","text","url"].forEach(k=>{ if(args[k]!=null) addCandidate(args[k],k); });
+  ["reason","intent","purpose","goal","why","description","desc","rationale"].forEach(k=>{ if(args[k]!=null){
+    const extracted=extractSearchQueryFromReasonField(args[k]);
+    if(extracted) addCandidate(extracted,k);
+    else addCandidate(args[k],k);
+  }});
   candidates.sort((a,b)=>b.score-a.score);
-  if(candidates[0] && candidates[0].score>0) return candidates[0].q;
+  const best=candidates.find(c=>c.score>0 && c.q && !isGenericSearchQuery(c.q) && !looksLikeMetaSearchTest(c.q));
+  if(best) return {query:best.q, source:best.source, inferred:false, candidates};
   const inferred=inferSearchQueryFromRecentUserMessage();
-  if(inferred && !isGenericSearchQuery(inferred)) return inferred;
-  const persona=personaInterestSearchQuery();
-  if(persona) return persona;
-  return "";
-}
-async function readWebpageTool(args={}){
-  let target=String(args.url||args.link||args.href||args.target||"").trim();
-  if(!target) target=inferWebTargetFromRecentUserMessage();
-  if(target && !isConcreteWebUrl(target)){
-    // 兼容模型把关键词误传给 read_webpage：自动改走 web_search，避免 search-only Worker 报 missing q。
-    const search=await webSearchTool({query:target});
-    if(!search.ok) return {ok:false,error:"这不是具体网址，已按关键词搜索但失败："+(search.error||"未知错误")};
-    return {ok:true, search:true, query:search.query||target, requestedQuery:target, url:"", content:formatWebSearchResultsForAI(search), results:search.results||[], count:search.count||0, images:[], imageCount:0};
+  if(inferred && !isGenericSearchQuery(inferred) && !looksLikeMetaSearchTest(inferred)) return {query:inferred, source:"recent_user", inferred:true, candidates};
+  if(candidates.some(c=>openEndedSearchRequested(c.q)) || openEndedSearchRequested(JSON.stringify(args||{}))){
+    return {query:personaInterestSearchQuery(), source:"persona", inferred:true, candidates};
   }
-  if(!target){
-    const query=resolveWebSearchQuery(args);
-    const search=await webSearchTool({query});
-    if(!search.ok) return {ok:false,error:"缺少具体网址，按关键词搜索也失败："+(search.error||"未知错误")};
-    return {ok:true, search:true, query:search.query||query, requestedQuery:query, url:"", content:formatWebSearchResultsForAI(search), results:search.results||[], count:search.count||0, images:[], imageCount:0};
-  }
-  const page=await fetchWebPage(target);
-  if(!page.ok) return page;
-  const images=extractWebPageImages(page.content, page.url);
-  return {ok:true, url:page.url, content:page.content, truncated:!!page.truncated, images, imageCount:images.length};
+  return {query:"", source:"", inferred:false, candidates};
 }
 function extractWebSearchResultsFromJson(data){
   if(!data || typeof data!=="object") return [];
@@ -10667,7 +10802,7 @@ function extractSearchContentFromJson(data){
   }
   return collapseWebText(Array.from(new Set(chunks)).join("\n\n")).slice(0,9000);
 }
-function normalizeSearchToolPayload(query, source, data, rawText, contentType){
+function normalizeSearchToolPayload(query, source, data, rawText, contentType, meta={}){
   const raw=String(rawText||"");
   let results=extractWebSearchResultsFromJson(data).slice(0,5).filter(r=>r.link);
   let content=extractSearchContentFromJson(data);
@@ -10678,29 +10813,27 @@ function normalizeSearchToolPayload(query, source, data, rawText, contentType){
       content=collapseWebText(raw);
     }
   }
-  // Jina Search 常返回整段 markdown/text，不一定有结构化 results；这也是可用搜索内容。
   content=String(content||"").slice(0,9000);
-  return {ok:!!(results.length || content), query, results, count:results.length, content, source};
+  return {ok:!!(results.length || content), query, finalQuery:query, querySource:meta.querySource||"", inferredQuery:!!meta.inferredQuery, results, count:results.length, content, source};
 }
 async function webSearchTool(args={}){
-  const query=resolveWebSearchQuery(args);
-  if(!query) return {ok:false,error:"搜索词为空：模型没有给出关键词，且无法从最近一条用户消息里推断。"};
+  const resolved=resolveWebSearchQuery(args);
+  const query=String(resolved.query||"").trim();
+  if(!query) return {ok:false,error:"搜索词为空：web_search 工具需要 query 参数；如果是‘你想搜的/你感兴趣的’，角色也必须先按人设拟定一个具体 query。", query:""};
   const cfg=Storage.get("webSearch",{})||{};
   const key=String(cfg.proxyKey||cfg.serpApiKey||"").trim();
   const proxy=String(cfg.proxyUrl||"").trim().replace(/\/+$/,"");
-  const cacheKey="webSearchCache."+query.toLowerCase();
+  const cacheKey="webSearchCache.v2."+query.toLowerCase();
   const cached=Storage.get(cacheKey,null);
-  if(cached && Date.now()-(cached.at||0)<10*60*1000) return Object.assign({cached:true}, cached.data);
+  if(cached && Date.now()-(cached.at||0)<10*60*1000) return Object.assign({cached:true, query, finalQuery:query, querySource:resolved.source, inferredQuery:resolved.inferred}, cached.data);
   const failures=[];
   const urls=[];
   if(proxy){
     buildProxyRequestUrls(proxy,"q",query,key).forEach(url=>urls.push({source:"自定义搜索代理", url}));
   }
-  // 有 SerpAPI key 时也保留直连兜底。即使自定义 Worker 临时坏了，也能再试一次官方接口。
   if(key){
     urls.push({source:"SerpAPI", url:"https://serpapi.com/search.json?engine=google&q="+encodeURIComponent(query)+"&api_key="+encodeURIComponent(key)+"&hl=zh-CN&gl=cn"});
   }
-  // 公共兜底：Jina Search 会直接返回适合模型阅读的搜索结果/网页内容摘要；即使自定义代理坏了也不至于完全断网。
   urls.push({source:"Jina Search", url:"https://s.jina.ai/"+encodeURIComponent(query)});
   try{
     for(const item of urls){
@@ -10720,7 +10853,7 @@ async function webSearchTool(args={}){
           failures.push({source:item.source,status:res.status||0,error:data.error||data.message||"搜索代理返回失败"});
           continue;
         }
-        const out=normalizeSearchToolPayload(query,item.source,data,text,contentType);
+        const out=normalizeSearchToolPayload(query,item.source,data,text,contentType,{querySource:resolved.source,inferredQuery:resolved.inferred});
         if(!out.ok){
           failures.push({source:item.source,status:res.status||0,error:"搜索返回为空"});
           continue;
@@ -10734,13 +10867,32 @@ async function webSearchTool(args={}){
       }
     }
     const has401=failures.some(f=>f.status===401);
-    if(has401) return {ok:false,error:proxy?"搜索代理/SerpAPI 拒绝访问（401），请检查代理地址和 Key 是否匹配；公共兜底也未成功":"搜索服务拒绝访问（401），请检查密钥"};
+    if(has401) return {ok:false,query,finalQuery:query,error:proxy?"搜索代理/SerpAPI 拒绝访问（401），请检查代理地址和 Key 是否匹配；公共兜底也未成功":"搜索服务拒绝访问（401），请检查密钥"};
     const detail=failures.slice(0,4).map(f=>`${f.source}${f.status?" HTTP "+f.status:""}${f.error?"："+String(f.error).slice(0,90):""}`).join("；");
-    return {ok:false,error:detail||"搜索代理返回失败"};
+    return {ok:false,query,finalQuery:query,error:detail||"搜索代理返回失败"};
   }catch(e){
     const msg=e.name==="AbortError"?"搜索超时":("搜索出错："+(e.message||e));
-    return {ok:false,error:msg+"；建议检查代理地址、密钥和网络是否可达"};
+    return {ok:false,query,finalQuery:query,error:msg+"；建议检查代理地址、密钥和网络是否可达"};
   }
+}
+async function readWebpageTool(args={}){
+  let target=String(args.url||args.link||args.href||args.target||"").trim();
+  if(!target) target=inferWebTargetFromRecentUserMessage();
+  if(target && !isConcreteWebUrl(target)){
+    const search=await webSearchTool({query:target});
+    if(!search.ok) return {ok:false,error:"这不是具体网址，已按关键词搜索但失败："+(search.error||"未知错误")};
+    return {ok:true, search:true, query:search.query||target, finalQuery:search.finalQuery||search.query||target, requestedQuery:target, url:"", content:formatWebSearchResultsForAI(search), results:search.results||[], count:search.count||0, images:[], imageCount:0};
+  }
+  if(!target){
+    const resolved=resolveWebSearchQuery(args);
+    const search=await webSearchTool({query:resolved.query});
+    if(!search.ok) return {ok:false,error:"缺少具体网址，按关键词搜索也失败："+(search.error||"未知错误")};
+    return {ok:true, search:true, query:search.query||resolved.query, finalQuery:search.finalQuery||search.query||resolved.query, requestedQuery:resolved.query, url:"", content:formatWebSearchResultsForAI(search), results:search.results||[], count:search.count||0, images:[], imageCount:0};
+  }
+  const page=await fetchWebPage(target);
+  if(!page.ok) return page;
+  const images=extractWebPageImages(page.content, page.url);
+  return {ok:true, url:page.url, content:page.content, truncated:!!page.truncated, images, imageCount:images.length};
 }
 async function viewWebImageTool(args={}){
   const imageUrl=String(args.image_url||args.url||"").trim();
@@ -14067,6 +14219,12 @@ async function callClaudeAI(api, ops){
           const q=String(result.query||"").trim();
           opNote=q ? `${q}${result.count!=null?` · ${result.count}条`:""}` : (result.count!=null?`${result.count}条`:"");
         }
+        if(toolName==="read_album" && result && !result.error){
+          const q=String(result.query||"").trim();
+          opNote=q ? `${q}${result.count!=null?` · ${result.count}张`:""}` : (result.count!=null?`${result.count}张`:"");
+        }
+        if(toolName==="save_album_photo" && result && !result.error){ opNote=result.title?`${result.title} · 已存`:"已存"; }
+        if(toolName==="write_album_note" && result && !result.error){ opNote="已写随记"; }
         claudeOpsDone(ops, opIndex, !(result&&result.error), opNote);
       }catch(e){
         result={error:e.message||String(e)};
@@ -16073,7 +16231,7 @@ function openQuickModal(html){
   const box=$("#quickModal");
   if(!mask || !box) throw new Error("quickModal DOM 不存在");
   mask.classList.remove("diary-modal-mask");
-  box.classList.remove("wide","mind-quick-modal","diary-quick-modal","reading-quick-modal");
+  box.classList.remove("wide","mind-quick-modal","diary-quick-modal","reading-quick-modal","album-quick-modal");
   box.innerHTML=html||"";
   mask.classList.add("show");
   if(typeof window.miaoUpdateKeyboardViewport==="function") setTimeout(window.miaoUpdateKeyboardViewport,0);
@@ -16081,7 +16239,7 @@ function openQuickModal(html){
 window.closeQuickModal=function closeQuickModal(){
   try{ if(window.RealVoiceMessage && typeof window.RealVoiceMessage.reset==="function") window.RealVoiceMessage.reset(); }catch(e){}
   $("#quickModalMask").classList.remove("show","diary-modal-mask");
-  $("#quickModal").classList.remove("wide","mind-quick-modal","diary-quick-modal","reading-quick-modal");
+  $("#quickModal").classList.remove("wide","mind-quick-modal","diary-quick-modal","reading-quick-modal","album-quick-modal");
   $("#quickModal").innerHTML="";
   if(typeof window.miaoUpdateKeyboardViewport==="function") setTimeout(window.miaoUpdateKeyboardViewport,0);
 }
@@ -18409,12 +18567,37 @@ function albumWriteNoteFromTool(args={}, sourceLabel){
   return {status:"saved",id,note:note.slice(0,120)};
 }
 function albumReadTool(args={}){
-  const q=String(args.query||"").trim().toLowerCase();
+  const rawQuery=String(args.query||"").trim();
+  const q=rawQuery.toLowerCase();
   const limit=Math.min(Math.max(parseInt(args.limit)||8,1),20);
   let list=getAlbumEntries();
-  if(q) list=list.filter(x=>[x.title,x.summary,x.note,x.imageName,x.sourceLabel].join(" ").toLowerCase().includes(q));
-  const results=list.slice(0,limit).map(x=>({id:x.id,title:x.title,summary:x.summary,note:x.note,sourceLabel:x.sourceLabel,createdAt:x.createdAt,updatedAt:x.updatedAt,comments:(x.comments||[]).slice(-2),thumbHint:isAlbumImageUrl(albumThumbOf(x))?"有缩略图":""}));
-  return {count:results.length,results};
+  if(q) list=list.filter(x=>[x.title,x.summary,x.note,x.imageName,x.sourceLabel,(x.comments||[]).map(c=>c.text).join(" ")].join(" ").toLowerCase().includes(q));
+  const results=list.slice(0,limit).map(x=>({id:x.id,title:x.title,summary:x.summary,note:x.note,sourceLabel:x.sourceLabel,createdAt:x.createdAt,updatedAt:x.updatedAt,comments:(x.comments||[]).slice(-3),thumbHint:isAlbumImageUrl(albumThumbOf(x))?"有缩略图":""}));
+  return {query:rawQuery,count:results.length,results};
+}
+
+function webSearchToolSchema(scope="wechat"){
+  return {
+    type:"function",
+    function:{
+      name:"web_search",
+      description:"联网搜索关键词，返回网页结果（标题、摘要、链接）。必须提供 query。用于搜资料、搜新闻、查最新、找网页；如果用户说‘随便/你感兴趣的/你想搜的’，请先按当前角色人设拟定一个具体 query，再调用本工具。",
+      parameters:{
+        type:"object",
+        properties:{
+          query:{type:"string",description:"最终实际搜索词，必填、具体、可直接交给搜索引擎；不要填‘随便’‘你感兴趣的’‘结果正常吗’这类用户泛话。"},
+          reason:{type:"string",description:"可选：为什么选择这个搜索词；仅用于调试和解释，不能替代 query。"}
+        },
+        required:["query"]
+      }
+    }
+  };
+}
+function readWebpageToolSchema(){
+  return {type:"function",function:{name:"read_webpage",description:"读取指定公开网页 URL 的文字内容，并提取最多8张网页图片候选。只接受具体 http/https URL；如果只有关键词请先用 web_search。",parameters:{type:"object",properties:{url:{type:"string",description:"要读取的具体网页 URL，必须是 http/https 链接"}},required:["url"]}}};
+}
+function viewWebImageToolSchema(){
+  return {type:"function",function:{name:"view_web_image",description:"理解一张网页图片。只在 read_webpage 返回的图片候选确实有用时调用，一次只看一张公网图片 URL。",parameters:{type:"object",properties:{image_url:{type:"string",description:"公网图片 URL，通常来自 read_webpage 的 images[].src"},question:{type:"string",description:"想从图片里了解什么"}},required:["image_url","question"]}}};
 }
 
 function getClaudeTools(policy={}){
@@ -18424,9 +18607,9 @@ function getClaudeTools(policy={}){
   if(policy.phoneActivity) add(phoneActivityToolSchema());
   if(policy.geoWeather) geoWeatherToolSchemas("claude").forEach(add);
   if(policy.web){
-    add({type:"function",function:{name:"web_search",description:"联网搜索关键词，返回网页结果（标题、摘要、链接），公共搜索兜底可能同时返回可读内容摘要。用于找资料/找链接/搜新闻。",parameters:{type:"object",properties:{query:{type:"string",description:"最终实际搜索词，必须具体。user说‘随便/你感兴趣的’时，按当前角色人设自行拟定具体关键词，不要原样传用户泛话。"},reason:{type:"string",description:"可选：为什么按这个关键词搜索，用于排查。"}},required:["query"]}}});
-    add({type:"function",function:{name:"read_webpage",description:"读取指定网页的文字内容，并提取最多8张网页图片候选（src/alt/附近文字）。正文会截断，避免塞满上下文。",parameters:{type:"object",properties:{url:{type:"string",description:"要读取的网页 URL"}},required:["url"]}}});
-    add({type:"function",function:{name:"view_web_image",description:"理解一张网页图片。只在 read_webpage 返回的图片候选确实有用时调用，一次只看一张公网图片 URL，不要批量调用。",parameters:{type:"object",properties:{image_url:{type:"string",description:"公网图片 URL，通常来自 read_webpage 的 images[].src"},question:{type:"string",description:"想从图片里了解什么"}},required:["image_url","question"]}}});
+    add(webSearchToolSchema("claude"));
+    add(readWebpageToolSchema());
+    add(viewWebImageToolSchema());
   }
   if(policy.file){
     add({
@@ -18641,11 +18824,7 @@ function getWechatTools(options={}){
   tools.push(albumToolSchema(), writeAlbumNoteToolSchema(), readAlbumToolSchema());
   printerToolSchemas("wechat").forEach(t=>tools.push(t));
   geoWeatherToolSchemas("wechat").forEach(t=>tools.push(t));
-  tools.push(
-    {type:"function",function:{name:"web_search",description:"联网搜索关键词，返回网页结果（标题、摘要、链接），公共搜索兜底可能同时返回可读内容摘要。用于用户要求搜资料/搜新闻/查最新/找网页。",parameters:{type:"object",properties:{query:{type:"string",description:"最终实际搜索词，必须具体；不要传空字符串。user说‘随便/你感兴趣的’时，按当前角色人设自行拟定具体关键词，不要原样传用户泛话。"},reason:{type:"string",description:"可选：为什么按这个关键词搜索，用于排查。"}},required:["query"]}}},
-    {type:"function",function:{name:"read_webpage",description:"读取指定公开网页 URL 的文字内容，并提取最多8张网页图片候选。只接受具体 http/https URL；如果只有关键词请先用 web_search；如果直读失败会自动用搜索通道 q=URL 兜底。",parameters:{type:"object",properties:{url:{type:"string",description:"要读取的具体网页 URL，必须是 http/https 链接"}},required:["url"]}}},
-    {type:"function",function:{name:"view_web_image",description:"理解一张网页图片。只在 read_webpage 返回的图片候选确实有用时调用，一次只看一张公网图片 URL。",parameters:{type:"object",properties:{image_url:{type:"string",description:"公网图片 URL，通常来自 read_webpage 的 images[].src"},question:{type:"string",description:"想从图片里了解什么"}},required:["image_url","question"]}}}
-  );
+  tools.push(webSearchToolSchema("wechat"), readWebpageToolSchema(), viewWebImageToolSchema());
   return tools;
 }
 function writeWechatMemoryEntry(args={}, sourceLabel){
@@ -21179,23 +21358,39 @@ function clearDiarySearch(){
   Storage.set("diaryFilterCategory","all");
   renderDiary();
 }
+function albumDateText(ts){
+  try{
+    const d=new Date(Number(ts)||Date.now());
+    return d.toLocaleDateString("zh-CN",{month:"short",day:"numeric"})+" "+d.toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",hour12:false});
+  }catch(e){ return ""; }
+}
+function albumCommentsHtml(item, limit=4){
+  return (item.comments||[]).slice(-limit).map(c=>`<div class="album-comment ${c.author==="role"?"role":"user"}"><b>${c.author==="role"?escapeHtml(c.roleName||currentRole().name||"角色"):"你"}</b><span>${escapeHtml(c.text||"")}</span></div>`).join("");
+}
+function albumNotesHtml(item){
+  return [item.summary,item.note].filter(Boolean).map(t=>`<div class="album-note">${escapeHtml(t)}</div>`).join("");
+}
 function renderAlbumItem(item){
   const thumb=albumThumbOf(item);
   const hasThumb=isAlbumImageUrl(thumb);
   const title=item.title||"照片";
-  const notes=[item.summary,item.note].filter(Boolean).map(t=>`<div class="album-note">${escapeHtml(t)}</div>`).join("");
-  const comments=(item.comments||[]).slice(-4).map(c=>`<div class="album-comment ${c.author==="role"?"role":"user"}"><b>${c.author==="role"?"角色":"你"}</b><span>${escapeHtml(c.text||"")}</span></div>`).join("");
   const thumbHtml=hasThumb
     ? `<img class="album-thumb" src="${escapeAttr(thumb)}" alt="${escapeAttr(title)}" onerror="this.style.display='none';this.parentElement.classList.add('album-thumb-broken')">`
     : `<div class="album-thumb album-thumb-placeholder">图片待修复</div>`;
+  const meta=[item.sourceLabel||"角色存图", item.imageName||"", albumDateText(item.createdAt)].filter(Boolean).join(" · ");
   return `<article class="album-card" data-id="${escapeAttr(item.id)}">
-    <button class="album-thumb-btn" data-action="open-album-item" data-id="${escapeAttr(item.id)}">${thumbHtml}</button>
+    <button class="album-thumb-btn" data-action="open-album-item" data-id="${escapeAttr(item.id)}" aria-label="预览照片">${thumbHtml}</button>
     <div class="album-body">
-      <div class="album-title-row"><div class="album-title">${escapeHtml(title)}</div><button class="icon-btn album-menu-btn" data-action="album-menu" data-id="${escapeAttr(item.id)}">⋯</button></div>
-      <div class="album-meta">${escapeHtml(item.sourceLabel||"角色存图")}${item.imageName?" · "+escapeHtml(item.imageName):""}</div>
-      ${notes}
-      <div class="album-comment-list">${comments}</div>
-      <div class="album-actions"><button class="chip-btn" data-action="album-add-note" data-id="${escapeAttr(item.id)}">写随记</button><button class="chip-btn" data-action="album-add-comment" data-id="${escapeAttr(item.id)}">评论</button></div>
+      <div class="album-title-row"><div class="album-title">${escapeHtml(title)}</div><button class="icon-btn album-menu-btn" data-action="album-menu" data-id="${escapeAttr(item.id)}" aria-label="相册操作">⋯</button></div>
+      <div class="album-meta">${escapeHtml(meta)}</div>
+      ${albumNotesHtml(item)}
+      <div class="album-comment-list">${albumCommentsHtml(item,4)}</div>
+      <div class="album-actions">
+        <button class="chip-btn primary" data-action="open-album-item" data-id="${escapeAttr(item.id)}">预览</button>
+        <button class="chip-btn" data-action="album-add-note" data-id="${escapeAttr(item.id)}">随记</button>
+        <button class="chip-btn" data-action="album-add-comment" data-id="${escapeAttr(item.id)}">评论</button>
+        <button class="chip-btn" data-action="album-menu" data-id="${escapeAttr(item.id)}">更多</button>
+      </div>
     </div>
   </article>`;
 }
@@ -21204,8 +21399,12 @@ function renderAlbum(){
   if(!box) return;
   repairAlbumBrokenThumbs();
   const list=getAlbumEntries();
+  const strip=document.querySelector(".album-strip");
+  if(strip && !strip.querySelector(".album-strip-sub")) strip.insertAdjacentHTML("beforeend",`<div class="album-strip-sub">${list.length} 张 · 点照片可在应用内预览</div>`);
+  const sub=strip?.querySelector(".album-strip-sub");
+  if(sub) sub.textContent=`${list.length} 张 · 点照片可在应用内预览`;
   if(!list.length){
-    box.innerHTML=`<div class="album-empty"><div class="album-empty-title">还没有相册照片</div><div class="album-empty-sub">角色看见想留下的图，会自己存进这里。你也可以在每张图下评论。</div></div>`;
+    box.innerHTML=`<div class="album-empty"><div class="album-empty-title">还没有相册照片</div><div class="album-empty-sub">角色看见想留下的图，会自己存进这里。你也可以在每张图下评论，或让 TA 留一句。</div></div>`;
     return;
   }
   box.innerHTML=list.map(renderAlbumItem).join("");
@@ -21216,36 +21415,112 @@ function openAlbumPreview(item){
     toast("这张照片的图片数据已失效，重新让角色存一次即可修复");
     return;
   }
-  const w=window.open("","_blank");
-  if(w){
-    w.document.write(`<title>${escapeHtml(item?.title||"照片")}</title><img src="${escapeAttr(img)}" style="max-width:100%;height:auto;display:block;margin:0 auto">`);
-    w.document.close();
-  }
+  const title=item.title||"照片";
+  const meta=[item.sourceLabel||"角色存图", item.imageName||"", albumDateText(item.createdAt)].filter(Boolean).join(" · ");
+  openQuickModal(`<div class="album-preview-modal">
+    <div class="album-preview-head"><div><div class="album-preview-title">${escapeHtml(title)}</div><div class="album-preview-sub">${escapeHtml(meta)}</div></div><button class="album-preview-close" data-action="close-quick-modal" aria-label="关闭预览">×</button></div>
+    <div class="album-preview-imgbox"><img src="${escapeAttr(img)}" alt="${escapeAttr(title)}"></div>
+    <div class="album-preview-text">${albumNotesHtml(item)}<div class="album-comment-list">${albumCommentsHtml(item,6)}</div></div>
+    <div class="album-preview-actions">
+      <button class="btn" data-action="album-add-note" data-id="${escapeAttr(item.id)}">写随记</button>
+      <button class="btn" data-action="album-add-comment" data-id="${escapeAttr(item.id)}">评论</button>
+      <button class="btn" data-action="album-role-comment" data-id="${escapeAttr(item.id)}">让TA回一句</button>
+      <button class="btn danger" data-action="album-delete" data-id="${escapeAttr(item.id)}">删除</button>
+    </div>
+  </div>`);
+  document.getElementById("quickModal")?.classList.add("album-quick-modal");
 }
-function albumPromptAction(item){
-  const action=prompt("输入：note 写随记 / comment 写评论 / delete 删除", "note");
-  if(!action) return;
-  const act=action.trim().toLowerCase();
-  if(act==="note") return albumPromptNote(item.id);
-  if(act==="comment") return albumPromptComment(item.id);
-  if(act==="delete" && confirm("删除这张相册照片？")){
-    saveAlbumEntries(getAlbumEntries().filter(x=>x.id!==item.id));
-    renderAlbum();
-  }
-}
-function albumPromptNote(id){
-  const text=prompt("给这张照片写随记", "");
-  if(!text) return;
+function openAlbumMenu(id){
   const item=getAlbumEntries().find(x=>x.id===id);
-  if(!item) return;
-  updateAlbumEntry(id,{note:String(text).trim()});
-  renderAlbum();
+  if(!item){ toast("找不到这张照片"); return; }
+  openQuickModal(`<div class="album-preview-modal"><div class="album-preview-head"><div><div class="album-preview-title">${escapeHtml(item.title||"照片")}</div><div class="album-preview-sub">${escapeHtml(albumDateText(item.createdAt))}</div></div><button class="album-preview-close" data-action="close-quick-modal">×</button></div>
+    <div class="album-menu-list">
+      <button class="primary" data-action="open-album-item" data-id="${escapeAttr(id)}">预览照片</button>
+      <button data-action="album-add-note" data-id="${escapeAttr(id)}">写 / 改随记</button>
+      <button data-action="album-add-comment" data-id="${escapeAttr(id)}">写评论</button>
+      <button data-action="album-role-comment" data-id="${escapeAttr(id)}">让 TA 回一句</button>
+      <button class="danger" data-action="album-delete" data-id="${escapeAttr(id)}">删除这张照片</button>
+    </div></div>`);
+  document.getElementById("quickModal")?.classList.add("album-quick-modal");
 }
-function albumPromptComment(id){
-  const text=prompt("写一条评论", "");
-  if(!text) return;
-  appendAlbumComment(id,text,"user");
+function albumPromptAction(item){ openAlbumMenu(item?.id||""); }
+function albumPromptNote(id){ return openAlbumNoteModal(id); }
+function albumPromptComment(id){ return openAlbumCommentModal(id); }
+function openAlbumNoteModal(id){
+  const item=getAlbumEntries().find(x=>x.id===id);
+  if(!item){ toast("找不到这张照片"); return; }
+  openQuickModal(`<div class="album-form"><div class="album-preview-head"><div><div class="album-preview-title">写随记</div><div class="album-preview-sub">${escapeHtml(item.title||"照片")}</div></div><button class="album-preview-close" data-action="close-quick-modal">×</button></div>
+    <textarea id="albumNoteInput" placeholder="给这张照片留一句话…">${escapeHtml(item.note||"")}</textarea>
+    <div class="album-modal-tip">这里会保存为相册随记，角色用 read_album 翻相册时能看到轻量摘要。</div>
+    <div class="album-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="album-save-note" data-id="${escapeAttr(id)}">保存</button></div></div>`);
+  document.getElementById("quickModal")?.classList.add("album-quick-modal");
+  setTimeout(()=>document.getElementById("albumNoteInput")?.focus(),80);
+}
+function albumSaveNoteFromModal(id){
+  const text=String(document.getElementById("albumNoteInput")?.value||"").trim();
+  const item=getAlbumEntries().find(x=>x.id===id);
+  if(!item){ toast("找不到这张照片"); return; }
+  updateAlbumEntry(id,{note:text});
+  closeQuickModal();
   renderAlbum();
+  toast(text?"随记已保存":"随记已清空");
+}
+function openAlbumCommentModal(id){
+  const item=getAlbumEntries().find(x=>x.id===id);
+  if(!item){ toast("找不到这张照片"); return; }
+  openQuickModal(`<div class="album-form"><div class="album-preview-head"><div><div class="album-preview-title">写评论</div><div class="album-preview-sub">${escapeHtml(item.title||"照片")}</div></div><button class="album-preview-close" data-action="close-quick-modal">×</button></div>
+    <textarea id="albumCommentInput" placeholder="你想对这张照片说什么…"></textarea>
+    <div class="album-modal-tip">可以只保存评论，也可以让当前角色按人设回一句。</div>
+    <div class="album-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn" data-action="album-save-comment" data-id="${escapeAttr(id)}">只保存</button><button class="btn primary" data-action="album-save-comment" data-role-reply="1" data-id="${escapeAttr(id)}" style="grid-column:1 / -1">保存并让TA回复</button></div></div>`);
+  document.getElementById("quickModal")?.classList.add("album-quick-modal");
+  setTimeout(()=>document.getElementById("albumCommentInput")?.focus(),80);
+}
+async function albumSaveCommentFromModal(id, withRoleReply=false){
+  const text=String(document.getElementById("albumCommentInput")?.value||"").trim();
+  if(!text){ toast("评论为空"); return; }
+  const saved=appendAlbumComment(id,text,"user");
+  if(saved.error){ toast(saved.error); return; }
+  closeQuickModal();
+  renderAlbum();
+  toast("评论已保存");
+  if(withRoleReply) await albumRoleComment(id,text);
+}
+async function albumRoleComment(id, userText=""){
+  const item=getAlbumEntries().find(x=>x.id===id);
+  if(!item){ toast("找不到这张照片"); return; }
+  const api=Storage.get("api",{});
+  if(!api.apiUrl||!api.apiKey||!api.model){ toast("请先配置 API"); return; }
+  if(Miao.state.albumCommentBusy){ toast("正在等 TA 回一句"); return; }
+  Miao.state.albumCommentBusy=true;
+  toast("正在等 TA 回一句…");
+  try{
+    const role=currentRole();
+    const recent=(item.comments||[]).slice(-6).map(c=>`${c.author==="role"?(c.roleName||role.name||"角色"):"user"}：${c.text||""}`).join("\n");
+    const prompt=`这是相册里的一张照片。请以 ${role.name||"当前角色"} 的口吻，在照片评论区回复 user 一句。要像聊天评论，不要总结报告，不要超过70字。\n\n标题：${item.title||"照片"}\n摘要：${item.summary||""}\n随记：${item.note||""}\n最新评论：\n${recent||userText||"user想听你说一句"}`;
+    const raw=await callSimpleChatAPI(api,[{role:"system",content:buildSystemPrompt(role)},{role:"user",content:prompt}],.58);
+    const text=removeReasoningLeakText(stripThinkingBlocks(raw||"")).replace(/^[\"“]|[\"”]$/g,"").trim().slice(0,120) || "我看到了。";
+    const list=getAlbumEntries();
+    const target=list.find(x=>x.id===id);
+    if(target){
+      if(!Array.isArray(target.comments)) target.comments=[];
+      target.comments.push({id:uid("albcom"),author:"role",roleId:role.id,roleName:role.name||"角色",text, time:nowTime()});
+      target.updatedAt=Date.now();
+      saveAlbumEntries(list);
+    }
+    closeQuickModal();
+    renderAlbum();
+    toast("TA 回了一句");
+  }catch(e){ toast("回复失败："+(e.message||e)); }
+  finally{ Miao.state.albumCommentBusy=false; }
+}
+async function deleteAlbumItem(id){
+  const item=getAlbumEntries().find(x=>x.id===id);
+  if(!item){ toast("这张照片已经不在了"); renderAlbum(); return; }
+  if(!await askConfirm(`确定删除「${item.title||"照片"}」？\n随记和评论也会一起删除。`)) return;
+  saveAlbumEntries(getAlbumEntries().filter(x=>x.id!==id));
+  closeQuickModal();
+  renderAlbum();
+  toast("相册照片已删除");
 }
 function renderDiaryBadge(){
   const badge=document.getElementById("diaryBadge");
