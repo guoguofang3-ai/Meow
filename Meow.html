@@ -8357,73 +8357,136 @@ function saveHistory(h){
 }
 
 function getImageMemorySource(){
-  return Storage.get("imageMemoryPool", []);
+  const list=Storage.get("imageMemoryPool", []);
+  return Array.isArray(list)?list:[];
 }
-function saveImageMemorySource(list){
-  Storage.set("imageMemoryPool", (Array.isArray(list)?list:[]).slice(-4));
+function isMemoryImageUrl(url){
+  const s=String(url||"").trim();
+  return !!s && (/^data:image\//i.test(s) || /^blob:/i.test(s) || /^https?:\/\//i.test(s));
 }
-function addImageMemory(entry){
-  if(!entry || !entry.thumbUrl) return null;
-  const list=getImageMemorySource().filter(x=>x && x.id!==entry.id);
-  const item={
-    id: entry.id || uid("imgmem"),
-    source: entry.source || "wechat",
+function currentImageMemoryScope(kind){
+  const rawKind=String(kind||"");
+  if(rawKind.startsWith("wechat:") || rawKind.startsWith("claude:")) return rawKind;
+  const roleId=(currentRole&&currentRole()?.id) || Miao.state.currentRoleId || "default";
+  const k=rawKind.toLowerCase();
+  if(k==="wechat") return "wechat:"+roleId;
+  if(k==="toolclaude" || k==="claude:tool") return "claude:tool";
+  if(k==="roleclaude" || k==="claude:role") return "claude:role:"+roleId;
+  if(k==="claude"){
+    const mode=typeof getClaudeMode==="function" ? getClaudeMode() : "role";
+    return mode==="tool" ? "claude:tool" : "claude:role:"+roleId;
+  }
+  if(Miao.state.currentApp==="claude"){
+    const mode=typeof getClaudeMode==="function" ? getClaudeMode() : "role";
+    return mode==="tool" ? "claude:tool" : "claude:role:"+roleId;
+  }
+  return "wechat:"+roleId;
+}
+function normalizeImageMemoryScope(entry={}){
+  if(entry.scope) {
+    const raw=String(entry.scope);
+    if(raw==="tool") return "claude:tool";
+    if(raw.startsWith("role_")) return "claude:role:"+raw.slice(5);
+    if(raw.startsWith("wechat:") || raw.startsWith("claude:")) return raw;
+  }
+  const roleId=entry.roleId || ((currentRole&&currentRole()?.id) || Miao.state.currentRoleId || "default");
+  const source=String(entry.source||"").toLowerCase();
+  if(source==="toolclaude" || entry.mode==="tool") return "claude:tool";
+  if(source==="roleclaude" || source==="claude") return "claude:role:"+roleId;
+  return "wechat:"+roleId;
+}
+function normalizeImageMemoryItem(entry){
+  if(!entry) return null;
+  const thumbUrl=String(entry.thumbUrl||entry.thumb||entry.imageUrl||entry.dataUrl||"").trim();
+  const dataUrl=String(entry.dataUrl||entry.readUrl||entry.fullUrl||thumbUrl||"").trim();
+  if(!isMemoryImageUrl(thumbUrl) && !isMemoryImageUrl(dataUrl)) return null;
+  const scope=normalizeImageMemoryScope(entry);
+  return {
+    id: String(entry.id || uid("imgmem")),
+    scope,
+    source: String(entry.source || (scope==="claude:tool"?"toolClaude":scope.startsWith("claude:role:")?"roleClaude":"wechat")),
+    mode: entry.mode || (scope==="claude:tool"?"tool":scope.startsWith("claude:")?"role":"wechat"),
+    roleId: entry.roleId || (scope.startsWith("claude:role:")?scope.replace("claude:role:",""):scope.startsWith("wechat:")?scope.replace("wechat:",""):""),
     title: String(entry.title||"图片").slice(0,40),
     summary: String(entry.summary||"").slice(0,140),
-    thumbUrl: entry.thumbUrl,
-    createdAt: entry.createdAt || Date.now(),
+    thumbUrl: isMemoryImageUrl(thumbUrl) ? thumbUrl : dataUrl,
+    dataUrl: isMemoryImageUrl(dataUrl) ? dataUrl : thumbUrl,
+    createdAt: Number(entry.createdAt||Date.now())||Date.now(),
     time: entry.time || nowTime()
   };
+}
+function trimImageMemoryList(list){
+  const map=new Map();
+  (Array.isArray(list)?list:[]).forEach(raw=>{
+    const item=normalizeImageMemoryItem(raw);
+    if(!item) return;
+    map.set(item.scope+"::"+item.id, item);
+  });
+  const grouped={};
+  Array.from(map.values()).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)).forEach(item=>{
+    if(!grouped[item.scope]) grouped[item.scope]=[];
+    grouped[item.scope].push(item);
+  });
+  let out=[];
+  Object.keys(grouped).forEach(scope=>{ out=out.concat(grouped[scope].slice(-4)); });
+  return out.sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)).slice(-48);
+}
+function saveImageMemorySource(list){
+  Storage.set("imageMemoryPool", trimImageMemoryList(list));
+}
+function addImageMemory(entry){
+  const item=normalizeImageMemoryItem(entry);
+  if(!item) return null;
+  const list=getImageMemorySource().filter(x=>x && !(String(x.id)===item.id && normalizeImageMemoryScope(x)===item.scope));
   list.push(item);
   saveImageMemorySource(list);
   return item;
 }
-function collectRecentImageMemory(){
-  return getImageMemorySource().slice(-4);
+function collectRecentImageMemory(scope){
+  const target=(scope===undefined || scope===null || scope==="") ? null : currentImageMemoryScope(scope);
+  const list=trimImageMemoryList(getImageMemorySource());
+  const filtered=target ? list.filter(x=>normalizeImageMemoryScope(x)===target) : list;
+  return filtered.sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)).slice(-4);
 }
-function buildRecentImageMemoryMessage(){
-  const list=collectRecentImageMemory();
+function getRecentVisionImageMemories(scope){
+  return collectRecentImageMemory(scope).filter(x=>isMemoryImageUrl(x.dataUrl)||isMemoryImageUrl(x.thumbUrl)).slice(-4);
+}
+function buildRecentImageMemoryMessage(scope){
+  const target=(scope===undefined || scope===null || scope==="") ? currentImageMemoryScope() : scope;
+  const list=collectRecentImageMemory(target);
   if(!list.length) return "";
-  return "\n\n【最近图片短期记忆】\n" + list.map((m,i)=>`${i+1}. ${m.title}${m.summary?`：${m.summary}`:""}${m.time?`（${m.time}）`:""}`).join("\n");
+  return "\n\n【最近图片短期记忆】\n同一聊天作用域最近最多4张用户图片会尽量作为视觉输入传入；下面是它们的文字索引：\n" + list.map((m,i)=>`${i+1}. ${m.title}${m.summary?`：${m.summary}`:""}${m.time?`（${m.time}）`:""}`).join("\n");
 }
-function getRecentImageMemoryThumb(id){
-  const item=collectRecentImageMemory().find(x=>x.id===id);
+function findImageMemoryById(id, scope){
+  const sid=String(id||"");
+  if(!sid) return null;
+  const target=(scope===undefined || scope===null || scope==="") ? null : currentImageMemoryScope(scope);
+  const list=trimImageMemoryList(getImageMemorySource()).slice().reverse();
+  return list.find(x=>String(x.id)===sid && (!target || normalizeImageMemoryScope(x)===target)) || null;
+}
+function getRecentImageMemoryThumb(id, scope){
+  const item=findImageMemoryById(id, scope);
   return item?.thumbUrl || "";
 }
-
-function getImageMemorySource(){
-  return Storage.get("imageMemoryPool", []);
+function getRecentImageMemoryDataUrl(id, scope){
+  const item=findImageMemoryById(id, scope);
+  return item?.dataUrl || item?.thumbUrl || "";
 }
-function saveImageMemorySource(list){
-  Storage.set("imageMemoryPool", (Array.isArray(list)?list:[]).slice(-4));
+function getImageDataForAI(id, data, scope){
+  const sid=String(id||"");
+  const d=data||{};
+  const candidates=[];
+  try{ if(window.wechatImageMap && window.wechatImageMap[sid]) candidates.push(window.wechatImageMap[sid]); }catch(e){}
+  try{ if(window.claudeFileContextMap && window.claudeFileContextMap[sid]?.dataUrl) candidates.push(window.claudeFileContextMap[sid].dataUrl); }catch(e){}
+  candidates.push(getRecentImageMemoryDataUrl(sid, scope), d.dataUrl, d.readUrl, d.thumbUrl, d.url);
+  return candidates.find(isMemoryImageUrl) || "";
 }
-function addImageMemory(entry){
-  if(!entry || !entry.thumbUrl) return null;
-  const list=getImageMemorySource().filter(x=>x && x.id!==entry.id && x.source!==entry.source);
-  const item={
-    id: entry.id || uid("imgmem"),
-    source: entry.source || "wechat",
-    title: String(entry.title||"图片").slice(0,40),
-    summary: String(entry.summary||"").slice(0,140),
-    thumbUrl: entry.thumbUrl,
-    createdAt: entry.createdAt || Date.now(),
-    time: entry.time || nowTime()
-  };
-  list.push(item);
-  saveImageMemorySource(list);
-  return item;
-}
-function collectRecentImageMemory(){
-  return getImageMemorySource().slice(-4);
-}
-function buildRecentImageMemoryMessage(){
-  const list=collectRecentImageMemory();
-  if(!list.length) return "";
-  return "\n\n【最近图片短期记忆】\n" + list.map((m,i)=>`${i+1}. ${m.title}${m.summary?`：${m.summary}`:""}${m.time?`（${m.time}）`:""}`).join("\n");
-}
-function getRecentImageMemoryThumb(id){
-  const item=collectRecentImageMemory().find(x=>x.id===id);
-  return item?.thumbUrl || "";
+function trimWechatImageRuntimePool(){
+  try{
+    if(!window.wechatImageMap) return;
+    const keep=new Set(getImageMemorySource().filter(x=>normalizeImageMemoryScope(x).startsWith("wechat:")).map(x=>String(x.id)));
+    Object.keys(window.wechatImageMap).forEach(id=>{ if(!keep.has(id)) delete window.wechatImageMap[id]; });
+  }catch(e){}
 }
 
 
@@ -9845,6 +9908,7 @@ function stripInstructions(t){
     .replace(/[\[【]\s*(?:状态更新|主动转账|向user发起代付)[:：]\s*[^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*开播邀请\s*(?:[:：][^\]】]*)?[\]】]/g,"")
     .replace(/[\[【]\s*读取网页[:：]\s*[^\]】]*[\]】]/g,"")
+    .replace(/[\[【]\s*(?:搜索网页|联网搜索|网页搜索)[:：]\s*[^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*(?:下任务|下指令|指令|任务)\s*[:：][^\]】]*[\]】]/g,"")
     .replace(/[\[【]\s*(?:收款|拒收转账|帮忙代付|同意代付|拒绝代付)[^\]】]*[\]】]/g,"")
     .replace(/含义[:：]\s*.*/g,"")
@@ -10031,8 +10095,34 @@ async function callAIReply(){
     }
     const musicHint=musicRequestHint(newUser.content||"");
     let reply=await callAI(api,h,onChunk,userUrlNote+musicHint);
-    // 若AI想读网页：抓取内容后，带着内容再问一次，让它基于真实内容回复
-    const wantUrl=extractReadWebUrl(reply);
+    // 若AI想联网搜索 / 读网页：先执行真实工具，再带结果二次询问，避免把关键词误当成URL读取。
+    let wantSearch=extractWebSearchQuery(reply);
+    let wantUrl=extractReadWebUrl(reply);
+    if(wantUrl && !isConcreteWebUrl(wantUrl)){
+      // 兼容旧提示/模型误用：[读取网页:新华网] 这类不是具体网址，应当走搜索代理 q=，不能硬拼 https://新华网
+      wantSearch=wantSearch || wantUrl;
+      wantUrl=null;
+    }
+    if(wantSearch){
+      if(useStream){
+        const bubble=document.querySelector('[data-id="'+streamMsgId+'"] .bubble');
+        if(bubble) bubble.textContent="";
+      }
+      const traceId=addWechatToolTrace("web_search",{query:wantSearch});
+      const search=await webSearchTool({query:wantSearch});
+      updateWechatToolTrace(traceId, search.ok?"done":"error", search.ok?`${search.count||0} 条`:search.error);
+      const note = search.ok
+        ? `
+
+【联网搜索结果】你刚才请求搜索「${wantSearch}」，真实搜索结果如下。请基于这些结果回复user；如还需要打开某条结果正文，可以再输出[读取网页:具体链接]，不要把关键词当网址：
+${formatWebSearchResultsForAI(search)}`
+        : `
+
+【联网搜索失败】你请求搜索「${wantSearch}」没成功，原因：${search.error}。请如实告诉user，或让user检查搜索代理设置。`;
+      reply=await callAI(api,h,onChunk,note+musicHint);
+      wantUrl=extractReadWebUrl(reply);
+      if(wantUrl && !isConcreteWebUrl(wantUrl)) wantUrl=null;
+    }
     if(wantUrl){
       if(useStream){
         const bubble=document.querySelector('[data-id="'+streamMsgId+'"] .bubble');
@@ -10042,8 +10132,13 @@ async function callAIReply(){
       const page=await fetchWebPage(wantUrl);
       updateWechatToolTrace(traceId, page.ok?"done":"error", page.ok?(page.truncated?"已截断":""):page.error);
       const note = page.ok
-        ? `\n\n【网页读取结果】你刚才请求读取的网页（${page.url}）内容如下${page.truncated?"（已截断）":""}，请基于真实内容回复user，不要再输出[读取网页]指令：\n${page.content}`
-        : `\n\n【网页读取失败】你请求读取的网页没读成功，原因：${page.error}。请如实告诉user读不了，不要再输出[读取网页]指令。`;
+        ? `
+
+【网页读取结果】你刚才请求读取的网页（${page.url}）内容如下${page.truncated?"（已截断）":""}，请基于真实内容回复user，不要再输出[读取网页]指令：
+${page.content}`
+        : `
+
+【网页读取失败】你请求读取的网页没读成功，原因：${page.error}。如果只是想找资料，请改用[搜索网页:关键词]；不要把关键词当网址。`;
       reply=await callAI(api,h,onChunk,note+musicHint);
     }
     extractCommandTaskDirectives(reply,"wechat");
@@ -10328,11 +10423,14 @@ async function fetchWebPage(url){
     }
     clearTimeout(timer);
     const statusList=failures.map(f=>f.status).filter(Boolean);
-    const sourceList=failures.slice(0,3).map(f=>`${f.source}${f.status?" HTTP "+f.status:""}${f.error?"："+String(f.error).slice(0,60):""}`).join("；");
-    if(statusList.includes(401)) return {ok:false, error:"读取代理被拒绝（401），不是网页一定不公开；可能是 Jina/代理限流、需要换自定义 Worker，或该站点对抓取器有限制。"+(sourceList?" 详情："+sourceList:"")};
-    if(statusList.includes(403)) return {ok:false, error:"网页或读取代理拒绝访问（403），可能有反爬限制；可尝试填写 Cloudflare Worker 代理。"+(sourceList?" 详情："+sourceList:"")};
+    const proxySearchOnly=failures.some(f=>f.source==="自定义代理" && f.status===400 && /missing\s*q|缺少\s*q|query/i.test(String(f.error||"")));
+    const detailFailures=failures.filter(f=>!(f.source==="自定义代理" && f.status===400 && /missing\s*q|缺少\s*q|query/i.test(String(f.error||""))));
+    const sourceList=(detailFailures.length?detailFailures:failures).slice(0,3).map(f=>`${f.source}${f.status?" HTTP "+f.status:""}${f.error?"："+String(f.error).slice(0,60):""}`).join("；");
+    const proxyTip=proxySearchOnly?" 自定义代理返回 missing q，说明它大概率是搜索代理，只支持 q=关键词，不支持 url=网页正文；已跳过它。":"";
+    if(statusList.includes(401)) return {ok:false, error:"读取代理被拒绝（401），不是网页一定不公开；可能是 Jina/代理限流、需要换支持 url= 的网页读取 Worker，或该站点对抓取器有限制。"+proxyTip+(sourceList?" 详情："+sourceList:"")};
+    if(statusList.includes(403)) return {ok:false, error:"网页或读取代理拒绝访问（403），可能有反爬限制；可尝试填写支持 url= 的网页读取 Worker。"+proxyTip+(sourceList?" 详情："+sourceList:"")};
     if(statusList.includes(404)) return {ok:false, error:"网页不存在（404）"};
-    return {ok:false, error:"读取失败：浏览器直连可能被 CORS 拦截，或公开 Reader/代理暂时不可用。"+(sourceList?" 详情："+sourceList:"")};
+    return {ok:false, error:"读取失败：浏览器直连可能被 CORS 拦截，或公开 Reader/代理暂时不可用。"+proxyTip+(sourceList?" 详情："+sourceList:"")};
   }catch(e){
     clearTimeout(timer);
     if(e.name==="AbortError") return {ok:false, error:"超时（网页太慢或无法访问）"};
@@ -10362,10 +10460,34 @@ function extractWebPageImages(text, pageUrl){
   return out.slice(0,8);
 }
 async function readWebpageTool(args={}){
-  const page=await fetchWebPage(args.url||args.link||"");
+  const target=String(args.url||args.link||"").trim();
+  if(target && !isConcreteWebUrl(target)){
+    // 兼容模型把关键词误传给 read_webpage：自动改走 web_search，避免 search-only Worker 报 missing q。
+    const search=await webSearchTool({query:target});
+    if(!search.ok) return {ok:false,error:"这不是具体网址，已按关键词搜索但失败："+(search.error||"未知错误")};
+    return {ok:true, search:true, query:target, url:"", content:formatWebSearchResultsForAI(search), results:search.results||[], count:search.count||0, images:[], imageCount:0};
+  }
+  const page=await fetchWebPage(target);
   if(!page.ok) return page;
   const images=extractWebPageImages(page.content, page.url);
   return {ok:true, url:page.url, content:page.content, truncated:!!page.truncated, images, imageCount:images.length};
+}
+function extractWebSearchResultsFromJson(data){
+  if(!data || typeof data!=="object") return [];
+  const pools=[];
+  [data.results,data.organic_results,data.items,data.web_results,data.news_results,data.data].forEach(v=>{ if(Array.isArray(v)) pools.push(v); });
+  if(data.result && typeof data.result==="object"){
+    [data.result.results,data.result.organic_results,data.result.items,data.result.web_results,data.result.news_results].forEach(v=>{ if(Array.isArray(v)) pools.push(v); });
+  }
+  const source=pools.find(arr=>arr && arr.length) || [];
+  return source.map(r=>{
+    if(typeof r==="string") return {title:r.slice(0,80), snippet:r, link:""};
+    return {
+      title:r.title||r.name||r.headline||"",
+      snippet:r.snippet||r.summary||r.description||r.content||r.text||"",
+      link:r.link||r.url||r.href||r.sourceUrl||""
+    };
+  }).filter(r=>r.title||r.snippet||r.link).filter(r=>!r.link || /^https?:\/\//i.test(r.link));
 }
 async function webSearchTool(args={}){
   const query=String(args.query||"").trim();
@@ -10397,8 +10519,7 @@ async function webSearchTool(args={}){
         failures.push({status:res.status||0,error:data.error||data.message||"搜索代理返回失败"});
         continue;
       }
-      const source=Array.isArray(data.results) ? data.results : (data.organic_results||[]);
-      const results=source.slice(0,5).map(r=>({title:r.title||"",snippet:r.snippet||"",link:r.link||r.url||""})).filter(r=>r.link);
+      const results=extractWebSearchResultsFromJson(data).slice(0,5).filter(r=>r.link);
       const out={ok:true,query,results,count:results.length};
       Storage.set(cacheKey,{at:Date.now(),data:out});
       clearTimeout(timer);
@@ -10429,7 +10550,24 @@ function extractReadWebUrl(text){
   const m=String(text||"").match(/[\[【]\s*读取网页[:：]\s*([^\]】]+?)\s*[\]】]/);
   return m ? m[1].trim() : null;
 }
-// 从用户消息里抽第一个裸URL
+// 从文本里抽出 [搜索网页:关键词] / [联网搜索:关键词] 兜底指令
+function extractWebSearchQuery(text){
+  const m=String(text||"").match(/[\[【]\s*(?:搜索网页|联网搜索|网页搜索)[:：]\s*([^\]】]+?)\s*[\]】]/);
+  return m ? m[1].trim() : null;
+}
+function isConcreteWebUrl(text){
+  const s=String(text||"").trim().replace(/[。！？、，,.!?]+$/g,"");
+  if(/^https?:\/\//i.test(s)) return true;
+  // 只把明确域名当网址；“新华网/知乎/搜一下新闻”这类中文关键词不能硬拼成 https://关键词
+  if(/^[a-z0-9-]+(\.[a-z0-9-]+)+([\/:?#].*)?$/i.test(s)) return true;
+  return false;
+}
+function formatWebSearchResultsForAI(result){
+  if(!result || result.ok===false) return "";
+  const rows=Array.isArray(result.results)?result.results:[];
+  if(!rows.length) return `搜索词：${result.query||""}\n没有找到可用结果。`;
+  return `搜索词：${result.query||""}\n`+rows.map((r,i)=>`${i+1}. ${r.title||"无标题"}\n摘要：${r.snippet||""}\n链接：${r.link||""}`).join("\n\n");
+}// 从用户消息里抽第一个裸URL
 function extractBareUrl(text){
   const m=String(text||"").match(/https?:\/\/[^\s，。！？、）】"']+/);
   return m ? m[0] : null;
@@ -10437,28 +10575,26 @@ function extractBareUrl(text){
 
 async function callAI(api, history, onChunk, extraSystem){
   const role=currentRole();
-  const system=buildSystemPrompt(role) + buildRecentImageMemoryMessage() + (extraSystem||"") + buildLatestLyricDigestNote(history);
-  let realWechatImageToConsume=null;
+  const imageScope=currentImageMemoryScope("wechat");
+  const system=buildSystemPrompt(role) + buildRecentImageMemoryMessage(imageScope) + (extraSystem||"") + buildLatestLyricDigestNote(history);
+  const recentVisionIds=new Set(getRecentVisionImageMemories(imageScope).map(x=>String(x.id)));
   const messages=[
     {role:"system", content:system},
     ...(()=>{
       const valid=history.filter(m=>["text","sticker","image_desc","voice","link","music","transfer","delivery","received","paid","rejected","role_transfer","shop_share"].includes(m.type));
       // 按groupId合并同组气泡，groupId相同的角色回复合并成一条
       const grouped=[];
-      // 找最近一张有真实图片的消息id
-      const lastRealImgId=valid.slice().reverse().find(m=>m.type==="image_desc"&&m.data?.hasRealImage&&!m.data?.imageCleared)?.id||null;
-      realWechatImageToConsume=lastRealImgId;
+      // 最近图片池：同一微信角色作用域最多保留4张真实图片，逐张传给视觉模型。
       for(const m of valid){
         const apiRole=m.sender==="user"?"user":"assistant";
         const last=grouped[grouped.length-1];
         if(last && last.role===apiRole && apiRole==="assistant" && m.groupId && last._groupId===m.groupId){
           last.content+=" "+messageToAIContext(m);
         } else {
-          // 最近一张有真实图片：以multipart content发送
-          if(m.id===lastRealImgId && window.wechatImageMap?.[m.id]){
-            const dataUrl=window.wechatImageMap[m.id];
+          const imageData=(m.type==="image_desc" && recentVisionIds.has(String(m.id))) ? getImageDataForAI(m.id, m.data, imageScope) : "";
+          if(imageData){
             grouped.push({role:apiRole, content:[
-              {type:"image_url", image_url:{url:dataUrl}},
+              {type:"image_url", image_url:{url:imageData}},
               {type:"text", text:messageToAIContext(m)}
             ], _groupId:m.groupId||null});
           } else {
@@ -10513,7 +10649,7 @@ async function callAI(api, history, onChunk, extraSystem){
     }
     const result=full;
     Miao.state.lastAIContent=result;
-    markWechatImageConsumed(realWechatImageToConsume);
+    trimWechatImageRuntimePool();
     return result;
   }
 
@@ -10542,7 +10678,7 @@ async function callAI(api, history, onChunk, extraSystem){
       const textContent=msg.content || (Array.isArray(data.content) ? data.content.filter(b=>b.type==="text").map(b=>b.text).join("") : null) || data.output_text || "";
       const content=textContent;
       Miao.state.lastAIContent=content;
-      markWechatImageConsumed(realWechatImageToConsume);
+      trimWechatImageRuntimePool();
       return content;
     }
     // 有tool_calls，执行工具，并在微信消息流里留下轻量可视化轨迹
@@ -10564,7 +10700,7 @@ async function callAI(api, history, onChunk, extraSystem){
     }
   }
   Miao.state.lastAIContent="";
-  markWechatImageConsumed(realWechatImageToConsume);
+  trimWechatImageRuntimePool();
   return "[工具调用超过上限，未获得最终回复]";
 }
 function buildSystemPrompt(role){
@@ -10678,12 +10814,12 @@ ${buildCommandTaskContext()||"暂无小任务反馈"}
 - [解除拉黑]：解除拉黑状态
 - 何时拉黑、拉黑多久、期间是否回复、何时解除，均根据你的人设自行判断，代码不做限制
 
-【联网读网页】
-- [读取网页:网址]：当你想看某个网页的真实内容时使用，例如 [读取网页:https://example.com/article]。
-- 系统会去抓取该网页，把真实内容返回给你，你再基于内容回复user。
-- 只能读公开网页；需要登录的页面（小红书、微博等）读不了，读不到时系统会告诉你。
-- 一次只读一个网址。拿到内容后正常回复，不要再重复输出这个指令。
-- 不要凭空编造网页内容；要读就发指令，读不到就如实说。
+【联网搜索 / 读网页】
+- user 让你“搜一下 / 查资料 / 搜新闻 / 找网页 / 最新消息”时，优先使用 function call：web_search(query)。如果模型环境没成功调用工具，可兜底单独输出：[搜索网页:关键词]。
+- 只有 user 给出具体 http/https 链接，或你已经从搜索结果拿到具体链接时，才使用 read_webpage(url) 或兜底输出：[读取网页:具体URL]。
+- 不要把“新华网、知乎、搜一下网页”这类关键词硬写成 [读取网页:关键词]，那不是网址，会导致代理报 missing q。
+- 读取网页只能读公开网页；需要登录的页面（小红书、微博等）读不了，读不到时系统会告诉你。
+- 拿到搜索/读取结果后正常回复，不要重复输出工具指令，不要凭空编造网页内容。
 
 【格式规则】
 1. 你只能扮演${role.name}，不能替user说话。
@@ -12788,7 +12924,7 @@ async function addClaudeFileMessage(file){
     const thumbUrl=(typeof compressImageFile==="function") ? await compressImageFile(file,360,.72) : dataUrl;
     window.claudeFileContextMap[id]={kind:"image", name:file.name, type, size:file.size, dataUrl, scope, mode, roleId, historyKey};
     h.push({id, sender:"user", type:"file", content:`[上传图片:${file.name}]`, data:{kind:"image", name:file.name, type, size:file.size, thumbUrl, scope, mode, roleId, historyKey}, createdAt:Date.now(), time:nowTime()});
-    addImageMemory({id, source:"claude", title:file.name||"图片", summary:file.name||"上传图片", thumbUrl, createdAt:Date.now(), time:nowTime()});
+    addImageMemory({id, source:mode==="tool"?"toolClaude":"roleClaude", scope:currentImageMemoryScope("claude"), mode, roleId, title:file.name||"图片", summary:file.name||"上传图片", thumbUrl, dataUrl, createdAt:Date.now(), time:nowTime()});
   }else{
     let record={chunks:[], text:"", total:0, words:0, sample:""};
     if(/\.(txt|md|html|json|svg|css|js|jsx|ts|tsx|py|java|c|cpp|h|hpp|rs|go|php|vue|svelte|xml|csv|yaml|yml|log)$/i.test(file.name) || /^text\//.test(file.type) || file.type==="application/json"){
@@ -13616,15 +13752,16 @@ async function callClaudeAI(api, ops){
   const mode=getClaudeMode();
   const h=getClaudeHistory();
   const policy=inferClaudeToolPolicy(h);
+  const imageScope=currentImageMemoryScope("claude");
   const system = mode==="tool"
-    ? buildToolClaudePrompt(policy) + buildRecentImageMemoryMessage()
-    : buildRoleClaudePrompt(policy) + buildRecentImageMemoryMessage();
+    ? buildToolClaudePrompt(policy) + buildRecentImageMemoryMessage(imageScope)
+    : buildRoleClaudePrompt(policy) + buildRecentImageMemoryMessage(imageScope);
   const messages=[
     {role:"system", content:system},
     ...(()=>{
       const valid=h.filter(m=>m.type!=="error"&&m.type!=="system");
-      // 找最后一张图片的id，只有它才传dataUrl
-      const lastImgId=valid.slice().reverse().find(m=>m.type==="file"&&m.data?.kind==="image")?.id||null;
+      // 最近图片池：角色Claude / 工具Claude 各自最多保留4张真实图片。
+      const recentVisionIds=new Set(getRecentVisionImageMemories(imageScope).map(x=>String(x.id)));
       const grouped=[];
       for(const m of valid){
         const apiRole=m.sender==="user"?"user":"assistant";
@@ -13633,20 +13770,16 @@ async function callClaudeAI(api, ops){
           last.content+=" "+claudeMsgToContext(m, policy);
         } else {
           const isImg=m.type==="file"&&m.data?.kind==="image";
-          if(isImg && m.id===lastImgId){
-            // 最近一张图片传dataUrl
-            const dataUrl=window.claudeFileContextMap?.[m.id]?.dataUrl;
+          if(isImg){
+            const dataUrl=recentVisionIds.has(String(m.id)) ? getImageDataForAI(m.id, m.data, imageScope) : "";
             if(dataUrl){
               grouped.push({role:apiRole, content:[
                 {type:"image_url",image_url:{url:dataUrl}},
-                {type:"text",text:`[上传图片] 文件名:${m.data.name}`}
+                {type:"text",text:`[上传图片] 文件名:${m.data.name||"图片"}`}
               ], _groupId:m.groupId||null});
             } else {
-              grouped.push({role:apiRole, content:`[上传图片] 文件名:${m.data.name||"图片"}。图片内容已通过视觉接口传入。`, _groupId:m.groupId||null});
+              grouped.push({role:apiRole, content:`[上传图片] 文件名:${m.data.name||"图片"}。图片数据已不在最近4张视觉池内，仅保留文件名/缩略说明。`, _groupId:m.groupId||null});
             }
-          } else if(isImg){
-            // 历史图片只传文字描述
-            grouped.push({role:apiRole, content:`[上传图片] 文件名:${m.data.name||"图片"}。图片内容已通过视觉接口传入。`, _groupId:m.groupId||null});
           } else {
             grouped.push({role:apiRole, content:claudeMsgToContext(m, policy), _groupId:m.groupId||null});
           }
@@ -18286,6 +18419,11 @@ function getWechatTools(options={}){
   tools.push(albumToolSchema(), writeAlbumNoteToolSchema(), readAlbumToolSchema());
   printerToolSchemas("wechat").forEach(t=>tools.push(t));
   geoWeatherToolSchemas("wechat").forEach(t=>tools.push(t));
+  tools.push(
+    {type:"function",function:{name:"web_search",description:"联网搜索关键词，返回最多5条网页结果（标题、摘要、链接）。用于用户要求搜资料/搜新闻/查最新/找网页；不要用它读取正文。",parameters:{type:"object",properties:{query:{type:"string",description:"搜索关键词，尽量具体；不要传空字符串"}},required:["query"]}}},
+    {type:"function",function:{name:"read_webpage",description:"读取指定公开网页 URL 的文字内容，并提取最多8张网页图片候选。只接受具体 http/https URL；如果只有关键词请先用 web_search。",parameters:{type:"object",properties:{url:{type:"string",description:"要读取的具体网页 URL，必须是 http/https 链接"}},required:["url"]}}},
+    {type:"function",function:{name:"view_web_image",description:"理解一张网页图片。只在 read_webpage 返回的图片候选确实有用时调用，一次只看一张公网图片 URL。",parameters:{type:"object",properties:{image_url:{type:"string",description:"公网图片 URL，通常来自 read_webpage 的 images[].src"},question:{type:"string",description:"想从图片里了解什么"}},required:["image_url","question"]}}}
+  );
   return tools;
 }
 function writeWechatMemoryEntry(args={}, sourceLabel){
@@ -18945,20 +19083,22 @@ function getWechatImageDisplayUrl(msgId, data){
   return (window.wechatImageMap&&window.wechatImageMap[msgId]) || data.thumbUrl || data.dataUrl || getRecentImageMemoryThumb(msgId) || "";
 }
 function markWechatImageConsumed(msgId){
-  if(!msgId) return;
-  try{ if(window.wechatImageMap) delete window.wechatImageMap[msgId]; }catch(e){}
-  try{
-    const h=getHistory();
-    const m=h.find(x=>x.id===msgId && x.type==="image_desc");
-    if(m && m.data){
-      m.data.imageCleared=true;
-      m.data.hasRealImage=true;
-      const thumb=getRecentImageMemoryThumb(msgId) || m.data.thumbUrl || "";
-      if(thumb) addImageMemory({id:msgId, source:"wechat", title:m.data.imageName||m.data.description||"图片", summary:m.data.description||m.content||"", thumbUrl:thumb, createdAt:m.createdAt, time:m.time});
-      saveHistory(h);
-      if(Miao.state.currentApp==="wechat") renderChat();
-    }
-  }catch(e){}
+  // 旧函数名保留兼容；现在不再“读完即删”。
+  // 最近4张图片由 imageMemoryPool 管理，超过4张才清理运行时大图引用。
+  if(msgId){
+    try{
+      const h=getHistory();
+      const m=h.find(x=>x.id===msgId && x.type==="image_desc");
+      if(m && m.data){
+        m.data.hasRealImage=true;
+        const thumb=getRecentImageMemoryThumb(msgId, "wechat") || m.data.thumbUrl || "";
+        const dataUrl=getImageDataForAI(msgId, m.data, "wechat") || thumb;
+        if(thumb) addImageMemory({id:msgId, source:"wechat", scope:currentImageMemoryScope("wechat"), title:m.data.imageName||m.data.description||"图片", summary:m.data.description||m.content||"", thumbUrl:thumb, dataUrl, createdAt:m.createdAt, time:m.time});
+        saveHistory(h);
+      }
+    }catch(e){}
+  }
+  trimWechatImageRuntimePool();
 }
 function downloadDataUrlFile(dataUrl, filename){
   try{
@@ -19040,17 +19180,18 @@ function submitImageDesc(){
   if(!desc && !f){ toast("请填写图片描述或上传图片"); return; }
   const msgId=uid("msg");
   if(f){
-    // 读取base64存入内存Map，不存localStorage
+    // 压缩后放入最近图片池；同一微信角色最多保留4张可读图。
     const reader=new FileReader();
     reader.onload=async e=>{
       const dataUrl=String(e.target.result||"");
-      const thumbUrl=(typeof compressImageDataUrl==="function") ? await compressImageDataUrl(dataUrl, 280, .72) : dataUrl;
+      const readUrl=(typeof compressImageDataUrl==="function") ? await compressImageDataUrl(dataUrl, 900, .74) : dataUrl;
+      const thumbUrl=(typeof compressImageDataUrl==="function") ? await compressImageDataUrl(dataUrl, 320, .72) : dataUrl;
       if(!window.wechatImageMap) window.wechatImageMap={};
-      window.wechatImageMap[msgId]=dataUrl;
+      window.wechatImageMap[msgId]=readUrl || dataUrl;
       const h=getHistory();
       const finalDesc=desc||(f.name||"图片");
       h.push({id:msgId, groupId:uid("usergrp"), sender:"user", type:"image_desc", content:`[图片描述:${finalDesc}]`, data:{description:finalDesc, hasRealImage:true, imageCleared:false, imageName:f.name||"图片", imageType:f.type||"image", imageSize:f.size||0, thumbUrl}, read:false, createdAt:Date.now(), time:nowTime()});
-      addImageMemory({id:msgId, source:"wechat", title:f.name||finalDesc||"图片", summary:finalDesc, thumbUrl, createdAt:Date.now(), time:nowTime()});
+      addImageMemory({id:msgId, source:"wechat", scope:currentImageMemoryScope("wechat"), title:f.name||finalDesc||"图片", summary:finalDesc, thumbUrl, dataUrl:readUrl||thumbUrl, createdAt:Date.now(), time:nowTime()});
       saveHistory(h);
       afterUserSpecialMessageSent();
     };
