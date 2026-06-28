@@ -3724,6 +3724,28 @@ body.keyboard-open .reading-edit-modal textarea{max-height:min(30vh,calc(var(--v
 .album-menu-list button.primary{background:var(--accent,#111827);color:#fff;}
 .album-menu-list button.danger{background:color-mix(in srgb,#ef4444 15%,var(--bar-bg,#fff));color:#b42318;}
 .album-modal-tip{font-size:11px;line-height:1.55;color:color-mix(in srgb,var(--bar-text,#111827) 50%,transparent);}
+/* Inner：轻量内心状态 / 念头池 */
+.inner-app{background:var(--memory-bg,var(--bg))!important;}
+.inner-content{padding:14px 16px 92px!important;overflow:auto!important;-webkit-overflow-scrolling:touch;}
+.inner-hero{border-radius:26px;padding:16px;background:linear-gradient(155deg,color-mix(in srgb,var(--accent,#111827) 12%,var(--bar-bg,#fff)),color-mix(in srgb,var(--bar-bg,#fff) 90%,#fff));border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent);box-shadow:0 12px 28px rgba(38,31,22,.06);}
+.inner-kicker{font-size:11px;font-weight:900;color:color-mix(in srgb,var(--bar-text,#111827) 48%,transparent);letter-spacing:.12em;text-transform:uppercase;}
+.inner-title{margin-top:5px;font-size:22px;line-height:1.12;font-weight:1000;color:var(--bar-text,#111827);}
+.inner-intent{margin-top:10px;font-size:13px;line-height:1.55;color:color-mix(in srgb,var(--bar-text,#111827) 68%,transparent);}
+.inner-scope-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;}
+.inner-scope-tabs button{border:0;border-radius:999px;padding:9px 10px;background:color-mix(in srgb,var(--bar-text,#111827) 7%,var(--bar-bg,#fff));color:color-mix(in srgb,var(--bar-text,#111827) 64%,transparent);font-size:12px;font-weight:950;}
+.inner-scope-tabs button.active{background:var(--accent,#111827);color:#fff;}
+.inner-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;}
+.inner-actions .btn{min-height:40px;border-radius:18px;}
+.inner-section-title{margin:18px 2px 9px;font-size:12px;font-weight:1000;letter-spacing:.18em;text-transform:uppercase;color:color-mix(in srgb,var(--bar-text,#111827) 46%,var(--accent,#111827) 22%);}
+.inner-drive-list,.inner-thought-list{display:grid;gap:8px;}
+.inner-drive{border-radius:18px;padding:10px 11px;background:color-mix(in srgb,#fff 82%,var(--bar-bg,#fff));border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent);}
+.inner-drive-top{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;font-weight:950;color:var(--bar-text,#111827);}
+.inner-drive-bar{height:7px;margin-top:8px;border-radius:999px;overflow:hidden;background:color-mix(in srgb,var(--bar-text,#111827) 8%,transparent);}
+.inner-drive-bar span{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,var(--accent,#111827),color-mix(in srgb,var(--accent,#111827) 46%,#fff));}
+.inner-thought{border-radius:18px;padding:10px 11px;background:color-mix(in srgb,#fff 82%,var(--bar-bg,#fff));border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent);}
+.inner-thought-top{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;font-weight:1000;color:color-mix(in srgb,var(--bar-text,#111827) 48%,transparent);text-transform:uppercase;letter-spacing:.08em;}
+.inner-thought-text{margin-top:5px;font-size:13px;line-height:1.5;color:var(--bar-text,#111827);}
+.inner-empty{padding:18px 14px;border-radius:20px;background:color-mix(in srgb,#fff 74%,var(--bar-bg,#fff));border:1px dashed color-mix(in srgb,var(--bar-text,#111827) 12%,transparent);color:color-mix(in srgb,var(--bar-text,#111827) 56%,transparent);font-size:12px;line-height:1.6;}
 
 /* ===== Claude output polish v1: 输出文件可见删除 / 预览操作条 ===== */
 .preview-actions{display:none;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
@@ -5103,6 +5125,11 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
       </div>
     </section>
 
+    <section class="app-screen inner-app" id="innerApp">
+      <div class="header mind-header"><button class="icon-btn" data-action="go-home">‹</button><div><div class="header-title">内心</div><div class="mind-header-sub">状态 / 念头池</div></div><button class="icon-btn" data-action="inner-refresh">↻</button></div>
+      <div class="content inner-content" id="innerContent"></div>
+    </section>
+
     <section class="app-screen" id="dataApp">
       <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">数据管理与体检</div><button class="icon-btn" data-action="run-health-check">✓</button></div>
       <div class="content">
@@ -5701,6 +5728,7 @@ const Miao = {
     {id:"worldbook", name:"世界书", iconId:"book", dock:false},
     {id:"greetings", name:"开场白", iconId:"chat", dock:false},
     {id:"memory", name:"记忆", iconId:"memory", dock:false},
+    {id:"inner", name:"内心", iconId:"role", dock:false},
     {id:"reading", name:"书屿", iconId:"book", dock:false},
     {id:"album", name:"相册", iconId:"image", dock:false},
     {id:"diary", name:"日记", iconId:"diary", dock:false},
@@ -6443,6 +6471,11 @@ function bindEvents(){
     if(action==="album-save-comment") await albumSaveCommentFromModal(id, btn.dataset.roleReply==="1");
     if(action==="album-role-comment") await albumRoleComment(id);
     if(action==="album-delete") await deleteAlbumItem(id);
+    if(action==="inner-refresh"){ tickInnerState(innerViewScope()); renderInner(); }
+    if(action==="set-inner-scope"){ Storage.set("innerViewScope", id==="tool"?"tool":"role"); renderInner(); }
+    if(action==="inner-clear-thoughts") clearInnerThoughts();
+    if(action==="inner-feed-thought") openInnerThoughtModal();
+    if(action==="inner-save-thought") saveInnerThoughtFromModal();
     if(action==="open-diary-entry") openDiaryEntryModal(id||"");
     if(action==="set-diary-tab") setDiaryTab(id||"today");
     if(action==="open-diary-menu") openDiaryMenu(id||"");
@@ -7101,7 +7134,7 @@ function openApp(id){
   if(lock) lock.classList.add("hidden");
   if(home) home.classList.add("hidden");
   $$(".app-screen").forEach(x=>x.classList.remove("active"));
-  const map={wechat:"wechatApp",roles:"rolesApp",api:"apiApp",theme:"themeApp",me:"meApp",eleme:"elemeApp",claude:"claudeApp",listen:"listenApp",story:"storyApp",call:"callApp",context:"contextSettingsApp",moments:"momentsApp",stickers:"stickersApp",worldbook:"worldbookApp",greetings:"greetingsApp",memory:"memoryApp",reading:"readingApp",album:"albumApp",diary:"diaryApp",data:"dataApp",settings:"settingsApp",pet:"petApp",live:"liveApp",shop:"shopApp"};
+  const map={wechat:"wechatApp",roles:"rolesApp",api:"apiApp",theme:"themeApp",me:"meApp",eleme:"elemeApp",claude:"claudeApp",listen:"listenApp",story:"storyApp",call:"callApp",context:"contextSettingsApp",moments:"momentsApp",stickers:"stickersApp",worldbook:"worldbookApp",greetings:"greetingsApp",memory:"memoryApp",inner:"innerApp",reading:"readingApp",album:"albumApp",diary:"diaryApp",data:"dataApp",settings:"settingsApp",pet:"petApp",live:"liveApp",shop:"shopApp"};
   const el=$("#"+map[id]);
   if(id==="wechat"){
     const badge=document.getElementById("wechatBadge");
@@ -7174,6 +7207,7 @@ function renderAll(){
   safeRun("通话渲染", renderCall);
   safeRun("隐藏上下文渲染", renderContextSettings);
   safeRun("记忆渲染", renderMemory);
+  safeRun("内心渲染", renderInner);
   safeRun("书屿渲染", renderReading);
   safeRun("相册渲染", renderAlbum);
   safeRun("日记渲染", renderDiary);
@@ -7809,6 +7843,7 @@ function renderHome(){
     ]},
     {title:"Bond", items:[
       {id:"roles", sub:"角色卡"},
+      {id:"inner", sub:"状态和念头池"},
       {id:"memory", sub:"长期记忆"},
       {id:"diary", sub:"日记"},
       {id:"worldbook", sub:"世界书"},
@@ -8648,6 +8683,7 @@ function sendMessage(){
     msg.quoteSender=Miao.state.quoteSender;
   }
   h.push(msg);
+  if(typeof feedInnerEvent==="function") feedInnerEvent("role:"+(currentRole()?.id||Miao.state.currentRoleId||"default"), "user_message", text);
   if(isBlocked()){
     msg.blockedFail=true; // 永久标记：被拉黑期间发送失败，解除后仍显示感叹号
     h.push({id:uid("msg"), groupId:uid("sysgrp"), sender:"system", type:"system", content:"消息已发出，但被对方拒收了。", createdAt:Date.now()+1, time:nowTime()});
@@ -10570,6 +10606,7 @@ ${page.content}`
       checkDiceMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
       markCommandFeedbackDelivered();
+      if(typeof feedInnerEvent==="function") feedInnerEvent("role:"+(currentRole()?.id||Miao.state.currentRoleId||"default"), "assistant_reply", Miao.state.lastAIContent||"");
     } else {
       let parsed=applyAutoVoiceMode(ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||""), newUser.content||"");
       if(!parsed.length){ saveHistory(h); renderChat(); Miao.state.busy=false; return; }
@@ -10581,6 +10618,7 @@ ${page.content}`
       checkDiceMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
       markCommandFeedbackDelivered();
+      if(typeof feedInnerEvent==="function") feedInnerEvent("role:"+(currentRole()?.id||Miao.state.currentRoleId||"default"), "assistant_reply", Miao.state.lastAIContent||"");
     }
   }catch(err){
     if(streamMsgId){
@@ -11355,6 +11393,9 @@ user人设：${user.persona||"无"}
 
 【长期记忆 / 关系状态】
 ${typeof buildMemoryPrompt==="function" ? buildMemoryPrompt() : "暂无长期记忆"}
+
+【内心状态】
+${typeof buildInnerStateContext==="function" ? buildInnerStateContext("role:"+(role.id||Miao.state.currentRoleId||"default")) : ""}
 
 【时间感知】
 当前时间：${timeStr}${(()=>{
@@ -13667,6 +13708,10 @@ async function sendClaudeMessage(){
   if(!text) return;
   const h=getClaudeHistory();
   h.push({id:uid("cmsg"), sender:"user", type:"text", content:text, createdAt:Date.now(), time:nowTime()});
+  if(typeof feedInnerEvent==="function"){
+    const scope=getClaudeMode()==="tool" ? "claude:tool" : "role:"+(currentRole()?.id||Miao.state.currentRoleId||"default");
+    feedInnerEvent(scope, getClaudeMode()==="tool"?"tool_user":"user_message", text);
+  }
   saveClaudeHistory(h);
   input.value="";
   renderClaude();
@@ -14427,6 +14472,10 @@ async function callClaudeReply(){
       }
     }
     saveClaudeHistory(h);
+    if(typeof feedInnerEvent==="function"){
+      const scope=getClaudeMode()==="tool" ? "claude:tool" : "role:"+(currentRole()?.id||Miao.state.currentRoleId||"default");
+      feedInnerEvent(scope, "assistant_reply", raw||"");
+    }
     renderClaude();
     markCommandFeedbackDelivered();
     // 文字已显示，图片在后台异步生成（不挡对话）
@@ -14555,6 +14604,10 @@ async function callClaudeAI(api, ops){
         if(toolName==="save_album_photo" && result && !result.error){ opNote=result.title?`${result.title} · 已存`:"已存"; }
         if(toolName==="write_album_note" && result && !result.error){ opNote="已写随记"; }
         claudeOpsDone(ops, opIndex, !(result&&result.error), opNote);
+        if(result && !result.error && typeof feedInnerEvent==="function"){
+          const scope=getClaudeMode()==="tool" ? "claude:tool" : "role:"+(currentRole()?.id||Miao.state.currentRoleId||"default");
+          feedInnerEvent(scope, "tool_done", toolName);
+        }
       }catch(e){
         result={error:e.message||String(e)};
         claudeOpsDone(ops, opIndex, false, result.error);
@@ -14612,6 +14665,9 @@ user人设：${user.persona||"无"}
 
 【长期记忆 / 关系状态】
 ${typeof buildMemoryPrompt==="function" ? buildMemoryPrompt() : "暂无长期记忆"}
+
+【内心状态】
+${typeof buildInnerStateContext==="function" ? buildInnerStateContext("role:"+(role.id||Miao.state.currentRoleId||"default")) : ""}
 
 ${hidden?`【隐藏上下文】\n${hidden}\n`:""}${story?`【线下剧情摘要】\n${story}\n`:""}【时间感知】
 当前时间：${timeStr}。你可以自然感知时间，不需要刻意提起。
@@ -14695,6 +14751,8 @@ function buildToolClaudePrompt(policy={}){
 重要：当文件正文内部本身又包含 \`\`\` 代码块时（例如一份 md 文档里举了代码例子），请用四个反引号 \`\`\`\` 作为最外层文件围栏，内部代码继续用三个反引号收尾用四个反引号。这样整份文件不会被内部代码块截断，也不会污染成多条气泡。
 如果你决定发表情包，输出指令：[发送表情包: 名称]
 ${buildMemoryPrompt(true)}
+【内心状态】
+${typeof buildInnerStateContext==="function" ? buildInnerStateContext("claude:tool") : ""}
 ${(()=>{
   const reading=typeof buildReadingContextPrompt==="function" ? buildReadingContextPrompt() : "";
   return reading ? "\n"+reading+"\n" : "";
@@ -18954,6 +19012,160 @@ function albumReadTool(args={}){
   if(q) list=list.filter(x=>[x.title,x.summary,x.note,x.imageName,x.sourceLabel,(x.comments||[]).map(c=>c.text).join(" ")].join(" ").toLowerCase().includes(q));
   const results=list.slice(0,limit).map(x=>({id:x.id,title:x.title,summary:x.summary,note:x.note,sourceLabel:x.sourceLabel,createdAt:x.createdAt,updatedAt:x.updatedAt,comments:(x.comments||[]).slice(-3),thumbHint:isAlbumImageUrl(albumThumbOf(x))?"有缩略图":""}));
   return {query:rawQuery,count:results.length,results};
+}
+
+const INNER_DRIVES=[
+  ["vitality","精力"],["fatigue","疲惫"],["longing","想念"],["intimacy","亲密"],
+  ["possessive","黏着"],["curiosity","好奇"],["play","玩闹"],["duty","记挂"],
+  ["anxiety","不安"],["stress","压力"],["contentment","满足"],["irritability","烦躁"]
+];
+function currentInnerScope(){
+  const mode=typeof getClaudeMode==="function" ? getClaudeMode() : "role";
+  if(Miao?.state?.currentApp==="claude" && mode==="tool") return "claude:tool";
+  const role=(typeof currentRole==="function" ? currentRole() : null) || {};
+  return "role:"+(role.id || Miao.state.currentRoleId || "default");
+}
+function innerViewScope(){
+  const view=Storage.get("innerViewScope","role");
+  if(view==="tool") return "claude:tool";
+  const role=(typeof currentRole==="function" ? currentRole() : null) || {};
+  return "role:"+(role.id || Miao.state.currentRoleId || "default");
+}
+function innerScopeLabel(scope=currentInnerScope()){
+  if(scope==="claude:tool") return "工具 Claude";
+  return (currentRole()?.name||"当前角色")+" 的内心";
+}
+function innerKey(scope=currentInnerScope()){ return "innerState."+scope; }
+function defaultInnerState(scope=currentInnerScope()){
+  const drives={};
+  INNER_DRIVES.forEach(([k])=>drives[k]=k==="vitality"?0.58:(k==="fatigue"?0.18:0.28));
+  drives.intimacy=.36; drives.contentment=.34; drives.curiosity=.32;
+  return {scope,drives,thoughts:[],updatedAt:Date.now(),enabled:true};
+}
+function clamp01(n){ n=Number(n); return Math.max(0,Math.min(1,isFinite(n)?n:0)); }
+function getInnerState(scope=currentInnerScope()){
+  const raw=Storage.get(innerKey(scope), null);
+  const base=defaultInnerState(scope);
+  if(raw&&typeof raw==="object"){
+    base.drives=Object.assign(base.drives, raw.drives||{});
+    base.thoughts=Array.isArray(raw.thoughts)?raw.thoughts:[];
+    base.updatedAt=Number(raw.updatedAt||Date.now())||Date.now();
+    base.enabled=raw.enabled!==false;
+  }
+  INNER_DRIVES.forEach(([k])=>base.drives[k]=clamp01(base.drives[k]));
+  return base;
+}
+function saveInnerState(state){
+  if(!state) return;
+  state.thoughts=(Array.isArray(state.thoughts)?state.thoughts:[])
+    .filter(t=>t&&String(t.text||"").trim())
+    .sort((a,b)=>(Number(b.strength)||0)-(Number(a.strength)||0))
+    .slice(0,60);
+  state.updatedAt=Date.now();
+  Storage.set(innerKey(state.scope||currentInnerScope()), state);
+}
+function tickInnerState(scope=currentInnerScope()){
+  const st=getInnerState(scope);
+  const hours=Math.min(72, Math.max(0, (Date.now()-(st.updatedAt||Date.now()))/3600000));
+  if(hours>0){
+    const neutral=defaultInnerState(scope).drives;
+    const pull=Math.min(.38, hours*.018);
+    INNER_DRIVES.forEach(([k])=>{ st.drives[k]=clamp01(st.drives[k]+(neutral[k]-st.drives[k])*pull); });
+  }
+  const thoughts=[];
+  (st.thoughts||[]).forEach(t=>{
+    const item=Object.assign({},t);
+    item.strength=clamp01(Number(item.strength)||0);
+    if(item.kind==="fixation"){
+      item.strength=clamp01(item.strength*1.04);
+      if(item.strength>.86 && item.drive && st.drives[item.drive]!=null){
+        st.drives[item.drive]=clamp01(st.drives[item.drive]+.10);
+        item.strength*=.72;
+        item.fedCount=(Number(item.fedCount)||0)+1;
+      }
+      if((Number(item.fedCount)||0)>=3) return;
+    }else{
+      item.strength=clamp01(item.strength*.94);
+      if(item.strength>.80) item.kind="fixation";
+    }
+    if(item.strength>=.06) thoughts.push(item);
+  });
+  st.thoughts=thoughts;
+  saveInnerState(st);
+  return st;
+}
+function feedInnerThought(scope, text, drive="longing", strength=.38, kind="flit"){
+  scope=scope||currentInnerScope();
+  const st=tickInnerState(scope);
+  const clean=String(text||"").replace(/\s+/g," ").trim().slice(0,80);
+  if(!clean) return st;
+  drive=INNER_DRIVES.some(([k])=>k===drive)?drive:"longing";
+  const found=st.thoughts.find(t=>String(t.text||"")===clean);
+  if(found){ found.strength=clamp01((Number(found.strength)||0)+strength*.55); found.drive=drive; }
+  else st.thoughts.unshift({id:uid("thought"),text:clean,drive,kind,strength:clamp01(strength),bornAt:Date.now(),fedCount:0});
+  saveInnerState(st);
+  return st;
+}
+function feedInnerEvent(scope, type, text=""){
+  scope=scope||currentInnerScope();
+  const st=tickInnerState(scope);
+  const d=st.drives;
+  const add=(k,v)=>{ d[k]=clamp01((d[k]||0)+v); };
+  if(type==="user_message"){ add("longing",.025); add("intimacy",.018); add("curiosity",.012); add("fatigue",.004); add("anxiety",-.012); feedInnerThought(scope,text,"longing",.22); }
+  if(type==="assistant_reply"){ add("contentment",.018); add("stress",-.012); add("duty",-.01); }
+  if(type==="tool_done"){ add("duty",-.055); add("stress",-.035); add("contentment",.04); }
+  if(type==="tool_user"){ add("duty",.035); add("curiosity",.028); add("stress",.012); feedInnerThought(scope,text,"duty",.24); }
+  saveInnerState(st);
+  return st;
+}
+function innerIntentOf(st){
+  const d=st?.drives||{};
+  const candidates=["longing","intimacy","curiosity","play","duty","anxiety","stress","contentment","irritability","possessive"];
+  let key=candidates[0], val=-1;
+  candidates.forEach(k=>{ const score=d[k]||0; if(score>val){key=k;val=score;} });
+  const map={longing:"想靠近一点",intimacy:"想更亲近",curiosity:"想知道更多",play:"想玩闹",duty:"记挂着未完成的事",anxiety:"有点不安",stress:"压力堵着",contentment:"安稳满足",irritability:"有点烦躁",possessive:"想多占有一点"};
+  return {key,value:clamp01(val),label:map[key]||"安静待着"};
+}
+function buildInnerStateContext(scope=currentInnerScope()){
+  const st=tickInnerState(scope);
+  if(st.enabled===false) return "";
+  const d=st.drives||{};
+  const intent=innerIntentOf(st);
+  const keys=["vitality","fatigue","longing","intimacy","curiosity","play","duty","anxiety","stress","contentment","irritability"];
+  const nums=keys.map(k=>`${k} ${clamp01(d[k]).toFixed(2)}`).join(" ");
+  const thought=(st.thoughts||[]).find(t=>t.strength>.28);
+  return `[inner]\n${nums}\nintent ${intent.key}: ${intent.label}${thought?`\nthought ${thought.text}`:""}\n[/inner]\n请只把这些数值当作内在倾向和解读基点，不要向 user 解释数值，不要机械复述。`;
+}
+function renderInner(){
+  const box=document.getElementById("innerContent");
+  if(!box) return;
+  const scope=innerViewScope();
+  const st=tickInnerState(scope);
+  const intent=innerIntentOf(st);
+  const isTool=scope==="claude:tool";
+  const pct=n=>Math.round(clamp01(n)*100);
+  const driveHtml=INNER_DRIVES.map(([k,label])=>`<div class="inner-drive"><div class="inner-drive-top"><span>${escapeHtml(label)}</span><span>${pct(st.drives[k])}</span></div><div class="inner-drive-bar"><span style="width:${pct(st.drives[k])}%"></span></div></div>`).join("");
+  const thoughts=(st.thoughts||[]).slice(0,12);
+  const thoughtHtml=thoughts.length?thoughts.map(t=>`<div class="inner-thought"><div class="inner-thought-top"><span>${escapeHtml(t.kind==="fixation"?"执念":"闪念")} · ${escapeHtml(t.drive||"")}</span><span>${pct(t.strength)}</span></div><div class="inner-thought-text">${escapeHtml(t.text||"")}</div></div>`).join(""):`<div class="inner-empty">念头池还很安静。聊天、工具完成、手动喂念头都会让这里慢慢有东西浮上来。</div>`;
+  box.innerHTML=`<div class="inner-hero"><div class="inner-kicker">${escapeHtml(scope)}</div><div class="inner-title">${escapeHtml(innerScopeLabel(scope))}</div><div class="inner-intent">此刻倾向：${escapeHtml(intent.label)} · ${escapeHtml(intent.key)} ${pct(intent.value)}</div><div class="inner-scope-tabs"><button class="${isTool?"":"active"}" data-action="set-inner-scope" data-id="role">当前角色</button><button class="${isTool?"active":""}" data-action="set-inner-scope" data-id="tool">工具 Claude</button></div><div class="inner-actions"><button class="btn primary" data-action="inner-feed-thought">喂一个念头</button><button class="btn" data-action="inner-clear-thoughts">清空念头池</button></div></div><div class="inner-section-title">Drives</div><div class="inner-drive-list">${driveHtml}</div><div class="inner-section-title">Thoughts</div><div class="inner-thought-list">${thoughtHtml}</div>`;
+}
+function openInnerThoughtModal(){
+  openQuickModal(`<div class="album-form"><div class="album-preview-head"><div><div class="album-preview-title">喂一个念头</div><div class="album-preview-sub">${escapeHtml(innerScopeLabel())}</div></div><button class="album-preview-close" data-action="close-quick-modal">×</button></div><textarea id="innerThoughtInput" placeholder="比如：还惦记刚刚那张照片"></textarea><label>关联维度</label><select id="innerThoughtDrive">${INNER_DRIVES.map(([k,label])=>`<option value="${k}">${escapeHtml(label)}</option>`).join("")}</select><div class="album-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="inner-save-thought">保存</button></div></div>`);
+  setTimeout(()=>document.getElementById("innerThoughtInput")?.focus(),80);
+}
+function saveInnerThoughtFromModal(){
+  const text=String(document.getElementById("innerThoughtInput")?.value||"").trim();
+  const drive=String(document.getElementById("innerThoughtDrive")?.value||"longing");
+  if(!text){ toast("念头为空"); return; }
+  feedInnerThought(innerViewScope(), text, drive, .62);
+  closeQuickModal(); renderInner(); toast("念头已放入池中");
+}
+function clearInnerThoughts(){
+  const st=getInnerState(innerViewScope());
+  st.thoughts=[];
+  saveInnerState(st);
+  renderInner();
+  toast("念头池已清空");
 }
 
 function webSearchToolSchema(scope="wechat"){
