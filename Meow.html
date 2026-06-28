@@ -18771,6 +18771,16 @@ function albumCurrentOwnerScope(){
   if(app==="claude" && mode==="tool") return "claude:tool";
   return albumRoleOwnerScope();
 }
+function nudgeInnerFromTrace(scope, text, drive="seen", strength=.22, kind="flit"){
+  try{
+    scope=String(scope||"").trim() || albumRoleOwnerScope();
+    const clean=String(text||"").replace(/\s+/g," ").trim().slice(0,80);
+    if(clean && typeof feedInnerThought==="function") feedInnerThought(scope, clean, drive, strength, kind);
+  }catch(e){}
+}
+function memoryInnerScope(scope){
+  return scope==="tool" ? "claude:tool" : albumRoleOwnerScope();
+}
 function albumEntryOwnerScope(item){
   return String(item?.ownerScope || item?.scope || item?.albumScope || "").trim();
 }
@@ -18957,6 +18967,7 @@ function addAlbumEntry(raw={}){
   if(same) return {status:"skipped",reason:"已存在",id:same.id,title:same.title};
   list.unshift(item);
   saveAlbumEntries(trimAlbumEntries(list));
+  nudgeInnerFromTrace(item.ownerScope, "存下照片："+item.title, albumIsToolOwner(item.ownerScope)?"seen":"longing", .24);
   return {status:"saved",id:item.id,title:item.title,count:scoped.length+1};
 }
 function updateAlbumEntry(id,patch={}){
@@ -18976,6 +18987,8 @@ function appendAlbumComment(id, text, author="user"){
   const comments=Array.isArray(item.comments)?item.comments.slice():[];
   comments.push({id:uid("albcom"),author,text:finalText.slice(0,300),time:nowTime()});
   updateAlbumEntry(id,{comments});
+  const roleComment=author==="role";
+  nudgeInnerFromTrace(albumEntryOwnerScope(item)||albumCurrentOwnerScope(), (roleComment?"在照片下回了一句：":"照片评论：")+finalText, roleComment?"contentment":"seen", roleComment ? .18 : .22);
   return {status:"saved",id,comments:comments.length};
 }
 function albumToolSchema(){
@@ -19000,6 +19013,7 @@ function albumWriteNoteFromTool(args={}, sourceLabel){
   if(!item) return {error:"相册条目不存在"};
   const next=(item.note?item.note+"\n":"")+note;
   updateAlbumEntry(id,{note:next,sourceLabel:sourceLabel||item.sourceLabel||"角色随记"});
+  nudgeInnerFromTrace(albumEntryOwnerScope(item)||albumCurrentOwnerScope(), "给照片写下随记："+note, "longing", .22);
   return {status:"saved",id,note:note.slice(0,120)};
 }
 function albumReadTool(args={}){
@@ -19563,6 +19577,7 @@ function writeWechatMemoryEntry(args={}, sourceLabel){
   };
   list.push(entry);
   saveMemories(list);
+  nudgeInnerFromTrace(memoryInnerScope("role"), "写入记忆："+entry.title, entry.important?"selfhood":"seen", entry.important ? .30 : .22, entry.important?"fixation":"flit");
   return {status:"saved",id:entry.id,title:entry.title,category:entry.type};
 }
 
@@ -22175,6 +22190,7 @@ function albumSaveNoteFromModal(id){
   const item=getAlbumEntries().find(x=>x.id===id);
   if(!item){ toast("找不到这张照片"); return; }
   updateAlbumEntry(id,{note:text});
+  if(text) nudgeInnerFromTrace(albumEntryOwnerScope(item)||albumCurrentOwnerScope(), "照片随记："+text, "longing", .20);
   closeQuickModal();
   renderAlbum();
   toast(text?"随记已保存":"随记已清空");
@@ -22221,6 +22237,7 @@ async function albumRoleComment(id, userText=""){
       target.comments.push({id:uid("albcom"),author:"role",roleId:role.id,roleName:role.name||"角色",text, time:nowTime()});
       target.updatedAt=Date.now();
       saveAlbumEntries(list);
+      nudgeInnerFromTrace(albumEntryOwnerScope(target)||scope, "在照片下回了一句："+text, "contentment", .18);
     }
     closeQuickModal();
     renderAlbum();
@@ -22544,6 +22561,7 @@ function saveDiaryMemoryDraftFromModal(diaryId){
   if(!content){ toast("记忆内容不能为空"); return; }
   list.unshift({id:uid("mem"),title,type,content,important:type==="重要记忆",locked:false,source:"日记沉淀",sourceApp:"diary",sourceDiaryId:diaryId,sourceDiaryTitle:d?.title||"无标题日记",sourceDiaryDate:d?diaryDateLabel(d):"",createdAt:Date.now(),time:nowTime()});
   isTool?saveToolMemories(list):saveMemories(list);
+  nudgeInnerFromTrace(memoryInnerScope(scope), "日记沉淀成记忆："+title, type==="重要记忆"?"selfhood":"seen", type==="重要记忆" ? .30 : .22, type==="重要记忆"?"fixation":"flit");
   closeQuickModal(); renderMemory(); renderDiary(); toast("已沉淀成记忆");
 }
 function buildDiaryContextPrompt(scope="role"){
@@ -22852,6 +22870,7 @@ function saveMemoryEntryFromModal(){
   m.content=$("#memoryContentInput")?.value.trim()||"";
   if(!m.content){ toast("记忆内容不能为空"); return; }
   isToolScope?saveToolMemories(list):saveMemories(list);
+  nudgeInnerFromTrace(memoryInnerScope(scope), "保存记忆："+m.title, m.important?"selfhood":"seen", m.important ? .30 : .22, m.important?"fixation":"flit");
   closeQuickModal();
   renderMemory();
   toast("记忆已保存");
@@ -22952,6 +22971,7 @@ function confirmMemoryCandidates(){
     const entry={id:uid("mem"),title:m.title||"候选记忆",type:m.type||"普通记忆",content:m.content,source:m.source||"AI提取",important:m.importance==="important"||m.type==="重要记忆"||m.type==="关系节点",locked:false,createdAt:Date.now(),time:nowTime()};
     if(m.scope==="tool") toolList.unshift(entry);
     else roleList.unshift(entry);
+    nudgeInnerFromTrace(memoryInnerScope(m.scope), "提取记忆："+entry.title, entry.important?"selfhood":"seen", entry.important ? .28 : .20, entry.important?"fixation":"flit");
   });
   saveMemories(roleList);
   saveToolMemories(toolList);
