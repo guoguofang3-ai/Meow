@@ -9096,7 +9096,7 @@ function getHistory(){
   return Storage.get(currentHistoryKey("wechat"), []);
 }
 function saveHistory(h){
-  const list=h || [];
+  const list=(h || []).map(normalizeVoiceMessage);
   Storage.set(currentHistoryKey("wechat"), list);
   touchSession("wechat", list);
 }
@@ -9954,19 +9954,50 @@ function renderDeliveryLinkCard(data){
   </div>`;
 }
 
-// 「转文字」给 user 看的净化版：隐藏语气（ElevenLabs audio tags / 声音描述），只留真正说的话。
-// 注意：只用于显示，不改 m.data.text —— AI 上下文与 ElevenLabs 仍拿到含语气的原文。
-function voiceDisplayText(raw){
+function stripVoiceAudioTags(text){
+  return String(text||"").replace(/\[[A-Za-z][A-Za-z0-9 _,-]{0,40}\]/g," ");
+}
+function splitVoiceTextAndTags(raw){
   let s=String(raw||"").trim();
-  if(!s) return "";
-  // 只隐藏「语气」，保留真正说/唱的台词（中英都留）：
-  // 1) 开头的（声音描述）语气说明
-  s=s.replace(/^\s*[（(][^）)]{1,40}[）)]\s*/,"");
-  // 2) ElevenLabs audio tags（英文方括号标签，如 [softly] [singing] [low voice]），整段去掉
-  s=s.replace(/\[[A-Za-z][A-Za-z0-9 _\-]{0,28}\]/g," ");
-  // 3) 去掉"中文："这个标签本身，但保留译文（让中英台词都显示，只是不显示标签）
-  s=s.replace(/\n?[ \t]*中文[ \t]*[:：][ \t]*/g,"\n");
-  return s.replace(/[ \t]{2,}/g," ").replace(/[ \t]*\n[ \t]*/g,"\n").replace(/\n{2,}/g,"\n").replace(/^\n+|\n+$/g,"").trim();
+  const tags=[];
+  s=s.replace(/^\s*[（(][^）)]{1,80}[）)]\s*/u,"");
+  s=s.replace(/\[[A-Za-z][A-Za-z0-9 _,-]{0,40}\]/g,m=>{ tags.push(m.trim()); return " "; });
+  return {tags:tags.join(" "), body:s.replace(/[ \t]{2,}/g," ").trim()};
+}
+function keepEnglishVoiceText(text){
+  let t=String(text||"").trim();
+  t=t.replace(/\s*[（(]\s*(?:中文(?:翻译)?|翻译|Chinese|CN)\s*[:：][\s\S]*?[）)]\s*$/iu,"");
+  t=t.replace(/(?:\n|\r|^)\s*(?:中文(?:翻译)?|翻译|Chinese|CN)\s*[:：][\s\S]*$/iu,"");
+  t=t.replace(/\s+(?:中文(?:翻译)?|翻译|Chinese|CN)\s*[:：][\s\S]*$/iu,"");
+  t=t.replace(/\s*[\/／｜|]\s*([\s\S]*)$/u,(m,tail)=>containsCJK(tail)?"":m);
+  t=t.replace(/^([\s\S]*?[A-Za-z][\s\S]*?)\s*[\u3400-\u9fff\uf900-\ufaff][\s\S]*$/u,(m,lead)=>lead.trim());
+  t=t.replace(/[\u3400-\u9fff\uf900-\ufaff]+/g," ");
+  return t.replace(/\s{2,}/g," ").replace(/\s+([,.!?;:])/g,"$1").trim();
+}
+function normalizeVoicePayload(raw, opts={}){
+  const split=splitVoiceTextAndTags(raw);
+  const english=keepEnglishVoiceText(split.body);
+  const text=english || stripVoiceAudioTags(split.body).trim();
+  const ttsText=[split.tags, text].filter(Boolean).join(" ").trim();
+  const duration=Math.max(1, Math.min(60, Math.ceil((text||ttsText||"").length/5)));
+  return {text, transcript:text, ttsText, duration, raw:String(raw||"").trim(), language:"en"};
+}
+function normalizeVoiceMessage(m){
+  if(!m || m.type!=="voice") return m;
+  if(m.sender==="user") return m;
+  const out=Object.assign({},m);
+  const data=Object.assign({},out.data||{});
+  const raw=data.ttsText || data.raw || data.text || data.transcript || out.content || "";
+  const normalized=normalizeVoicePayload(raw);
+  data.raw=normalized.raw || data.raw || "";
+  data.ttsText=normalized.ttsText || normalized.text;
+  data.text=normalized.text;
+  data.transcript=normalized.transcript;
+  data.language="en";
+  if(!data.duration) data.duration=normalized.duration;
+  out.data=data;
+  out.content="[语音:"+data.text+"]";
+  return out;
 }
 function renderMessageBody(m){
   const d=m.data||{};
@@ -9978,13 +10009,14 @@ function renderMessageBody(m){
     return `<img class="sticker-msg-img" src="${escapeAttr(d.url||"")}" alt="${escapeAttr(d.name||"表情包")}">`;
   }
   if(m.type==="voice"){
-    const text = m.data?.text || m.data?.transcript || m.content || "";
+    const vm=normalizeVoiceMessage(m);
+    const text = vm.data?.text || vm.data?.transcript || "";
     const dur = m.data?.duration || Math.max(1, Math.min(60, Math.ceil(String(text).length/5)));
     const isUser = m.sender==="user";
     const hasAudio = !!(m.data?.audioData || m.data?.audioUrl);
     const heights=[8,14,10,18,12,16,9,13,11,17];
     const waves = Array.from({length:10}, (_,i)=>`<span style="height:${heights[i%heights.length]}px"></span>`).join("");
-    const safeText = text && !/^\[?语音[:：]/.test(String(text)) ? voiceDisplayText(text) : (hasAudio ? "（真实语音，未识别文字）" : (m.data?.audioCleared ? "（语音缓存已清理，文字保留）" : voiceDisplayText(text)));
+    const safeText = text || (hasAudio ? "（真实语音，未识别文字）" : (m.data?.audioCleared ? "（语音缓存已清理，文字保留）" : ""));
     const ttsStatus = m.data?.ttsStatus==="loading" ? "（角色语音生成中…）" : (m.data?.ttsStatus==="error" ? "（角色语音生成失败，保留文字语音）" : "");
     const displayText = [ttsStatus, safeText].filter(Boolean).join("\n");
     return `<div class="voice-msg-wrap">
@@ -10575,7 +10607,7 @@ function finalReplyTextForThought(parsed){
     if(m.type==="music") return `[音乐:${m.data?.title||""}]`;
     if(m.type==="sticker") return `[表情包:${m.data?.name||""}]`;
     if(m.type==="image_desc") return `[图片:${m.data?.description||""}]`;
-    if(m.type==="voice") return `[语音:${m.data?.text||m.content||""}]`;
+  if(m.type==="voice") return `[语音:${normalizeVoiceMessage(m).data?.text||""}]`;
     if(m.type==="role_transfer") return `[转账:${m.data?.amount||""}]`;
     return m.content||"";
   }).join("\n").trim();
@@ -10617,7 +10649,7 @@ function summarizeParsedForThought(parsed){
     if(m.type==="music") return `音乐卡：${m.data?.title||""}${m.data?.artist?" / "+m.data.artist:""}${m.data?.note?"，附言："+m.data.note:""}`;
     if(m.type==="sticker") return `表情包：${m.data?.name||""}${m.data?.meaning?"，含义："+m.data.meaning:""}`;
     if(m.type==="image_desc") return `图片：${m.data?.description||""}`;
-    if(m.type==="voice") return `语音：${m.data?.text||m.content||""}`;
+    if(m.type==="voice") return `语音：${normalizeVoiceMessage(m).data?.text||""}`;
     if(m.type==="role_transfer") return `角色转账：${m.data?.amount||""} ${m.data?.note||""}`;
     if(m.type==="received") return `收款：${m.data?.amount||""}`;
     if(m.type==="paid") return `代付完成：${m.data?.amount||""}`;
@@ -10756,7 +10788,7 @@ function updateThoughtInHistory(roleId, targetId, thought, attempt=0){
   }
 }
 function saveHistoryByRoleId(roleId, h){
-  Storage.set(Storage.roleKey("wechatHistory", roleId), h || []);
+  Storage.set(Storage.roleKey("wechatHistory", roleId), (h || []).map(normalizeVoiceMessage));
 }
 function scheduleThoughtProcessRefresh(api, parsed, ctx){
   const target=getThoughtTarget(parsed);
@@ -11120,7 +11152,7 @@ function messageToAIContext(m){
   const d=m.data||{};
   const quotePrefix=m.quoteId||m.quoteContent ? `[引用:${m.quoteContent||""}] ` : "";
   if(m.type==="sticker") return `[表情包:${d.name||m.content}|含义:${d.meaning||""}]`;
-  if(m.type==="voice") return `[语音:${d.text||m.content}]`;
+  if(m.type==="voice") return `[语音:${normalizeVoiceMessage(m).data?.text||""}]`;
   if(m.type==="link") return `[链接:${d.platform||"论坛"}|${d.title||""}]`;
   if(m.type==="music"){
     const cleanNote=String(d.note||"").replace(/\n*\[排查记录\][\s\S]*$/," ").trim();
@@ -20284,37 +20316,6 @@ function isRealTTSOff(){
 function containsCJK(s){
   return /[\u3400-\u9fff\uf900-\ufaff]/.test(String(s||""));
 }
-function stripVoiceStageDirections(s){
-  let t=String(s||"").trim();
-  // 旧文字语音常写成：（音色/场景/语气）真正要说的话
-  // 真实 TTS 只朗读后面的正文，不读括号里的音色/场景提示。
-  t=t.replace(/^\s*[（(][^\n()（）]{1,120}[）)]\s*/u,"");
-  return t.trim();
-}
-function stripVoiceChineseTranslation(s){
-  let t=String(s||"").trim();
-  // Keep the English line for ElevenLabs; Chinese translation tails are removed below.
-  // 推荐格式：English sentence.\n中文：中文翻译
-  // 或：English sentence.（中文：中文翻译）
-  t=t.replace(/\s*[（(]\s*(?:中文(?:翻译)?|翻译|Chinese|CN)\s*[:：][\s\S]*?[）)]\s*$/iu,"");
-  t=t.replace(/(?:\n|\r|^)\s*(?:中文(?:翻译)?|翻译|Chinese|CN)\s*[:：][\s\S]*$/iu,"");
-  // 兼容单行：English sentence. 中文：中文翻译
-  t=t.replace(/\s+(?:中文(?:翻译)?|翻译|Chinese|CN)\s*[:：][\s\S]*$/iu,"");
-  // 兼容：English sentence. / 中文翻译 ；只有斜杠后明显是中文时才删，避免误删英文里的 /。
-  t=t.replace(/\s*[\/／｜|]\s*([\s\S]*)$/u,(m,tail)=>containsCJK(tail)?"":m);
-  // 兼容没有写“中文：”的情况：English sentence. 我想你了。
-  // 如果中文前面已经有英文，就只保留中文前面的英文部分。
-  t=t.replace(/^([\s\S]*?[A-Za-z][\s\S]*?)\s*[㐀-鿿豈-﫿][\s\S]*$/u,(m,lead)=>lead.trim());
-  return t.trim();
-}
-function getVoiceSpeakText(raw){
-  // UI 仍显示原来的文字语音全文；这里只决定送去 ElevenLabs 朗读的文本。
-  let t=String(raw||"").trim();
-  t=stripVoiceStageDirections(t);
-  t=stripVoiceChineseTranslation(t);
-  return t.trim();
-}
-
 function getElevenLabsTTSConfig(){
   if(isRealTTSOff()) return null;
   const cfg=Storage.get("ttsApi",{});
@@ -20354,8 +20355,10 @@ async function hydrateRoleVoiceTTS(msgId, roleId){
     let h=Storage.get(histKey,[]);
     let m=h.find(x=>x.id===msgId && x.sender==="role" && x.type==="voice");
     if(!m || !m.data) return;
-    const rawVoiceText=String(m.data.text || m.data.transcript || "").trim();
-    const text=getVoiceSpeakText(rawVoiceText);
+    const normalized=normalizeVoiceMessage(m);
+    m.data=normalized.data;
+    m.content=normalized.content;
+    const text=String(m.data.ttsText || m.data.text || "").trim();
     if(!text || m.data.audioData || m.data.audioUrl || m.data.ttsStatus==="loading" || m.data.ttsStatus==="done") return;
     m.data.ttsStatus="loading";
     m.data.ttsProvider="elevenlabs";
@@ -20962,10 +20965,10 @@ function shouldAutoVoiceText(text, userText){
 }
 function textMsgToVoiceMsg(m){
   const text=String(m.content||"").trim();
-  const dur=Math.max(1,Math.min(60,Math.ceil(text.length/5)));
-  const out=Object.assign({},m,{type:"voice",content:"[语音:"+text+"]"});
-  out.data=Object.assign({},m.data||{},{text,transcript:text,duration:dur,autoVoice:true});
-  return out;
+  const voice=normalizeVoicePayload(text);
+  const out=Object.assign({},m,{type:"voice",content:"[语音:"+voice.text+"]"});
+  out.data=Object.assign({},m.data||{},voice,{autoVoice:true});
+  return normalizeVoiceMessage(out);
 }
 function applyAutoVoiceMode(parsed, userText){
   const mode=getTTSMode();
@@ -21119,10 +21122,9 @@ function parseAIReplyUnified(raw, groupId){
       // 内部允许 ElevenLabs v3 的方括号 audio tags（如 [sigh][low voice]）和换行/中文翻译。
       regex:/[\[【]\s*(?:发送语音|语音)\s*[:：]\s*((?:\[[^\]】\n]+\]|[^\]】])+?)[\]】]/g,
       parse(m){
-        const t=String(m[1]||"").trim();
-        if(t){
-          const dur=Math.max(1,Math.min(60,Math.ceil(t.length/5)));
-          return {type:"voice", content:"[语音:"+t+"]", data:{text:t, duration:dur}};
+        const voice=normalizeVoicePayload(m[1]||"");
+        if(voice.text || voice.ttsText){
+          return {type:"voice", content:"[语音:"+voice.text+"]", data:voice};
         }
         return null;
       }
