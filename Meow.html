@@ -21367,6 +21367,9 @@ function saveReadingSettings(settings){
   st.pageChars=Math.max(380, Math.min(820, Number(st.pageChars||620)||620));
   Storage.set("readingSettings", st);
 }
+function readingResetPageFit(){
+  Storage.set("readingPageFitChars", 0);
+}
 function setReadingTab(tab){ Storage.set("readingTab", tab||"home"); renderReading(); }
 function clampReadingProgress(n){ n=Number(n)||0; return Math.max(0,Math.min(100,Math.round(n))); }
 function readingNormalizeText(text){
@@ -21395,24 +21398,30 @@ function readingChunkContent(text, size){
   if(cur.trim()) pages.push(cur.trim());
   return pages;
 }
-function readingPagesOfBook(book){
-  if(!book || !book.content) return [];
-  const st=getReadingSettings();
-  const size=Number(st.size||100)||100;
-  const configured=Number(st.pageChars||book.pageSize||620)||620;
-  const calibrated=Number(Storage.get("readingPageFitChars", 0)||0);
+function readingViewportPageEstimate(size){
   const vw=Math.max(320, Math.min(900, window.innerWidth||390));
   const vh=Math.max(520, Math.min(1200, window.innerHeight||720));
-  const fontPx=18*(size/100);
+  const fontPx=18*((Number(size)||100)/100);
   const linePx=fontPx*2.06;
   const usableW=Math.max(220, vw-60);
   const usableH=Math.max(260, vh-150);
   const charsPerLine=Math.max(10, Math.floor(usableW/(fontPx*.98)));
   const linesPerPage=Math.max(8, Math.floor(usableH/linePx));
-  const viewportFit=Math.floor(charsPerLine*linesPerPage*.88);
-  const base=calibrated>0 ? Math.min(configured, calibrated) : Math.min(configured, viewportFit);
-  const scaled=Math.round(base*(100/Math.max(90,size)));
-  return readingChunkContent(book.content, Math.max(260, Math.min(1100, scaled)));
+  return Math.floor(charsPerLine*linesPerPage*.88);
+}
+function readingPageCharLimit(book){
+  const st=getReadingSettings();
+  const size=Number(st.size||100)||100;
+  const settingLimit=Math.round((Number(st.pageChars||book?.pageSize||620)||620)*(100/Math.max(90,size)));
+  const viewportLimit=readingViewportPageEstimate(size);
+  const measuredLimit=Number(Storage.get("readingPageFitChars", 0)||0);
+  const candidates=[settingLimit, viewportLimit];
+  if(measuredLimit>0) candidates.push(measuredLimit);
+  return Math.max(260, Math.min(1100, ...candidates));
+}
+function readingPagesOfBook(book){
+  if(!book || !book.content) return [];
+  return readingChunkContent(book.content, readingPageCharLimit(book));
 }
 function readingBookHasRemoteSource(book){
   return !!(book && (book.sourceUrl || book.remoteUrl || book.remoteContentUrl));
@@ -22150,18 +22159,17 @@ function renderReadingReader(box, books){
       ${activeQ?`<div class="reading-reader-menu-grid" style="margin-top:8px"><button data-action="reading-clear-active-query">关闭高亮</button></div>`:""}
     </div>
     </div>`;
-  setTimeout(()=>calibrateReadingPageFit(cur.id), 60);
+  setTimeout(()=>readingSyncMeasuredPageFit(cur.id), 60);
 }
 
-function calibrateReadingPageFit(id){
+function readingSyncMeasuredPageFit(id){
   const el=document.getElementById("readingReaderText");
   if(!el) return;
   const overflow=el.scrollHeight-el.clientHeight;
   if(overflow<=8) return;
-  const st=getReadingSettings();
-  const oldFit=Number(Storage.get("readingPageFitChars", st.pageChars)||st.pageChars);
+  const oldFit=readingPageCharLimit(readingBookById(id));
   const ratio=Math.max(.45, Math.min(.92, (el.clientHeight-18)/Math.max(1,el.scrollHeight)));
-  const next=Math.max(260, Math.floor(Math.min(oldFit, st.pageChars)*ratio*.94));
+  const next=Math.max(260, Math.floor(oldFit*ratio*.94));
   if(next>=oldFit-8) return;
   Storage.set("readingPageFitChars", next);
   const list=getReadingBooks();
@@ -22205,7 +22213,7 @@ function saveReadingSettingsFromForm(){
   st.size=Number($("#readingSizeInput")?.value||100)||100;
   st.pageChars=Number($("#readingPageCharsInput")?.value||620)||620;
   saveReadingSettings(st);
-  Storage.set("readingPageFitChars", 0);
+  readingResetPageFit();
   renderReading();
   toast("阅读设置已保存");
 }
@@ -22484,7 +22492,7 @@ function setReadingLiveSize(value){
   const st=getReadingSettings();
   st.size=Math.max(90, Math.min(120, Number(value)||100));
   saveReadingSettings(st);
-  Storage.set("readingPageFitChars", 0);
+  readingResetPageFit();
   applyReadingSettings();
   const input=document.getElementById("readingReaderSizeInput");
   const label=input?.nextElementSibling;
