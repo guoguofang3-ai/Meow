@@ -9955,13 +9955,13 @@ function renderDeliveryLinkCard(data){
 }
 
 function stripVoiceAudioTags(text){
-  return String(text||"").replace(/\[[A-Za-z][A-Za-z0-9 _,-]{0,40}\]/g," ");
+  return String(text||"").replace(/\[[A-Za-z][A-Za-z0-9 _,'".-]{0,72}\]/g," ");
 }
 function splitVoiceTextAndTags(raw){
   let s=String(raw||"").trim();
   const tags=[];
   s=s.replace(/^\s*[（(][^）)]{1,80}[）)]\s*/u,"");
-  s=s.replace(/\[[A-Za-z][A-Za-z0-9 _,-]{0,40}\]/g,m=>{ tags.push(m.trim()); return " "; });
+  s=s.replace(/\[[A-Za-z][A-Za-z0-9 _,'".-]{0,72}\]/g,m=>{ tags.push(m.trim()); return " "; });
   return {tags:tags.join(" "), body:s.replace(/[ \t]{2,}/g," ").trim()};
 }
 function keepEnglishVoiceText(text){
@@ -12012,8 +12012,8 @@ ${buildCommandTaskContext()||"暂无小任务反馈"}
 3. 只输出微信聊天内容；可以用双换行分成多条气泡。
 7. 不要写后台规则，不要解释指令，不要说“我格式写错了/我应该怎么回”。
 8. 如果输出语音，优先使用全角外层格式，方便内部使用 ElevenLabs v3 audio tags：
-   【语音: [softly] [low voice] 我想你了。】
-   方括号里的英文用于 ElevenLabs 语气标签；真正要朗读的话默认写英文，基本不要输出中文。不要把语音拆成“英文原句 + 中文翻译”，除非 user 明确要求中文语音或翻译。
+   【语音: [soft, low voice] [close to the mic] [a small pause before speaking] I missed you.】
+   方括号里的英文用于 ElevenLabs 语气标签，不会显示在转文字里。语音 tag 可以比普通文本更细一点，通常 2-4 个，描述音量、距离、气息、停顿、情绪和节奏；不要堆太多，也不要写舞台说明或中文翻译。真正要朗读的话默认写英文。不要把语音拆成“英文原句 + 中文翻译”，除非 user 明确要求中文语音或翻译。
 4. 表情包只能从"可用表情包"里按名称选择，不能编造。发送表情包指令后不要解释含义，不要加括号说明。
 5. 遇到用户转账/代付时，必须根据关系、上下文和人设自主决定是否收款/帮付。转账卡片上标注了付款来源（我的钱包/亲属卡），你可以根据来源做出反应。
 ${(()=>{
