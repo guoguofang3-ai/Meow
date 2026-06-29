@@ -127,6 +127,7 @@
   --text:#111827;
   --muted:#6b7280;
   --danger:#d93025;
+  --miao-dynamic-island-reserve:max(env(safe-area-inset-top),48px);
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
@@ -444,13 +445,13 @@ textarea{min-height:96px;resize:vertical;line-height:1.55}
 .btn.primary{background:var(--accent);color:#fff}.btn.danger{background:#ffe8e6;color:#c5221f}.btn.block{width:100%}
 .toast{position:absolute;left:50%;bottom:94px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:999px;font-size:13px;z-index:500;display:none;max-width:88%;text-align:center}.toast.show{display:block}
 .wechat{background:var(--wechat-bg)}
-.wechat-head{margin:0;padding:10px 14px 12px;border-radius:0;background:var(--bar-bg,rgba(255,255,255,.92));backdrop-filter:blur(18px);border:none;border-bottom:1px solid rgba(0,0,0,.07);display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(50,60,80,.06);z-index:6;flex:0 0 auto;color:var(--bar-text,#111827);overflow:visible;position:relative}
-.wechat-left-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto;z-index:2}
+.wechat-head{margin:0;padding:calc(var(--miao-dynamic-island-reserve) + 12px) 14px 12px;min-height:calc(var(--miao-dynamic-island-reserve) + 58px);border-radius:0;background:var(--bar-bg,rgba(255,255,255,.92));backdrop-filter:blur(18px);border:none;border-bottom:1px solid rgba(0,0,0,.07);display:flex;align-items:flex-start;justify-content:space-between;box-shadow:0 2px 12px rgba(50,60,80,.06);z-index:6;flex:0 0 auto;color:var(--bar-text,#111827);overflow:visible;position:relative}
+.wechat-left-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto;z-index:2;align-self:flex-start}
 .profile{display:flex;align-items:center;gap:10px;min-width:0}.profile-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;background:#ddd}.profile-copy{min-width:0}.profile-title-row,.chat-title-row{display:flex;align-items:center;gap:6px;min-width:0}.profile-title{font-size:17px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:188px}.profile-sub{font-size:11px;color:#666;display:flex;align-items:center;gap:5px;margin-top:2px}.online-dot{width:7px;height:7px;border-radius:50%;background:#2da44e;display:inline-block}
 .session-title-btn{width:36px;height:36px;border:0;border-radius:50%;background:color-mix(in srgb,var(--bar-bg,#fff) 74%,var(--accent,#111827) 5%);color:var(--bar-text,#111827);display:inline-flex;align-items:center;justify-content:center;flex:0 0 36px;box-shadow:0 8px 22px rgba(38,31,22,.06)}
 .session-title-btn .miao-svg-icon{width:18px;height:18px;overflow:visible}
-.wechat-head .profile{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);justify-content:center;max-width:58%;gap:10px;z-index:1}
-.wechat-head .header-actions,.claude-head-actions{gap:6px;z-index:2}
+.wechat-head .profile{position:absolute;left:50%;top:calc(var(--miao-dynamic-island-reserve) + 31px);transform:translate(-50%,-50%);justify-content:center;max-width:58%;gap:7px;z-index:1}
+.wechat-head .header-actions{gap:6px;z-index:2;align-self:flex-start}.claude-head-actions{gap:6px;z-index:2}
 .wechat-head .icon-btn,.claude-head-actions .icon-btn,.claude-app>.header>.icon-btn{width:36px;height:36px;flex:0 0 36px}
 .wechat-left-actions .session-title-btn{background:rgba(0,0,0,.055);box-shadow:none}
 .claude-app>.header{position:relative}
@@ -4055,6 +4056,8 @@ body.keyboard-open .reading-edit-modal textarea{max-height:min(30vh,calc(var(--v
   background:linear-gradient(180deg,#fbf7f1 0%,#f6eee8 58%,#eee7df 100%)!important;
   color:var(--reading-ink);
 }
+.reading-app.reader-mode .reading-header,.reading-app.reader-mode .reading-bottom-nav{display:none!important;}
+.reading-app.reader-mode .reading-content{padding:0!important;inset:0!important;height:100%!important;overflow:hidden!important;}
 .reading-app.font-serif{--reading-font:Georgia,"Times New Roman","Songti SC",serif;}
 .reading-app.font-song{--reading-font:"Songti SC","STSong","SimSun",serif;}
 .reading-app.font-kai{--reading-font:"Kaiti SC","KaiTi","STKaiti",serif;}
@@ -4260,6 +4263,40 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 .reading-note-thread{background:rgba(255,250,245,.70)!important;}
 .quick-modal.reading-quick-modal{background:linear-gradient(180deg,#fffaf4,#f8eee6)!important;}
 
+/* 书屿阅读器 v2：沉浸式小说阅读 */
+.reading-reader-shell{position:absolute;inset:0;background:var(--reading-page-bg,#fff8ef);color:#4f4540;overflow:hidden;}
+.reading-reader-page-head{position:absolute;top:0;left:0;right:0;height:56px;padding:10px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:4;pointer-events:none;color:#8b746d;font-size:12px;font-weight:900;background:linear-gradient(180deg,rgba(255,248,239,.92),rgba(255,248,239,0));}
+.reading-reader-page-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.reading-reader-page-count{flex:0 0 auto;}
+.reading-reader-card.novel-reader{position:absolute;inset:0;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:hidden!important;background:transparent!important;}
+.reading-reader-card.novel-reader .reading-reader-top,.reading-reader-card.novel-reader .reading-reader-progress,.reading-reader-card.novel-reader .reading-reader-tools{display:none!important;}
+.reading-reader-tools{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:0 15px 10px;color:#9b8179;font-size:11px;font-weight:900;}
+.reading-page-jump{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;}
+.reading-page-jump input{width:54px!important;height:30px!important;min-height:30px!important;border-radius:999px!important;text-align:center!important;padding:0 8px!important;background:rgba(255,255,255,.72)!important;border:1px solid rgba(120,87,75,.08)!important;color:#5b4b45!important;font-size:12px!important;font-weight:950!important;}
+.reading-reader-tools button{min-height:30px!important;border:0!important;border-radius:999px!important;background:rgba(255,255,255,.62)!important;color:#7d655d!important;font-size:11px!important;font-weight:950!important;padding:0 10px!important;}
+.reading-page-surface{position:absolute;inset:0;margin:0;min-height:0;height:auto;border-radius:0;background:var(--reading-page-bg,#fff8ef);border:0;box-shadow:none;overflow:hidden;}
+.reading-page-surface:before{display:none;}
+.novel-reader .reading-reader-text{height:100%!important;max-height:none!important;overflow:hidden!important;padding:72px 30px 78px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;font-size:calc(18px * var(--reading-scale))!important;line-height:2.06!important;color:#4f4540!important;text-align:left;}
+.reading-swipe-hint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:1;border-radius:999px;padding:5px 10px;background:rgba(255,255,255,.42);color:#b1968e;font-size:10px;font-weight:950;pointer-events:none;}
+.reading-reader-progress{padding:0 16px!important;margin:10px 0 12px!important;}
+.reading-reader-footer{display:none!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:0 12px 14px;}
+.reading-reader-footer button{min-height:38px!important;border:0!important;border-radius:999px!important;background:rgba(255,255,255,.72)!important;color:#7d655d!important;font-size:11px!important;font-weight:950!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.reading-reader-footer button.primary-soft{background:color-mix(in srgb,var(--accent,#6f5a53) 16%,#fff6ee)!important;color:#5c4b45!important;}
+.reading-reader-more{display:none!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 12px 14px;}
+.reading-reader-more button{min-height:36px!important;border:0!important;border-radius:999px!important;background:rgba(255,255,255,.52)!important;color:#8d726b!important;font-size:11px!important;font-weight:950!important;}
+.reading-reader-menu{position:absolute;left:0;right:0;bottom:0;z-index:12;padding:18px 18px calc(18px + env(safe-area-inset-bottom));border-radius:28px 28px 0 0;background:rgba(255,250,244,.94);box-shadow:0 -18px 46px rgba(72,50,42,.18);transform:translateY(110%);transition:transform .18s ease;pointer-events:none;}
+.reading-reader-shell.menu-open .reading-reader-menu{transform:translateY(0);pointer-events:auto;}
+.reading-reader-menu-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;color:#6e5a53;font-weight:950;}
+.reading-reader-menu-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.reading-reader-menu-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+.reading-reader-menu-grid button{min-height:42px!important;border:0!important;border-radius:999px!important;background:rgba(255,255,255,.70)!important;color:#7d655d!important;font-size:11px!important;font-weight:950!important;}
+.reading-reader-menu-grid button.primary-soft{background:color-mix(in srgb,var(--accent,#6f5a53) 16%,#fff6ee)!important;color:#5c4b45!important;}
+.reading-reader-menu-row{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center;margin:12px 0;color:#8d746d;font-size:12px;font-weight:900;}
+.reading-reader-menu-row input[type="range"]{width:100%;}
+.reading-reader-menu-row input[type="number"]{width:62px!important;min-height:34px!important;border-radius:999px!important;text-align:center!important;background:rgba(255,255,255,.78)!important;border:1px solid rgba(120,87,75,.08)!important;color:#5b4b45!important;font-weight:950!important;}
+.reading-selection-pop{position:absolute;z-index:20;display:none;border:0;border-radius:999px;padding:8px 13px;background:#5f4c45;color:#fff;font-size:12px;font-weight:950;box-shadow:0 10px 28px rgba(70,50,42,.26);}
+.reading-selection-pop.show{display:block;}
+
 
 
 /* ===== Meow UI final overrides 2026-06-25：保持底部不动，仅统一顶部与卡片密度 ===== */
@@ -4374,11 +4411,6 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 .app-screen.wechat .thinking-btn.pending{opacity:.64;}
 .app-screen.wechat .thinking-btn:active{transform:scale(.92);background:transparent!important;}
 /* 微信 / Claude 顶栏尺寸：新窗口按钮跟顶栏图标统一 */
-.app-screen.wechat .wechat-head{
-  padding:calc(10px + env(safe-area-inset-top)) 14px 8px;
-  min-height:calc(54px + env(safe-area-inset-top));
-}
-.app-screen.wechat .wechat-head .profile{max-width:58%;gap:7px;}
 .app-screen.wechat .profile-copy{
   display:flex;
   flex-direction:column;
@@ -4486,33 +4518,6 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 .claude-composer{padding:7px 9px calc(8px + env(safe-area-inset-bottom))!important;gap:7px!important;}
 .claude-composer textarea{min-height:40px!important;border-radius:18px!important;padding:9px 12px!important;background:rgba(255,255,255,.78)!important;}
 .claude-invoke,.claude-send{width:40px!important;height:40px!important;min-width:40px!important;}
-
-
-/* ===== iOS 灵动岛安全区修复 2026-06-29 =====
-   微信顶栏中间的头像/昵称是 absolute + top:50%，旧写法会把它居中到整个顶栏，
-   在 iOS / external-file / PWA 中 env(safe-area-inset-top) 取 0 或偏小时会钻进灵动岛区域。
-   这里为微信页单独预留动态岛高度，并把头像组按“安全区底部 + 顶栏内容半高”定位。 */
-:root{
-  --miao-dynamic-island-reserve: max(env(safe-area-inset-top), 48px);
-}
-.app-screen.wechat .wechat-head{
-  padding-top:calc(var(--miao-dynamic-island-reserve) + 12px)!important;
-  min-height:calc(var(--miao-dynamic-island-reserve) + 58px)!important;
-}
-.app-screen.wechat .wechat-head .profile{
-  top:calc(var(--miao-dynamic-island-reserve) + 31px)!important;
-  transform:translate(-50%,-50%)!important;
-}
-.app-screen.wechat .wechat-head .wechat-left-actions,
-.app-screen.wechat .wechat-head .header-actions{
-  align-self:flex-start!important;
-  margin-top:0!important;
-}
-@supports (padding-top: env(safe-area-inset-top)){
-  .app-screen.wechat .wechat-head{
-    padding-top:calc(var(--miao-dynamic-island-reserve) + 12px)!important;
-  }
-}
 </style>
 <script>window.MIAO_BUILD="ClawdPetWechatControlV1";</script>
 </head>
@@ -6298,6 +6303,14 @@ function stopCommandTaskTicker(){ clearInterval(commandTaskTimer); commandTaskTi
 function stripCommandTaskDirectives(text){
   return String(text||"").replace(/[\[【]\s*(?:下任务|下指令|指令|任务)\s*[:：][\s\S]{0,220}?[\]】]/g,"").trim();
 }
+function stripLineDirectivesKeepCode(text, patterns){
+  const blocks=parseCodeBlocks(String(text||""));
+  return blocks.map(part=>{
+    if(part.kind!=="text") return fenceFor(part.code)+(part.lang||"")+"\n"+part.code+"\n"+fenceFor(part.code);
+    const lines=String(part.text||"").split(/\r?\n/);
+    return lines.filter(line=>!patterns.some(re=>re.test(line))).join("\n");
+  }).join("").replace(/\n{3,}/g,"\n\n").trim();
+}
 function extractCommandTaskDirectives(text,source){
   const s=String(text||"");
   const re=/[\[【]\s*(?:下任务|下指令|指令|任务)\s*[:：]\s*([^|\]】\n]{1,80})(?:\|([^\]】]{0,40}))?\s*[\]】]/g;
@@ -6686,9 +6699,71 @@ function openImageDescModal(){
 
 
 function bindEvents(){
+  document.addEventListener("keydown", (e)=>{
+    if(e.key!=="Enter" || e.isComposing) return;
+    const target=e.target;
+    if(!target || !target.id) return;
+    if(target.id==="readingLibrarySearchInput"){
+      e.preventDefault();
+      readingRunLibrarySearch();
+    }
+    if(target.id==="readingOnlineSearchInput"){
+      e.preventDefault();
+      readingRunOnlineSearch();
+    }
+    if(target.id==="readingSourceSearchInput" || target.id==="readingSourceUrlInput"){
+      e.preventDefault();
+      readingRunExternalSourceSearch();
+    }
+    if(target.id==="readingPageJumpInput"){
+      e.preventDefault();
+      jumpReadingReaderPage(target.dataset.bookId||"", target.value);
+    }
+  });
+  let readingTouchStart=null;
+  document.addEventListener("touchstart", (e)=>{
+    const surface=e.target.closest?.(".reading-page-surface");
+    if(!surface) return;
+    const t=e.changedTouches && e.changedTouches[0];
+    if(!t) return;
+    readingTouchStart={x:t.clientX,y:t.clientY,time:Date.now(),id:surface.dataset.bookId||""};
+  }, {passive:true});
+  document.addEventListener("touchend", (e)=>{
+    if(!readingTouchStart) return;
+    const surface=e.target.closest?.(".reading-page-surface");
+    const t=e.changedTouches && e.changedTouches[0];
+    if(!surface || !t){ readingTouchStart=null; return; }
+    const dx=t.clientX-readingTouchStart.x, dy=t.clientY-readingTouchStart.y;
+    const fast=Date.now()-readingTouchStart.time<900;
+    const horizontal=Math.abs(dx)>54 && Math.abs(dx)>Math.abs(dy)*1.35;
+    const id=readingTouchStart.id || surface.dataset.bookId || "";
+    readingTouchStart=null;
+    if(horizontal && fast){
+      e.preventDefault();
+      moveReadingReaderPage(id, dx<0?1:-1);
+    }
+  }, {passive:false});
+  document.addEventListener("selectionchange", updateReadingSelectionMenu);
+  document.addEventListener("input", (e)=>{
+    const target=e.target;
+    if(target?.id==="readingReaderSizeInput"){
+      setReadingLiveSize(target.value);
+    }
+  });
   document.addEventListener("click", async (e)=>{
     /* v11.6 outer click guard */
     try{
+    const readerSurface=e.target.closest?.(".reading-page-surface");
+    if(readerSurface && !e.target.closest?.("[data-action]")){
+      if(readingSelectedText()) return;
+      const rect=readerSurface.getBoundingClientRect();
+      const x=(e.clientX-rect.left)/Math.max(1,rect.width);
+      const id=readerSurface.dataset.bookId||"";
+      if(x<0.28) moveReadingReaderPage(id,-1);
+      else if(x>0.72) moveReadingReaderPage(id,1);
+      else toggleReadingReaderMenu();
+      return;
+    }
     const btn = e.target.closest("[data-action]");
     if(!btn) return;
     const action = btn.dataset.action;
@@ -6772,6 +6847,8 @@ function bindEvents(){
     if(action==="save-reading-library-url") importReadingLibraryFromUrl();
     if(action==="reading-online-search") readingRunOnlineSearch();
     if(action==="reading-import-gutenberg") readingImportGutenberg(id);
+    if(action==="reading-source-search") readingRunExternalSourceSearch();
+    if(action==="reading-source-add") addReadingExternalSourceResult(id);
     if(action==="open-reading-search-result") openReadingSearchResult(id, Number(btn.dataset.page||0), btn.dataset.q||"");
     if(action==="reading-highlight-search-result") openReadingAnnotationModal(id, btn.dataset.quote||"", Number(btn.dataset.page||0), btn.dataset.q||"");
     if(action==="reading-open-book-detail") openReadingBookDetail(id);
@@ -6791,9 +6868,14 @@ function bindEvents(){
     if(action==="save-reading-paste-import") saveReadingPasteImportFromModal();
     if(action==="open-reading-reader") openReadingReader(id);
     if(action==="reading-reader-page") moveReadingReaderPage(id, Number(btn.dataset.dir||0));
+    if(action==="reading-jump-page") jumpReadingReaderPage(id);
+    if(action==="toggle-reading-menu") toggleReadingReaderMenu();
+    if(action==="reading-selection-annotate") openReadingAnnotationFromCurrent(id||"");
     if(action==="reading-highlight-current") openReadingHighlightFromCurrent(id);
-    if(action==="reading-chat-current") sendReadingCurrentPageToChat(id);
-    if(action==="reading-chat-annotation") sendReadingAnnotationToChat(id);
+    if(action==="reading-chat-current") openReadingSharePreview(id);
+    if(action==="reading-chat-annotation") openReadingAnnotationSharePreview(id);
+    if(action==="reading-send-share") sendReadingSharePreviewToChat(id);
+    if(action==="reading-update-sofar") updateReadingSoFarFromCurrent(id);
     if(action==="open-reading-together-note") openReadingTogetherNoteModal(id);
     if(action==="save-reading-together-note") saveReadingTogetherNoteFromModal(id);
     if(action==="reading-set-font") setReadingFont(id||"serif");
@@ -13339,9 +13421,16 @@ function getClaudeIdentityName(){
 function getClaudeHistory(){
   return Storage.get(claudeKey(), []);
 }
+function shouldNormalizeClaudeStoredMessage(m){
+  if(!m || m.sender!=="assistant") return false;
+  return !["file","image_gen","sticker","ops","file_ops","error","system"].includes(m.type||"text");
+}
 function slimClaudeMessageForStorage(m){
   if(!m || typeof m!=="object") return m;
   const x=Object.assign({}, m);
+  if(shouldNormalizeClaudeStoredMessage(x) && typeof x.content==="string"){
+    x.content=normalizeClaudeAssistantOutput(x.content);
+  }
   if(x.type==="file" && x.data){
     const d=Object.assign({}, x.data);
     delete d.dataUrl;
@@ -14661,12 +14750,17 @@ function retryImageGen(msgId){
   saveClaudeHistory(h); renderClaude();
   runImageGen(msgId, m.data.prompt||"");
 }
-function stripClaudeSurfaceLeaks(text){
-  let s=String(text||"");
-  // 角色 Claude 有时会把微信专用状态/卡片指令带出来；Claude App 里统一静默过滤。
-  s=s.replace(/^\s*[\[【]状态更新[:：][\s\S]*?[\]】]\s*$/gmi,"");
-  s=s.replace(/^\s*[\[【](?:拉黑|解除拉黑|开播|关闭直播|引用|主动转账|向user发起代付|收款|拒收转账|帮忙代付|同意代付|拒绝代付)[:：]?[^\]】]*[\]】]\s*$/gmi,"");
-  return s.replace(/\n{3,}/g,"\n\n").trim();
+function normalizeClaudeAssistantOutput(raw){
+  let s=stripThinkingBlocksKeepCode(String(raw||"").trim());
+  s=s.replace(/^\s*(Assistant|Claude)\s*[:：]\s*/i,"");
+  s=stripCommandTaskDirectives(s);
+  s=stripLineDirectivesKeepCode(s,[
+    /^\s*[\[【]\s*状态更新[:：][\s\S]*?[\]】]\s*$/i,
+    /^\s*[\[【]\s*(?:拉黑|解除拉黑|开播|关闭直播|引用|主动转账|向user发起代付|收款|拒收转账|帮忙代付|同意代付|拒绝代付)[:：]?[^\]】]*[\]】]\s*$/i,
+    /^\s*[\[【]\s*(?:文件操作|工具调用|工具|tool(?:\s*call)?|function(?:\s*call)?|调用工具)\s*[\]】]\s*$/i,
+    /^\s*[\[【]\s*(?:read_file|search_file|write_file|edit_file|apply_patch|open_file|save_file|创建文件|修改文件|读取文件|搜索文件)[:：]?[^\]】]*[\]】]\s*$/i
+  ]);
+  return s.trim();
 }
 
 function claudePlainOutputLang(raw){
@@ -14746,7 +14840,7 @@ async function callClaudeReply(){
     setClaudePetMood("done","完成啦，看看结果");
     const h=getClaudeHistory();
     // 按双换行拆成多条独立消息，代码块不拆
-    const cleaned=cleanAITextKeepCode(stripClaudeSurfaceLeaks(reply));
+    const cleaned=normalizeClaudeAssistantOutput(reply);
     const normalizedOutput=normalizeClaudePlainOutputsToCode(cleaned, h);
     const claudeParts=parseCodeBlocks(normalizedOutput);
     let claudeBubbles=[];
@@ -15171,12 +15265,6 @@ function claudeMsgToContext(m, policy={}){
     return `[上传文件] 文件名:${d.name} 类型:${d.type} 字数:${d.words||0} 字符:${d.totalChars||0} 分段:${d.chunks||1}${more}\n【文件预览】\n${preview||"（此文件未解析正文，仅作为附件卡片显示）"}`;
   }
   return m.content||"";
-}
-function cleanAITextKeepCode(text){
-  return stripThinkingBlocksKeepCode(String(text||"").trim())
-    .replace(/^\s*(Assistant|Claude)\s*[:：]/i,"")
-    .replace(/[\[【]\s*状态更新[:：]\s*[^\]】]*[\]】]/g,"")
-    .trim();
 }
 // 返回一段比 code 里最长连续反引号还长的围栏（至少 3 个），用于安全包裹含 ``` 的内容
 function fenceFor(code){
@@ -21267,8 +21355,8 @@ function getReadingHighlights(){
   return list;
 }
 function saveReadingHighlights(list){ Storage.set("readingHighlights", Array.isArray(list)?list:[]); }
-function getReadingSettings(){ return Object.assign({font:"serif",size:100}, Storage.get("readingSettings", {})||{}); }
-function saveReadingSettings(settings){ Storage.set("readingSettings", Object.assign({font:"serif",size:100}, settings||{})); }
+function getReadingSettings(){ return Object.assign({font:"serif",size:100,pageChars:900}, Storage.get("readingSettings", {})||{}); }
+function saveReadingSettings(settings){ Storage.set("readingSettings", Object.assign({font:"serif",size:100,pageChars:900}, settings||{})); }
 function setReadingTab(tab){ Storage.set("readingTab", tab||"home"); renderReading(); }
 function clampReadingProgress(n){ n=Number(n)||0; return Math.max(0,Math.min(100,Math.round(n))); }
 function readingNormalizeText(text){
@@ -21299,7 +21387,11 @@ function readingChunkContent(text, size){
 }
 function readingPagesOfBook(book){
   if(!book || !book.content) return [];
-  return readingChunkContent(book.content, Number(book.pageSize||0)||1150);
+  const st=getReadingSettings();
+  const size=Number(st.size||100)||100;
+  const configured=Number(st.pageChars||book.pageSize||900)||900;
+  const scaled=Math.round(configured*(100/Math.max(90,size)));
+  return readingChunkContent(book.content, Math.max(620, Math.min(1400, scaled)));
 }
 function readingBookHasRemoteSource(book){
   return !!(book && (book.sourceUrl || book.remoteUrl || book.remoteContentUrl));
@@ -21310,10 +21402,86 @@ function readingBookIsReadable(book){
 function readingRemoteUrl(book){
   return String((book&&(book.sourceUrl||book.remoteUrl||book.remoteContentUrl))||"").trim();
 }
+function readingNormalizeBookItem(item, sourceName="书库", baseUrl=""){
+  item=item||{};
+  const rawUrl=item.url||item.href||item.src||item.contentUrl||item.sourceUrl||item.downloadUrl||item.remoteUrl||"";
+  let sourceUrl="";
+  try{ sourceUrl=rawUrl ? new URL(rawUrl, baseUrl||location.href).href : ""; }
+  catch(e){ sourceUrl=String(rawUrl||""); }
+  return {
+    id:String(item.id||item.bookId||""),
+    title:(item.title||item.name||item.bookName||"未命名电子书").trim(),
+    author:(item.author||item.writer||item.authorName||"").trim(),
+    summary:item.summary||item.description||item.intro||"",
+    content:item.content||item.text||"",
+    sourceUrl,
+    sourceName:item.sourceName||sourceName,
+    lazy:item.lazy,
+    remote:item.remote
+  };
+}
 function readingCompactText(text, max=380){
   const raw=String(text||"").replace(/\s+/g," ").trim();
   const limit=Math.max(80, Number(max)||380);
   return raw.length>limit ? raw.slice(0,limit).trim()+"…" : raw;
+}
+function readingAppendSoFar(existing, line, max=1400){
+  const nextLine=String(line||"").trim();
+  const lines=String(existing||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  if(nextLine && !lines.includes(nextLine)) lines.push(nextLine);
+  while(lines.length>1 && lines.join("\n").length>max) lines.shift();
+  const text=lines.join("\n");
+  return text.length>max ? text.slice(Math.max(0,text.length-max)).trim() : text;
+}
+function readingBookDossierText(book){
+  if(!book) return "";
+  const parts=[];
+  const summary=String(book.summary||"").trim();
+  const soFar=String(book.readingSoFar||book.soFar||"").trim();
+  const cast=String(book.characterNotes||book.castNotes||"").trim();
+  const clues=String(book.plotNotes||book.clueNotes||"").trim();
+  if(summary) parts.push("书卡备注："+readingCompactText(summary,420));
+  if(soFar) parts.push("到目前为止："+readingCompactText(soFar,900));
+  if(cast) parts.push("人物/关系："+readingCompactText(cast,700));
+  if(clues) parts.push("伏笔/注意点："+readingCompactText(clues,500));
+  return parts.join("\n");
+}
+function readingRelatedNotes(book, limit=4){
+  if(!book) return [];
+  const title=String(book.title||"");
+  return getReadingHighlights()
+    .filter(n=>n && (n.bookId===book.id || (title && n.bookTitle===title)))
+    .slice(0, Math.max(0,limit||4));
+}
+function buildReadingSharePacket(book, opts={}){
+  if(!book) return "";
+  const pages=readingPagesOfBook(book);
+  const idx=readingPageIndex(book);
+  const selected=String(opts.quote||"").trim();
+  const current=selected || (pages[idx]||readingCurrentPassage(book)||"");
+  const before=idx>0 ? readingCompactText(pages[idx-1]||"", 420) : "";
+  const after=idx<pages.length-1 ? readingCompactText(pages[idx+1]||"", 260) : "";
+  const dossier=readingBookDossierText(book);
+  const notes=readingRelatedNotes(book,4);
+  const noteLines=notes.map((n,i)=>{
+    const q=readingCompactText(n.quote||"",120);
+    const note=readingCompactText(n.note||"",100);
+    return `${i+1}. ${n.page?`p.${n.page} `:""}“${q}”${note?`；批注：${note}`:""}`;
+  }).join("\n");
+  const lines=[
+    "【书屿共读】",
+    `书名：${book.title||"未命名"}`,
+    book.author?`作者：${book.author}`:"",
+    `阅读位置：${readingFormatChapter(book)}`,
+    dossier?`\n【这本书目前读到这里】\n${dossier}`:"",
+    before?`\n【前一页简况】\n${before}`:"",
+    `\n【${selected?"我选中的这一段":"这一页"}】\n${String(current||"").trim().slice(0,1400)}`,
+    after?`\n【后一页线索】\n${after}`:"",
+    noteLines?`\n【最近划线/批注】\n${noteLines}`:"",
+    opts.note?`\n【我想给你看的原因】\n${String(opts.note).trim().slice(0,500)}`:"",
+    "\n你先接住这一页，不要假装读过整本；如果需要更多前文，可以问我要上一页、章节摘要或人物关系。"
+  ].filter(Boolean);
+  return lines.join("\n").slice(0,3800);
 }
 function readingPageIndex(book){
   const pages=readingPagesOfBook(book);
@@ -21562,17 +21730,28 @@ function openReadingBookDetail(id){
   document.getElementById("quickModal")?.classList.add("reading-quick-modal");
 }
 function openReadingLibraryUrlModal(){
-  toast("外接书源入口先取消了：书屿现在只保留本地书架、共读和批注。");
+  openReadingImportModal();
+  setTimeout(()=>document.getElementById("readingLibraryUrlInput")?.focus(),80);
+}
+async function readingFetchUrlBlob(url){
+  try{
+    const res=await fetch(url);
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    return await res.blob();
+  }catch(firstErr){
+    const proxyUrl=CORS_PROXY+encodeURIComponent(url);
+    const res=await fetch(proxyUrl);
+    if(!res.ok) throw new Error((firstErr?.message?firstErr.message+"；":"")+"代理 HTTP "+res.status);
+    return await res.blob();
+  }
 }
 async function importReadingLibraryFromUrl(){
   const url=(document.getElementById("readingLibraryUrlInput")?.value||"").trim();
   if(!url){ toast("请填写 URL"); return; }
   try{
     toast("正在读取外接书库…");
-    const res=await fetch(url);
-    if(!res.ok) throw new Error("HTTP "+res.status);
     const lower=url.toLowerCase().split("?")[0];
-    const blob=await res.blob();
+    const blob=await readingFetchUrlBlob(url);
     if(lower.endsWith(".epub") || blob.type==="application/epub+zip"){
       const file=new File([blob], url.split("/").pop()||"book.epub", {type:blob.type||"application/epub+zip"});
       const parsed=await parseReadingEpub(file); createReadingBookFromContent(parsed); setReadingTab("books"); return;
@@ -21588,16 +21767,30 @@ async function importReadingLibraryFromUrl(){
   }catch(err){ console.error(err); toast("外接书库读取失败："+(err?.message||err)); }
 }
 function readingBuildBookFromContent(parsed){
+  parsed=readingNormalizeBookItem(parsed, parsed?.sourceName||"书库", parsed?.sourceUrl||location.href);
   const title=(parsed.title||"未命名电子书").trim();
   const author=(parsed.author||"").trim();
   const content=readingNormalizeText(parsed.content||"");
-  const pages=readingChunkContent(content,1150);
-  return {id:uid("book"),createdAt:Date.now(),title,author,status:"reading",currentChapter:0,totalChapters:0,readerPage:0,pageSize:1150,progress:pages.length?clampReadingProgress(100/pages.length):0,color:readingColorFromTitle(title),summary:`已接入全文 · ${pages.length||1} 页`,content,sourceName:parsed.sourceName||"",importedAt:Date.now(),lastOpenedAt:Date.now(),updatedAt:Date.now()};
+  const temp={content,pageSize:1150};
+  const pages=readingPagesOfBook(temp);
+  return {id:uid("book"),createdAt:Date.now(),title,author,status:"reading",currentChapter:0,totalChapters:0,readerPage:0,pageSize:1150,progress:pages.length?clampReadingProgress(100/pages.length):0,color:readingColorFromTitle(title),summary:parsed.summary||`已接入全文 · ${pages.length||1} 页`,content,sourceName:parsed.sourceName||"",importedAt:Date.now(),lastOpenedAt:Date.now(),updatedAt:Date.now()};
 }
 function readingBuildRemoteBook(parsed){
+  parsed=readingNormalizeBookItem(parsed, parsed?.sourceName||"外接书库", parsed?.sourceUrl||location.href);
   const title=(parsed.title||"未命名电子书").trim();
   const author=(parsed.author||"").trim();
-  return {id:uid("book"),createdAt:Date.now(),title,author,status:"shelf",currentChapter:0,totalChapters:0,readerPage:0,pageSize:1150,progress:0,color:readingColorFromTitle(title),summary:parsed.summary||"远程书源 · 打开时加载正文",content:"",sourceUrl:parsed.sourceUrl||parsed.url||"",sourceName:parsed.sourceName||"外接书库",remote:true,importedAt:Date.now(),lastOpenedAt:0,updatedAt:Date.now()};
+  return {id:uid("book"),createdAt:Date.now(),title,author,status:"shelf",currentChapter:0,totalChapters:0,readerPage:0,pageSize:1150,progress:0,color:readingColorFromTitle(title),summary:parsed.summary||"远程书源 · 打开时加载正文",content:"",sourceUrl:parsed.sourceUrl||"",sourceName:parsed.sourceName||"外接书库",remote:true,importedAt:Date.now(),lastOpenedAt:0,updatedAt:Date.now()};
+}
+async function readingBuildBookFromRemoteUrl(parsed, baseUrl=""){
+  const item=readingNormalizeBookItem(parsed, parsed?.sourceName||"外接书库", baseUrl||parsed?.sourceUrl||location.href);
+  if(!item.sourceUrl) throw new Error("缺少正文链接");
+  const blob=await readingFetchUrlBlob(item.sourceUrl);
+  if(/\.epub(\?|$)/i.test(item.sourceUrl) || blob.type==="application/epub+zip"){
+    const epub=await parseReadingEpub(new File([blob], item.title||"book.epub", {type:blob.type||"application/epub+zip"}));
+    return readingBuildBookFromContent({...item,...epub,sourceName:item.sourceName||epub.sourceName||item.sourceUrl});
+  }
+  const content=readingNormalizeText(await blob.text());
+  return readingBuildBookFromContent({...item,content,sourceName:item.sourceName||item.sourceUrl});
 }
 async function importReadingManifestData(data, sourceName="书库", baseUrl=""){
   const items=Array.isArray(data)?data:(Array.isArray(data?.books)?data.books:Array.isArray(data?.items)?data.items:[]);
@@ -21607,21 +21800,16 @@ async function importReadingManifestData(data, sourceName="书库", baseUrl=""){
   let count=0, remoteCount=0, fullCount=0;
   for(const item of items.slice(0,120)){
     try{
-      let parsed={title:item.title||item.name||"未命名电子书",author:item.author||item.writer||"",content:item.content||item.text||"",summary:item.summary||item.description||"",sourceName:item.sourceName||sourceName};
-      const itemUrl=item.url||item.href||item.src||item.contentUrl;
+      const parsed=readingNormalizeBookItem(item, item.sourceName||sourceName, baseUrl);
       if(parsed.content){ list.unshift(readingBuildBookFromContent(parsed)); count++; fullCount++; continue; }
-      if(itemUrl){
-        const u=new URL(itemUrl, baseUrl||location.href).href;
+      if(parsed.sourceUrl){
         if(lazyLibrary || item.lazy===true || item.remote===true){
-          list.unshift(readingBuildRemoteBook({...parsed, sourceUrl:u, sourceName:item.sourceName||sourceName}));
+          list.unshift(readingBuildRemoteBook(parsed));
           count++; remoteCount++;
           continue;
         }
-        const res=await fetch(u); if(!res.ok) throw new Error("HTTP "+res.status);
-        const blob=await res.blob();
-        if(/\.epub(\?|$)/i.test(u) || blob.type==="application/epub+zip") parsed=await parseReadingEpub(new File([blob], item.title||"book.epub", {type:blob.type||"application/epub+zip"}));
-        else { parsed.content=readingNormalizeText(await blob.text()); parsed.sourceName=u; }
-        if(parsed.content){ list.unshift(readingBuildBookFromContent(parsed)); count++; fullCount++; }
+        list.unshift(await readingBuildBookFromRemoteUrl(parsed, baseUrl));
+        count++; fullCount++;
       }
     }catch(e){ console.warn("书库条目导入失败", e); }
   }
@@ -21643,8 +21831,12 @@ function applyReadingSettings(){
 const CORS_PROXY = "https://corsproxy.io/?";
 let _gutendexCache = {};
 let _gutendexLoading = false;
+let _readingSourceCache = [];
+let _readingSourceLoading = false;
 
 function readingOnlineSearchQuery(){ return Storage.get("readingOnlineQuery",""); }
+function readingSourceSearchQuery(){ return Storage.get("readingSourceQuery",""); }
+function readingSourceUrlTemplate(){ return Storage.get("readingSourceUrlTemplate",""); }
 
 async function readingRunOnlineSearch(){
   const input = document.getElementById("readingOnlineSearchInput");
@@ -21718,6 +21910,69 @@ function renderReadingOnlineResults(q){
   }).join("");
 }
 
+function readingNormalizeSourceResults(data, sourceName="外接书源", baseUrl=""){
+  const items=Array.isArray(data)?data:(Array.isArray(data?.books)?data.books:Array.isArray(data?.items)?data.items:Array.isArray(data?.results)?data.results:(data&&typeof data==="object"?[data]:[]));
+  return items.slice(0,50).map((item,i)=>{
+    const parsed=readingNormalizeBookItem(item, item?.sourceName||sourceName, baseUrl);
+    if(!parsed.id) parsed.id=String(i);
+    parsed.lazy=item?.lazy!==false;
+    return parsed;
+  }).filter(x=>x.title || x.sourceUrl || x.content);
+}
+async function readingRunExternalSourceSearch(){
+  const input=document.getElementById("readingSourceSearchInput");
+  const urlInput=document.getElementById("readingSourceUrlInput");
+  const q=(input?.value||"").trim();
+  const template=(urlInput?.value||"").trim();
+  Storage.set("readingSourceQuery", q);
+  Storage.set("readingSourceUrlTemplate", template);
+  const box=document.getElementById("readingSourceResults");
+  if(!template){ if(box) box.innerHTML=`<div class="reading-empty">先填一个 JSON 搜索接口模板。用 {q} 表示搜索词，例如 https://example.com/search?q={q}</div>`; return; }
+  if(!q){ if(box) box.innerHTML=`<div class="reading-empty">输入书名或作者再搜。</div>`; return; }
+  if(_readingSourceLoading){ toast("正在搜索外接书源，稍等…"); return; }
+  _readingSourceLoading=true;
+  if(box) box.innerHTML=`<div class="reading-empty">正在搜索「${escapeHtml(q)}」…</div>`;
+  try{
+    const url=template.includes("{q}") ? template.replaceAll("{q}", encodeURIComponent(q)) : template + (template.includes("?")?"&":"?") + "q=" + encodeURIComponent(q);
+    const blob=await readingFetchUrlBlob(url);
+    const text=await blob.text();
+    const data=JSON.parse(text);
+    _readingSourceCache=readingNormalizeSourceResults(data, new URL(url).hostname, url);
+    renderReadingExternalSourceResults(q);
+  }catch(err){
+    console.error(err);
+    _readingSourceCache=[];
+    if(box) box.innerHTML=`<div class="reading-empty">外接书源搜索失败：${escapeHtml(err?.message||"网络错误")}。请确认接口返回 JSON。</div>`;
+  }finally{ _readingSourceLoading=false; }
+}
+function renderReadingExternalSourceResults(q){
+  const box=document.getElementById("readingSourceResults");
+  if(!box) return;
+  const results=_readingSourceCache||[];
+  if(!results.length){ box.innerHTML=`<div class="reading-empty">没有搜到「${escapeHtml(q)}」。</div>`; return; }
+  box.innerHTML=results.map((b,i)=>`<div class="reading-search-result">
+    <div class="reading-result-head"><div><div class="reading-result-title">${escapeHtml(b.title||"未命名电子书")}</div><div class="reading-result-meta">${escapeHtml([b.author,b.sourceName,b.sourceUrl?"远程正文":"内嵌正文"].filter(Boolean).join(" · "))}</div></div><span class="reading-result-badge">外接</span></div>
+    ${b.summary?`<div class="reading-result-snippet">${escapeHtml(readingCompactText(b.summary,160))}</div>`:""}
+    <div class="reading-actions"><button class="primary-soft" data-action="reading-source-add" data-id="${i}">加入书屿</button></div>
+  </div>`).join("");
+}
+function addReadingExternalSourceResult(index){
+  const item=_readingSourceCache[Number(index)||0];
+  if(!item){ toast("这条书源结果已经失效，请重新搜索"); return; }
+  const list=getReadingBooks();
+  if(item.content){
+    list.unshift(readingBuildBookFromContent(item));
+  }else if(item.sourceUrl){
+    list.unshift(readingBuildRemoteBook({...item, remote:true, lazy:true}));
+  }else{
+    toast("这条结果没有正文链接"); return;
+  }
+  saveReadingBooks(list);
+  closeQuickModal();
+  setReadingTab("books");
+  toast(`已加入《${item.title||"未命名电子书"}》`);
+}
+
 async function readingImportGutenberg(gutId){
   // find the button that triggered this to get data attributes
   const btn = document.querySelector(`[data-action="reading-import-gutenberg"][data-id="${gutId}"]`);
@@ -21754,13 +22009,13 @@ async function readingImportGutenberg(gutId){
   let lastErr = null;
   for(const url of uniqueUrls){
     try{
-      const proxyUrl = CORS_PROXY + url;
-      const res = await fetch(proxyUrl);
-      if(!res.ok) throw new Error("HTTP "+res.status);
-      const text = await res.text();
-      const content = readingNormalizeText(text);
-      if(!content || content.length < 100) throw new Error("正文太短或为空");
-      createReadingBookFromContent({title, author, content, sourceName:"Gutenberg #"+gutId});
+      const book=await readingBuildBookFromRemoteUrl({title, author, sourceUrl:url, sourceName:"Gutenberg #"+gutId}, url);
+      if(!book.content || book.content.length < 100) throw new Error("正文太短或为空");
+      const list=getReadingBooks();
+      list.unshift(book);
+      saveReadingBooks(list);
+      closeQuickModal();
+      setReadingTab("reader");
       toast(`《${title}》已导入，开始共读`);
       return;
     }catch(err){ lastErr = err; console.warn("尝试URL失败:", url, err.message); }
@@ -21778,6 +22033,7 @@ function renderReading(){
   let tab=Storage.get("readingTab","home");
   if(tab==="library") tab="books";
   if(!["home","books","reader","notes","style"].includes(tab)) tab="home";
+  document.getElementById("readingApp")?.classList.toggle("reader-mode", tab==="reader");
   ["home","books","reader","notes"].forEach(t=>document.getElementById("readingTab"+t.charAt(0).toUpperCase()+t.slice(1))?.classList.toggle("active",tab===t));
   const books=getReadingBooks();
   const notes=getReadingHighlights();
@@ -21823,8 +22079,8 @@ function renderReadingBooks(box, books, notes=[]){
     <div class="reading-page-title">书架</div><div class="reading-page-sub">角色会知道这里有什么书</div>
     <div class="reading-library-card">
       <div class="reading-library-title">找一本书 / 找一句话</div>
-      <div class="reading-library-tip">只搜你自己的书架和批注，不再堆在线书源、外接 URL 那些没写完的入口。</div>
-      <div class="reading-search-box"><input id="readingLibrarySearchInput" value="${escapeAttr(q)}" placeholder="搜书名、作者、正文或批注…" oninput="readingSetLibrarySearch(this.value)" onkeydown="if(event.key==='Enter')readingRunLibrarySearch()"><button data-action="reading-library-search">搜索</button></div>
+      <div class="reading-library-tip">这里搜你已经放进书屿的书和批注；要找新书，点「放一本书」进入本地、在线和外接书库。</div>
+      <div class="reading-search-box"><input id="readingLibrarySearchInput" value="${escapeAttr(q)}" placeholder="搜书名、作者、正文或批注…" oninput="readingSetLibrarySearch(this.value)"><button data-action="reading-library-search">搜索</button></div>
       <div class="reading-library-tools"><button class="btn primary" data-action="open-reading-import">放一本书</button><button class="btn" data-action="open-reading-book">建书卡</button></div>
       <div class="reading-inline-muted" style="margin-top:10px">${books.length} 本书 · ${notes.length} 条批注。聊天里只会给角色很轻的书架摘要，不会把整本书塞过去。</div>
     </div>
@@ -21848,21 +22104,30 @@ function renderReadingReader(box, books){
   if(!pages.length){
     box.innerHTML=`<div class="reading-page-title">共读</div><div class="reading-page-sub">这本书还差正文</div>
       <div class="reading-current-card">${readingCoverHtml(cur,{mini:true,noAction:true})}<div class="reading-current-meta"><div class="reading-current-label">还不能翻页</div><div class="reading-current-title">${escapeHtml(cur.title||"未命名")}</div><div class="reading-current-author">${escapeHtml(cur.author||"")}</div><div class="reading-current-progress">先给它放一份正文，就可以一起看了</div></div></div>
-      <div class="reading-import-card"><div class="reading-style-title">给这本书放正文</div><div class="reading-import-tip">保留简单一点：本地 txt / md / epub，或直接粘贴正文。不做打电话看书，也不把外接书源入口摆在这里。</div><div class="btn-row"><label class="btn file-btn primary">选择电子书<input type="file" id="readingImportInput" data-target-book-id="${escapeAttr(cur.id||"")}" accept=".txt,.md,.markdown,.epub,text/plain,text/markdown,application/epub+zip"></label><button class="btn" data-action="open-reading-import">粘贴正文</button></div></div>`;
+      <div class="reading-import-card"><div class="reading-style-title">给这本书放正文</div><div class="reading-import-tip">可以选择本地 txt / md / epub，或打开统一书库入口粘贴正文、搜索公版书、接入外接 URL。</div><div class="btn-row"><label class="btn file-btn primary">选择电子书<input type="file" id="readingImportInput" data-target-book-id="${escapeAttr(cur.id||"")}" accept=".txt,.md,.markdown,.epub,text/plain,text/markdown,application/epub+zip"></label><button class="btn" data-action="open-reading-import">打开书库入口</button></div></div>`;
     return;
   }
   const idx=readingPageIndex(cur), text=pages[idx]||"", pct=readingBookProgress(cur);
   const activeQ=Storage.get("readingActiveQuery","");
   box.innerHTML=`
-    <div class="reading-page-title">共读</div><div class="reading-page-sub">和 ${escapeHtml(role.name||"TA")} 一起看</div>
-    <div class="reading-together-card"><img class="reading-together-avatar" src="${escapeAttr(role.avatar||Miao.defaults.avatar)}" alt=""><div class="reading-together-main"><div class="reading-together-title">《${escapeHtml(cur.title||"未命名")}》</div><div class="reading-together-sub">TA 知道你正在看这本、书架里有哪些书，以及最近几条批注。需要讨论具体原文时，点「给 TA 看」。</div><span class="reading-together-pill">第 ${idx+1} / ${pages.length} 页</span></div></div>
-    ${activeQ?`<div class="reading-search-result" style="margin-top:0"><div class="reading-result-head"><div><div class="reading-result-title">正在高亮：${escapeHtml(activeQ)}</div><div class="reading-result-meta">来自书架搜索 / 最近批注</div></div><span class="reading-result-badge">高亮</span></div><div class="reading-actions"><button data-action="reading-clear-active-query">关闭高亮</button><button data-action="set-reading-tab" data-id="books">回到书架</button></div></div>`:""}
-    <div class="reading-reader-card">
+    <div class="reading-reader-shell" id="readingReaderShell">
+    <div class="reading-reader-page-head"><span class="reading-reader-page-title">${escapeHtml(cur.title||"未命名")}</span><span class="reading-reader-page-count">${idx+1} / ${pages.length}</span></div>
+    <div class="reading-reader-card novel-reader">
       <div class="reading-reader-top">${readingCoverHtml(cur,{mini:true,noAction:true})}<div style="min-width:0"><div class="reading-reader-title">${escapeHtml(cur.title||"未命名")}</div><div class="reading-reader-author">${escapeHtml(cur.author||"")}</div></div></div>
       <div class="reading-reader-progress"><span>${idx+1}</span><i><b style="width:${pct}%"></b></i><span>${pages.length}</span></div>
-      <div class="reading-reader-text" id="readingReaderText">${readingMarkText(text,activeQ)}</div>
-      <div class="reading-reader-actions"><button data-action="reading-reader-page" data-id="${escapeAttr(cur.id||"")}" data-dir="-1">上一页</button><button data-action="reading-reader-page" data-id="${escapeAttr(cur.id||"")}" data-dir="1">下一页</button><button class="primary-soft" data-action="reading-annotate-current" data-id="${escapeAttr(cur.id||"")}">划线 / 批注</button><button class="primary-soft" data-action="reading-chat-current" data-id="${escapeAttr(cur.id||"")}">给 TA 看</button></div>
-      <div class="reading-small-actions"><button data-action="open-reading-together-note" data-id="${escapeAttr(cur.id||"")}">写共读批注</button><button data-action="reading-open-book-detail" data-id="${escapeAttr(cur.id||"")}">书籍详情</button><button data-action="set-reading-tab" data-id="books">回书架搜索</button><button data-action="open-reading-book" data-id="${escapeAttr(cur.id||"")}">编辑书卡</button></div>
+      <div class="reading-reader-tools"><span>${Math.round(pct)}%</span><span>第 ${idx+1} / ${pages.length} 页</span><button data-action="reading-jump-page" data-id="${escapeAttr(cur.id||"")}">前往</button></div>
+      <div class="reading-page-surface" data-book-id="${escapeAttr(cur.id||"")}">
+        <div class="reading-reader-text" id="readingReaderText">${readingMarkText(text,activeQ)}</div>
+        ${activeQ?`<div class="reading-swipe-hint">正在高亮：${escapeHtml(activeQ)}</div>`:""}
+      </div>
+    </div>
+    <div class="reading-reader-menu" id="readingReaderMenu">
+      <div class="reading-reader-menu-head"><button class="btn" data-action="set-reading-tab" data-id="books">退出阅读</button><span class="reading-reader-menu-title">《${escapeHtml(cur.title||"未命名")}》</span><button class="btn" data-action="toggle-reading-menu">收起</button></div>
+      <div class="reading-reader-menu-row"><span>页码</span><input id="readingPageJumpInput" type="number" min="1" max="${pages.length}" value="${idx+1}" data-book-id="${escapeAttr(cur.id||"")}"><button class="btn" data-action="reading-jump-page" data-id="${escapeAttr(cur.id||"")}">前往</button></div>
+      <div class="reading-reader-menu-row"><span>字号</span><input id="readingReaderSizeInput" type="range" min="90" max="120" value="${Number(getReadingSettings().size||100)}" data-action="reading-live-size"><b>${Number(getReadingSettings().size||100)}%</b></div>
+      <div class="reading-reader-menu-grid"><button class="primary-soft" data-action="reading-annotate-current" data-id="${escapeAttr(cur.id||"")}">批注选中</button><button class="primary-soft" data-action="reading-chat-current" data-id="${escapeAttr(cur.id||"")}">给 TA 看</button><button data-action="open-reading-together-note" data-id="${escapeAttr(cur.id||"")}">共读批注</button><button data-action="reading-open-book-detail" data-id="${escapeAttr(cur.id||"")}">书籍详情</button></div>
+      ${activeQ?`<div class="reading-reader-menu-grid" style="margin-top:8px"><button data-action="reading-clear-active-query">关闭高亮</button></div>`:""}
+    </div>
     </div>`;
 }
 
@@ -21878,8 +22143,9 @@ function renderReadingStyle(box){
       <div class="reading-style-sub">这里的字体只影响「书屿」阅读角，不会改掉微信和其它 App。想全局换字体，还是去美化中心。</div>
       <div class="reading-font-grid">${fonts.map(f=>`<button class="reading-font-choice ${st.font===f[0]?"active":""}" data-action="reading-set-font" data-id="${f[0]}"><b style="font-family:${f[0]==="system"?'-apple-system,BlinkMacSystemFont,&quot;PingFang SC&quot;,sans-serif':f[0]==="round"?'&quot;PingFang SC&quot;,&quot;Microsoft YaHei&quot;,sans-serif':f[0]==="kai"?'&quot;Kaiti SC&quot;,&quot;KaiTi&quot;,serif':f[0]==="song"?'&quot;Songti SC&quot;,&quot;SimSun&quot;,serif':'Georgia,&quot;Times New Roman&quot;,serif'}">${escapeHtml(f[1])}</b><span>${escapeHtml(f[2])}</span></button>`).join("")}</div>
       <div class="reading-size-row"><span>字号</span><input id="readingSizeInput" type="range" min="90" max="120" value="${Number(st.size||100)}" oninput="document.getElementById('readingSizeValue').textContent=this.value+'%'"><b id="readingSizeValue">${Number(st.size||100)}%</b></div>
+      <div class="reading-size-row"><span>每页字数</span><input id="readingPageCharsInput" type="range" min="650" max="1200" step="50" value="${Number(st.pageChars||900)}" oninput="document.getElementById('readingPageCharsValue').textContent=this.value"><b id="readingPageCharsValue">${Number(st.pageChars||900)}</b></div>
       <div class="reading-preview-text">“把喜欢的句子画下来，就像在今天的边缘留一盏很小的灯。”</div>
-      <div class="reading-actions"><button class="primary-soft" data-action="save-reading-style">保存字号</button><button data-action="open-app" data-id="theme">去美化中心换全局字体</button></div>
+      <div class="reading-actions"><button class="primary-soft" data-action="save-reading-style">保存阅读设置</button><button data-action="open-app" data-id="theme">去美化中心换全局字体</button></div>
     </div>`;
 }
 function setReadingFont(font){
@@ -21893,9 +22159,10 @@ function setReadingFont(font){
 function saveReadingSettingsFromForm(){
   const st=getReadingSettings();
   st.size=Number($("#readingSizeInput")?.value||100)||100;
+  st.pageChars=Number($("#readingPageCharsInput")?.value||900)||900;
   saveReadingSettings(st);
   renderReading();
-  toast("字号已保存");
+  toast("阅读设置已保存");
 }
 
 function readingColorFromTitle(title){
@@ -21904,12 +22171,34 @@ function readingColorFromTitle(title){
   return palette[n%palette.length];
 }
 function openReadingImportModal(){
+  const onlineQ=readingOnlineSearchQuery();
+  const sourceQ=readingSourceSearchQuery();
+  const sourceUrl=readingSourceUrlTemplate();
   openQuickModal(`<div class="reading-edit-modal">
     <div class="reading-edit-title">放一本书到书屿</div>
-    <div class="reading-edit-sub">保留最需要的入口：本地 txt / md / epub，或者直接粘贴正文。去掉外接 URL、在线书源和复杂书库配置。</div>
+    <div class="reading-edit-sub">本地、粘贴、在线公版书和外接书库都从这里进来；导入后统一进入书架和共读。</div>
     <div class="reading-import-card" style="margin-top:8px">
       <label class="btn file-btn primary" style="width:100%;justify-content:center">选择电子书<input type="file" id="readingImportInput" multiple accept=".txt,.md,.markdown,.epub,text/plain,text/markdown,application/epub+zip"></label>
-      <div class="reading-import-tip">导入后可以翻页、划线、批注、给 TA 看。epub 只尝试读取无 DRM 的标准文件；读不到时可以导出 txt 再放进来。</div>
+      <div class="reading-import-tip">支持 txt / md / epub / JSON 书单。epub 只尝试读取无 DRM 的标准文件；读不到时可以导出 txt 再放进来。</div>
+    </div>
+    <div class="reading-import-card">
+      <div class="reading-style-title">在线公版书</div>
+      <div class="reading-import-tip">先接 Gutenberg 公版书库，适合名著和英文书；搜索结果只在你点「共读这本」后写入书架。</div>
+      <div class="reading-search-box"><input id="readingOnlineSearchInput" value="${escapeAttr(onlineQ)}" placeholder="英文书名 / 作者，例如 Austen"><button data-action="reading-online-search">搜索</button></div>
+      <div id="readingOnlineResults">${onlineQ?`<div class="reading-empty">点搜索刷新「${escapeHtml(onlineQ)}」的结果。</div>`:`<div class="reading-empty">这里搜索的是公版书，不会什么网文都搜到。外源网文书库下一步再接。</div>`}</div>
+    </div>
+    <div class="reading-import-card">
+      <div class="reading-style-title">外接书源搜索</div>
+      <div class="reading-import-tip">填写返回 JSON 的搜索接口模板，用 {q} 放搜索词。支持 results/books/items；每条可含 title、author、summary、content 或 url/sourceUrl。</div>
+      <input id="readingSourceUrlInput" value="${escapeAttr(sourceUrl)}" placeholder="https://.../search?q={q}">
+      <div class="reading-search-box" style="margin-top:8px"><input id="readingSourceSearchInput" value="${escapeAttr(sourceQ)}" placeholder="搜索书名 / 作者"><button data-action="reading-source-search">搜索</button></div>
+      <div id="readingSourceResults">${sourceQ?`<div class="reading-empty">点搜索刷新「${escapeHtml(sourceQ)}」的外接书源结果。</div>`:`<div class="reading-empty">这是可换接口的书源层；找到可用 JSON 书源后填进来就能搜。</div>`}</div>
+    </div>
+    <div class="reading-import-card">
+      <div class="reading-style-title">外接 URL / 书单</div>
+      <div class="reading-import-tip">可填 txt、md、epub，或 JSON 书单地址。JSON 支持 books/items；可用 remote/lazy 只保存链接，打开时再加载正文。</div>
+      <input id="readingLibraryUrlInput" placeholder="https://.../book.txt 或 library.json">
+      <div class="reading-actions"><button class="primary-soft" data-action="save-reading-library-url">接入书屿</button></div>
     </div>
     <label>或者直接粘贴正文</label><input id="readingPasteTitleInput" placeholder="书名">
     <input id="readingPasteAuthorInput" placeholder="作者，可留空" style="margin-top:8px">
@@ -21950,7 +22239,8 @@ async function importReadingFile(file, targetBookId){
   const lower=name.toLowerCase();
   let parsed;
   if(lower.endsWith(".json") || file.type==="application/json"){
-    toast("书源 / JSON 导入先取消了；请导入 txt、md、epub，或直接粘贴正文。");
+    const text=await file.text();
+    await importReadingManifestData(JSON.parse(text), name, location.href);
     return;
   }
   if(lower.endsWith(".epub") || file.type==="application/epub+zip") parsed=await parseReadingEpub(file);
@@ -21964,14 +22254,14 @@ async function importReadingFile(file, targetBookId){
 }
 function createReadingBookFromContent(parsed, targetBookId){
   const list=getReadingBooks();
-  const title=(parsed.title||"未命名电子书").trim();
-  const author=(parsed.author||"").trim();
-  const content=readingNormalizeText(parsed.content||"");
-  const pages=readingChunkContent(content,1150);
-  const base={title,author,status:"reading",currentChapter:0,totalChapters:0,readerPage:0,pageSize:1150,progress:pages.length?clampReadingProgress(100/pages.length):0,color:readingColorFromTitle(title),summary:`已导入正文 · ${pages.length||1} 页`,content,sourceName:parsed.sourceName||"",importedAt:Date.now(),lastOpenedAt:Date.now(),updatedAt:Date.now()};
+  const built=readingBuildBookFromContent(parsed);
+  const title=built.title||"未命名电子书";
+  const base=Object.assign({}, built, {summary:built.summary.replace(/^已接入全文/,"已导入正文")});
+  delete base.id;
+  delete base.createdAt;
   if(targetBookId){
     const idx=list.findIndex(b=>b.id===targetBookId);
-    if(idx>=0){ list[idx]={...list[idx],...base,title:title||list[idx].title,author:author||list[idx].author,color:list[idx].color||base.color}; }
+    if(idx>=0){ list[idx]={...list[idx],...base,title:title||list[idx].title,author:base.author||list[idx].author,color:list[idx].color||base.color}; }
     else list.unshift({id:uid("book"),createdAt:Date.now(),...base});
   }else{
     list.unshift({id:uid("book"),createdAt:Date.now(),...base});
@@ -22084,9 +22374,7 @@ async function ensureReadingBookContent(id){
   const url=readingRemoteUrl(b);
   if(!url) return false;
   toast("正在加载远程正文…");
-  const res=await fetch(url);
-  if(!res.ok) throw new Error("HTTP "+res.status);
-  const blob=await res.blob();
+  const blob=await readingFetchUrlBlob(url);
   let parsed;
   if(/\.epub(\?|$)/i.test(url) || blob.type==="application/epub+zip") parsed=await parseReadingEpub(new File([blob], b.title||"book.epub", {type:blob.type||"application/epub+zip"}));
   else parsed={title:b.title,author:b.author,content:readingNormalizeText(await blob.text()),sourceName:url};
@@ -22114,18 +22402,72 @@ async function openReadingReader(id){
   catch(err){ console.error(err); toast("远程正文加载失败："+(err?.message||err)); }
   setReadingTab("reader");
 }
-function moveReadingReaderPage(id, dir){
+function setReadingReaderPage(id, pageIndex){
   const list=getReadingBooks();
   const b=list.find(x=>x.id===id) || readingCurrentBook(list);
   if(!b) return;
   const pages=readingPagesOfBook(b);
   if(!pages.length){ toast("这本书还没有正文"); return; }
-  b.readerPage=Math.max(0, Math.min(pages.length-1, readingPageIndex(b)+(Number(dir)||0)));
+  const prev=readingPageIndex(b);
+  b.readerPage=Math.max(0, Math.min(pages.length-1, Number(pageIndex)||0));
   b.progress=readingBookProgress(b);
   b.status=(b.readerPage>=pages.length-1)?"done":"reading";
   b.lastOpenedAt=Date.now(); b.updatedAt=Date.now();
   saveReadingBooks(list); renderReading();
+  hideReadingSelectionMenu();
   setTimeout(()=>{ const el=document.getElementById("readingReaderText"); if(el) el.scrollTop=0; },0);
+  return b.readerPage!==prev;
+}
+function moveReadingReaderPage(id, dir){
+  const b=readingBookById(id);
+  if(!b) return;
+  setReadingReaderPage(id, readingPageIndex(b)+(Number(dir)||0));
+}
+function jumpReadingReaderPage(id, value){
+  const input=document.getElementById("readingPageJumpInput");
+  const target=value!=null ? value : input?.value;
+  const page=Math.max(1, parseInt(target||"1",10)||1);
+  setReadingReaderPage(id || input?.dataset.bookId || "", page-1);
+}
+function toggleReadingReaderMenu(force){
+  const shell=document.getElementById("readingReaderShell");
+  if(!shell) return;
+  const open=force==null ? !shell.classList.contains("menu-open") : !!force;
+  shell.classList.toggle("menu-open", open);
+}
+function setReadingLiveSize(value){
+  const st=getReadingSettings();
+  st.size=Math.max(90, Math.min(120, Number(value)||100));
+  saveReadingSettings(st);
+  applyReadingSettings();
+  const input=document.getElementById("readingReaderSizeInput");
+  const label=input?.nextElementSibling;
+  if(label) label.textContent=st.size+"%";
+}
+function hideReadingSelectionMenu(){
+  document.getElementById("readingSelectionPop")?.classList.remove("show");
+}
+function updateReadingSelectionMenu(){
+  const text=readingSelectedText();
+  const root=document.getElementById("readingReaderText");
+  let pop=document.getElementById("readingSelectionPop");
+  if(!root || !text){ hideReadingSelectionMenu(); return; }
+  if(!pop){
+    pop=document.createElement("button");
+    pop.id="readingSelectionPop";
+    pop.className="reading-selection-pop";
+    pop.dataset.action="reading-selection-annotate";
+    pop.textContent="批注";
+    document.getElementById("readingReaderShell")?.appendChild(pop);
+  }
+  try{
+    const rect=window.getSelection().getRangeAt(0).getBoundingClientRect();
+    const shell=document.getElementById("readingReaderShell")?.getBoundingClientRect();
+    if(!rect || !shell) return;
+    pop.style.left=Math.max(16, Math.min(shell.width-78, rect.left-shell.left+(rect.width/2)-28))+"px";
+    pop.style.top=Math.max(54, rect.top-shell.top-42)+"px";
+    pop.classList.add("show");
+  }catch(e){ hideReadingSelectionMenu(); }
 }
 function readingBookById(id){ return getReadingBooks().find(b=>b.id===id) || readingCurrentBook(getReadingBooks()); }
 function openReadingHighlightFromCurrent(id){
@@ -22144,38 +22486,72 @@ function openReadingHighlightFromCurrent(id){
   </div>`);
   document.getElementById("quickModal")?.classList.add("reading-quick-modal");
 }
-function sendReadingCurrentPageToChat(id){
+
+function openReadingSharePreview(id, opts={}){
   const b=readingBookById(id); if(!b) return;
-  const role=currentRole();
-  const selected=readingSelectedText();
+  const selected=String(opts.quote||readingSelectedText()||"").trim();
   const text=(selected || readingCurrentPassage(b)).slice(0,1200).trim();
   if(!text){ toast("这一页没有正文"); return; }
-  const pos=readingFormatChapter(b);
+  const packet=buildReadingSharePacket(b,{quote:selected, note:opts.note||""});
+  const title=opts.title || "给 TA 看这一页";
+  const sub=opts.sub || "发送前可以删减；需要角色懂前因后果时，先把这一页补进前情摘要。";
+  openQuickModal(`<div class="reading-edit-modal reading-share-preview">
+    <div class="reading-edit-title">${escapeHtml(title)}</div>
+    <div class="reading-edit-sub">${escapeHtml(sub)}</div>
+    <label>这次会发送给聊天框</label><textarea id="readingSharePacketInput">${escapeHtml(packet)}</textarea>
+    <div class="reading-edit-actions">${opts.canUpdateSoFar===false?"":`<button class="btn" data-action="reading-update-sofar" data-id="${escapeAttr(b.id||"")}">补进前情</button>`}<button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="reading-send-share" data-id="${escapeAttr(b.id||"")}">放进聊天框</button></div>
+  </div>`);
+  document.getElementById("quickModal")?.classList.add("reading-quick-modal");
+}
+function openReadingAnnotationSharePreview(id){
+  const h=getReadingHighlights().find(x=>x.id===id);
+  if(!h){ toast("没有找到这条批注"); return; }
+  const b=(h.bookId&&readingBookById(h.bookId)) || getReadingBooks().find(x=>h.bookTitle&&x.title===h.bookTitle) || null;
+  if(b){
+    openReadingSharePreview(b.id,{quote:h.quote||"", note:h.note||"", title:"给 TA 看这条批注", sub:"批注会带上书卡前情和邻近页线索；发送前可以删减。", canUpdateSoFar:false});
+    return;
+  }
+  const packet=`【书屿共读】\n书名：${h.bookTitle||"这本书"}\n\n【我画下来的句子】\n${h.quote||""}${h.note?`\n\n【我的批注】\n${h.note}`:""}\n\n你先接住这一句；如果需要更多前文，可以问我要上下文。`;
+  openQuickModal(`<div class="reading-edit-modal reading-share-preview">
+    <div class="reading-edit-title">给 TA 看这条批注</div>
+    <div class="reading-edit-sub">这条批注没有绑定到书架里的正文，只发送摘句和你的批注。</div>
+    <label>这次会发送给聊天框</label><textarea id="readingSharePacketInput">${escapeHtml(packet)}</textarea>
+    <div class="reading-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="reading-send-share">放进聊天框</button></div>
+  </div>`);
+  document.getElementById("quickModal")?.classList.add("reading-quick-modal");
+}
+function sendReadingSharePreviewToChat(){
+  const role=currentRole();
+  const packet=($("#readingSharePacketInput")?.value||"").trim();
+  if(!packet){ toast("没有可发送的内容"); return; }
+  closeQuickModal();
   openApp("wechat");
   setTimeout(()=>{
     const input=document.getElementById("msgInput");
     if(input){
-      input.value=`我们一起读《${b.title||"这本书"}》${selected?"这段":"这一页"}吧。位置：${pos}\n\n${text}\n\n你读完有什么感觉？`;
+      input.value=packet;
       input.focus();
       toast(`已放到和${role.name||"TA"}的聊天框`);
     }
   },80);
 }
-function sendReadingAnnotationToChat(id){
-  const h=getReadingHighlights().find(x=>x.id===id);
-  if(!h){ toast("没有找到这条批注"); return; }
-  const role=currentRole();
-  const book=h.bookTitle?`《${h.bookTitle}》`:"这本书";
-  const note=h.note?`\n\n我的批注/之前的共读：\n${h.note}`:"";
-  openApp("wechat");
-  setTimeout(()=>{
-    const input=document.getElementById("msgInput");
-    if(input){
-      input.value=`我想给你看${book}里我画的这句：\n\n“${h.quote||""}”${note}\n\n你怎么看？`;
-      input.focus();
-      toast(`已放到和${role.name||"TA"}的聊天框`);
-    }
-  },80);
+function updateReadingSoFarFromCurrent(id){
+  const list=getReadingBooks();
+  const b=list.find(x=>x.id===id) || readingCurrentBook(list);
+  if(!b){ toast("没有找到这本书"); return; }
+  const page=readingCurrentPassage(b).trim();
+  if(!page){ toast("这一页没有正文"); return; }
+  const idx=readingPageIndex(b)+1;
+  const title=`第 ${idx} 页`;
+  const line=`${title}：${readingCompactText(page,360)}`;
+  const old=String(b.readingSoFar||"").trim();
+  b.readingSoFar=readingAppendSoFar(old,line,1400);
+  b.updatedAt=Date.now();
+  saveReadingBooks(list);
+  const preview=$("#readingSharePacketInput");
+  if(preview) preview.value=buildReadingSharePacket(b,{quote:readingSelectedText()});
+  renderReading();
+  toast("已补进前情摘要");
 }
 function buildReadingContextPrompt(){
   try{
@@ -22247,6 +22623,9 @@ function openReadingBookModal(id){
     <div class="row"><div><label>状态</label><select id="readingBookStatusInput"><option value="reading" ${b.status==="reading"?"selected":""}>在读</option><option value="shelf" ${b.status==="shelf"?"selected":""}>书架</option><option value="done" ${b.status==="done"?"selected":""}>读完</option></select></div><div><label>封面颜色</label><input id="readingBookColorInput" type="color" value="${/^#[0-9a-fA-F]{6}$/.test(b.color||"")?escapeAttr(b.color):"#5a263d"}"></div></div>
     <div class="row"><div><label>当前章</label><input id="readingBookChapterInput" type="number" min="0" step="1" value="${escapeAttr(b.currentChapter||0)}"></div><div><label>总章数</label><input id="readingBookTotalInput" type="number" min="0" step="1" value="${escapeAttr(b.totalChapters||"")}"></div></div>
     <label>备注</label><textarea id="readingBookSummaryInput" placeholder="为什么想读，读到哪里了。">${escapeHtml(b.summary||"")}</textarea>
+    <label>到目前为止</label><textarea id="readingBookSoFarInput" placeholder="这本书已经发生了什么，压成几百字。">${escapeHtml(b.readingSoFar||"")}</textarea>
+    <label>人物 / 关系</label><textarea id="readingBookCastInput" placeholder="谁是谁，当前关系、误会、秘密。">${escapeHtml(b.characterNotes||"")}</textarea>
+    <label>伏笔 / 注意点</label><textarea id="readingBookPlotInput" placeholder="未解矛盾、重要线索、你想让 TA 记住的点。">${escapeHtml(b.plotNotes||"")}</textarea>
     <div class="reading-edit-actions">${!isNew?`<button class="btn danger" data-action="delete-reading-book" data-id="${escapeAttr(b.id||"")}">删除</button>`:""}<button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="save-reading-book" data-id="${escapeAttr(b.id||"")}">保存</button></div>
   </div>`);
   document.getElementById("quickModal")?.classList.add("reading-quick-modal");
@@ -22260,18 +22639,21 @@ function saveReadingBookFromModal(id){
   const totalChapters=Math.max(0,parseInt($("#readingBookTotalInput")?.value||"0",10)||0);
   const color=($("#readingBookColorInput")?.value||"#5a263d").trim();
   const summary=($("#readingBookSummaryInput")?.value||"").trim();
+  const readingSoFar=($("#readingBookSoFarInput")?.value||"").trim();
+  const characterNotes=($("#readingBookCastInput")?.value||"").trim();
+  const plotNotes=($("#readingBookPlotInput")?.value||"").trim();
   const list=getReadingBooks();
   const progress=totalChapters>0?clampReadingProgress((currentChapter/totalChapters)*100):0;
   if(id){
     const idx=list.findIndex(x=>x.id===id);
     if(idx>=0){
       const keepText=!!list[idx].content;
-      const next={...list[idx],title,author,status,currentChapter,totalChapters,color,summary,updatedAt:Date.now(),lastOpenedAt:status==="reading"?Date.now():(list[idx].lastOpenedAt||0)};
+      const next={...list[idx],title,author,status,currentChapter,totalChapters,color,summary,readingSoFar,characterNotes,plotNotes,updatedAt:Date.now(),lastOpenedAt:status==="reading"?Date.now():(list[idx].lastOpenedAt||0)};
       next.progress=keepText && !totalChapters ? readingBookProgress(next) : progress;
       list[idx]=next;
     }
   }else{
-    list.unshift({id:uid("book"),title,author,status,currentChapter,totalChapters,progress,color,summary,createdAt:Date.now(),lastOpenedAt:status==="reading"?Date.now():0});
+    list.unshift({id:uid("book"),title,author,status,currentChapter,totalChapters,progress,color,summary,readingSoFar,characterNotes,plotNotes,createdAt:Date.now(),lastOpenedAt:status==="reading"?Date.now():0});
   }
   saveReadingBooks(list);
   closeQuickModal();
