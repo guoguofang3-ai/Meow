@@ -19158,7 +19158,9 @@ async function pcViewPhotoTool(args={}){
   if(!api.apiUrl||!api.apiKey||!api.model) return {ok:false,error:"缺少聊天 API 配置，无法识别照片"};
   try{
     const d=await pcBridgeCall("read_image",{name});
-    const dataUrl="data:"+(d.mime||"image/jpeg")+";base64,"+d.base64;
+    let dataUrl="data:"+(d.mime||"image/jpeg")+";base64,"+d.base64;
+    // 先在浏览器里缩小并统一转成 JPEG，避免大图/PNG 被视觉模型拒收
+    if(typeof compressImageDataUrl==="function"){ try{ dataUrl=await compressImageDataUrl(dataUrl, 1024, .82); }catch(e){} }
     const q=String(args.question||"").slice(0,300) || "这是 user 想给你看的一张照片。请自然、具体地描述你看到了什么，并按你的人设和此刻心情去理解、回应。";
     const text=await callSimpleChatAPI(api,[{role:"user",content:[{type:"image_url",image_url:{url:dataUrl}},{type:"text",text:q}]}],.3);
     try{ if(typeof nudgeInnerFromTrace==="function") nudgeInnerFromTrace(currentInnerScope(), "看了 ta 给的照片", "intimacy", .18, "flit"); }catch(e){}
