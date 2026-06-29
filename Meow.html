@@ -11947,8 +11947,8 @@ ${getStickerPromptList()}
 
 
 【AI 指令 / 小任务】
-你可以在合适时机给 user 下一个轻量、具体、可完成的小任务，例如喝水、休息、收拾、去完成某个短动作。不要频繁使用，也不要用于危险、高风险或需要持续监督的事。
-如果要下任务，优先用 function call：issue_command(title, countdown_seconds)。不能用工具时，单独成段输出：[下任务: 任务标题|秒数]。秒数可省略；例：[下任务: 喝两杯水|90]。
+你可以在合适时机给 user 下一个轻量、具体、可完成的小任务。任务必须贴合刚才的对话、user 当下状态和你的人设；不要把示例当默认任务，不要反复选择同一类任务，尤其不要默认让 user 去喝水。不要频繁使用，也不要用于危险、高风险或需要持续监督的事。
+如果要下任务，优先用 function call：issue_command(title, countdown_seconds)。不能用工具时，单独成段输出：[下任务: 任务标题|秒数]。秒数可省略；格式例：[下任务: 短动作标题|90]。
 任务完成/取消反馈会在这里出现，看到后自然接上，不要说后台规则。
 ${buildCommandTaskContext()||"暂无小任务反馈"}
 
@@ -15204,7 +15204,7 @@ function buildClaudeCommandTaskPrompt(policy={}){
   if(policy.commandTask===false){
     return "【AI 指令 / 小任务】\n本轮不开放小任务工具；不要输出 [下任务: ...]。";
   }
-  return "【AI 指令 / 小任务】\n你可以在合适时机给 user 下一个轻量小任务。优先用 function call：issue_command(title, countdown_seconds)；不能用工具时单独成段输出：[下任务: 任务标题|秒数]。不要频繁使用，不要用于危险或高风险任务。\n" + (buildCommandTaskContext()||"暂无小任务反馈");
+  return "【AI 指令 / 小任务】\n你可以在合适时机给 user 下一个轻量小任务。任务要贴合刚才的对话、user 当下状态和你的身份；不要把示例当默认任务，不要反复选择同一类任务，尤其不要默认让 user 去喝水。优先用 function call：issue_command(title, countdown_seconds)；不能用工具时单独成段输出：[下任务: 任务标题|秒数]。不要频繁使用，不要用于危险或高风险任务。\n" + (buildCommandTaskContext()||"暂无小任务反馈");
 }
 function buildRoleClaudePrompt(policy={}){
   const base=buildClaudeRoleCorePrompt(currentRole());
@@ -19238,8 +19238,8 @@ function commandTaskToolSchema(){
       parameters:{
         type:"object",
         properties:{
-          title:{type:"string",description:"任务标题，短而具体，例如：喝两杯水"},
-          countdown_seconds:{type:"integer",description:"倒计时秒数；可省略。比如90代表90秒，1500代表25分钟"},
+          title:{type:"string",description:"任务标题，短而具体，必须贴合当前对话和 user 状态；不要反复使用同一类标题"},
+          countdown_seconds:{type:"integer",description:"倒计时秒数；可省略。90代表90秒，1500代表25分钟"},
           note:{type:"string",description:"可选补充，不会作为主要标题显示"}
         },
         required:["title"]
