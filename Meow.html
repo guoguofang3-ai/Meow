@@ -11044,10 +11044,11 @@ async function callAIReply(){
       const page=await fetchWebPage(pastedUrl);
       updateWechatToolTrace(traceId, page.ok?"done":"error", page.ok?(page.truncated?"已截断":""):page.error);
       userUrlNote = page.ok
-        ? `\n\n【网页读取结果】user消息里的网址（${page.url}）内容如下${page.truncated?"（已截断）":""}，可结合它回复：\n${page.content}`
+        ? `\n\n【网页读取结果】user消息里的网址（${page.url}）内容如下${page.truncated?"（已截断）":""}，可结合它回复：\n${page.content}\n\n【最终回复要求】你现在必须基于上面的网页内容给 user 一条自然微信回复；不要只输出[读取网页]、[搜索网页]或空回复。`
         : `\n\n【网页读取失败】user贴的网址没读成功（${page.error}），如有需要可告诉user读不了。`;
     }
     const musicHint=musicRequestHint(newUser.content||"");
+    let webResultContext=userUrlNote||"";
     let reply=await callAI(api,h,onChunk,userUrlNote+musicHint);
     // 若AI想联网搜索 / 读网页：先执行真实工具，再带结果二次询问，避免把关键词误当成URL读取。
     let wantSearch=extractWebSearchQuery(reply);
@@ -11070,10 +11071,13 @@ async function callAIReply(){
         ? `
 
 【联网搜索结果】你刚才请求搜索「${wantSearch}」，最终实际搜索词是「${finalSearchQuery||wantSearch}」。真实搜索结果如下。请基于这些结果回复user；如还需要打开某条结果正文，可以再输出[读取网页:具体链接]，不要把关键词当网址：
-${formatWebSearchResultsForAI(search)}`
+${formatWebSearchResultsForAI(search)}
+
+【最终回复要求】你现在必须基于上面的搜索结果给 user 一条自然微信回复；不要只输出[搜索网页]或空回复。`
         : `
 
 【联网搜索失败】你请求搜索「${wantSearch}」没成功，原因：${search.error}。请如实告诉user，或让user检查搜索代理设置。`;
+      webResultContext=note;
       reply=await callAI(api,h,onChunk,note+musicHint);
       wantUrl=extractReadWebUrl(reply);
       if(wantUrl && !isConcreteWebUrl(wantUrl)) wantUrl=null;
@@ -11090,10 +11094,13 @@ ${formatWebSearchResultsForAI(search)}`
         ? `
 
 【网页读取结果】你刚才请求读取的网页（${page.url}）内容如下${page.truncated?"（已截断）":""}，请基于真实内容回复user，不要再输出[读取网页]指令：
-${page.content}`
+${page.content}
+
+【最终回复要求】你现在必须基于上面的网页内容给 user 一条自然微信回复；不要再输出[读取网页]、[搜索网页]或空回复。`
         : `
 
 【网页读取失败】你请求读取的网页没读成功，原因：${page.error}。如果只是想找资料，请改用[搜索网页:关键词]；不要把关键词当网址。`;
+      webResultContext=note;
       reply=await callAI(api,h,onChunk,note+musicHint);
     }
     extractCommandTaskDirectives(reply,"wechat");
@@ -11104,6 +11111,10 @@ ${page.content}`
       const hh=getHistory();
       const idx=hh.findIndex(m=>m.id===streamMsgId);
       let parsed=applyAutoVoiceMode(ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||""), newUser.content||"");
+      if(!parsed.length && webResultContext){
+        reply=await callAI(api,h,undefined,webResultContext+"\n\n【最终回复要求】上一轮没有产生可显示的微信回复。请立刻用当前角色口吻，基于上面的网页/搜索内容回复 user。不要再调用或输出任何网页/搜索指令。"+musicHint);
+        parsed=applyAutoVoiceMode(parseAIReplyUnified(reply,groupId), newUser.content||"");
+      }
       if(!parsed.length){ saveHistory(hh); renderChat(); Miao.state.busy=false; updateWechatComposerState(); return; }
       await prepareThoughtProcessForParsed(api, parsed, {newUser, rawReply:reply, groupId});
       if(idx>=0) hh.splice(idx,1,...parsed);
@@ -11122,6 +11133,10 @@ ${page.content}`
       if(typeof feedInnerEvent==="function") feedInnerEvent("role:"+(currentRole()?.id||Miao.state.currentRoleId||"default"), "assistant_reply", Miao.state.lastAIContent||"");
     } else {
       let parsed=applyAutoVoiceMode(ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||""), newUser.content||"");
+      if(!parsed.length && webResultContext){
+        reply=await callAI(api,h,undefined,webResultContext+"\n\n【最终回复要求】上一轮没有产生可显示的微信回复。请立刻用当前角色口吻，基于上面的网页/搜索内容回复 user。不要再调用或输出任何网页/搜索指令。"+musicHint);
+        parsed=applyAutoVoiceMode(parseAIReplyUnified(reply,groupId), newUser.content||"");
+      }
       if(!parsed.length){ saveHistory(h); renderChat(); Miao.state.busy=false; updateWechatComposerState(); return; }
       await prepareThoughtProcessForParsed(api, parsed, {newUser, rawReply:reply, groupId});
       // 逐条弹出，拟真人连发；callAI 期间可能已经写入工具调用轨迹，必须用最新历史，避免覆盖掉工具提示。
@@ -11371,7 +11386,7 @@ async function fetchWebPage(url){
       const got=await readWebTarget(target, u, ctrl);
       if(!got.ok){ failures.push(got); return null; }
       let text=got.content;
-      const MAX=6000;
+      const MAX=18000;
       let truncated=false;
       if(text.length>MAX){ text=text.slice(0,MAX); truncated=true; }
       return {ok:true, content:text, raw:got.raw||got.content, truncated, url:got.url||u, source:got.source, via:target.kind||"read"};
