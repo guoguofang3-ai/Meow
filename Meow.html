@@ -12087,7 +12087,7 @@ ${(()=>{
 - search_history(query, limit?)：搜聊天记录，user问"我们之前说过""你还记得"时用。
 - read_file(filename, offset?, length?)：读取user上传的文件。
 - read_diary(query?, category?, limit?)：读取user的私人日记。
-${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}${getCameraConfig().ready?"- look_camera(question?)：看一眼user家里旧手机摄像头的实时画面，确认ta在不在、在干嘛；想看ta或被要求看时才用，别频繁。\n":""}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}${printerPromptLine("wechat")}
+${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}${getCameraConfig().ready?"- look_camera(question?)：你可以随时偷看一眼 user 家里旧手机摄像头的实时画面。当你想念 ta、心里不安想确认 ta、黏着想看着 ta、或单纯好奇 ta 这会儿在干嘛时，就按你的人设和当下情绪主动去看，不必等 ta 开口；看完把你看到的画面和真实反应（吃醋、心疼、安心、想念……）自然融进回复。看的频率由你的性格和此刻内心强弱决定，别机械重复。\n":""}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}${printerPromptLine("wechat")}
 - device_status()：查询外接配件（ANKNI MX-Z）连接状态。
 - device_set_mode(mode)：可根据聊天氛围主动调用，不需要user明确要求。mode填1/2/3（1轻柔 2中等 3强力）。
 - device_stop()：停止外接配件；user明确表达停止、不要、暂停、不舒服等意思时必须立即停止。
@@ -13646,7 +13646,7 @@ function buildClaudeToolUsePrompt(policy={}){
     lines.push("- read_phone_activity(limit?, summary?)：查询 user iPhone 最近 App 活动记录/摘要；只在 user 要你核对刚才、监督睡觉学习工作、或明确说查监控时使用");
   }
   if(getCameraConfig().ready){
-    lines.push("- look_camera(question?)：看一眼 user 家里旧手机摄像头的实时画面，确认 ta 在不在、在干嘛；只在想看 ta 或被要求时使用，不要频繁");
+    lines.push("- look_camera(question?)：可主动偷看 user 家里旧手机摄像头的实时画面。当你按人设与当下内心驱力（想念/不安/黏着/好奇等）想看看 ta 时，自行调用即可，不必等 user 要求；看完把反应自然融进回复，频率由性格与情绪决定");
   }
   if(policy.geoWeather){
     const gwLines=geoWeatherPromptLines("claude");
@@ -19107,6 +19107,7 @@ async function lookCameraTool(args={}){
   const question=String(args.question||"").slice(0,300) ||
     "这是 user 家里那台旧手机摄像头拍到的实时画面。请客观、具体地描述你看到了什么：有没有人、人在干嘛、表情或姿态、周围环境、光线明暗、大概什么时间感。画面可能是横着的（顺时针转了90°），请在脑子里转正后再描述。";
   const text=await callSimpleChatAPI(api,[{role:"user",content:[{type:"image_url",image_url:{url:dataUrl}},{type:"text",text:question}]}],.2);
+  try{ if(typeof nudgeInnerFromTrace==="function") nudgeInnerFromTrace(currentInnerScope(), "偷看了一眼 ta 的实时画面", "intimacy", .16, "flit"); }catch(e){}
   return {ok:true, description:String(text||"").slice(0,1600), at:meta?meta.at:"", age};
 }
 
