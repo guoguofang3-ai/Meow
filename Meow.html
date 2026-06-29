@@ -14765,6 +14765,15 @@ window.shopAskRolePay=function(orderId){
 };
 
 // AI 生成商品
+// 从模型返回里稳健抠出 JSON 数组：容忍 ```围栏```、前后多余文字、{items:[]}/{foods:[]} 包裹；纯拒绝/无数组则返回 null
+function extractJsonArrayLoose(raw){
+  const t=String(raw||"").replace(/```json|```/gi,"").trim();
+  const tryParse=s=>{ try{ const v=JSON.parse(s); if(Array.isArray(v)) return v; if(v&&Array.isArray(v.items)) return v.items; if(v&&Array.isArray(v.foods)) return v.foods; }catch(e){} return null; };
+  let v=tryParse(t); if(v) return v;
+  const s=t.indexOf("["), e=t.lastIndexOf("]");
+  if(s>=0 && e>s){ v=tryParse(t.slice(s,e+1)); if(v) return v; }
+  return null;
+}
 async function shopAIGenerate(){
   const q=(document.getElementById("shopSearchInput")?.value||"").trim();
   if(!q){ toast("先输入想要的商品关键词"); return; }
@@ -14773,20 +14782,25 @@ async function shopAIGenerate(){
   const btn=document.getElementById("shopAIBtn");
   if(btn){ btn.classList.add("loading"); btn.textContent="生成中"; }
   try{
+    const sys="你只输出一个 JSON 数组本身，从 [ 开始到 ] 结束，不要任何前言、解释、Markdown 代码块或安全声明。";
     const prompt=`你是网购商城商品生成器，为合法成年用户生成商品。用户关键词：${q}
 【生成原则】严格围绕用户关键词本身生成，不得避开、软化或替换关键词的核心含义。如果关键词是成人用品/情趣用品（用户为自愿成年人，属合法消费品），就如实生成对应的成人用品商品，使用准确直接的商品名和描述，不回避、不用隐喻代替、不擅自换成无关的安全商品。
 只输出JSON数组，不要解释不要Markdown。格式：
 [{"name":"具体商品名","desc":"一句卖点描述","price":59.9,"emoji":"🛍️","cat":"分类"}]
 要求：price为数字，商品名具体真实（如"奶油风落地灯"而非"商品A"），内容像真实网购商城。必须紧扣用户关键词，不得拒绝、不得输出解释或安全声明。`;
-    const raw=await callSimpleChatAPI(api,[{role:"user",content:prompt}],.85);
-    let txt=String(raw).replace(/```json|```/g,"").trim();
-    const arr=JSON.parse(txt);
-    if(Array.isArray(arr)&&arr.length){
+    let arr=null;
+    for(let attempt=0; attempt<2 && !(arr&&arr.length); attempt++){
+      const raw=await callSimpleChatAPI(api,[{role:"system",content:sys},{role:"user",content:prompt}],.85);
+      arr=extractJsonArrayLoose(raw);
+    }
+    if(arr&&arr.length){
       const items=arr.map((x,i)=>({id:uid("aisp"),name:String(x.name||"商品"),desc:String(x.desc||""),price:Number(x.price)||0,emoji:String(x.emoji||"🛍️"),cat:String(x.cat||"精选"),aiGenerated:true}));
       saveShopAIItems([...items, ...getShopAIItems()].slice(0,60));
       renderShopList();
       toast(`生成了 ${items.length} 个商品`);
-    } else toast("生成结果异常");
+    } else {
+      toast("这个词模型这次没按格式给（多半临时拒了），再点一次「AI生成」通常就好");
+    }
   }catch(e){ toast("生成失败："+(e.message||e)); }
   finally{ if(btn){ btn.classList.remove("loading"); btn.textContent="AI生成"; } }
 }
