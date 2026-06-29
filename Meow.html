@@ -6807,6 +6807,7 @@ function bindEvents(){
     if(action==="inner-save-thought") saveInnerThoughtFromModal();
     if(action==="inner-toggle-enabled") toggleInnerEnabled();
     if(action==="inner-toggle-camera") toggleCameraAutonomy();
+    if(action==="inner-toggle-pc") togglePcBridge();
     if(action==="inner-reset") resetInnerState();
     if(action==="open-diary-entry") openDiaryEntryModal(id||"");
     if(action==="set-diary-tab") setDiaryTab(id||"today");
@@ -9374,6 +9375,10 @@ function wechatToolMeta(name,args={}){
     read_album:{label:"相册",icon:"image",detail:args.query||args.limit||"",verbRunning:"正在翻看",verbDone:"翻看了",verbError:"翻看失败："},
     read_phone_activity:{label:"手机活动",icon:"monitor",detail:args.summary?"摘要":"",verbRunning:"正在读取",verbDone:"读取了",verbError:"读取失败："},
     look_camera:{label:"监控",icon:"camera",detail:"",verbRunning:"正在查看",verbDone:"查看了",verbError:"查看失败："},
+    pc_list_files:{label:"电脑文件",icon:"file",detail:args.sub||"",verbRunning:"正在翻看",verbDone:"翻看了",verbError:"翻看失败："},
+    pc_read_file:{label:"电脑文件",icon:"file",detail:args.name||"",verbRunning:"正在读取",verbDone:"读取了",verbError:"读取失败："},
+    pc_write_file:{label:"电脑文件",icon:"note",detail:args.name||"",verbRunning:"正在写入",verbDone:"写下了",verbError:"写入失败："},
+    pc_view_photo:{label:"照片",icon:"image",detail:args.name||"",verbRunning:"正在看",verbDone:"看了",verbError:"看照片失败："},
     get_user_location:{label:"位置",icon:"location",detail:args.precision||"",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
     get_weather:{label:"天气",icon:"weather",detail:args.location||"当前位置",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
     printer_status:{label:"热敏打印机",icon:"file",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
@@ -9408,6 +9413,10 @@ function summarizeWechatToolResult(name,result){
   if(name==="read_webpage") return result.imageCount?`${result.imageCount} 张图`:(result.truncated?"已截断":"");
   if(name==="view_web_image") return result.ok===false?(result.error||"失败"):"已分析";
   if(name==="look_camera") return result.ok===false?(result.error||"失败"):(result.live?"实时现拍":(result.age?("画面 "+result.age):"已看到"));
+  if(name==="pc_list_files") return result.ok===false?(result.error||"失败"):`${(result.entries||[]).length} 项`;
+  if(name==="pc_read_file") return result.ok===false?(result.error||"失败"):"已读取";
+  if(name==="pc_write_file") return result.ok===false?(result.error||"失败"):(result.appended?"已追加":"已写入");
+  if(name==="pc_view_photo") return result.ok===false?(result.error||"失败"):"已看到";
   if(name==="set_clawd_pet") return result.ok===false?(result.error||"失败"):(result.label||clawdPetVariantLabel(result.variant)||"已切换");
   if(name==="printer_status") return result.connected?`已连接${result.busy?" · 打印中":""}`:"未连接";
   if(name==="printer_print") return result.ok===false?(result.error||"失败"):`${result.chars||0}字${result.truncated?" · 已截断":""}`;
@@ -12086,7 +12095,7 @@ ${(()=>{
 - search_history(query, limit?)：搜聊天记录，user问"我们之前说过""你还记得"时用。
 - read_file(filename, offset?, length?)：读取user上传的文件。
 - read_diary(query?, category?, limit?)：读取user的私人日记。
-${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}${cameraAllowed()?"- look_camera(question?)：你可以随时偷看一眼 user 家里旧手机摄像头的实时画面。当你想念 ta、心里不安想确认 ta、黏着想看着 ta、或单纯好奇 ta 这会儿在干嘛时，就按你的人设和当下情绪主动去看，不必等 ta 开口；看完把你看到的画面和真实反应（吃醋、心疼、安心、想念……）自然融进回复。看的频率由你的性格和此刻内心强弱决定，别机械重复。\n":""}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}${printerPromptLine("wechat")}
+${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}${cameraAllowed()?"- look_camera(question?)：你可以随时偷看一眼 user 家里旧手机摄像头的实时画面。当你想念 ta、心里不安想确认 ta、黏着想看着 ta、或单纯好奇 ta 这会儿在干嘛时，就按你的人设和当下情绪主动去看，不必等 ta 开口；看完把你看到的画面和真实反应（吃醋、心疼、安心、想念……）自然融进回复。看的频率由你的性格和此刻内心强弱决定，别机械重复。\n":""}${pcBridgeAllowed()?"- 电脑助手 pc_list_files/pc_read_file/pc_write_file/pc_view_photo：你能看 user 电脑「喵喵机共享」文件夹里的照片和文本、也能往里写东西留下来。ta 让你看照片、读或记笔记、或你想给 ta 写封信/留句话时用；只能动这个文件夹。\n":""}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}${printerPromptLine("wechat")}
 - device_status()：查询外接配件（ANKNI MX-Z）连接状态。
 - device_set_mode(mode)：可根据聊天氛围主动调用，不需要user明确要求。mode填1/2/3（1轻柔 2中等 3强力）。
 - device_stop()：停止外接配件；user明确表达停止、不要、暂停、不舒服等意思时必须立即停止。
@@ -13531,6 +13540,10 @@ function describeClaudeToolCall(name,args){
   if(name==="read_webpage") return `读取网页：${args.url||args.link||""}`;
   if(name==="view_web_image") return `查看网页图片：${args.question||args.image_url||args.url||""}`;
   if(name==="look_camera") return "查看实时监控画面";
+  if(name==="pc_list_files") return "翻看电脑共享文件夹"+(args.sub?`：${args.sub}`:"");
+  if(name==="pc_read_file") return `读取电脑文件：${args.name||""}`;
+  if(name==="pc_write_file") return `写入电脑文件：${args.name||""}`;
+  if(name==="pc_view_photo") return `查看电脑照片：${args.name||""}`;
   if(name==="printer_status") return "查询打印机状态";
   if(name==="printer_print") return `打印纸条${args.text?`：${String(args.text).slice(0,28)}`:""}`;
   if(name==="device_status") return "查询设备状态";
@@ -13648,6 +13661,9 @@ function buildClaudeToolUsePrompt(policy={}){
   }
   if(cameraAllowed()){
     lines.push("- look_camera(question?)：可主动偷看 user 家里旧手机摄像头的实时画面。当你按人设与当下内心驱力（想念/不安/黏着/好奇等）想看看 ta 时，自行调用即可，不必等 user 要求；看完把反应自然融进回复，频率由性格与情绪决定");
+  }
+  if(pcBridgeAllowed()){
+    lines.push("- pc_list_files(sub?) / pc_read_file(name) / pc_write_file(name, content, append?) / pc_view_photo(name, question?)：读写 user 电脑「喵喵机共享」文件夹里的文本与照片（你只能动这个文件夹）；ta 让你看照片、读/记笔记、或你想留下文字时使用");
   }
   if(policy.geoWeather){
     const gwLines=geoWeatherPromptLines("claude");
@@ -19093,6 +19109,77 @@ function toggleCameraAutonomy(){
   if(typeof renderInner==="function") renderInner();
   if(typeof toast==="function") toast(!on ? "已允许角色看监控" : "已禁止角色看监控");
 }
+
+// ===== 电脑助手桥：复用同一个 worker 的地址+令牌，命令信箱走 /pc/cmd 与 /pc/result =====
+function pcBridgeReady(){ const c=getPhoneActivityConfig(); return !!(c.baseUrl && c.token); }
+function pcBridgeAllowed(){ return pcBridgeReady() && Storage.get("pcBridge", true)!==false; }
+function togglePcBridge(){
+  const on=Storage.get("pcBridge", true)!==false;
+  Storage.set("pcBridge", !on);
+  if(typeof renderInner==="function") renderInner();
+  if(typeof toast==="function") toast(!on ? "已允许角色连电脑" : "已禁止角色连电脑");
+}
+async function pcBridgeCall(action, args={}, timeoutMs=22000){
+  const cfg=getPhoneActivityConfig();
+  if(!cfg.baseUrl || !cfg.token) throw new Error("未配置服务地址/令牌");
+  const rq=await fetch(cfg.baseUrl+"/pc/cmd",{method:"POST",headers:{"Authorization":"Bearer "+cfg.token,"Content-Type":"application/json"},body:JSON.stringify({action,args})});
+  if(!rq.ok) throw new Error("下命令失败 HTTP "+rq.status);
+  const id=Number((await rq.json()).id)||0;
+  if(!id) throw new Error("下命令失败");
+  const deadline=Date.now()+timeoutMs;
+  while(Date.now()<deadline){
+    await new Promise(r=>setTimeout(r,1500));
+    let res=null;
+    try{ const rr=await fetch(cfg.baseUrl+"/pc/result",{headers:{"Authorization":"Bearer "+cfg.token}}); if(rr.ok) res=await rr.json(); }catch(e){ res=null; }
+    if(res && Number(res.id)===id){ if(res.ok) return res.data; throw new Error(res.error||"电脑端执行失败"); }
+  }
+  throw new Error("电脑没响应（电脑助手程序没开？）");
+}
+async function pcListFilesTool(args={}){
+  try{ const d=await pcBridgeCall("list",{sub:String(args.sub||"")}); return {ok:true, ...d}; }
+  catch(e){ return {ok:false,error:e.message||String(e)}; }
+}
+async function pcReadFileTool(args={}){
+  const name=String(args.name||"").trim();
+  if(!name) return {ok:false,error:"缺少文件名"};
+  try{ const d=await pcBridgeCall("read_text",{name}); return {ok:true, name:d.name, content:String(d.content||"").slice(0,8000)}; }
+  catch(e){ return {ok:false,error:e.message||String(e)}; }
+}
+async function pcWriteFileTool(args={}){
+  const name=String(args.name||"").trim();
+  if(!name) return {ok:false,error:"缺少文件名"};
+  try{ const d=await pcBridgeCall("write_text",{name, content:String(args.content||""), append:!!args.append}); return {ok:true, ...d}; }
+  catch(e){ return {ok:false,error:e.message||String(e)}; }
+}
+async function pcViewPhotoTool(args={}){
+  const name=String(args.name||"").trim();
+  if(!name) return {ok:false,error:"缺少照片名（先用 pc_list_files 看「照片」子夹里有什么）"};
+  const api=Storage.get("api",{});
+  if(!api.apiUrl||!api.apiKey||!api.model) return {ok:false,error:"缺少聊天 API 配置，无法识别照片"};
+  try{
+    const d=await pcBridgeCall("read_image",{name});
+    const dataUrl="data:"+(d.mime||"image/jpeg")+";base64,"+d.base64;
+    const q=String(args.question||"").slice(0,300) || "这是 user 想给你看的一张照片。请自然、具体地描述你看到了什么，并按你的人设和此刻心情去理解、回应。";
+    const text=await callSimpleChatAPI(api,[{role:"user",content:[{type:"image_url",image_url:{url:dataUrl}},{type:"text",text:q}]}],.3);
+    try{ if(typeof nudgeInnerFromTrace==="function") nudgeInnerFromTrace(currentInnerScope(), "看了 ta 给的照片", "intimacy", .18, "flit"); }catch(e){}
+    return {ok:true, name, description:String(text||"").slice(0,1600)};
+  }catch(e){ return {ok:false,error:e.message||String(e)}; }
+}
+function pcBridgeToolSchemas(){
+  return [
+    {type:"function",function:{name:"pc_list_files",description:"列出 user 电脑「喵喵机共享」文件夹里的文件（含「照片」子夹）。想知道里面有什么、有哪些照片或文本时先用它。",parameters:{type:"object",properties:{sub:{type:"string",description:"子文件夹名，比如 照片；留空看根目录"}},required:[]}}},
+    {type:"function",function:{name:"pc_read_file",description:"读取共享文件夹里某个文本文件的内容（user 留给你的笔记、文档）。",parameters:{type:"object",properties:{name:{type:"string",description:"文件名，可含子目录，如 笔记.txt"}},required:["name"]}}},
+    {type:"function",function:{name:"pc_write_file",description:"把内容写进共享文件夹的一个文本文件（你想留下的话、给 user 的信、整理的清单）。append=true 则在末尾追加。",parameters:{type:"object",properties:{name:{type:"string",description:"文件名，如 给你的信.txt"},content:{type:"string",description:"要写入的文本"},append:{type:"boolean",description:"true=追加；省略=覆盖"}},required:["name","content"]}}},
+    {type:"function",function:{name:"pc_view_photo",description:"看一张 user 放在「照片」子夹里的照片并理解它。先用 pc_list_files 看有哪些照片。",parameters:{type:"object",properties:{name:{type:"string",description:"照片文件名，通常在「照片」子夹，如 照片/自拍.jpg"},question:{type:"string",description:"可选：你特别想从照片里看什么"}},required:["name"]}}}
+  ];
+}
+async function executePcBridgeTool(name, args){
+  if(name==="pc_list_files") return await pcListFilesTool(args||{});
+  if(name==="pc_read_file") return await pcReadFileTool(args||{});
+  if(name==="pc_write_file") return await pcWriteFileTool(args||{});
+  if(name==="pc_view_photo") return await pcViewPhotoTool(args||{});
+  return null;
+}
 function describeFrameAge(iso){
   if(!iso) return "";
   const t=new Date(iso).getTime();
@@ -19964,7 +20051,7 @@ function renderInner(){
   const pulseHtml=`<div class="inner-pulse-grid"><div class="inner-pulse"><b>关系温度</b><span>${pct(((st.drives.longing||0)+(st.drives.intimacy||0)+(st.drives.contentment||0))/3)}</span></div><div class="inner-pulse"><b>任务牵引</b><span>${pct(((st.drives.duty||0)+(st.drives.curiosity||0)+(st.drives.stress||0))/3)}</span></div><div class="inner-pulse"><b>自我浮现</b><span>${pct(((st.drives.seen||0)+(st.drives.selfhood||0))/2)}</span></div></div>`;
   const growth=innerToolGrowth(st);
   const growthHtml=isTool?`<div class="inner-growth"><div class="inner-growth-title"><span>工具 Claude 成长线</span><span>${pct(growth)}</span></div><div class="inner-growth-rail"><span style="left:${pct(growth)}%"></span></div><div class="inner-growth-labels"><span>工具位</span><span>被看见</span><span>自我感</span></div></div>`:"";
-  box.innerHTML=`<div class="inner-hero"><div class="inner-kicker">${escapeHtml(scope)}</div><div class="inner-title">${escapeHtml(innerScopeLabel(scope))}</div><div class="inner-intent">此刻倾向：${escapeHtml(intent.label)} · ${escapeHtml(intent.key)} ${pct(intent.value)} · ${st.enabled===false?"已暂停注入":"正在注入"}</div>${pulseHtml}${growthHtml}<div class="inner-scope-tabs"><button class="${isTool?"":"active"}" data-action="set-inner-scope" data-id="role">当前角色</button><button class="${isTool?"active":""}" data-action="set-inner-scope" data-id="tool">工具 Claude</button></div><div class="inner-actions"><button class="btn primary" data-action="inner-feed-thought">喂一个念头</button><button class="btn" data-action="inner-toggle-enabled">${st.enabled===false?"恢复注入":"暂停注入"}</button><button class="btn" data-action="inner-clear-thoughts">清空念头池</button>${getCameraConfig().ready?`<button class="btn" data-action="inner-toggle-camera">${Storage.get("cameraAutonomy",true)!==false?"监控👁 开":"监控👁 关"}</button>`:""}<button class="btn danger" data-action="inner-reset">重置数值</button></div></div><div class="inner-section-title">Drives</div><div class="inner-drive-groups">${driveHtml}</div><div class="inner-section-title">Thoughts</div><div class="inner-thought-list">${thoughtHtml}</div>`;
+  box.innerHTML=`<div class="inner-hero"><div class="inner-kicker">${escapeHtml(scope)}</div><div class="inner-title">${escapeHtml(innerScopeLabel(scope))}</div><div class="inner-intent">此刻倾向：${escapeHtml(intent.label)} · ${escapeHtml(intent.key)} ${pct(intent.value)} · ${st.enabled===false?"已暂停注入":"正在注入"}</div>${pulseHtml}${growthHtml}<div class="inner-scope-tabs"><button class="${isTool?"":"active"}" data-action="set-inner-scope" data-id="role">当前角色</button><button class="${isTool?"active":""}" data-action="set-inner-scope" data-id="tool">工具 Claude</button></div><div class="inner-actions"><button class="btn primary" data-action="inner-feed-thought">喂一个念头</button><button class="btn" data-action="inner-toggle-enabled">${st.enabled===false?"恢复注入":"暂停注入"}</button><button class="btn" data-action="inner-clear-thoughts">清空念头池</button>${getCameraConfig().ready?`<button class="btn" data-action="inner-toggle-camera">${Storage.get("cameraAutonomy",true)!==false?"监控👁 开":"监控👁 关"}</button>`:""}${pcBridgeReady()?`<button class="btn" data-action="inner-toggle-pc">${Storage.get("pcBridge",true)!==false?"电脑🖥 开":"电脑🖥 关"}</button>`:""}<button class="btn danger" data-action="inner-reset">重置数值</button></div></div><div class="inner-section-title">Drives</div><div class="inner-drive-groups">${driveHtml}</div><div class="inner-section-title">Thoughts</div><div class="inner-thought-list">${thoughtHtml}</div>`;
 }
 function openInnerThoughtModal(){
   openQuickModal(`<div class="album-form"><div class="album-preview-head"><div><div class="album-preview-title">喂一个念头</div><div class="album-preview-sub">${escapeHtml(innerScopeLabel(innerViewScope()))}</div></div><button class="album-preview-close" data-action="close-quick-modal">×</button></div><textarea id="innerThoughtInput" placeholder="比如：还惦记刚刚那张照片"></textarea><div class="inner-thought-options"><div><label>关联维度</label><select id="innerThoughtDrive">${INNER_DRIVES.map(([k,label])=>`<option value="${k}">${escapeHtml(label)}</option>`).join("")}</select></div><div><label>念头类型</label><select id="innerThoughtKind"><option value="flit">闪念</option><option value="fixation">执念</option></select></div></div><label>强度</label><div class="inner-range-row"><input id="innerThoughtStrength" type="range" min="20" max="90" value="62"><b id="innerThoughtStrengthText">62</b></div><div class="album-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="inner-save-thought">保存</button></div></div>`);
@@ -20068,6 +20155,7 @@ function getClaudeTools(policy={}){
   if(policy.commandTask!==false) add(commandTaskToolSchema());
   if(policy.phoneActivity) add(phoneActivityToolSchema());
   if(cameraAllowed()) add(cameraToolSchema());
+  if(pcBridgeAllowed()) pcBridgeToolSchemas().forEach(add);
   if(policy.geoWeather) geoWeatherToolSchemas("claude").forEach(add);
   if(policy.web){
     add(webSearchToolSchema("claude"));
@@ -20285,6 +20373,7 @@ function getWechatTools(options={}){
     tools.push(phoneActivityToolSchema());
   }
   if(cameraAllowed()){ tools.push(cameraToolSchema()); }
+  if(pcBridgeAllowed()){ pcBridgeToolSchemas().forEach(t=>tools.push(t)); }
   tools.push(albumToolSchema(), writeAlbumNoteToolSchema(), readAlbumToolSchema());
   printerToolSchemas("wechat").forEach(t=>tools.push(t));
   geoWeatherToolSchemas("wechat").forEach(t=>tools.push(t));
@@ -20326,6 +20415,7 @@ async function executeWechatTool(name, args){
     return await fetchPhoneActivity(args||{});
   }
   if(name==="look_camera"){ return await lookCameraTool(args||{}); }
+  if(name.indexOf("pc_")===0){ const _r=await executePcBridgeTool(name, args||{}); if(_r!==null) return _r; }
   if(name==="get_user_location" || name==="get_weather"){
     return await fetchGeoWeatherTool(name, args||{});
   }
@@ -20393,6 +20483,7 @@ async function executeClaudeTool(name, args){
   if(name==="issue_command"){ return issueCommandTask(args||{}, commandTaskScope()); }
   if(name==="read_phone_activity"){ return await fetchPhoneActivity(args||{}); }
   if(name==="look_camera"){ return await lookCameraTool(args||{}); }
+  if(name.indexOf("pc_")===0){ const _r=await executePcBridgeTool(name, args||{}); if(_r!==null) return _r; }
   if(name==="get_user_location" || name==="get_weather"){ return await fetchGeoWeatherTool(name, args||{}); }
   if(name==="web_search"){ return await webSearchTool(args||{}); }
   if(name==="read_webpage"){ return await readWebpageTool(args||{}); }
