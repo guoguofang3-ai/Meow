@@ -4276,7 +4276,7 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
 .reading-reader-tools button{min-height:30px!important;border:0!important;border-radius:999px!important;background:rgba(255,255,255,.62)!important;color:#7d655d!important;font-size:11px!important;font-weight:950!important;padding:0 10px!important;}
 .reading-page-surface{position:absolute;inset:0;margin:0;min-height:0;height:auto;border-radius:0;background:var(--reading-page-bg,#fff8ef);border:0;box-shadow:none;overflow:hidden;}
 .reading-page-surface:before{display:none;}
-.novel-reader .reading-reader-text{height:100%!important;max-height:none!important;overflow:hidden!important;padding:72px 30px 78px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;font-size:calc(18px * var(--reading-scale))!important;line-height:2.06!important;color:#4f4540!important;text-align:left;}
+.novel-reader .reading-reader-text{height:100%!important;max-height:none!important;overflow:hidden!important;box-sizing:border-box!important;padding:72px 30px 78px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;font-size:calc(18px * var(--reading-scale))!important;line-height:2.06!important;color:#4f4540!important;text-align:left;}
 .reading-swipe-hint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:1;border-radius:999px;padding:5px 10px;background:rgba(255,255,255,.42);color:#b1968e;font-size:10px;font-weight:950;pointer-events:none;}
 .reading-reader-progress{padding:0 16px!important;margin:10px 0 12px!important;}
 .reading-reader-footer{display:none!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;padding:0 12px 14px;}
@@ -21371,6 +21371,7 @@ function saveReadingSettings(settings){
 }
 function readingResetPageFit(){
   Storage.set("readingPageFitChars", 0);
+  Miao.state.readingPageCache={};
 }
 function setReadingTab(tab){ Storage.set("readingTab", tab||"home"); renderReading(); }
 function clampReadingProgress(n){ n=Number(n)||0; return Math.max(0,Math.min(100,Math.round(n))); }
@@ -21400,6 +21401,97 @@ function readingChunkContent(text, size){
   if(cur.trim()) pages.push(cur.trim());
   return pages;
 }
+function readingTextHash(text){
+  const s=String(text||"");
+  let h=0;
+  for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
+  return h.toString(36);
+}
+function readingSplitLongParagraph(text){
+  const s=String(text||"").trim();
+  if(!s) return [];
+  const chunks=[];
+  let cur="";
+  const pieces=s.match(/[^。！？!?；;，,、\n]+[。！？!?；;，,、]?|\S+/g)||[s];
+  pieces.forEach(p=>{
+    if(cur && (cur.length+p.length)>82){ chunks.push(cur); cur=p; }
+    else cur+=p;
+  });
+  if(cur) chunks.push(cur);
+  return chunks.flatMap(part=>{
+    if(part.length<=120) return [part];
+    const out=[];
+    for(let i=0;i<part.length;i+=72) out.push(part.slice(i,i+72));
+    return out;
+  });
+}
+function readingTextUnits(text){
+  const paragraphs=readingNormalizeText(text).split(/\n{2,}/).map(x=>x.trim()).filter(Boolean);
+  const units=[];
+  paragraphs.forEach((p,pi)=>{
+    readingSplitLongParagraph(p).forEach((chunk,ci)=>{
+      units.push({text:chunk, sep:(pi>0 && ci===0)?"\n\n":""});
+    });
+  });
+  return units;
+}
+function readingReaderLayoutBox(){
+  const content=document.getElementById("readingContent");
+  const vv=window.visualViewport;
+  const rect=content?.getBoundingClientRect?.();
+  const width=Math.max(260, Math.floor(rect?.width || vv?.width || window.innerWidth || 390));
+  const height=Math.max(360, Math.floor(rect?.height || vv?.height || window.innerHeight || 720));
+  return {width,height};
+}
+function readingMeasureElement(width){
+  let el=document.getElementById("readingMeasureTextBox");
+  if(!el){
+    el=document.createElement("div");
+    el.id="readingMeasureTextBox";
+    document.body.appendChild(el);
+  }
+  const st=getReadingSettings();
+  el.style.cssText=[
+    "position:fixed","left:-10000px","top:0","visibility:hidden","pointer-events:none",
+    "box-sizing:border-box","white-space:pre-wrap","word-break:break-word",
+    "border:0","margin:0","height:auto","max-height:none","overflow:visible",
+    "padding:72px 30px 78px","font-family:var(--reading-font)",
+    `font-size:${18*(Number(st.size||100)/100)}px`,"line-height:2.06",
+    `width:${Math.max(260,width)}px`
+  ].join(";");
+  return el;
+}
+function readingMeasuredTextHeight(text, width){
+  const el=readingMeasureElement(width);
+  el.textContent=String(text||"");
+  return el.scrollHeight || el.getBoundingClientRect().height || 0;
+}
+function readingMeasuredPagesOfBook(book){
+  if(typeof document==="undefined" || !book?.content) return null;
+  const box=readingReaderLayoutBox();
+  const st=getReadingSettings();
+  const key=[readingTextHash(book.content), box.width, box.height, st.font, st.size, st.pageChars].join("|");
+  Miao.state.readingPageCache=Miao.state.readingPageCache||{};
+  const cached=Miao.state.readingPageCache[key];
+  if(cached) return cached;
+  const pageHeight=Math.max(260, box.height-8);
+  const units=readingTextUnits(book.content);
+  const pages=[];
+  let cur="";
+  units.forEach(unit=>{
+    const candidate=cur ? cur+unit.sep+unit.text : unit.text;
+    if(cur && readingMeasuredTextHeight(candidate, box.width)>pageHeight){
+      pages.push(cur.trim());
+      cur=unit.text;
+    }else{
+      cur=candidate;
+    }
+  });
+  if(cur.trim()) pages.push(cur.trim());
+  const out=pages.length?pages:[readingNormalizeText(book.content)];
+  Miao.state.readingPageCache={[key]:out};
+  return out;
+}
 function readingViewportPageEstimate(size){
   const vw=Math.max(320, Math.min(900, window.innerWidth||390));
   const vh=Math.max(520, Math.min(1200, window.innerHeight||720));
@@ -21423,6 +21515,8 @@ function readingPageCharLimit(book){
 }
 function readingPagesOfBook(book){
   if(!book || !book.content) return [];
+  const measured=readingMeasuredPagesOfBook(book);
+  if(measured) return measured;
   return readingChunkContent(book.content, readingPageCharLimit(book));
 }
 function readingBookHasRemoteSource(book){
@@ -22169,11 +22263,7 @@ function readingSyncMeasuredPageFit(id){
   if(!el) return;
   const overflow=el.scrollHeight-el.clientHeight;
   if(overflow<=8) return;
-  const oldFit=readingPageCharLimit(readingBookById(id));
-  const ratio=Math.max(.45, Math.min(.92, (el.clientHeight-18)/Math.max(1,el.scrollHeight)));
-  const next=Math.max(260, Math.floor(oldFit*ratio*.94));
-  if(next>=oldFit-8) return;
-  Storage.set("readingPageFitChars", next);
+  Miao.state.readingPageCache={};
   const list=getReadingBooks();
   const b=list.find(x=>x.id===id) || readingCurrentBook(list);
   if(b){
