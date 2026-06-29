@@ -6301,7 +6301,10 @@ function startCommandTaskTicker(){
 }
 function stopCommandTaskTicker(){ clearInterval(commandTaskTimer); commandTaskTimer=null; }
 function stripCommandTaskDirectives(text){
-  return String(text||"").replace(/[\[【]\s*(?:下任务|下指令|指令|任务)\s*[:：][\s\S]{0,220}?[\]】]/g,"").trim();
+  return String(text||"")
+    .replace(/[\[【]\s*(?:下任务|下指令|指令|任务)\s*[:：][\s\S]{0,220}?[\]】]/g,"")
+    .replace(/\[task_status:(?:done|cancelled)\|[^\]]{0,80}\]/g,"")
+    .trim();
 }
 function stripLineDirectivesKeepCode(text, patterns){
   const blocks=parseCodeBlocks(String(text||""));
@@ -6324,20 +6327,14 @@ function extractCommandTaskDirectives(text,source){
   return count;
 }
 function buildCommandTaskContext(){
-  const active=getCommandTasks().filter(t=>t && (t.status==="pending"||t.status==="running")).slice(0,3);
-  const feedback=getCommandFeedback().filter(f=>f&&!f.delivered_at).slice(-5);
+  const feedback=getCommandFeedback().filter(f=>f&&!f.delivered_at).slice(-1);
   const lines=[];
   if(feedback.length){
-    lines.push("【小任务完成反馈】");
     feedback.forEach(f=>{
-      const dur=formatCommandTime(f.duration_seconds||0);
-      const diff=f.vs_countdown==null?"":(f.vs_countdown>=0?`，比预设慢 ${formatCommandTime(f.vs_countdown)}`:`，比预设快 ${formatCommandTime(Math.abs(f.vs_countdown))}`);
-      lines.push(`- ${f.status==="done"?"已完成":"已取消"}「${f.title}」，实际 ${dur}${diff}`);
+      const title=String(f.title||"").replace(/\s+/g," ").trim().slice(0,60);
+      const status=f.status==="done"?"done":"cancelled";
+      lines.push(`[task_status:${status}|${title}]`);
     });
-  }
-  if(active.length){
-    lines.push("【当前还在执行/排队的小任务】");
-    active.forEach(t=>lines.push(`- ${t.status==="running"?"进行中":"排队中"}「${t.title}」${t.countdown_seconds?`，预设 ${formatCommandTime(t.countdown_seconds)}`:""}`));
   }
   return lines.length?lines.join("\n"):"";
 }
@@ -9438,6 +9435,7 @@ function renderWechatToolTrace(m){
 }
 function addWechatToolTrace(name,args){
   try{
+    if(name==="issue_command") return null;
     const role=currentRole();
     const h=getHistory();
     const id=uid("tool");
