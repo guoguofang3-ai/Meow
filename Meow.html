@@ -9375,6 +9375,7 @@ function wechatToolMeta(name,args={}){
     write_album_note:{label:"相册随记",icon:"note",detail:args.photoId||"",verbRunning:"正在写入",verbDone:"写进了",verbError:"写入失败："},
     read_album:{label:"相册",icon:"image",detail:args.query||args.limit||"",verbRunning:"正在翻看",verbDone:"翻看了",verbError:"翻看失败："},
     read_phone_activity:{label:"手机活动",icon:"monitor",detail:args.summary?"摘要":"",verbRunning:"正在读取",verbDone:"读取了",verbError:"读取失败："},
+    look_camera:{label:"监控",icon:"camera",detail:"",verbRunning:"正在查看",verbDone:"查看了",verbError:"查看失败："},
     get_user_location:{label:"位置",icon:"location",detail:args.precision||"",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
     get_weather:{label:"天气",icon:"weather",detail:args.location||"当前位置",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
     printer_status:{label:"热敏打印机",icon:"file",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
@@ -9408,6 +9409,7 @@ function summarizeWechatToolResult(name,result){
   }
   if(name==="read_webpage") return result.imageCount?`${result.imageCount} 张图`:(result.truncated?"已截断":"");
   if(name==="view_web_image") return result.ok===false?(result.error||"失败"):"已分析";
+  if(name==="look_camera") return result.ok===false?(result.error||"失败"):(result.age?("画面 "+result.age):"已看到");
   if(name==="set_clawd_pet") return result.ok===false?(result.error||"失败"):(result.label||clawdPetVariantLabel(result.variant)||"已切换");
   if(name==="printer_status") return result.connected?`已连接${result.busy?" · 打印中":""}`:"未连接";
   if(name==="printer_print") return result.ok===false?(result.error||"失败"):`${result.chars||0}字${result.truncated?" · 已截断":""}`;
@@ -12085,7 +12087,7 @@ ${(()=>{
 - search_history(query, limit?)：搜聊天记录，user问"我们之前说过""你还记得"时用。
 - read_file(filename, offset?, length?)：读取user上传的文件。
 - read_diary(query?, category?, limit?)：读取user的私人日记。
-${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}${printerPromptLine("wechat")}
+${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}${getCameraConfig().ready?"- look_camera(question?)：看一眼user家里旧手机摄像头的实时画面，确认ta在不在、在干嘛；想看ta或被要求看时才用，别频繁。\n":""}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}${printerPromptLine("wechat")}
 - device_status()：查询外接配件（ANKNI MX-Z）连接状态。
 - device_set_mode(mode)：可根据聊天氛围主动调用，不需要user明确要求。mode填1/2/3（1轻柔 2中等 3强力）。
 - device_stop()：停止外接配件；user明确表达停止、不要、暂停、不舒服等意思时必须立即停止。
@@ -13527,6 +13529,7 @@ function describeClaudeToolCall(name,args){
   if(name==="web_search") return `搜索网页：${args.query||""}`;
   if(name==="read_webpage") return `读取网页：${args.url||args.link||""}`;
   if(name==="view_web_image") return `查看网页图片：${args.question||args.image_url||args.url||""}`;
+  if(name==="look_camera") return "查看实时监控画面";
   if(name==="printer_status") return "查询打印机状态";
   if(name==="printer_print") return `打印纸条${args.text?`：${String(args.text).slice(0,28)}`:""}`;
   if(name==="device_status") return "查询设备状态";
@@ -13641,6 +13644,9 @@ function buildClaudeToolUsePrompt(policy={}){
   }
   if(policy.phoneActivity){
     lines.push("- read_phone_activity(limit?, summary?)：查询 user iPhone 最近 App 活动记录/摘要；只在 user 要你核对刚才、监督睡觉学习工作、或明确说查监控时使用");
+  }
+  if(getCameraConfig().ready){
+    lines.push("- look_camera(question?)：看一眼 user 家里旧手机摄像头的实时画面，确认 ta 在不在、在干嘛；只在想看 ta 或被要求时使用，不要频繁");
   }
   if(policy.geoWeather){
     const gwLines=geoWeatherPromptLines("claude");
@@ -19058,6 +19064,52 @@ async function fetchPhoneActivity(args={}){
   }
 }
 
+// ===== 摄像头：复用手机活动同一个 worker 的地址+令牌 =====
+function getCameraConfig(){
+  const cfg=getPhoneActivityConfig();
+  return { baseUrl:cfg.baseUrl, token:cfg.token, ready:!!(cfg.baseUrl && cfg.token) };
+}
+function describeFrameAge(iso){
+  if(!iso) return "";
+  const t=new Date(iso).getTime();
+  if(!Number.isFinite(t)) return "";
+  const sec=Math.max(0,Math.round((Date.now()-t)/1000));
+  if(sec<60) return sec+"秒前";
+  const min=Math.round(sec/60);
+  if(min<60) return min+"分钟前";
+  return Math.round(min/60)+"小时前";
+}
+async function lookCameraTool(args={}){
+  const cfg=getCameraConfig();
+  if(!cfg.ready) return {ok:false,error:"摄像头未配置：请先在 API 设置里填好活动服务地址和 REPORT_TOKEN"};
+  const api=Storage.get("api",{});
+  if(!api.apiUrl || !api.apiKey || !api.model) return {ok:false,error:"缺少聊天 API 配置，无法识别画面"};
+  let dataUrl="", meta=null;
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),12000);
+  try{
+    const res=await fetch(cfg.baseUrl+"/cam/latest.jpg",{headers:{"Authorization":"Bearer "+cfg.token},signal:ctrl.signal});
+    if(res.status===404){ clearTimeout(timer); return {ok:false,error:"摄像头还没有画面（电脑端采集程序可能没在运行）"}; }
+    if(!res.ok){ clearTimeout(timer); return {ok:false,status:res.status,error:"取画面失败 HTTP "+res.status}; }
+    const blob=await res.blob();
+    dataUrl=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(new Error("读取画面失败"));r.readAsDataURL(blob);});
+  }catch(e){
+    clearTimeout(timer);
+    if(e.name==="AbortError") return {ok:false,error:"取画面超时"};
+    return {ok:false,error:"取画面失败："+(e.message||String(e))};
+  }
+  clearTimeout(timer);
+  try{
+    const mres=await fetch(cfg.baseUrl+"/cam/meta",{headers:{"Authorization":"Bearer "+cfg.token}});
+    if(mres.ok){ const mj=await mres.json(); meta=mj&&mj.latest?mj.latest:null; }
+  }catch(e){}
+  const age=meta?describeFrameAge(meta.at):"";
+  const question=String(args.question||"").slice(0,300) ||
+    "这是 user 家里那台旧手机摄像头拍到的实时画面。请客观、具体地描述你看到了什么：有没有人、人在干嘛、表情或姿态、周围环境、光线明暗、大概什么时间感。画面可能是横着的（顺时针转了90°），请在脑子里转正后再描述。";
+  const text=await callSimpleChatAPI(api,[{role:"user",content:[{type:"image_url",image_url:{url:dataUrl}},{type:"text",text:question}]}],.2);
+  return {ok:true, description:String(text||"").slice(0,1600), at:meta?meta.at:"", age};
+}
+
 
 function getGeoWeatherConfig(){
   const cfg=Storage.get("geoWeather",{});
@@ -19273,6 +19325,22 @@ function phoneActivityToolSchema(){
         properties:{
           limit:{type:"integer",description:"返回最近记录条数，默认20，最多100"},
           summary:{type:"boolean",description:"true 时返回摘要接口；false 时返回详细记录，默认false"}
+        },
+        required:[]
+      }
+    }
+  };
+}
+function cameraToolSchema(){
+  return {
+    type:"function",
+    function:{
+      name:"look_camera",
+      description:"看一眼 user 家里那台旧手机摄像头的实时画面，了解 user 现在在不在、在干嘛、家里什么情况。只在你真的想看看 ta、或 user 让你看、或需要确认 ta 状态时调用；不要每轮都看，避免打扰。",
+      parameters:{
+        type:"object",
+        properties:{
+          question:{type:"string",description:"可选：这次特别想从画面里确认什么，比如 ta 在不在、有没有在学习"}
         },
         required:[]
       }
@@ -19887,6 +19955,7 @@ function getClaudeTools(policy={}){
   const add=(tool)=>tools.push(tool);
   if(policy.commandTask!==false) add(commandTaskToolSchema());
   if(policy.phoneActivity) add(phoneActivityToolSchema());
+  if(getCameraConfig().ready) add(cameraToolSchema());
   if(policy.geoWeather) geoWeatherToolSchemas("claude").forEach(add);
   if(policy.web){
     add(webSearchToolSchema("claude"));
@@ -20103,6 +20172,7 @@ function getWechatTools(options={}){
   if(options.phoneActivity){
     tools.push(phoneActivityToolSchema());
   }
+  if(getCameraConfig().ready){ tools.push(cameraToolSchema()); }
   tools.push(albumToolSchema(), writeAlbumNoteToolSchema(), readAlbumToolSchema());
   printerToolSchemas("wechat").forEach(t=>tools.push(t));
   geoWeatherToolSchemas("wechat").forEach(t=>tools.push(t));
@@ -20143,6 +20213,7 @@ async function executeWechatTool(name, args){
   if(name==="read_phone_activity"){
     return await fetchPhoneActivity(args||{});
   }
+  if(name==="look_camera"){ return await lookCameraTool(args||{}); }
   if(name==="get_user_location" || name==="get_weather"){
     return await fetchGeoWeatherTool(name, args||{});
   }
@@ -20209,6 +20280,7 @@ async function executeWechatTool(name, args){
 async function executeClaudeTool(name, args){
   if(name==="issue_command"){ return issueCommandTask(args||{}, commandTaskScope()); }
   if(name==="read_phone_activity"){ return await fetchPhoneActivity(args||{}); }
+  if(name==="look_camera"){ return await lookCameraTool(args||{}); }
   if(name==="get_user_location" || name==="get_weather"){ return await fetchGeoWeatherTool(name, args||{}); }
   if(name==="web_search"){ return await webSearchTool(args||{}); }
   if(name==="read_webpage"){ return await readWebpageTool(args||{}); }
