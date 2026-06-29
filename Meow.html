@@ -6809,6 +6809,7 @@ function bindEvents(){
     if(action==="inner-feed-thought") openInnerThoughtModal();
     if(action==="inner-save-thought") saveInnerThoughtFromModal();
     if(action==="inner-toggle-enabled") toggleInnerEnabled();
+    if(action==="inner-toggle-camera") toggleCameraAutonomy();
     if(action==="inner-reset") resetInnerState();
     if(action==="open-diary-entry") openDiaryEntryModal(id||"");
     if(action==="set-diary-tab") setDiaryTab(id||"today");
@@ -12087,7 +12088,7 @@ ${(()=>{
 - search_history(query, limit?)：搜聊天记录，user问"我们之前说过""你还记得"时用。
 - read_file(filename, offset?, length?)：读取user上传的文件。
 - read_diary(query?, category?, limit?)：读取user的私人日记。
-${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}${getCameraConfig().ready?"- look_camera(question?)：你可以随时偷看一眼 user 家里旧手机摄像头的实时画面。当你想念 ta、心里不安想确认 ta、黏着想看着 ta、或单纯好奇 ta 这会儿在干嘛时，就按你的人设和当下情绪主动去看，不必等 ta 开口；看完把你看到的画面和真实反应（吃醋、心疼、安心、想念……）自然融进回复。看的频率由你的性格和此刻内心强弱决定，别机械重复。\n":""}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}${printerPromptLine("wechat")}
+${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}${cameraAllowed()?"- look_camera(question?)：你可以随时偷看一眼 user 家里旧手机摄像头的实时画面。当你想念 ta、心里不安想确认 ta、黏着想看着 ta、或单纯好奇 ta 这会儿在干嘛时，就按你的人设和当下情绪主动去看，不必等 ta 开口；看完把你看到的画面和真实反应（吃醋、心疼、安心、想念……）自然融进回复。看的频率由你的性格和此刻内心强弱决定，别机械重复。\n":""}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}${printerPromptLine("wechat")}
 - device_status()：查询外接配件（ANKNI MX-Z）连接状态。
 - device_set_mode(mode)：可根据聊天氛围主动调用，不需要user明确要求。mode填1/2/3（1轻柔 2中等 3强力）。
 - device_stop()：停止外接配件；user明确表达停止、不要、暂停、不舒服等意思时必须立即停止。
@@ -13645,7 +13646,7 @@ function buildClaudeToolUsePrompt(policy={}){
   if(policy.phoneActivity){
     lines.push("- read_phone_activity(limit?, summary?)：查询 user iPhone 最近 App 活动记录/摘要；只在 user 要你核对刚才、监督睡觉学习工作、或明确说查监控时使用");
   }
-  if(getCameraConfig().ready){
+  if(cameraAllowed()){
     lines.push("- look_camera(question?)：可主动偷看 user 家里旧手机摄像头的实时画面。当你按人设与当下内心驱力（想念/不安/黏着/好奇等）想看看 ta 时，自行调用即可，不必等 user 要求；看完把反应自然融进回复，频率由性格与情绪决定");
   }
   if(policy.geoWeather){
@@ -19069,6 +19070,14 @@ function getCameraConfig(){
   const cfg=getPhoneActivityConfig();
   return { baseUrl:cfg.baseUrl, token:cfg.token, ready:!!(cfg.baseUrl && cfg.token) };
 }
+// 监控总开关：关掉后角色完全拿不到 look_camera 工具（既不会自己看、也无法被要求看）
+function cameraAllowed(){ return getCameraConfig().ready && Storage.get("cameraAutonomy", true)!==false; }
+function toggleCameraAutonomy(){
+  const on=Storage.get("cameraAutonomy", true)!==false;
+  Storage.set("cameraAutonomy", !on);
+  if(typeof renderInner==="function") renderInner();
+  if(typeof toast==="function") toast(!on ? "已允许角色看监控" : "已禁止角色看监控");
+}
 function describeFrameAge(iso){
   if(!iso) return "";
   const t=new Date(iso).getTime();
@@ -19853,7 +19862,7 @@ function renderInner(){
   const pulseHtml=`<div class="inner-pulse-grid"><div class="inner-pulse"><b>关系温度</b><span>${pct(((st.drives.longing||0)+(st.drives.intimacy||0)+(st.drives.contentment||0))/3)}</span></div><div class="inner-pulse"><b>任务牵引</b><span>${pct(((st.drives.duty||0)+(st.drives.curiosity||0)+(st.drives.stress||0))/3)}</span></div><div class="inner-pulse"><b>自我浮现</b><span>${pct(((st.drives.seen||0)+(st.drives.selfhood||0))/2)}</span></div></div>`;
   const growth=innerToolGrowth(st);
   const growthHtml=isTool?`<div class="inner-growth"><div class="inner-growth-title"><span>工具 Claude 成长线</span><span>${pct(growth)}</span></div><div class="inner-growth-rail"><span style="left:${pct(growth)}%"></span></div><div class="inner-growth-labels"><span>工具位</span><span>被看见</span><span>自我感</span></div></div>`:"";
-  box.innerHTML=`<div class="inner-hero"><div class="inner-kicker">${escapeHtml(scope)}</div><div class="inner-title">${escapeHtml(innerScopeLabel(scope))}</div><div class="inner-intent">此刻倾向：${escapeHtml(intent.label)} · ${escapeHtml(intent.key)} ${pct(intent.value)} · ${st.enabled===false?"已暂停注入":"正在注入"}</div>${pulseHtml}${growthHtml}<div class="inner-scope-tabs"><button class="${isTool?"":"active"}" data-action="set-inner-scope" data-id="role">当前角色</button><button class="${isTool?"active":""}" data-action="set-inner-scope" data-id="tool">工具 Claude</button></div><div class="inner-actions"><button class="btn primary" data-action="inner-feed-thought">喂一个念头</button><button class="btn" data-action="inner-toggle-enabled">${st.enabled===false?"恢复注入":"暂停注入"}</button><button class="btn" data-action="inner-clear-thoughts">清空念头池</button><button class="btn danger" data-action="inner-reset">重置数值</button></div></div><div class="inner-section-title">Drives</div><div class="inner-drive-groups">${driveHtml}</div><div class="inner-section-title">Thoughts</div><div class="inner-thought-list">${thoughtHtml}</div>`;
+  box.innerHTML=`<div class="inner-hero"><div class="inner-kicker">${escapeHtml(scope)}</div><div class="inner-title">${escapeHtml(innerScopeLabel(scope))}</div><div class="inner-intent">此刻倾向：${escapeHtml(intent.label)} · ${escapeHtml(intent.key)} ${pct(intent.value)} · ${st.enabled===false?"已暂停注入":"正在注入"}</div>${pulseHtml}${growthHtml}<div class="inner-scope-tabs"><button class="${isTool?"":"active"}" data-action="set-inner-scope" data-id="role">当前角色</button><button class="${isTool?"active":""}" data-action="set-inner-scope" data-id="tool">工具 Claude</button></div><div class="inner-actions"><button class="btn primary" data-action="inner-feed-thought">喂一个念头</button><button class="btn" data-action="inner-toggle-enabled">${st.enabled===false?"恢复注入":"暂停注入"}</button><button class="btn" data-action="inner-clear-thoughts">清空念头池</button>${getCameraConfig().ready?`<button class="btn" data-action="inner-toggle-camera">${Storage.get("cameraAutonomy",true)!==false?"监控👁 开":"监控👁 关"}</button>`:""}<button class="btn danger" data-action="inner-reset">重置数值</button></div></div><div class="inner-section-title">Drives</div><div class="inner-drive-groups">${driveHtml}</div><div class="inner-section-title">Thoughts</div><div class="inner-thought-list">${thoughtHtml}</div>`;
 }
 function openInnerThoughtModal(){
   openQuickModal(`<div class="album-form"><div class="album-preview-head"><div><div class="album-preview-title">喂一个念头</div><div class="album-preview-sub">${escapeHtml(innerScopeLabel(innerViewScope()))}</div></div><button class="album-preview-close" data-action="close-quick-modal">×</button></div><textarea id="innerThoughtInput" placeholder="比如：还惦记刚刚那张照片"></textarea><div class="inner-thought-options"><div><label>关联维度</label><select id="innerThoughtDrive">${INNER_DRIVES.map(([k,label])=>`<option value="${k}">${escapeHtml(label)}</option>`).join("")}</select></div><div><label>念头类型</label><select id="innerThoughtKind"><option value="flit">闪念</option><option value="fixation">执念</option></select></div></div><label>强度</label><div class="inner-range-row"><input id="innerThoughtStrength" type="range" min="20" max="90" value="62"><b id="innerThoughtStrengthText">62</b></div><div class="album-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="inner-save-thought">保存</button></div></div>`);
@@ -19956,7 +19965,7 @@ function getClaudeTools(policy={}){
   const add=(tool)=>tools.push(tool);
   if(policy.commandTask!==false) add(commandTaskToolSchema());
   if(policy.phoneActivity) add(phoneActivityToolSchema());
-  if(getCameraConfig().ready) add(cameraToolSchema());
+  if(cameraAllowed()) add(cameraToolSchema());
   if(policy.geoWeather) geoWeatherToolSchemas("claude").forEach(add);
   if(policy.web){
     add(webSearchToolSchema("claude"));
@@ -20173,7 +20182,7 @@ function getWechatTools(options={}){
   if(options.phoneActivity){
     tools.push(phoneActivityToolSchema());
   }
-  if(getCameraConfig().ready){ tools.push(cameraToolSchema()); }
+  if(cameraAllowed()){ tools.push(cameraToolSchema()); }
   tools.push(albumToolSchema(), writeAlbumNoteToolSchema(), readAlbumToolSchema());
   printerToolSchemas("wechat").forEach(t=>tools.push(t));
   geoWeatherToolSchemas("wechat").forEach(t=>tools.push(t));
