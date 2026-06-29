@@ -21355,8 +21355,18 @@ function getReadingHighlights(){
   return list;
 }
 function saveReadingHighlights(list){ Storage.set("readingHighlights", Array.isArray(list)?list:[]); }
-function getReadingSettings(){ return Object.assign({font:"serif",size:100,pageChars:900}, Storage.get("readingSettings", {})||{}); }
-function saveReadingSettings(settings){ Storage.set("readingSettings", Object.assign({font:"serif",size:100,pageChars:900}, settings||{})); }
+function getReadingSettings(){
+  const st=Object.assign({font:"serif",size:100,pageChars:620}, Storage.get("readingSettings", {})||{});
+  st.size=Math.max(90, Math.min(120, Number(st.size||100)||100));
+  st.pageChars=Math.max(380, Math.min(820, Number(st.pageChars||620)||620));
+  return st;
+}
+function saveReadingSettings(settings){
+  const st=Object.assign({font:"serif",size:100,pageChars:620}, settings||{});
+  st.size=Math.max(90, Math.min(120, Number(st.size||100)||100));
+  st.pageChars=Math.max(380, Math.min(820, Number(st.pageChars||620)||620));
+  Storage.set("readingSettings", st);
+}
 function setReadingTab(tab){ Storage.set("readingTab", tab||"home"); renderReading(); }
 function clampReadingProgress(n){ n=Number(n)||0; return Math.max(0,Math.min(100,Math.round(n))); }
 function readingNormalizeText(text){
@@ -21389,9 +21399,18 @@ function readingPagesOfBook(book){
   if(!book || !book.content) return [];
   const st=getReadingSettings();
   const size=Number(st.size||100)||100;
-  const configured=Number(st.pageChars||book.pageSize||900)||900;
-  const scaled=Math.round(configured*(100/Math.max(90,size)));
-  return readingChunkContent(book.content, Math.max(620, Math.min(1400, scaled)));
+  const configured=Number(st.pageChars||book.pageSize||620)||620;
+  const vw=Math.max(320, Math.min(900, window.innerWidth||390));
+  const vh=Math.max(520, Math.min(1200, window.innerHeight||720));
+  const fontPx=18*(size/100);
+  const linePx=fontPx*2.06;
+  const usableW=Math.max(220, vw-60);
+  const usableH=Math.max(260, vh-150);
+  const charsPerLine=Math.max(10, Math.floor(usableW/(fontPx*.98)));
+  const linesPerPage=Math.max(8, Math.floor(usableH/linePx));
+  const viewportFit=Math.floor(charsPerLine*linesPerPage*.88);
+  const scaled=Math.round(Math.min(configured, viewportFit)*(100/Math.max(90,size)));
+  return readingChunkContent(book.content, Math.max(360, Math.min(1100, scaled)));
 }
 function readingBookHasRemoteSource(book){
   return !!(book && (book.sourceUrl || book.remoteUrl || book.remoteContentUrl));
@@ -22143,7 +22162,7 @@ function renderReadingStyle(box){
       <div class="reading-style-sub">这里的字体只影响「书屿」阅读角，不会改掉微信和其它 App。想全局换字体，还是去美化中心。</div>
       <div class="reading-font-grid">${fonts.map(f=>`<button class="reading-font-choice ${st.font===f[0]?"active":""}" data-action="reading-set-font" data-id="${f[0]}"><b style="font-family:${f[0]==="system"?'-apple-system,BlinkMacSystemFont,&quot;PingFang SC&quot;,sans-serif':f[0]==="round"?'&quot;PingFang SC&quot;,&quot;Microsoft YaHei&quot;,sans-serif':f[0]==="kai"?'&quot;Kaiti SC&quot;,&quot;KaiTi&quot;,serif':f[0]==="song"?'&quot;Songti SC&quot;,&quot;SimSun&quot;,serif':'Georgia,&quot;Times New Roman&quot;,serif'}">${escapeHtml(f[1])}</b><span>${escapeHtml(f[2])}</span></button>`).join("")}</div>
       <div class="reading-size-row"><span>字号</span><input id="readingSizeInput" type="range" min="90" max="120" value="${Number(st.size||100)}" oninput="document.getElementById('readingSizeValue').textContent=this.value+'%'"><b id="readingSizeValue">${Number(st.size||100)}%</b></div>
-      <div class="reading-size-row"><span>每页字数</span><input id="readingPageCharsInput" type="range" min="650" max="1200" step="50" value="${Number(st.pageChars||900)}" oninput="document.getElementById('readingPageCharsValue').textContent=this.value"><b id="readingPageCharsValue">${Number(st.pageChars||900)}</b></div>
+      <div class="reading-size-row"><span>每页字数</span><input id="readingPageCharsInput" type="range" min="380" max="820" step="20" value="${Number(st.pageChars||620)}" oninput="document.getElementById('readingPageCharsValue').textContent=this.value"><b id="readingPageCharsValue">${Number(st.pageChars||620)}</b></div>
       <div class="reading-preview-text">“把喜欢的句子画下来，就像在今天的边缘留一盏很小的灯。”</div>
       <div class="reading-actions"><button class="primary-soft" data-action="save-reading-style">保存阅读设置</button><button data-action="open-app" data-id="theme">去美化中心换全局字体</button></div>
     </div>`;
@@ -22159,7 +22178,7 @@ function setReadingFont(font){
 function saveReadingSettingsFromForm(){
   const st=getReadingSettings();
   st.size=Number($("#readingSizeInput")?.value||100)||100;
-  st.pageChars=Number($("#readingPageCharsInput")?.value||900)||900;
+  st.pageChars=Number($("#readingPageCharsInput")?.value||620)||620;
   saveReadingSettings(st);
   renderReading();
   toast("阅读设置已保存");
@@ -22443,6 +22462,7 @@ function setReadingLiveSize(value){
   const input=document.getElementById("readingReaderSizeInput");
   const label=input?.nextElementSibling;
   if(label) label.textContent=st.size+"%";
+  renderReading();
 }
 function hideReadingSelectionMenu(){
   document.getElementById("readingSelectionPop")?.classList.remove("show");
