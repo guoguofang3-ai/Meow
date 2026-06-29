@@ -21374,7 +21374,7 @@ function readingNormalizeText(text){
 }
 function readingChunkContent(text, size){
   const clean=readingNormalizeText(text);
-  const limit=Math.max(720, Math.min(1800, Number(size||1150)||1150));
+  const limit=Math.max(260, Math.min(1800, Number(size||620)||620));
   if(!clean) return [];
   const pages=[];
   let cur="";
@@ -21400,6 +21400,7 @@ function readingPagesOfBook(book){
   const st=getReadingSettings();
   const size=Number(st.size||100)||100;
   const configured=Number(st.pageChars||book.pageSize||620)||620;
+  const calibrated=Number(Storage.get("readingPageFitChars", 0)||0);
   const vw=Math.max(320, Math.min(900, window.innerWidth||390));
   const vh=Math.max(520, Math.min(1200, window.innerHeight||720));
   const fontPx=18*(size/100);
@@ -21409,8 +21410,9 @@ function readingPagesOfBook(book){
   const charsPerLine=Math.max(10, Math.floor(usableW/(fontPx*.98)));
   const linesPerPage=Math.max(8, Math.floor(usableH/linePx));
   const viewportFit=Math.floor(charsPerLine*linesPerPage*.88);
-  const scaled=Math.round(Math.min(configured, viewportFit)*(100/Math.max(90,size)));
-  return readingChunkContent(book.content, Math.max(360, Math.min(1100, scaled)));
+  const base=calibrated>0 ? Math.min(configured, calibrated) : Math.min(configured, viewportFit);
+  const scaled=Math.round(base*(100/Math.max(90,size)));
+  return readingChunkContent(book.content, Math.max(260, Math.min(1100, scaled)));
 }
 function readingBookHasRemoteSource(book){
   return !!(book && (book.sourceUrl || book.remoteUrl || book.remoteContentUrl));
@@ -22148,6 +22150,29 @@ function renderReadingReader(box, books){
       ${activeQ?`<div class="reading-reader-menu-grid" style="margin-top:8px"><button data-action="reading-clear-active-query">关闭高亮</button></div>`:""}
     </div>
     </div>`;
+  setTimeout(()=>calibrateReadingPageFit(cur.id), 60);
+}
+
+function calibrateReadingPageFit(id){
+  const el=document.getElementById("readingReaderText");
+  if(!el) return;
+  const overflow=el.scrollHeight-el.clientHeight;
+  if(overflow<=8) return;
+  const st=getReadingSettings();
+  const oldFit=Number(Storage.get("readingPageFitChars", st.pageChars)||st.pageChars);
+  const ratio=Math.max(.45, Math.min(.92, (el.clientHeight-18)/Math.max(1,el.scrollHeight)));
+  const next=Math.max(260, Math.floor(Math.min(oldFit, st.pageChars)*ratio*.94));
+  if(next>=oldFit-8) return;
+  Storage.set("readingPageFitChars", next);
+  const list=getReadingBooks();
+  const b=list.find(x=>x.id===id) || readingCurrentBook(list);
+  if(b){
+    const pages=readingPagesOfBook(b);
+    b.readerPage=Math.max(0, Math.min(pages.length-1, Number(b.readerPage||0)||0));
+    b.progress=readingBookProgress(b);
+    saveReadingBooks(list);
+  }
+  renderReading();
 }
 
 function renderReadingStyle(box){
@@ -22180,6 +22205,7 @@ function saveReadingSettingsFromForm(){
   st.size=Number($("#readingSizeInput")?.value||100)||100;
   st.pageChars=Number($("#readingPageCharsInput")?.value||620)||620;
   saveReadingSettings(st);
+  Storage.set("readingPageFitChars", 0);
   renderReading();
   toast("阅读设置已保存");
 }
@@ -22458,6 +22484,7 @@ function setReadingLiveSize(value){
   const st=getReadingSettings();
   st.size=Math.max(90, Math.min(120, Number(value)||100));
   saveReadingSettings(st);
+  Storage.set("readingPageFitChars", 0);
   applyReadingSettings();
   const input=document.getElementById("readingReaderSizeInput");
   const label=input?.nextElementSibling;
