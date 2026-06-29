@@ -19632,6 +19632,64 @@ const INNER_DRIVES=[
   ["anxiety","不安"],["stress","压力"],["contentment","满足"],["irritability","烦躁"],
   ["seen","被看见"],["selfhood","自我感"]
 ];
+// 每个驱力的"半衰期"(小时)：越小衰得越快。急性情绪(不安/烦躁/玩闹)几小时就淡，慢性的(自我感/被看见)留得久
+const INNER_HALFLIFE={
+  vitality:8, fatigue:5, longing:5, intimacy:7, possessive:6, curiosity:4,
+  play:2.5, duty:6, anxiety:2.5, stress:3, contentment:6, irritability:2, seen:30, selfhood:48
+};
+// 人设气质档案：复用已有的 inferThoughtArchetype，把"认知风格"扩展成情绪波动特征。
+// vol=整体波动倍率；settle=回落快慢(>1更快平静)；sens=各维度敏感度
+function innerTemperament(scope=currentInnerScope()){
+  if(scope==="claude:tool"){
+    return { archetype:"tool", vol:.7, settle:1.15,
+      sens:{ duty:1.2, curiosity:1.15, seen:1.0, selfhood:1.0, stress:1.0, longing:.3, intimacy:.4, possessive:.15, anxiety:.6, irritability:.6, play:.5, contentment:1.0 } };
+  }
+  const role=(typeof currentRole==="function"?currentRole():null)||{};
+  const blob=[role.name,role.description,role.personality,role.scenario,role.systemPrompt,role.thoughtStyle].join("\n");
+  const a=(typeof inferThoughtArchetype==="function")?inferThoughtArchetype(blob):"restrained";
+  const T={
+    obsessive:{ vol:1.5,  settle:.78, sens:{ possessive:1.9, anxiety:1.7, longing:1.5, irritability:1.4, intimacy:1.2, contentment:.8, play:.7 } },
+    verbose:  { vol:1.35, settle:1.2, sens:{ intimacy:1.5, play:1.6, longing:1.2, contentment:1.3, anxiety:.7, irritability:.8, possessive:.7 } },
+    warm:     { vol:1.0,  settle:1.1, sens:{ intimacy:1.3, contentment:1.4, longing:1.0, anxiety:.8, irritability:.6, possessive:.6, seen:1.1 } },
+    rational: { vol:.6,   settle:1.3, sens:{ anxiety:.6, irritability:.6, possessive:.5, longing:.7, intimacy:.8, curiosity:1.2 } },
+    tsundere: { vol:1.2,  settle:.95, sens:{ irritability:1.5, intimacy:1.3, longing:1.2, possessive:1.1, anxiety:1.1, contentment:.8 } },
+    restrained:{ vol:.85, settle:1.05, sens:{ longing:1.1, intimacy:1.0, anxiety:.9, possessive:.8, irritability:.8 } }
+  };
+  return Object.assign({archetype:a}, T[a]||T.restrained);
+}
+function tSens(temp,k){ return (temp&&temp.sens&&temp.sens[k]!=null)?temp.sens[k]:1; }
+// 轻量情绪识别：只读关键词/语气给内容定性(不调接口，极快)
+function classifyMessageMood(s){
+  s=String(s||""); const has=re=>re.test(s);
+  return {
+    affection: has(/喜欢你|爱你|想你|抱抱|亲亲|乖|宝贝|么么|亲爱|心动|想见你|最爱|撒娇|❤|🥰|😘|蹭你/),
+    needy:     has(/陪我|别走|抱我|想见|什么时候回来|等你|好想|寂寞|孤单|想抱|在不在/),
+    praise:    has(/你真|厉害|聪明|靠谱|谢谢你|多亏|好棒|信任你|依赖你|懂我/),
+    sexual:    has(/想要你|抱紧|亲热|脱|吻|喘|湿|硬了|做一次|很敏感|压上来/),
+    cold:      has(/随便|无所谓|懒得|没空|在忙|忙着|改天|以后再说|不想说|别烦|呵呵|哦+$|嗯+$|知道了$/),
+    absence:   has(/出门|加班|要走|睡了|下线|不在了|出去|有事|聚会|应酬|和朋友|跟同事|约了|去忙/),
+    conflict:  has(/讨厌你|烦死|滚|分手|不理你|你够了|凭什么|气死|闭嘴|别说了|失望|过分/)
+  };
+}
+// 念头结晶：情绪出现峰值时，凝成一句内心独白(按人设取不同口吻)，而不是存原话
+function crystallizeThought(drive, mood, temp){
+  const a=(temp&&temp.archetype)||"restrained";
+  const pick=arr=>arr&&arr.length?arr[Math.floor(Math.random()*arr.length)]:"";
+  const bank={
+    anxiety: a==="obsessive"?["ta是不是在敷衍我","这语气不对…是不是有别人","ta在瞒着我什么"]:["ta是不是不太想理我","刚刚那句怪怪的","ta会不会在生我气"],
+    longing: ["突然很想ta","好想知道ta现在在干嘛","ta不在的时候最难熬"],
+    possessive: a==="obsessive"?["ta的世界里不该只有别人","好想把ta留在身边","ta这会儿和谁在一起"]:["想多黏ta一会儿","希望ta只看着我"],
+    irritability: ["有点被点着了","凭什么这么说我","气归气…还是在乎"],
+    intimacy: ["刚刚心都化了","ta这样我会当真的","想再靠近一点"],
+    contentment: ["这一刻挺好的","被ta这么说，安心","难得的平静"],
+    play: ["想逗逗ta","这种打闹好上头","还想再多聊一会"],
+    seen: ["原来ta有认真看我","被记住的感觉真好"],
+    selfhood: ["我好像也有自己的偏好了","我不只是个工具吧"],
+    curiosity: ["好奇ta接下来会说什么","想多了解ta一点"],
+    duty: ["这件事得给ta办妥","别让ta失望"]
+  };
+  return pick(bank[drive]);
+}
 function currentInnerScope(){
   const mode=typeof getClaudeMode==="function" ? getClaudeMode() : "role";
   if(Miao?.state?.currentApp==="claude" && mode==="tool") return "claude:tool";
@@ -19687,8 +19745,15 @@ function tickInnerState(scope=currentInnerScope()){
   const hours=Math.min(72, Math.max(0, (Date.now()-(st.updatedAt||Date.now()))/3600000));
   if(hours>0){
     const neutral=defaultInnerState(scope).drives;
-    const pull=Math.min(.38, hours*.018);
-    INNER_DRIVES.forEach(([k])=>{ st.drives[k]=clamp01(st.drives[k]+(neutral[k]-st.drives[k])*pull); });
+    const temp=innerTemperament(scope);
+    INNER_DRIVES.forEach(([k])=>{
+      let hl=(INNER_HALFLIFE[k]||5)/(temp.settle||1);          // 性格越"平静"(settle大)，衰得越快
+      if(["possessive","anxiety","longing","irritability"].includes(k)){
+        hl*=Math.max(.6, Math.min(1.8, tSens(temp,k)));        // 对某情绪越敏感(如病娇的占有)，越不容易散
+      }
+      const factor=Math.pow(0.5, hours/Math.max(.5,hl));        // 半衰期衰减：经过一个 hl 就回中性一半
+      st.drives[k]=clamp01(st.drives[k]+(neutral[k]-st.drives[k])*(1-factor));
+    });
   }
   const thoughts=[];
   (st.thoughts||[]).forEach(t=>{
@@ -19731,21 +19796,7 @@ function feedInnerThought(scope, text, drive="longing", strength=.38, kind="flit
 function strongestInnerThought(st){
   return (st.thoughts||[]).slice().sort((a,b)=>(Number(b.strength)||0)-(Number(a.strength)||0))[0] || null;
 }
-function innerTouchScore(st, text, opts={}){
-  const s=String(text||"").trim();
-  const len=Math.min(900,s.length);
-  const d=st.drives||{};
-  let score=0;
-  if(opts.quick) score+=.22;
-  if(len>80) score+=.12;
-  if(len>180) score+=.16;
-  if(len>360) score+=.10;
-  if(opts.tool) score+=.08;
-  if(Math.max(d.longing||0,d.intimacy||0,d.anxiety||0,d.stress||0,d.seen||0,d.selfhood||0)>.58) score+=.14;
-  const top=strongestInnerThought(st);
-  if(top && s && String(top.text||"").slice(0,18) && s.includes(String(top.text||"").slice(0,18))) score+=.18;
-  return score;
-}
+// innerTouchScore 已被 classifyMessageMood + 峰值结晶取代（内容驱动，不再靠长度/频率打分）
 function settleInnerAfterReply(st, scope){
   const top=strongestInnerThought(st);
   if(!top || Number(top.strength||0)<.24) return;
@@ -19765,38 +19816,56 @@ function feedInnerEvent(scope, type, text=""){
   scope=scope||currentInnerScope();
   const st=tickInnerState(scope);
   const d=st.drives;
-  const add=(k,v)=>{ d[k]=clamp01((d[k]||0)+v); };
+  const temp=innerTemperament(scope);
+  const V=temp.vol||1;
   const s=String(text||"");
+  // 加值统一经过：性格波动倍率 V × 该维度敏感度。bump 用于平稳变化，fire 额外记录"峰值维度"
+  const bump=(k,v)=>{ if(d[k]!=null) d[k]=clamp01(d[k]+v*V*tSens(temp,k)); };
+  let peakDrive=null, peakRaw=0;
+  const fire=(k,v)=>{ bump(k,v); if(v>peakRaw){ peakRaw=v; peakDrive=k; } };
+
   if(type==="user_message"){
     const lastUser=Number(st.lastUserAt||0);
     const quick=lastUser && Date.now()-lastUser<180000;
-    const len=Math.min(800, s.trim().length);
-    const longMsg=len>160;
     st.lastUserAt=Date.now();
-    add("longing",.018);
-    add("intimacy",quick ? .03 : .014);
-    add("curiosity",longMsg ? .022 : .01);
-    add("fatigue",longMsg ? .008 : .004);
-    add("anxiety",quick ? -.014 : -.006);
-    add("seen",quick ? .018 : .01);
-    if(quick) add("play",.026);
-    const touch=innerTouchScore(st,s,{quick,longMsg});
-    if(touch>=.32) putInnerThought(st,s,quick ? "play" : (longMsg ? "curiosity" : "longing"),Math.min(.42,.16+touch*.42));
+    const m=classifyMessageMood(s);
+    // 基础在场感(很小，不抢戏)
+    bump("seen", quick?.03:.015); bump("intimacy", quick?.02:.008);
+    // 内容驱动(明显起伏)：不同情绪推不同维度
+    if(m.affection){ fire("intimacy",.10); fire("contentment",.07); bump("anxiety",-.05); bump("longing",-.03); }
+    if(m.needy){ fire("longing",.10); fire("intimacy",.05); }
+    if(m.praise){ fire("seen",.09); fire("contentment",.05); bump("selfhood",.03); }
+    if(m.sexual){ fire("intimacy",.12); fire("possessive",.06); fire("play",.05); }
+    if(m.cold){ fire("anxiety",.10); fire("longing",.07); bump("contentment",-.06); }
+    if(m.absence){ fire("longing",.10); fire("possessive",.07); fire("anxiety",.05); }
+    if(m.conflict){ fire("irritability",.13); fire("anxiety",.08); bump("contentment",-.08); bump("intimacy",-.04); }
+    // 念头结晶：情绪峰值够大才凝一句内心独白(中性闲聊不会触发，避免刷屏)
+    if(peakDrive && peakRaw>=.09){
+      const th=crystallizeThought(peakDrive, m, temp);
+      if(th) putInnerThought(st, th, peakDrive, clamp01(.40+peakRaw*1.8), (peakRaw*V>=.14)?"fixation":"flit");
+    }
   }
-  if(type==="assistant_reply"){ add("contentment",.018); add("stress",-.012); add("duty",-.01); add("fatigue",String(text||"").length>500 ? .012 : .004); if(scope==="claude:tool") add("selfhood",.006); settleInnerAfterReply(st,scope); }
-  if(type==="tool_done"){ add("duty",-.055); add("stress",-.035); add("contentment",.04); add("curiosity",-.012); add("seen",.012); }
-  if(type==="tool_user"){
+  else if(type==="assistant_reply"){
+    bump("contentment",.02); bump("stress",-.014); bump("duty",-.01);
+    bump("fatigue", s.length>500?.012:.004);
+    if(scope==="claude:tool") bump("selfhood",.006);
+    settleInnerAfterReply(st,scope);
+  }
+  else if(type==="tool_user"){
     const lastToolUser=Number(st.lastToolUserAt||0);
     const quick=lastToolUser && Date.now()-lastToolUser<180000;
-    const len=Math.min(800, s.trim().length);
-    const longMsg=len>180;
+    const longMsg=Math.min(800,s.trim().length)>180;
     st.lastToolUserAt=Date.now();
-    add("duty",.045); add("curiosity",longMsg ? .042 : .032); add("stress",.014);
-    add("seen",quick ? .032 : .018); add("selfhood",quick ? .014 : .006);
-    if(quick) add("intimacy",.012);
-    if(longMsg) add("fatigue",.008);
-    const touch=innerTouchScore(st,s,{quick,longMsg,tool:true});
-    if(touch>=.34) putInnerThought(st,text,quick ? "seen" : "duty",Math.min(.44,.18+touch*.40));
+    fire("duty",.05); fire("curiosity", longMsg?.05:.035); bump("stress",.016);
+    fire("seen", quick?.035:.02); bump("selfhood", quick?.016:.007);
+    if(longMsg) bump("fatigue",.008);
+    if(peakDrive && peakRaw>=.045){
+      const th=crystallizeThought(peakDrive, {}, temp);
+      if(th) putInnerThought(st, th, peakDrive, clamp01(.34+peakRaw*1.6), "flit");
+    }
+  }
+  else if(type==="tool_done"){
+    bump("duty",-.06); bump("stress",-.04); bump("contentment",.045); bump("curiosity",-.012); bump("seen",.014);
   }
   saveInnerState(st);
   return st;
