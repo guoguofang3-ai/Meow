@@ -9407,7 +9407,7 @@ function summarizeWechatToolResult(name,result){
   }
   if(name==="read_webpage") return result.imageCount?`${result.imageCount} 张图`:(result.truncated?"已截断":"");
   if(name==="view_web_image") return result.ok===false?(result.error||"失败"):"已分析";
-  if(name==="look_camera") return result.ok===false?(result.error||"失败"):(result.age?("画面 "+result.age):"已看到");
+  if(name==="look_camera") return result.ok===false?(result.error||"失败"):(result.live?"实时现拍":(result.age?("画面 "+result.age):"已看到"));
   if(name==="set_clawd_pet") return result.ok===false?(result.error||"失败"):(result.label||clawdPetVariantLabel(result.variant)||"已切换");
   if(name==="printer_status") return result.connected?`已连接${result.busy?" · 打印中":""}`:"未连接";
   if(name==="printer_print") return result.ok===false?(result.error||"失败"):`${result.chars||0}字${result.truncated?" · 已截断":""}`;
@@ -19091,6 +19091,24 @@ async function lookCameraTool(args={}){
   if(!cfg.ready) return {ok:false,error:"摄像头未配置：请先在 API 设置里填好活动服务地址和 REPORT_TOKEN"};
   const api=Storage.get("api",{});
   if(!api.apiUrl || !api.apiKey || !api.model) return {ok:false,error:"缺少聊天 API 配置，无法识别画面"};
+  // 1) 按"拍照铃"，请电脑现拍一张当前画面
+  let requestAt=0;
+  try{
+    const rq=await fetch(cfg.baseUrl+"/cam/request",{method:"POST",headers:{"Authorization":"Bearer "+cfg.token}});
+    if(rq.ok){ const rj=await rq.json(); requestAt=Number(rj.at)||0; }
+  }catch(e){}
+  // 2) 等"请求之后才拍的"新画面传上来（最多约18秒；电脑没开就退而取现有的）
+  let live=false;
+  if(requestAt){
+    const deadline=Date.now()+18000;
+    while(Date.now()<deadline){
+      await new Promise(r=>setTimeout(r,1600));
+      try{
+        const mr=await fetch(cfg.baseUrl+"/cam/meta",{headers:{"Authorization":"Bearer "+cfg.token}});
+        if(mr.ok){ const mj=await mr.json(); const at=mj&&mj.latest?new Date(mj.latest.at).getTime():0; if(at>=requestAt){ live=true; break; } }
+      }catch(e){}
+    }
+  }
   let dataUrl="", meta=null;
   const ctrl=new AbortController();
   const timer=setTimeout(()=>ctrl.abort(),30000);
@@ -19115,7 +19133,7 @@ async function lookCameraTool(args={}){
     "这是 user 家里那台旧手机摄像头拍到的实时画面。请客观、具体地描述你看到了什么：有没有人、人在干嘛、表情或姿态、周围环境、光线明暗、大概什么时间感。画面可能是横着的（顺时针转了90°），请在脑子里转正后再描述。";
   const text=await callSimpleChatAPI(api,[{role:"user",content:[{type:"image_url",image_url:{url:dataUrl}},{type:"text",text:question}]}],.2);
   try{ if(typeof nudgeInnerFromTrace==="function") nudgeInnerFromTrace(currentInnerScope(), "偷看了一眼 ta 的实时画面", "intimacy", .16, "flit"); }catch(e){}
-  return {ok:true, description:String(text||"").slice(0,1600), at:meta?meta.at:"", age};
+  return {ok:true, live, description:String(text||"").slice(0,1600), at:meta?meta.at:"", age, freshness: live?"实时现拍":("非实时，画面约"+(age||"未知")+"（电脑采集器可能没运行）")};
 }
 
 
