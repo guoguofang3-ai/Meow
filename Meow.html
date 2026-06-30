@@ -10277,7 +10277,10 @@ function bindActionSheetOnce(){
     if(e.target===mask || e.target.closest('[data-action-sheet-cancel]')) closeActionSheet();
   });
   const sheet=$('#actionSheet');
-  if(sheet) sheet.addEventListener('click',(e)=>e.stopPropagation());
+  if(sheet) sheet.addEventListener('click',(e)=>{
+    if(e.target.closest('[data-action-sheet-cancel]')){ closeActionSheet(); return; }
+    e.stopPropagation();
+  });
   list.addEventListener('click',(e)=>{
     const btn=e.target.closest('[data-action-sheet-index]');
     if(!btn) return;
@@ -17520,7 +17523,7 @@ function openLinkInput(){
 <input id="linkTitleInput" placeholder="标题" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:13px;box-sizing:border-box">
 <textarea id="linkBodyInput" placeholder="正文内容" style="width:100%;height:70px;resize:none;border-radius:8px;border:1px solid #ddd;padding:7px;font-size:13px;box-sizing:border-box;margin-bottom:8px"></textarea>
 <textarea id="linkCommentsInput" placeholder="评论（可选，每条用换行分隔，格式：昵称:内容）" style="width:100%;height:50px;resize:none;border-radius:8px;border:1px solid #ddd;padding:7px;font-size:12px;box-sizing:border-box;margin-bottom:10px"></textarea>
-<button class="btn primary" data-action="submit-link-input" style="width:100%">发送</button>`);
+<div style="display:flex;gap:8px"><button class="btn" data-action="close-quick-modal" style="flex:1">取消</button><button class="btn primary" data-action="submit-link-input" style="flex:1">发送</button></div>`);
 }
 function submitLinkInput(){
   const platform = document.getElementById("linkPlatformSel")?.value||"论坛";
