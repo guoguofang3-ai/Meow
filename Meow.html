@@ -20019,7 +20019,7 @@ function stripInnerMoodBlock(text){
   return String(extracted||"").replace(/\[mood\][\s\S]*$/i,"").replace(/\n{3,}/g,"\n\n").trim();
 }
 function buildInnerMoodInstruction(){
-  return `\n\n[private mood vector]\nAfter your visible reply, append one hidden block for the current user turn:\n[mood]{"affection":0,"neediness":0,"praise":0,"sexual_tension":0,"coldness":0,"absence":0,"conflict":0,"curiosity":0,"playfulness":0,"stress":0,"task_pull":0}[/mood]\nUse 0..1 numbers from semantic judgment, not keyword matching. This block is private and will be stripped before display. Do not mention it.`;
+  return `\n\n【隐藏情绪打分 ·  务必先照常回复，再追加】\n极重要：你必须完全保持平时的回复方式——该用 [语音:...]、[发送图片:...]、表情包、[分享音乐:...]、[主动转账]、[引用] 等任何指令时，一律照常使用，语气、格式、分条都不变。这个打分只是附加项，绝不能让它改变或替代你正常的回复（尤其不要因此就不发语音了）。\n仅在你整段回复的最末尾、另起一行，追加这个隐藏块（会被自动去掉、不显示给 user，也不要提到它）：\n[mood]{"affection":0,"neediness":0,"praise":0,"sexual_tension":0,"coldness":0,"absence":0,"conflict":0,"curiosity":0,"playfulness":0,"stress":0,"task_pull":0}[/mood]\n数值取 0~1，按你对这一轮对话语义的真实判断打分（不是关键词匹配）。`;
 }
 // 念头结晶：情绪出现峰值时，凝成一句内心独白(按人设取不同口吻)，而不是存原话
 function crystallizeThought(drive, mood, temp){
