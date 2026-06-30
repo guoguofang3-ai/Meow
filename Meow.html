@@ -9395,6 +9395,31 @@ function attachSelfCheck(result, note){
   if(note && result && typeof result==="object" && !result.error) result.self_check=note;
   return result;
 }
+// "查/搜/读"类工具：让角色知道本轮已经查过哪些、别围着同一件事反复搜
+const LOOKUP_AWARE_TOOLS={
+  web_search:"联网搜了", read_webpage:"读了网页", view_web_image:"看了网页图",
+  search_history:"翻了聊天记录", read_memory:"读了记忆", read_diary:"读了日记",
+  read_album:"翻了相册", read_phone_activity:"查了手机活动"
+};
+function lookupToolQueryDesc(name, args={}){
+  if(name==="web_search") return String(args.query||"").slice(0,40);
+  if(name==="read_webpage") return String(args.url||args.link||"").slice(0,50);
+  if(name==="view_web_image") return String(args.question||args.image_url||args.url||"").slice(0,40);
+  if(name==="read_phone_activity") return args.summary?"摘要":"记录";
+  return String(args.query||args.category||"").slice(0,40);
+}
+function lookupAwarenessNote(name, turnSeen, turnQueries){
+  const label=LOOKUP_AWARE_TOOLS[name]; if(!label) return "";
+  let n="（自觉提醒：你刚刚"+label;
+  const q=turnQueries[turnQueries.length-1]; if(q) n+="「"+q+"」";
+  n+="，结果已在上面。";
+  if(turnQueries.length>1) n+="本轮你已经查过："+turnQueries.map(x=>"「"+x+"」").join("、")+"。";
+  n+="别围着同一件事反复搜、也别换个说法绕回同一主题；只要够回答 user 了，就直接基于已有结果回复，不要再调用。";
+  n+="）";
+  return n;
+}
+// 完全相同参数的查/搜 重复≥3次：结果不会变，直接拦下让它停
+function shouldStopRepeatLookup(name, turnSeen){ return !!LOOKUP_AWARE_TOOLS[name] && turnSeen>=3; }
 function wechatToolMeta(name,args={}){
   args=args||{};
   const map={
@@ -11919,6 +11944,7 @@ async function callAI(api, history, onChunk, extraSystem){
   body={...body, tools:wechatTools, tool_choice:"auto"};
   let loopMessages=[...messages];
   const seenWechatTools=new Map();
+  const lookupQueriesWT=[];
   for(let i=0;i<12;i++){
     let res=await fetch(url,{method:"POST",headers,body:JSON.stringify({...body,messages:loopMessages})});
     let text=await res.text();
@@ -11959,11 +11985,19 @@ async function callAI(api, history, onChunk, extraSystem){
         if(shouldStopRepeatLook(tname, seen)){
           result={stopped:true, self_check:"你这一轮已经反复用过这个了，停下来，直接用你的话回复 user，不要再调用工具。"};
           updateWechatToolTrace(traceId, "done", "已看够");
+        } else if(shouldStopRepeatLookup(tname, seen)){
+          result={stopped:true, self_check:"你用完全相同的参数查/搜了"+seen+"次了，结果不会变。请立刻停止搜索，直接基于上面已有的结果回复 user。"};
+          updateWechatToolTrace(traceId, "done", "已搜过");
         } else {
           result=await executeWechatTool(tname, args);
           const note=summarizeWechatToolResult(tname, result);
           updateWechatToolTrace(traceId, result&&result.error?"error":"done", note);
           attachSelfCheck(result, recordToolUseAndNote(tname, seen));
+          if(LOOKUP_AWARE_TOOLS[tname] && result && typeof result==="object" && !result.error){
+            const d=lookupToolQueryDesc(tname, args); if(d && !lookupQueriesWT.includes(d)) lookupQueriesWT.push(d);
+            const ln=lookupAwarenessNote(tname, seen, lookupQueriesWT);
+            if(ln) result.self_check=(result.self_check?result.self_check+" ":"")+ln;
+          }
         }
       }catch(e){
         result={error:e.message||String(e)};
@@ -15228,6 +15262,7 @@ async function callClaudeAI(api, ops){
   const maxOps=policy.allToolsOpen ? CLAUDE_TOOL_MAX_OPS_FILEMODE : CLAUDE_TOOL_MAX_OPS_DEFAULT;
   let opCount=0;
   const seenToolCalls=new Map();
+  const lookupQueriesCL=[];
   for(let i=0;i<maxRounds;i++){
     const {data,msg}=await requestChat({...body,messages:loopMessages});
     if(!msg) break;
@@ -15258,9 +15293,16 @@ async function callClaudeAI(api, ops){
           result={error:"检测到重复工具调用", hint:"同一个工具和参数已经重复调用很多次。请换关键词/换 offset，或基于已有结果直接回答。"};
         } else if(shouldStopRepeatLook(toolName, seen)){
           result={stopped:true, self_check:"你这一轮已经反复用过这个了，停下来直接回复 user，不要再调用工具。"};
+        } else if(shouldStopRepeatLookup(toolName, seen)){
+          result={stopped:true, self_check:"你用完全相同的参数查/搜了"+seen+"次了，结果不会变。请停止，直接基于上面已有的结果回复 user。"};
         } else {
           result=await executeClaudeTool(toolName, args);
           attachSelfCheck(result, recordToolUseAndNote(toolName, seen));
+          if(LOOKUP_AWARE_TOOLS[toolName] && result && typeof result==="object" && !result.error){
+            const d=lookupToolQueryDesc(toolName, args); if(d && !lookupQueriesCL.includes(d)) lookupQueriesCL.push(d);
+            const ln=lookupAwarenessNote(toolName, seen, lookupQueriesCL);
+            if(ln) result.self_check=(result.self_check?result.self_check+" ":"")+ln;
+          }
         }
         let opNote=result&&result.error?String(result.error).slice(0,80):"";
         if(toolName==="web_search" && result && !result.error){
