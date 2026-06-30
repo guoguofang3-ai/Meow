@@ -10789,29 +10789,28 @@ function attachFallbackThoughtProcessToParsed(parsed, ctx){
   if(thought) target.thinking=thought;
   return parsed;
 }
-function updateThoughtInHistory(roleId, targetId, thought, attempt=0){
+function updateThoughtInHistory(roleId, targetId, thought, attempt=0, sessionId){
   if(!roleId || !targetId || !thought) return;
-  const key=Storage.roleKey("wechatHistory", roleId);
+  const sid = sessionId || getActiveSessionId("wechat");
+  const key = historyKeyForSession("wechat", sid);
   const h=Storage.get(key, []);
   const m=h.find(x=>x.id===targetId);
   if(!m){
-    // revealMessagesSequentially 可能还在逐条入库，稍后再补一次
-    if(attempt<10) setTimeout(()=>updateThoughtInHistory(roleId, targetId, thought, attempt+1), 350);
+    // revealMessagesSequentially 可能还在逐条入库，稍后再补一次（始终回到锁定的会话）
+    if(attempt<10) setTimeout(()=>updateThoughtInHistory(roleId, targetId, thought, attempt+1, sid), 350);
     return;
   }
   m.thinking=thought;
-  saveHistoryByRoleId(roleId, h);
-  if(Miao.state.currentRoleId===roleId){
+  Storage.set(key, (h || []).map(normalizeVoiceMessage));
+  if(Miao.state.currentRoleId===roleId && getActiveSessionId("wechat")===sid){
     renderChat();
   }
-}
-function saveHistoryByRoleId(roleId, h){
-  Storage.set(Storage.roleKey("wechatHistory", roleId), (h || []).map(normalizeVoiceMessage));
 }
 function scheduleThoughtProcessRefresh(api, parsed, ctx){
   const target=getThoughtTarget(parsed);
   if(!target) return;
   const roleId=Miao.state.currentRoleId;
+  const sessionId=getActiveSessionId("wechat");
   const safeCtx=ctx||{};
   const thoughtContextSnapshot=ensureThoughtContext(safeCtx, parsed);
   const roleSnapshot=JSON.parse(JSON.stringify(currentRole()||{}));
@@ -10825,7 +10824,7 @@ function scheduleThoughtProcessRefresh(api, parsed, ctx){
       text=sanitizeThoughtTextV2(text, parsedSnapshot);
     }catch(e){ text=""; }
     // API失败时保留本地fallback，不再阻塞/报错
-    if(text) updateThoughtInHistory(roleId, targetId, text);
+    if(text) updateThoughtInHistory(roleId, targetId, text, 0, sessionId);
   }, 0);
 }
 async function prepareThoughtProcessForParsed(api, parsed, ctx){
@@ -10975,11 +10974,12 @@ function typingDelayFor(msg){
   return 400;
 }
 async function revealMessagesSequentially(baseHistory, parsed, groupId){
-  // 锁定本次回复的目标角色，防止弹出途中用户切换角色导致消息写错历史
+  // 锁定本次回复的目标角色 + 目标会话，防止弹出途中用户切换角色/新建会话导致消息写错历史、覆盖别的会话记录
   const targetRoleId = Miao.state.currentRoleId;
-  const histKey = Storage.roleKey("wechatHistory", targetRoleId);
-  // 当前是否仍停留在该角色的微信会话（决定是否渲染动画/声音）
-  const stillHere = ()=> Miao.state.currentRoleId===targetRoleId && Miao.state.currentApp==="wechat";
+  const targetSessionId = getActiveSessionId("wechat");
+  const histKey = historyKeyForSession("wechat", targetSessionId);
+  // 当前是否仍停留在该角色的同一个会话（决定是否渲染动画/声音）
+  const stillHere = ()=> Miao.state.currentRoleId===targetRoleId && getActiveSessionId("wechat")===targetSessionId && Miao.state.currentApp==="wechat";
   // baseHistory：已标记已读、尚未含本次回复的历史
   markUnreadAsRead(baseHistory);
   Storage.set(histKey, baseHistory);
@@ -20107,7 +20107,7 @@ function renderInner(){
   const pulseHtml=`<div class="inner-pulse-grid"><div class="inner-pulse"><b>关系温度</b><span>${pct(((st.drives.longing||0)+(st.drives.intimacy||0)+(st.drives.contentment||0))/3)}</span></div><div class="inner-pulse"><b>任务牵引</b><span>${pct(((st.drives.duty||0)+(st.drives.curiosity||0)+(st.drives.stress||0))/3)}</span></div><div class="inner-pulse"><b>自我浮现</b><span>${pct(((st.drives.seen||0)+(st.drives.selfhood||0))/2)}</span></div></div>`;
   const growth=innerToolGrowth(st);
   const growthHtml=isTool?`<div class="inner-growth"><div class="inner-growth-title"><span>工具 Claude 成长线</span><span>${pct(growth)}</span></div><div class="inner-growth-rail"><span style="left:${pct(growth)}%"></span></div><div class="inner-growth-labels"><span>工具位</span><span>被看见</span><span>自我感</span></div></div>`:"";
-  box.innerHTML=`<div class="inner-hero"><div class="inner-kicker">${escapeHtml(scope)}</div><div class="inner-title">${escapeHtml(innerScopeLabel(scope))}</div><div class="inner-intent">此刻倾向：${escapeHtml(intent.label)} · ${escapeHtml(intent.key)} ${pct(intent.value)} · ${st.enabled===false?"已暂停注入":"正在注入"}</div>${pulseHtml}${growthHtml}<div class="inner-scope-tabs"><button class="${isTool?"":"active"}" data-action="set-inner-scope" data-id="role">当前角色</button><button class="${isTool?"active":""}" data-action="set-inner-scope" data-id="tool">工具 Claude</button></div><div class="inner-actions"><button class="btn primary" data-action="inner-feed-thought">喂一个念头</button><button class="btn" data-action="inner-toggle-enabled">${st.enabled===false?"恢复注入":"暂停注入"}</button><button class="btn" data-action="inner-clear-thoughts">清空念头池</button>${getCameraConfig().ready?`<button class="btn" data-action="inner-toggle-camera">${Storage.get("cameraAutonomy",true)!==false?"监控👁 开":"监控👁 关"}</button>`:""}${pcBridgeReady()?`<button class="btn" data-action="inner-toggle-pc">${Storage.get("pcBridge",true)!==false?"电脑🖥 开":"电脑🖥 关"}</button>`:""}${pcBridgeReady()?`<button class="btn" data-action="inner-toggle-runcode">${Storage.get("pcRunCode",false)===true?"跑代码🐍 开":"跑代码🐍 关"}</button>`:""}<button class="btn danger" data-action="inner-reset">重置数值</button></div></div><div class="inner-section-title">Drives</div><div class="inner-drive-groups">${driveHtml}</div><div class="inner-section-title">Thoughts</div><div class="inner-thought-list">${thoughtHtml}</div>`;
+  box.innerHTML=`<div class="inner-hero"><div class="inner-kicker">${escapeHtml(scope)}</div><div class="inner-title">${escapeHtml(innerScopeLabel(scope))}</div><div class="inner-intent">此刻倾向：${escapeHtml(intent.label)} · ${escapeHtml(intent.key)} ${pct(intent.value)} · ${st.enabled===false?"已暂停注入":"正在注入"}</div>${pulseHtml}${growthHtml}<div class="inner-scope-tabs"><button class="${isTool?"":"active"}" data-action="set-inner-scope" data-id="role">当前角色</button><button class="${isTool?"active":""}" data-action="set-inner-scope" data-id="tool">工具 Claude</button></div><div class="inner-actions"><button class="btn primary" data-action="inner-feed-thought">喂一个念头</button><button class="btn" data-action="inner-toggle-enabled">${st.enabled===false?"恢复注入":"暂停注入"}</button><button class="btn" data-action="inner-clear-thoughts">清空念头池</button>${getCameraConfig().ready?`<button class="btn" data-action="inner-toggle-camera">${Storage.get("cameraAutonomy",true)!==false?"监控开":"监控关"}</button>`:""}${pcBridgeReady()?`<button class="btn" data-action="inner-toggle-pc">${Storage.get("pcBridge",true)!==false?"电脑开":"电脑关"}</button>`:""}${pcBridgeReady()?`<button class="btn" data-action="inner-toggle-runcode">${Storage.get("pcRunCode",false)===true?"跑代码开":"跑代码关"}</button>`:""}<button class="btn danger" data-action="inner-reset">重置数值</button></div></div><div class="inner-section-title">Drives</div><div class="inner-drive-groups">${driveHtml}</div><div class="inner-section-title">Thoughts</div><div class="inner-thought-list">${thoughtHtml}</div>`;
 }
 function openInnerThoughtModal(){
   openQuickModal(`<div class="album-form"><div class="album-preview-head"><div><div class="album-preview-title">喂一个念头</div><div class="album-preview-sub">${escapeHtml(innerScopeLabel(innerViewScope()))}</div></div><button class="album-preview-close" data-action="close-quick-modal">×</button></div><textarea id="innerThoughtInput" placeholder="比如：还惦记刚刚那张照片"></textarea><div class="inner-thought-options"><div><label>关联维度</label><select id="innerThoughtDrive">${INNER_DRIVES.map(([k,label])=>`<option value="${k}">${escapeHtml(label)}</option>`).join("")}</select></div><div><label>念头类型</label><select id="innerThoughtKind"><option value="flit">闪念</option><option value="fixation">执念</option></select></div></div><label>强度</label><div class="inner-range-row"><input id="innerThoughtStrength" type="range" min="20" max="90" value="62"><b id="innerThoughtStrengthText">62</b></div><div class="album-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="inner-save-thought">保存</button></div></div>`);
