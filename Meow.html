@@ -9357,6 +9357,46 @@ function scheduleMissingRoleVoiceHydration(){
       });
   }catch(e){}
 }
+// ===== 工具"自觉提醒"：让角色知道自己刚用过某个"看/动作"工具，避免无意识反复调用 =====
+const SELF_AWARE_TOOLS={
+  look_camera:"看了一眼监控",
+  pc_view_photo:"看了那张照片",
+  pc_search_code:"在代码里找过了",
+  pc_patch_code:"改了一次代码",
+  pc_run_python:"跑了一次代码",
+  pc_run_node:"跑了一次代码"
+};
+function toolAwarenessScope(){
+  try{
+    const mode=typeof getClaudeMode==="function"?getClaudeMode():"role";
+    if(Miao?.state?.currentApp==="claude" && mode==="tool") return "claude:tool";
+    return "role:"+((typeof currentRole==="function"&&currentRole()?.id)||Miao?.state?.currentRoleId||"default");
+  }catch(e){ return "default"; }
+}
+// 记录这次使用、并生成给模型看的"你刚刚做过"提醒。turnSeen=本轮同一工具+参数已调用次数
+function recordToolUseAndNote(toolName, turnSeen){
+  const label=SELF_AWARE_TOOLS[toolName];
+  if(!label) return "";
+  const key="toolLastUse."+toolAwarenessScope()+"."+toolName;
+  const now=Date.now();
+  const last=Number(Storage.get(key,0))||0;
+  Storage.set(key, now);
+  let ago="";
+  if(last && now>last){ const s=Math.round((now-last)/1000); ago = s<60?(s+"秒前"):(s<3600?(Math.round(s/60)+"分钟前"):(Math.round(s/3600)+"小时前")); }
+  let n="（自觉提醒：你刚刚"+label;
+  if(ago) n+="，上一次是"+ago;
+  n+="。";
+  if(turnSeen>=2) n+="这一轮已经是第"+turnSeen+"次了——别再无意识地重复；没有新的、具体的理由就停下，专心回复 user。";
+  else n+="如果只是顺手、并没有新理由，就先别重复了；你要是真的还想再看，可以再看。";
+  n+="）";
+  return n;
+}
+// 本轮同一"看/动作"工具重复≥3次：直接拦下不再执行
+function shouldStopRepeatLook(toolName, turnSeen){ return !!SELF_AWARE_TOOLS[toolName] && turnSeen>=3; }
+function attachSelfCheck(result, note){
+  if(note && result && typeof result==="object" && !result.error) result.self_check=note;
+  return result;
+}
 function wechatToolMeta(name,args={}){
   args=args||{};
   const map={
@@ -11868,6 +11908,7 @@ async function callAI(api, history, onChunk, extraSystem){
   const wechatTools=getWechatTools({phoneActivity:offerPhoneActivity});
   body={...body, tools:wechatTools, tool_choice:"auto"};
   let loopMessages=[...messages];
+  const seenWechatTools=new Map();
   for(let i=0;i<5;i++){
     let res=await fetch(url,{method:"POST",headers,body:JSON.stringify({...body,messages:loopMessages})});
     let text=await res.text();
@@ -11897,12 +11938,21 @@ async function callAI(api, history, onChunk, extraSystem){
     loopMessages.push(msg);
     for(const tc of msg.tool_calls){
       const args=JSON.parse(tc.function.arguments||"{}");
-      const traceId=addWechatToolTrace(tc.function.name, args);
+      const tname=tc.function.name;
+      const sig=tname+":"+JSON.stringify(args||{});
+      const seen=(seenWechatTools.get(sig)||0)+1; seenWechatTools.set(sig,seen);
+      const traceId=addWechatToolTrace(tname, args);
       let result;
       try{
-        result=await executeWechatTool(tc.function.name, args);
-        const note=summarizeWechatToolResult(tc.function.name, result);
-        updateWechatToolTrace(traceId, result&&result.error?"error":"done", note);
+        if(shouldStopRepeatLook(tname, seen)){
+          result={stopped:true, self_check:"你这一轮已经反复用过这个了，停下来，直接用你的话回复 user，不要再调用工具。"};
+          updateWechatToolTrace(traceId, "done", "已看够");
+        } else {
+          result=await executeWechatTool(tname, args);
+          const note=summarizeWechatToolResult(tname, result);
+          updateWechatToolTrace(traceId, result&&result.error?"error":"done", note);
+          attachSelfCheck(result, recordToolUseAndNote(tname, seen));
+        }
       }catch(e){
         result={error:e.message||String(e)};
         updateWechatToolTrace(traceId, "error", result.error);
@@ -15183,8 +15233,11 @@ async function callClaudeAI(api, ops){
       try{
         if(seen>=8 && /^(read_file|search_file|search_history|read_memory|read_diary|web_search|read_webpage|view_web_image)$/.test(toolName)){
           result={error:"检测到重复工具调用", hint:"同一个工具和参数已经重复调用很多次。请换关键词/换 offset，或基于已有结果直接回答。"};
+        } else if(shouldStopRepeatLook(toolName, seen)){
+          result={stopped:true, self_check:"你这一轮已经反复用过这个了，停下来直接回复 user，不要再调用工具。"};
         } else {
           result=await executeClaudeTool(toolName, args);
+          attachSelfCheck(result, recordToolUseAndNote(toolName, seen));
         }
         let opNote=result&&result.error?String(result.error).slice(0,80):"";
         if(toolName==="web_search" && result && !result.error){
