@@ -11037,7 +11037,7 @@ async function revealMessagesSequentially(baseHistory, parsed, groupId){
     const h=Storage.get(histKey, []);
     h.push(msg);
     Storage.set(histKey, h);
-    if(msg.type==="voice" && msg.sender==="role") hydrateRoleVoiceTTS(msg.id, targetRoleId);
+    if(msg.type==="voice" && msg.sender==="role") hydrateRoleVoiceTTS(msg.id, targetRoleId, targetSessionId);
     // 仅当仍停留在该会话时渲染、播音、动画
     if(stillHere()){
       renderChat();
@@ -20893,11 +20893,11 @@ async function elevenLabsTTS(text, cfg){
   }
   return await res.blob();
 }
-async function hydrateRoleVoiceTTS(msgId, roleId){
+async function hydrateRoleVoiceTTS(msgId, roleId, sessionId){
   try{
     const cfg=getElevenLabsTTSConfig();
     if(!cfg) return;
-    const histKey=Storage.roleKey("wechatHistory", roleId||Miao.state.currentRoleId);
+    const histKey=historyKeyForSession("wechat", sessionId || getActiveSessionId("wechat"));
     let h=Storage.get(histKey,[]);
     let m=h.find(x=>x.id===msgId && x.sender==="role" && x.type==="voice");
     if(!m || !m.data) return;
@@ -20927,7 +20927,7 @@ async function hydrateRoleVoiceTTS(msgId, roleId){
     if(Miao.state.currentRoleId===(roleId||Miao.state.currentRoleId) && Miao.state.currentApp==="wechat") renderChat();
   }catch(err){
     try{
-      const histKey=Storage.roleKey("wechatHistory", roleId||Miao.state.currentRoleId);
+      const histKey=historyKeyForSession("wechat", sessionId || getActiveSessionId("wechat"));
       const h=Storage.get(histKey,[]);
       const m=h.find(x=>x.id===msgId && x.sender==="role" && x.type==="voice");
       if(m && m.data){
