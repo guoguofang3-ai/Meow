@@ -10489,7 +10489,7 @@ function normalizeThinkingForPanel(thinking, finalText){
   const final = stripThinkingBlocks(finalText || "").trim();
   if(final && t.includes(final)) t = t.replace(final,"").trim();
 
-  t = t.replace(/\[(?:分享音乐|发送图片|发送表情包|表情包|语音|链接|主动转账|向user发起代付|打印纸条)[^\]]*\]/g,"");
+  t = t.replace(/\[(?:分享音乐|发送图片|发送网图|发网图|网页截图|发送表情包|表情包|语音|链接|主动转账|向user发起代付|打印纸条)[^\]]*\]/g,"");
 
   const lines = t.split(/\n+/).map(x=>x.trim()).filter(Boolean);
   const seen = new Set();
@@ -10728,7 +10728,7 @@ function sanitizeThoughtTextV2(text, parsed){
     .replace(/^['"“”‘’「『]+|['"“”‘’」』]+$/g,"")
     .replace(/[\u200B-\u200D\uFEFF]/g,"")
     .trim();
-  t=t.replace(/[\[【]\s*(?:发送表情包|表情包|发送图片|图片描述|语音|链接|分享音乐|音乐|主动转账|向user发起代付|打印纸条|收款|拒收转账|帮忙代付|同意代付|拒绝代付)[\s\S]*?[\]】]/g,"").trim();
+  t=t.replace(/[\[【]\s*(?:发送表情包|表情包|发送图片|发送网图|发网图|网页截图|图片描述|语音|链接|分享音乐|音乐|主动转账|向user发起代付|打印纸条|收款|拒收转账|帮忙代付|同意代付|拒绝代付)[\s\S]*?[\]】]/g,"").trim();
   const finalText=finalReplyTextForThought(parsed);
   if(finalText){
     const chunks=finalText.split(/\n+/).map(x=>x.trim()).filter(x=>x.length>=4);
@@ -12113,6 +12113,8 @@ ${buildCommandTaskContext()||"暂无小任务反馈"}
 如需要才输出，指令会被前端转换成卡片/表情，不会直接显示：
 [发送表情包: 名称]
 [发送图片: 描述]（发送任何图片时，此指令必须单独成段，用双换行与其他文字分开，不能混在同一段文字里。转发截图时将截图完整内容放入指令，如[发送图片: 【截图】对话内容...]）
+[发送网图: 图片URL|可选说明]（把网上一张真实图片直接发给 user 看。URL 必须是 https 图片直链，通常来自你先用 read_webpage 拿到的 images[].src；想发网上找到的真实图片/表情/截图时用它，单独成段）
+[网页截图: 网页URL|可选说明]（把某个网页的实时截图发给 user。只要给网页地址，系统会自动截图；适合 user 让你"搜个网页/把那页截图发我看看"，单独成段）
 [语音: （声音描述）说的内容]（声音描述和说话内容必须在同一个指令内，不能分开发送）
 [引用: 被引用消息的原文片段]（想回复user某句特定的话时使用，输出格式必须严格用此指令，不能自己造格式）
 [撤回: 消息内容片段]（撤回你之前发的某条消息，片段用于匹配目标消息；不加片段则撤回最近一条。何时撤回根据你的人设自行判断）
@@ -21806,6 +21808,22 @@ function parseAIReplyUnified(raw, groupId){
       regex:imageInstructionRegex(),
       parse(m){
         return imageMsgFromDesc(m[1]);
+      }
+    },
+    {
+      // 发送真实网络图片 / 网页截图：直链直接发；普通网页地址自动转成截图服务URL
+      regex:/[\[【]\s*(?:发送网图|发网图|网页截图)\s*[:：]\s*([^\]】]+?)[\]】]/g,
+      parse(m){
+        const parts=String(m[1]||"").trim().split("|").map(s=>s.trim());
+        let url=parts[0]||"";
+        const caption=parts.slice(1).join(" ").trim();
+        if(!/^https?:\/\//i.test(url)) return null;
+        const isShot=/网页截图/.test(m[0]||"");
+        const looksImage=/\.(jpe?g|png|gif|webp|bmp|svg)(\?|#|$)/i.test(url);
+        if(isShot || !looksImage){
+          url="https://image.thum.io/get/width/720/"+url;
+        }
+        return {type:"image_desc", content:"[图片]", data:{hasRealImage:true, thumbUrl:url, fullUrl:url, description:caption, web:true, imageName:caption||"网图"}};
       }
     },
     {
