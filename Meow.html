@@ -4730,6 +4730,19 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
         <details class="api-fold" open>
           <summary><span>聊天 API</span><small>必填</small></summary>
           <div class="api-fold-body">
+            <div class="api-preset-box" style="margin-bottom:12px;padding:10px;border-radius:12px;background:rgba(0,0,0,.03)">
+              <label>我的 API 方案（多个三方站随时切换）</label>
+              <div style="display:flex;gap:8px;align-items:center;margin:6px 0">
+                <select id="apiPresetSelect" style="flex:1;min-width:0"></select>
+                <button class="btn" data-action="api-preset-apply">应用</button>
+              </div>
+              <div class="api-inline-actions">
+                <button class="btn" data-action="api-preset-save">存为新方案</button>
+                <button class="btn" data-action="api-preset-update">更新此方案</button>
+                <button class="btn" data-action="api-preset-rename">重命名</button>
+                <button class="btn danger" data-action="api-preset-delete">删除</button>
+              </div>
+            </div>
             <label>API 地址</label><input id="apiUrlInput" placeholder="https://api.example.com/v1/chat/completions">
             <label>API Key</label><input id="apiKeyInput" placeholder="sk-..." type="password">
             <div class="api-two-col">
@@ -7085,6 +7098,11 @@ function bindEvents(){
     if(action==="save-role") saveCurrentRoleFromForm();
     if(action==="delete-role") deleteCurrentRole();
     if(action==="save-api") saveApiFromForm();
+    if(action==="api-preset-apply") applyApiPreset();
+    if(action==="api-preset-save") saveApiPresetNew();
+    if(action==="api-preset-update") updateApiPreset();
+    if(action==="api-preset-rename") renameApiPreset();
+    if(action==="api-preset-delete") deleteApiPreset();
     if(action==="toggle-stream"){ Storage.set("streamEnabled",!Storage.get("streamEnabled",false)); renderApi(); }
     if(action==="toggle-msg-sound"){ Storage.set("msgSoundEnabled",!Storage.get("msgSoundEnabled",true)); renderApi(); playMessageSound(); }
     if(action==="test-api") testApi();
@@ -12471,6 +12489,72 @@ async function deleteCurrentRole(){
   Storage.set("currentRoleId", Miao.state.currentRoleId);
   renderAll();
 }
+// ===== 聊天 API 方案（多三方站 url+key+模型 命名存档，随时切换）=====
+function getApiPresets(){ const v=Storage.get("apiPresets",[]); return Array.isArray(v)?v:[]; }
+function saveApiPresets(list){ Storage.set("apiPresets", Array.isArray(list)?list:[]); }
+function renderApiPresetSelect(){
+  const sel=document.getElementById("apiPresetSelect"); if(!sel) return;
+  const list=getApiPresets();
+  const active=Storage.get("apiPresetActiveId","");
+  sel.innerHTML = list.length
+    ? list.map(p=>`<option value="${escapeAttr(p.id)}"${p.id===active?" selected":""}>${escapeHtml(p.name||"未命名")}</option>`).join("")
+    : `<option value="">（还没有方案：填好下面的地址/密钥/模型，点「存为新方案」）</option>`;
+}
+function currentApiFormValues(){
+  return {
+    apiUrl:($("#apiUrlInput").value||"").trim(),
+    apiKey:($("#apiKeyInput").value||"").trim(),
+    model:($("#modelInput").value||"").trim(),
+    format:($("#apiFormatInput")&&$("#apiFormatInput").value)||"openai"
+  };
+}
+function selectedApiPreset(){
+  const sel=document.getElementById("apiPresetSelect"); if(!sel||!sel.value) return null;
+  return getApiPresets().find(p=>p.id===sel.value)||null;
+}
+function applyApiPreset(){
+  const p=selectedApiPreset(); if(!p){ toast("先在上面选一个方案"); return; }
+  $("#apiUrlInput").value=p.apiUrl||"";
+  $("#apiKeyInput").value=p.apiKey||"";
+  $("#modelInput").value=p.model||"";
+  if($("#apiFormatInput")) $("#apiFormatInput").value=p.format||"openai";
+  Storage.set("api", {apiUrl:p.apiUrl||"", apiKey:p.apiKey||"", model:p.model||"", format:p.format||"openai"});
+  Storage.set("apiPresetActiveId", p.id);
+  toast("已切换到方案："+(p.name||"未命名"));
+}
+function saveApiPresetNew(){
+  const v=currentApiFormValues();
+  if(!v.apiUrl && !v.apiKey){ toast("先填好上面的 API 地址和密钥"); return; }
+  const name=(prompt("给这个方案起个名字（例：站A · gpt-4o）","")||"").trim();
+  if(!name) return;
+  const id=uid("apipreset");
+  const list=getApiPresets(); list.push(Object.assign({id,name},v));
+  saveApiPresets(list);
+  Storage.set("apiPresetActiveId", id);
+  renderApiPresetSelect();
+  toast("已存为方案："+name);
+}
+function updateApiPreset(){
+  const p=selectedApiPreset(); if(!p){ toast("先选一个方案"); return; }
+  const v=currentApiFormValues();
+  saveApiPresets(getApiPresets().map(x=>x.id===p.id?Object.assign({},x,v):x));
+  toast("已用当前填写更新方案："+(p.name||""));
+}
+function renameApiPreset(){
+  const p=selectedApiPreset(); if(!p){ toast("先选一个方案"); return; }
+  const name=(prompt("新的方案名字", p.name||"")||"").trim();
+  if(!name) return;
+  saveApiPresets(getApiPresets().map(x=>x.id===p.id?Object.assign({},x,{name}):x));
+  renderApiPresetSelect();
+  toast("已重命名为："+name);
+}
+async function deleteApiPreset(){
+  const p=selectedApiPreset(); if(!p){ toast("先选一个方案"); return; }
+  if(typeof askConfirm==="function" && !await askConfirm("删除方案「"+(p.name||"")+"」？它的密钥也会一并删掉。")) return;
+  saveApiPresets(getApiPresets().filter(x=>x.id!==p.id));
+  renderApiPresetSelect();
+  toast("已删除方案");
+}
 function renderApi(){
   const api=Storage.get("api",{});
   $("#apiUrlInput").value=api.apiUrl||"";
@@ -12509,6 +12593,7 @@ function renderApi(){
   const _gwm=document.getElementById("geoWeatherMaxAgeInput"); if(_gwm) _gwm.value=String(gw.maxAgeMinutes ?? 5);
   const _gwk=document.getElementById("geoWeatherAmapKeyInput"); if(_gwk) _gwk.value=String(gw.amapKey||"");
   $("#apiFormatInput").value=api.format||"openai";
+  renderApiPresetSelect();
 }
 function saveApiFromForm(){
   Storage.set("api", {apiUrl:$("#apiUrlInput").value.trim(), apiKey:$("#apiKeyInput").value.trim(), model:$("#modelInput").value.trim(), format:$("#apiFormatInput").value});
