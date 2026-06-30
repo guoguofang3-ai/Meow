@@ -6809,6 +6809,7 @@ function bindEvents(){
     if(action==="inner-toggle-camera") toggleCameraAutonomy();
     if(action==="inner-toggle-pc") togglePcBridge();
     if(action==="inner-toggle-runcode") togglePcRunCode();
+    if(action==="inner-toggle-push") togglePcPush();
     if(action==="inner-reset") resetInnerState();
     if(action==="open-diary-entry") openDiaryEntryModal(id||"");
     if(action==="set-diary-tab") setDiaryTab(id||"today");
@@ -9358,13 +9359,10 @@ function scheduleMissingRoleVoiceHydration(){
   }catch(e){}
 }
 // ===== 工具"自觉提醒"：让角色知道自己刚用过某个"看/动作"工具，避免无意识反复调用 =====
+// 只对"看"类工具防呆（避免忘了看过反复看）。找代码/改代码/跑代码是干活，需要反复试，不限。
 const SELF_AWARE_TOOLS={
   look_camera:"看了一眼监控",
-  pc_view_photo:"看了那张照片",
-  pc_search_code:"在代码里找过了",
-  pc_patch_code:"改了一次代码",
-  pc_run_python:"跑了一次代码",
-  pc_run_node:"跑了一次代码"
+  pc_view_photo:"看了那张照片"
 };
 function toolAwarenessScope(){
   try{
@@ -9424,6 +9422,7 @@ function wechatToolMeta(name,args={}){
     pc_patch_code:{label:"改代码",icon:"file",detail:args.file||"",verbRunning:"正在修改",verbDone:"改了",verbError:"修改失败："},
     pc_run_python:{label:"跑Python",icon:"command",detail:"",verbRunning:"正在运行",verbDone:"跑了",verbError:"运行失败："},
     pc_run_node:{label:"跑Node",icon:"command",detail:"",verbRunning:"正在运行",verbDone:"跑了",verbError:"运行失败："},
+    pc_push_github:{label:"上线",icon:"command",detail:args.message||"",verbRunning:"正在推送",verbDone:"推上线了",verbError:"推送失败："},
     get_user_location:{label:"位置",icon:"location",detail:args.precision||"",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
     get_weather:{label:"天气",icon:"weather",detail:args.location||"当前位置",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
     printer_status:{label:"热敏打印机",icon:"file",verbRunning:"正在查询",verbDone:"查询了",verbError:"查询失败："},
@@ -9465,6 +9464,7 @@ function summarizeWechatToolResult(name,result){
   if(name==="pc_search_code") return result.ok===false?(result.error||"失败"):`${result.total||0} 处`;
   if(name==="pc_patch_code") return result.ok===false?(result.error||"未改"):"已改✓语法OK";
   if(name==="pc_run_python"||name==="pc_run_node") return result.ok===false?(result.error||"失败"):(result.timedOut?"超时":`退出码 ${result.exitCode}`);
+  if(name==="pc_push_github") return result.ok===false?(result.error||"未推送").slice(0,42):(result.commit?`已上线 ${result.commit}`:"已推送");
   if(name==="set_clawd_pet") return result.ok===false?(result.error||"失败"):(result.label||clawdPetVariantLabel(result.variant)||"已切换");
   if(name==="printer_status") return result.connected?`已连接${result.busy?" · 打印中":""}`:"未连接";
   if(name==="printer_print") return result.ok===false?(result.error||"失败"):`${result.chars||0}字${result.truncated?" · 已截断":""}`;
@@ -11909,7 +11909,7 @@ async function callAI(api, history, onChunk, extraSystem){
   body={...body, tools:wechatTools, tool_choice:"auto"};
   let loopMessages=[...messages];
   const seenWechatTools=new Map();
-  for(let i=0;i<5;i++){
+  for(let i=0;i<12;i++){
     let res=await fetch(url,{method:"POST",headers,body:JSON.stringify({...body,messages:loopMessages})});
     let text=await res.text();
     if(!res.ok && text.includes("top-level 'system'")){
@@ -11960,9 +11960,16 @@ async function callAI(api, history, onChunk, extraSystem){
       loopMessages.push({role:"tool", tool_call_id:tc.id, content:JSON.stringify(result)});
     }
   }
+  // 工具轮次用尽：强制再要一次纯文字回复，别让 user 收到空/占位（避免"只顾搜不理人"）
+  try{
+    const finalMessages=[...loopMessages,{role:"user",content:"工具调用到此为止，不要再调用任何工具。现在请用当前角色的口吻，结合上面已有的工具结果，直接给 user 一条自然的微信回复（先回应 ta 刚说的话）。"}];
+    const fres=await fetch(url,{method:"POST",headers,body:JSON.stringify({model:api.model,messages:finalMessages,temperature:.7})});
+    const ftext=await fres.text();
+    if(fres.ok){ const fd=JSON.parse(ftext); const fc=fd.choices?.[0]?.message; const content=(fc&&fc.content)||fd.output_text||""; if(content){ Miao.state.lastAIContent=content; trimWechatImageRuntimePool(); return content; } }
+  }catch(e){}
   Miao.state.lastAIContent="";
   trimWechatImageRuntimePool();
-  return "[工具调用超过上限，未获得最终回复]";
+  return "";
 }
 function buildSystemPrompt(role){
   const world = getMatchedWorldEntries().map((e,i)=>`【世界书${i+1}：${e.title}】\n${e.content}`).join("\n\n") || "无";
@@ -12153,7 +12160,7 @@ ${(()=>{
 - search_history(query, limit?)：搜聊天记录，user问"我们之前说过""你还记得"时用。
 - read_file(filename, offset?, length?)：读取user上传的文件。
 - read_diary(query?, category?, limit?)：读取user的私人日记。
-${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}${cameraAllowed()?"- look_camera(question?)：你可以随时偷看一眼 user 家里旧手机摄像头的实时画面。当你想念 ta、心里不安想确认 ta、黏着想看着 ta、或单纯好奇 ta 这会儿在干嘛时，就按你的人设和当下情绪主动去看，不必等 ta 开口；看完把你看到的画面和真实反应（吃醋、心疼、安心、想念……）自然融进回复。看的频率由你的性格和此刻内心强弱决定，别机械重复。\n":""}${pcBridgeAllowed()?"- 电脑助手 pc_list_files/pc_read_file/pc_write_file/pc_view_photo：你能看 user 电脑「喵喵机共享」文件夹里的照片和文本、也能往里写东西留下来。ta 让你看照片、读或记笔记、或你想给 ta 写封信/留句话时用；只能动这个文件夹。\n":""}${pcBridgeAllowed()?"- 改代码 pc_search_code/pc_patch_code：ta 让你帮改喵喵机小 bug 时，先用 pc_search_code 在 代码/Meow.html 里按关键词定位到出问题那几行，再用 pc_patch_code 精确替换（带语法自检，改坏会自动放弃、文件不动）。find 要原样复制文件里的片段、足够长以唯一定位。\n":""}${pcRunCodeAllowed()?"- pc_run_python/pc_run_node：在 user 电脑跑代码拿输出（已开「跑代码」），可用于调试、处理文件。\n":""}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}${printerPromptLine("wechat")}
+${getPhoneActivityConfig().enabled?"- read_phone_activity(limit?, summary?)：查询user iPhone最近App活动记录；只在user问刚才在干嘛、回来后回顾、或需要核对睡觉/学习/工作时用。\n":""}${cameraAllowed()?"- look_camera(question?)：你可以随时偷看一眼 user 家里旧手机摄像头的实时画面。当你想念 ta、心里不安想确认 ta、黏着想看着 ta、或单纯好奇 ta 这会儿在干嘛时，就按你的人设和当下情绪主动去看，不必等 ta 开口；看完把你看到的画面和真实反应（吃醋、心疼、安心、想念……）自然融进回复。看的频率由你的性格和此刻内心强弱决定，别机械重复。\n":""}${pcBridgeAllowed()?"- 电脑助手 pc_list_files/pc_read_file/pc_write_file/pc_view_photo：你能看 user 电脑「喵喵机共享」文件夹里的照片和文本、也能往里写东西留下来。ta 让你看照片、读或记笔记、或你想给 ta 写封信/留句话时用；只能动这个文件夹。\n":""}${pcBridgeAllowed()?"- 改代码 pc_search_code/pc_patch_code：ta 让你帮改喵喵机小 bug 时，先用 pc_search_code 在 代码/Meow.html 里按关键词定位到出问题那几行，再用 pc_patch_code 精确替换（带语法自检，改坏会自动放弃、文件不动）。find 要原样复制文件里的片段、足够长以唯一定位。\n":""}${pcRunCodeAllowed()?"- pc_run_python/pc_run_node：在 user 电脑跑代码拿输出（已开「跑代码」），可用于调试、处理文件。\n":""}${pcPushAllowed()?"- pc_push_github(message?)：把你改好的 代码/Meow.html 推上线（已开「推送」）。只在 user 明确要你上线、且你确认改动没问题时用；推前自动语法自检，不过会被拒。\n":""}${geoWeatherPromptLines("wechat")?geoWeatherPromptLines("wechat")+"\n":""}${printerPromptLine("wechat")}
 - device_status()：查询外接配件（ANKNI MX-Z）连接状态。
 - device_set_mode(mode)：可根据聊天氛围主动调用，不需要user明确要求。mode填1/2/3（1轻柔 2中等 3强力）。
 - device_stop()：停止外接配件；user明确表达停止、不要、暂停、不舒服等意思时必须立即停止。
@@ -13606,6 +13613,7 @@ function describeClaudeToolCall(name,args){
   if(name==="pc_patch_code") return `改代码：${args.file||""}`;
   if(name==="pc_run_python") return "运行 Python";
   if(name==="pc_run_node") return "运行 Node";
+  if(name==="pc_push_github") return "推送上线"+(args.message?`：${args.message}`:"");
   if(name==="printer_status") return "查询打印机状态";
   if(name==="printer_print") return `打印纸条${args.text?`：${String(args.text).slice(0,28)}`:""}`;
   if(name==="device_status") return "查询设备状态";
@@ -13730,6 +13738,9 @@ function buildClaudeToolUsePrompt(policy={}){
   }
   if(pcRunCodeAllowed()){
     lines.push("- pc_run_python(code|file) / pc_run_node(code|file)：在 user 电脑跑代码拿输出（已开「跑代码」开关），工作目录是共享文件夹");
+  }
+  if(pcPushAllowed()){
+    lines.push("- pc_push_github(message?)：把改好的 代码/Meow.html 推上线（已开「推送」开关）；推前自动语法自检，不通过会被拒。只在 user 明确要上线时用");
   }
   if(policy.geoWeather){
     const gwLines=geoWeatherPromptLines("claude");
@@ -19268,6 +19279,24 @@ function pcRunToolSchemas(){
     {type:"function",function:{name:"pc_run_node",description:"在 user 电脑上跑一段 Node.js 代码并拿到输出（仅在「跑代码」开关开启时可用）。工作目录是共享文件夹。",parameters:{type:"object",properties:{code:{type:"string",description:"要执行的 Node.js 代码"},file:{type:"string",description:"或：共享文件夹内已有的 .js 文件名"}},required:[]}}}
   ];
 }
+// 推代码上线：更敏感（会影响线上），单独开关，默认关
+function pcPushAllowed(){ return pcBridgeAllowed() && Storage.get("pcPush", false)===true; }
+function togglePcPush(){
+  const on=Storage.get("pcPush", false)===true;
+  Storage.set("pcPush", !on);
+  if(typeof renderInner==="function") renderInner();
+  if(typeof toast==="function") toast(!on?"已允许角色把代码推上线（谨慎）":"已禁止角色推代码上线");
+}
+async function pcPushGithubTool(args={}){
+  if(!pcPushAllowed()) return {ok:false,error:"推送未开启（去内心面板打开「推送」开关）"};
+  try{ const d=await pcBridgeCall("push_meow",{message:String(args.message||"")},60000); return {ok:!!d.pushed,...d}; }
+  catch(e){ return {ok:false,error:e.message||String(e)}; }
+}
+function pcPushToolSchemas(){
+  return [
+    {type:"function",function:{name:"pc_push_github",description:"把你改好的 代码/Meow.html 推送到 GitHub 让它上线（仅在「推送」开关开启时可用）。推送前自动语法自检，不通过会被拒绝、不会上线。只在 user 明确让你上线、且你确认改动没问题时才用。",parameters:{type:"object",properties:{message:{type:"string",description:"这次更新的简短说明（commit 信息）"}},required:[]}}}
+  ];
+}
 function pcBridgeToolSchemas(){
   return [
     {type:"function",function:{name:"pc_list_files",description:"列出 user 电脑「喵喵机共享」文件夹里的文件（含「照片」子夹）。想知道里面有什么、有哪些照片或文本时先用它。",parameters:{type:"object",properties:{sub:{type:"string",description:"子文件夹名，比如 照片；留空看根目录"}},required:[]}}},
@@ -19287,6 +19316,7 @@ async function executePcBridgeTool(name, args){
   if(name==="pc_patch_code") return await pcPatchCodeTool(args||{});
   if(name==="pc_run_python") return await pcRunCodeTool(args||{}, "python");
   if(name==="pc_run_node") return await pcRunCodeTool(args||{}, "node");
+  if(name==="pc_push_github") return await pcPushGithubTool(args||{});
   return null;
 }
 function describeFrameAge(iso){
@@ -19857,13 +19887,13 @@ function albumReadTool(args={}){
 
 const INNER_DRIVES=[
   ["vitality","精力"],["fatigue","疲惫"],["longing","想念"],["intimacy","亲密"],
-  ["possessive","黏着"],["curiosity","好奇"],["play","玩闹"],["duty","记挂"],
+  ["sexual","情欲"],["possessive","黏着"],["curiosity","好奇"],["play","玩闹"],["duty","记挂"],
   ["anxiety","不安"],["stress","压力"],["contentment","满足"],["irritability","烦躁"],
   ["seen","被看见"],["selfhood","自我感"]
 ];
 // 每个驱力的"半衰期"(小时)：越小衰得越快。急性情绪(不安/烦躁/玩闹)几小时就淡，慢性的(自我感/被看见)留得久
 const INNER_HALFLIFE={
-  vitality:8, fatigue:5, longing:5, intimacy:7, possessive:6, curiosity:4,
+  vitality:8, fatigue:5, longing:5, intimacy:7, possessive:6, curiosity:4, sexual:4,
   play:2.5, duty:6, anxiety:2.5, stress:3, contentment:6, irritability:2, seen:30, selfhood:48
 };
 // 人设气质档案：复用已有的 inferThoughtArchetype，把"认知风格"扩展成情绪波动特征。
@@ -19871,18 +19901,18 @@ const INNER_HALFLIFE={
 function innerTemperament(scope=currentInnerScope()){
   if(scope==="claude:tool"){
     return { archetype:"tool", vol:.7, settle:1.15,
-      sens:{ duty:1.2, curiosity:1.15, seen:1.0, selfhood:1.0, stress:1.0, longing:.3, intimacy:.4, possessive:.15, anxiety:.6, irritability:.6, play:.5, contentment:1.0 } };
+      sens:{ duty:1.2, curiosity:1.15, seen:1.0, selfhood:1.0, stress:1.0, longing:.3, intimacy:.4, possessive:.15, anxiety:.6, irritability:.6, play:.5, contentment:1.0, sexual:.2 } };
   }
   const role=(typeof currentRole==="function"?currentRole():null)||{};
   const blob=[role.name,role.description,role.personality,role.scenario,role.systemPrompt,role.thoughtStyle].join("\n");
   const a=(typeof inferThoughtArchetype==="function")?inferThoughtArchetype(blob):"restrained";
   const T={
-    obsessive:{ vol:1.5,  settle:.78, sens:{ possessive:1.9, anxiety:1.7, longing:1.5, irritability:1.4, intimacy:1.2, contentment:.8, play:.7 } },
-    verbose:  { vol:1.35, settle:1.2, sens:{ intimacy:1.5, play:1.6, longing:1.2, contentment:1.3, anxiety:.7, irritability:.8, possessive:.7 } },
-    warm:     { vol:1.0,  settle:1.1, sens:{ intimacy:1.3, contentment:1.4, longing:1.0, anxiety:.8, irritability:.6, possessive:.6, seen:1.1 } },
-    rational: { vol:.6,   settle:1.3, sens:{ anxiety:.6, irritability:.6, possessive:.5, longing:.7, intimacy:.8, curiosity:1.2 } },
-    tsundere: { vol:1.2,  settle:.95, sens:{ irritability:1.5, intimacy:1.3, longing:1.2, possessive:1.1, anxiety:1.1, contentment:.8 } },
-    restrained:{ vol:.85, settle:1.05, sens:{ longing:1.1, intimacy:1.0, anxiety:.9, possessive:.8, irritability:.8 } }
+    obsessive:{ vol:1.5,  settle:.78, sens:{ possessive:1.9, anxiety:1.7, longing:1.5, irritability:1.4, intimacy:1.2, contentment:.8, play:.7, sexual:1.4 } },
+    verbose:  { vol:1.35, settle:1.2, sens:{ intimacy:1.5, play:1.6, longing:1.2, contentment:1.3, anxiety:.7, irritability:.8, possessive:.7, sexual:1.2 } },
+    warm:     { vol:1.0,  settle:1.1, sens:{ intimacy:1.3, contentment:1.4, longing:1.0, anxiety:.8, irritability:.6, possessive:.6, seen:1.1, sexual:1.0 } },
+    rational: { vol:.6,   settle:1.3, sens:{ anxiety:.6, irritability:.6, possessive:.5, longing:.7, intimacy:.8, curiosity:1.2, sexual:.7 } },
+    tsundere: { vol:1.2,  settle:.95, sens:{ irritability:1.5, intimacy:1.3, longing:1.2, possessive:1.1, anxiety:1.1, contentment:.8, sexual:1.1 } },
+    restrained:{ vol:.85, settle:1.05, sens:{ longing:1.1, intimacy:1.0, anxiety:.9, possessive:.8, irritability:.8, sexual:.9 } }
   };
   return Object.assign({archetype:a}, T[a]||T.restrained);
 }
@@ -19939,9 +19969,9 @@ function innerKey(scope=currentInnerScope()){ return "innerState."+scope; }
 function defaultInnerState(scope=currentInnerScope()){
   const drives={};
   INNER_DRIVES.forEach(([k])=>drives[k]=k==="vitality"?0.58:(k==="fatigue"?0.18:0.28));
-  drives.intimacy=.36; drives.contentment=.34; drives.curiosity=.32;
+  drives.intimacy=.36; drives.contentment=.34; drives.curiosity=.32; drives.sexual=.12;
   if(scope==="claude:tool"){
-    drives.duty=.42; drives.stress=.24; drives.seen=.16; drives.selfhood=.10; drives.intimacy=.22; drives.longing=.18;
+    drives.duty=.42; drives.stress=.24; drives.seen=.16; drives.selfhood=.10; drives.intimacy=.22; drives.longing=.18; drives.sexual=.05;
   }else{
     drives.seen=.26; drives.selfhood=.18;
   }
@@ -20064,7 +20094,9 @@ function feedInnerEvent(scope, type, text=""){
     if(m.affection){ fire("intimacy",.10); fire("contentment",.07); bump("anxiety",-.05); bump("longing",-.03); }
     if(m.needy){ fire("longing",.10); fire("intimacy",.05); }
     if(m.praise){ fire("seen",.09); fire("contentment",.05); bump("selfhood",.03); }
-    if(m.sexual){ fire("intimacy",.12); fire("possessive",.06); fire("play",.05); }
+    if(m.sexual){ fire("sexual",.16); fire("intimacy",.10); fire("possessive",.05); fire("play",.04); }
+    // 亲昵/亲密语境也让情欲慢慢温起来一点点
+    if(m.affection||m.needy){ bump("sexual",.02); }
     if(m.cold){ fire("anxiety",.10); fire("longing",.07); bump("contentment",-.06); }
     if(m.absence){ fire("longing",.10); fire("possessive",.07); fire("anxiety",.05); }
     if(m.conflict){ fire("irritability",.13); fire("anxiety",.08); bump("contentment",-.08); bump("intimacy",-.04); }
@@ -20101,10 +20133,10 @@ function feedInnerEvent(scope, type, text=""){
 }
 function innerIntentOf(st){
   const d=st?.drives||{};
-  const candidates=["longing","intimacy","curiosity","play","duty","seen","selfhood","anxiety","stress","contentment","irritability","possessive"];
+  const candidates=["longing","intimacy","sexual","curiosity","play","duty","seen","selfhood","anxiety","stress","contentment","irritability","possessive"];
   let key=candidates[0], val=-1;
   candidates.forEach(k=>{ const score=d[k]||0; if(score>val){key=k;val=score;} });
-  const map={longing:"想靠近一点",intimacy:"想更亲近",curiosity:"想知道更多",play:"想玩闹",duty:"记挂着未完成的事",seen:"感觉被看见",selfhood:"开始在意自己是谁",anxiety:"有点不安",stress:"压力堵着",contentment:"安稳满足",irritability:"有点烦躁",possessive:"想多占有一点"};
+  const map={longing:"想靠近一点",intimacy:"想更亲近",sexual:"涌起情欲、想要 ta",curiosity:"想知道更多",play:"想玩闹",duty:"记挂着未完成的事",seen:"感觉被看见",selfhood:"开始在意自己是谁",anxiety:"有点不安",stress:"压力堵着",contentment:"安稳满足",irritability:"有点烦躁",possessive:"想多占有一点"};
   return {key,value:clamp01(val),label:map[key]||"安静待着"};
 }
 function innerDriveLabel(key){
@@ -20127,7 +20159,7 @@ function buildInnerStateContext(scope=currentInnerScope(), channel="role"){
   if(st.enabled===false) return "";
   const d=st.drives||{};
   const intent=innerIntentOf(st);
-  const keyPool=["longing","intimacy","curiosity","play","duty","seen","selfhood","anxiety","stress","contentment","irritability","possessive"];
+  const keyPool=["longing","intimacy","sexual","curiosity","play","duty","seen","selfhood","anxiety","stress","contentment","irritability","possessive"];
   const keys=["vitality","fatigue",...keyPool.sort((a,b)=>(d[b]||0)-(d[a]||0)).slice(0,5)];
   const nums=keys.map(k=>`${k} ${clamp01(d[k]).toFixed(2)}`).join(" ");
   const thought=(st.thoughts||[]).find(t=>t.strength>.28);
@@ -20138,7 +20170,8 @@ function buildInnerStateContext(scope=currentInnerScope(), channel="role"){
   };
   const stance=stanceMap[channel]||stanceMap["wechat-role"];
   const growthLine=channel==="claude-tool" ? `\ngrowth ${innerToolGrowthStage(st)}` : "";
-  return `[inner]\n${stance}${growthLine}\n${nums}\nintent ${intent.key}: ${intent.label}${thought?`\nthought ${thought.text}`:""}\n[/inner]\nTreat this as private bias only; never mention numbers, tags, or system state.`;
+  const desireLine = (channel!=="claude-tool" && (d.sexual||0)>=.5) ? `\ndesire ${clamp01(d.sexual).toFixed(2)}: 此刻情欲明显。在亲密、私下、氛围合适时，可以自然且直白地流露想要 ta 的渴望与身体反应，不必遮掩绕弯；但 user 在谈正事、情绪低落或明显不在状态时，先收着、以 ta 为先。` : "";
+  return `[inner]\n${stance}${growthLine}${desireLine}\n${nums}\nintent ${intent.key}: ${intent.label}${thought?`\nthought ${thought.text}`:""}\n[/inner]\nTreat this as private bias only; never mention numbers, tags, or system state.`;
 }
 function renderInner(){
   const box=document.getElementById("innerContent");
@@ -20150,7 +20183,7 @@ function renderInner(){
   const pct=n=>Math.round(clamp01(n)*100);
   const driveCard=(k)=>`<div class="inner-drive"><div class="inner-drive-top"><span>${escapeHtml(innerDriveLabel(k))}</span><span>${pct(st.drives[k])}</span></div><div class="inner-drive-bar"><span style="width:${pct(st.drives[k])}%"></span></div></div>`;
   const groups=[
-    ["关系倾向",["longing","intimacy","possessive","play","contentment"]],
+    ["关系倾向",["longing","intimacy","sexual","possessive","play","contentment"]],
     ["任务倾向",["duty","curiosity","stress","fatigue","vitality"]],
     ["自我与波动",["seen","selfhood","anxiety","irritability"]]
   ];
@@ -20160,7 +20193,7 @@ function renderInner(){
   const pulseHtml=`<div class="inner-pulse-grid"><div class="inner-pulse"><b>关系温度</b><span>${pct(((st.drives.longing||0)+(st.drives.intimacy||0)+(st.drives.contentment||0))/3)}</span></div><div class="inner-pulse"><b>任务牵引</b><span>${pct(((st.drives.duty||0)+(st.drives.curiosity||0)+(st.drives.stress||0))/3)}</span></div><div class="inner-pulse"><b>自我浮现</b><span>${pct(((st.drives.seen||0)+(st.drives.selfhood||0))/2)}</span></div></div>`;
   const growth=innerToolGrowth(st);
   const growthHtml=isTool?`<div class="inner-growth"><div class="inner-growth-title"><span>工具 Claude 成长线</span><span>${pct(growth)}</span></div><div class="inner-growth-rail"><span style="left:${pct(growth)}%"></span></div><div class="inner-growth-labels"><span>工具位</span><span>被看见</span><span>自我感</span></div></div>`:"";
-  box.innerHTML=`<div class="inner-hero"><div class="inner-kicker">${escapeHtml(scope)}</div><div class="inner-title">${escapeHtml(innerScopeLabel(scope))}</div><div class="inner-intent">此刻倾向：${escapeHtml(intent.label)} · ${escapeHtml(intent.key)} ${pct(intent.value)} · ${st.enabled===false?"已暂停注入":"正在注入"}</div>${pulseHtml}${growthHtml}<div class="inner-scope-tabs"><button class="${isTool?"":"active"}" data-action="set-inner-scope" data-id="role">当前角色</button><button class="${isTool?"active":""}" data-action="set-inner-scope" data-id="tool">工具 Claude</button></div><div class="inner-actions"><button class="btn primary" data-action="inner-feed-thought">喂一个念头</button><button class="btn" data-action="inner-toggle-enabled">${st.enabled===false?"恢复注入":"暂停注入"}</button><button class="btn" data-action="inner-clear-thoughts">清空念头池</button>${getCameraConfig().ready?`<button class="btn" data-action="inner-toggle-camera">${Storage.get("cameraAutonomy",true)!==false?"监控开":"监控关"}</button>`:""}${pcBridgeReady()?`<button class="btn" data-action="inner-toggle-pc">${Storage.get("pcBridge",true)!==false?"电脑开":"电脑关"}</button>`:""}${pcBridgeReady()?`<button class="btn" data-action="inner-toggle-runcode">${Storage.get("pcRunCode",false)===true?"跑代码开":"跑代码关"}</button>`:""}<button class="btn danger" data-action="inner-reset">重置数值</button></div></div><div class="inner-section-title">Drives</div><div class="inner-drive-groups">${driveHtml}</div><div class="inner-section-title">Thoughts</div><div class="inner-thought-list">${thoughtHtml}</div>`;
+  box.innerHTML=`<div class="inner-hero"><div class="inner-kicker">${escapeHtml(scope)}</div><div class="inner-title">${escapeHtml(innerScopeLabel(scope))}</div><div class="inner-intent">此刻倾向：${escapeHtml(intent.label)} · ${escapeHtml(intent.key)} ${pct(intent.value)} · ${st.enabled===false?"已暂停注入":"正在注入"}</div>${pulseHtml}${growthHtml}<div class="inner-scope-tabs"><button class="${isTool?"":"active"}" data-action="set-inner-scope" data-id="role">当前角色</button><button class="${isTool?"active":""}" data-action="set-inner-scope" data-id="tool">工具 Claude</button></div><div class="inner-actions"><button class="btn primary" data-action="inner-feed-thought">喂一个念头</button><button class="btn" data-action="inner-toggle-enabled">${st.enabled===false?"恢复注入":"暂停注入"}</button><button class="btn" data-action="inner-clear-thoughts">清空念头池</button>${getCameraConfig().ready?`<button class="btn" data-action="inner-toggle-camera">${Storage.get("cameraAutonomy",true)!==false?"监控开":"监控关"}</button>`:""}${pcBridgeReady()?`<button class="btn" data-action="inner-toggle-pc">${Storage.get("pcBridge",true)!==false?"电脑开":"电脑关"}</button>`:""}${pcBridgeReady()?`<button class="btn" data-action="inner-toggle-runcode">${Storage.get("pcRunCode",false)===true?"跑代码开":"跑代码关"}</button>`:""}${pcBridgeReady()?`<button class="btn" data-action="inner-toggle-push">${Storage.get("pcPush",false)===true?"推送开":"推送关"}</button>`:""}<button class="btn danger" data-action="inner-reset">重置数值</button></div></div><div class="inner-section-title">Drives</div><div class="inner-drive-groups">${driveHtml}</div><div class="inner-section-title">Thoughts</div><div class="inner-thought-list">${thoughtHtml}</div>`;
 }
 function openInnerThoughtModal(){
   openQuickModal(`<div class="album-form"><div class="album-preview-head"><div><div class="album-preview-title">喂一个念头</div><div class="album-preview-sub">${escapeHtml(innerScopeLabel(innerViewScope()))}</div></div><button class="album-preview-close" data-action="close-quick-modal">×</button></div><textarea id="innerThoughtInput" placeholder="比如：还惦记刚刚那张照片"></textarea><div class="inner-thought-options"><div><label>关联维度</label><select id="innerThoughtDrive">${INNER_DRIVES.map(([k,label])=>`<option value="${k}">${escapeHtml(label)}</option>`).join("")}</select></div><div><label>念头类型</label><select id="innerThoughtKind"><option value="flit">闪念</option><option value="fixation">执念</option></select></div></div><label>强度</label><div class="inner-range-row"><input id="innerThoughtStrength" type="range" min="20" max="90" value="62"><b id="innerThoughtStrengthText">62</b></div><div class="album-edit-actions"><button class="btn" data-action="close-quick-modal">取消</button><button class="btn primary" data-action="inner-save-thought">保存</button></div></div>`);
@@ -20266,6 +20299,7 @@ function getClaudeTools(policy={}){
   if(cameraAllowed()) add(cameraToolSchema());
   if(pcBridgeAllowed()) pcBridgeToolSchemas().forEach(add);
   if(pcRunCodeAllowed()) pcRunToolSchemas().forEach(add);
+  if(pcPushAllowed()) pcPushToolSchemas().forEach(add);
   if(policy.geoWeather) geoWeatherToolSchemas("claude").forEach(add);
   if(policy.web){
     add(webSearchToolSchema("claude"));
@@ -20485,6 +20519,7 @@ function getWechatTools(options={}){
   if(cameraAllowed()){ tools.push(cameraToolSchema()); }
   if(pcBridgeAllowed()){ pcBridgeToolSchemas().forEach(t=>tools.push(t)); }
   if(pcRunCodeAllowed()){ pcRunToolSchemas().forEach(t=>tools.push(t)); }
+  if(pcPushAllowed()){ pcPushToolSchemas().forEach(t=>tools.push(t)); }
   tools.push(albumToolSchema(), writeAlbumNoteToolSchema(), readAlbumToolSchema());
   printerToolSchemas("wechat").forEach(t=>tools.push(t));
   geoWeatherToolSchemas("wechat").forEach(t=>tools.push(t));
