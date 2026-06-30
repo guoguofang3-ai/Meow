@@ -11188,6 +11188,10 @@ ${page.content}
       checkDiceMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
       markCommandFeedbackDelivered();
+      if(Miao.state.lastInnerMood && typeof feedInnerEvent==="function"){
+        feedInnerEvent("role:"+(currentRole()?.id||Miao.state.currentRoleId||"default"), "mood_vector", JSON.stringify(Miao.state.lastInnerMood));
+        Miao.state.lastInnerMood=null;
+      }
       if(typeof feedInnerEvent==="function") feedInnerEvent("role:"+(currentRole()?.id||Miao.state.currentRoleId||"default"), "assistant_reply", Miao.state.lastAIContent||"");
     } else {
       let parsed=applyAutoVoiceMode(ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||""), newUser.content||"");
@@ -11204,6 +11208,10 @@ ${page.content}
       checkDiceMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
       markCommandFeedbackDelivered();
+      if(Miao.state.lastInnerMood && typeof feedInnerEvent==="function"){
+        feedInnerEvent("role:"+(currentRole()?.id||Miao.state.currentRoleId||"default"), "mood_vector", JSON.stringify(Miao.state.lastInnerMood));
+        Miao.state.lastInnerMood=null;
+      }
       if(typeof feedInnerEvent==="function") feedInnerEvent("role:"+(currentRole()?.id||Miao.state.currentRoleId||"default"), "assistant_reply", Miao.state.lastAIContent||"");
     }
   }catch(err){
@@ -11827,7 +11835,7 @@ function extractBareUrl(text){
 async function callAI(api, history, onChunk, extraSystem){
   const role=currentRole();
   const imageScope=currentImageMemoryScope("wechat");
-  const system=buildSystemPrompt(role) + buildRecentImageMemoryMessage(imageScope) + (extraSystem||"") + buildLatestLyricDigestNote(history);
+  const system=buildSystemPrompt(role) + buildRecentImageMemoryMessage(imageScope) + (typeof buildInnerMoodInstruction==="function" ? buildInnerMoodInstruction() : "") + (extraSystem||"") + buildLatestLyricDigestNote(history);
   const recentVisionIds=new Set(getRecentVisionImageMemories(imageScope).map(x=>String(x.id)));
   const messages=[
     {role:"system", content:system},
@@ -11890,15 +11898,17 @@ async function callAI(api, history, onChunk, extraSystem){
           const j=JSON.parse(d);
           // OpenAI兼容格式：正文
           const delta=j.choices?.[0]?.delta?.content||"";
-          if(delta){ full+=delta; onChunk(full); }
+          if(delta){ full+=delta; onChunk(typeof stripInnerMoodBlock==="function" ? stripInnerMoodBlock(full) : full); }
           // 思维链不再从主回复流里抽取；reasoning_content / thinking_delta 一律忽略，避免混入正式聊天。
           if(j.type==="content_block_delta"){
-            if(j.delta?.type==="text_delta" && j.delta?.text){ full+=j.delta.text; onChunk(full); }
+            if(j.delta?.type==="text_delta" && j.delta?.text){ full+=j.delta.text; onChunk(typeof stripInnerMoodBlock==="function" ? stripInnerMoodBlock(full) : full); }
           }
         }catch(e){}
       }
     }
-    const result=full;
+    const extracted=typeof extractInnerMoodBlock==="function" ? extractInnerMoodBlock(full) : {text:full,mood:null};
+    const result=extracted.text;
+    Miao.state.lastInnerMood=extracted.mood||null;
     Miao.state.lastAIContent=result;
     trimWechatImageRuntimePool();
     return result;
@@ -11928,7 +11938,9 @@ async function callAI(api, history, onChunk, extraSystem){
     if(!msg.tool_calls || msg.tool_calls.length===0){
       // 主回复只取正式聊天内容；API 原生 reasoning/thinking 不进入 ThoughtProcess。
       const textContent=msg.content || (Array.isArray(data.content) ? data.content.filter(b=>b.type==="text").map(b=>b.text).join("") : null) || data.output_text || "";
-      const content=textContent;
+      const extracted=typeof extractInnerMoodBlock==="function" ? extractInnerMoodBlock(textContent) : {text:textContent,mood:null};
+      const content=extracted.text;
+      Miao.state.lastInnerMood=extracted.mood||null;
       Miao.state.lastAIContent=content;
       trimWechatImageRuntimePool();
       return content;
@@ -11965,7 +11977,7 @@ async function callAI(api, history, onChunk, extraSystem){
     const finalMessages=[...loopMessages,{role:"user",content:"工具调用到此为止，不要再调用任何工具。现在请用当前角色的口吻，结合上面已有的工具结果，直接给 user 一条自然的微信回复（先回应 ta 刚说的话）。"}];
     const fres=await fetch(url,{method:"POST",headers,body:JSON.stringify({model:api.model,messages:finalMessages,temperature:.7})});
     const ftext=await fres.text();
-    if(fres.ok){ const fd=JSON.parse(ftext); const fc=fd.choices?.[0]?.message; const content=(fc&&fc.content)||fd.output_text||""; if(content){ Miao.state.lastAIContent=content; trimWechatImageRuntimePool(); return content; } }
+    if(fres.ok){ const fd=JSON.parse(ftext); const fc=fd.choices?.[0]?.message; const rawContent=(fc&&fc.content)||fd.output_text||""; const extracted=typeof extractInnerMoodBlock==="function" ? extractInnerMoodBlock(rawContent) : {text:rawContent,mood:null}; const content=extracted.text; if(content){ Miao.state.lastInnerMood=extracted.mood||null; Miao.state.lastAIContent=content; trimWechatImageRuntimePool(); return content; } }
   }catch(e){}
   Miao.state.lastAIContent="";
   trimWechatImageRuntimePool();
@@ -19896,39 +19908,118 @@ const INNER_HALFLIFE={
   vitality:8, fatigue:5, longing:5, intimacy:7, possessive:6, curiosity:4, sexual:4,
   play:2.5, duty:6, anxiety:2.5, stress:3, contentment:6, irritability:2, seen:30, selfhood:48
 };
-// 人设气质档案：复用已有的 inferThoughtArchetype，把"认知风格"扩展成情绪波动特征。
-// vol=整体波动倍率；settle=回落快慢(>1更快平静)；sens=各维度敏感度
+const INNER_MOOD_KEYS=["affection","neediness","praise","sexual_tension","coldness","absence","conflict","curiosity","playfulness","stress","task_pull"];
+const INNER_MOOD_TO_DRIVES={
+  affection:{intimacy:.105,contentment:.07,longing:-.035,anxiety:-.045,sexual:.018},
+  neediness:{longing:.105,intimacy:.055,anxiety:.025,sexual:.012},
+  praise:{seen:.095,contentment:.055,selfhood:.035,stress:-.018},
+  sexual_tension:{sexual:.13,intimacy:.075,possessive:.035,play:.028,anxiety:.012},
+  coldness:{anxiety:.095,longing:.068,contentment:-.065,intimacy:-.025},
+  absence:{longing:.095,possessive:.06,anxiety:.045,contentment:-.018},
+  conflict:{irritability:.12,anxiety:.08,contentment:-.085,intimacy:-.048},
+  curiosity:{curiosity:.07,seen:.018},
+  playfulness:{play:.075,intimacy:.032,contentment:.028},
+  stress:{stress:.075,fatigue:.025,duty:.018,contentment:-.03},
+  task_pull:{duty:.08,curiosity:.035,stress:.018}
+};
+function innerRoleSignature(role={}){
+  return [role.id,role.name,role.description,role.personality,role.scenario,role.systemPrompt,role.thoughtStyle].join("\n").slice(0,4000);
+}
+function innerTemperamentCacheKey(role){ return "innerTemperament.v2."+(role?.id||Miao?.state?.currentRoleId||"default"); }
+function inferInnerTemperamentFromPersona(role={}){
+  const blob=innerRoleSignature(role);
+  const a=(typeof inferThoughtArchetype==="function")?inferThoughtArchetype(blob):"restrained";
+  const T={
+    obsessive:{ vol:1.5,  settle:.78, sens:{ possessive:1.9, anxiety:1.7, longing:1.5, irritability:1.4, intimacy:1.2, contentment:.8, play:.7, sexual:1.4, stress:1.1 } },
+    verbose:  { vol:1.35, settle:1.2, sens:{ intimacy:1.5, play:1.6, longing:1.2, contentment:1.3, anxiety:.7, irritability:.8, possessive:.7, sexual:1.2, curiosity:1.15 } },
+    warm:     { vol:1.0,  settle:1.1, sens:{ intimacy:1.3, contentment:1.4, longing:1.0, anxiety:.8, irritability:.6, possessive:.6, seen:1.1, sexual:1.0 } },
+    rational: { vol:.6,   settle:1.3, sens:{ anxiety:.6, irritability:.6, possessive:.5, longing:.7, intimacy:.8, curiosity:1.2, sexual:.7, stress:.85 } },
+    tsundere: { vol:1.2,  settle:.95, sens:{ irritability:1.5, intimacy:1.3, longing:1.2, possessive:1.1, anxiety:1.1, contentment:.8, sexual:1.1 } },
+    restrained:{ vol:.85, settle:1.05, sens:{ longing:1.1, intimacy:1.0, anxiety:.9, possessive:.8, irritability:.8, sexual:.9 } }
+  };
+  const temp=Object.assign({archetype:a}, T[a]||T.restrained);
+  const low=blob.toLowerCase();
+  const has=re=>re.test(blob)||re.test(low);
+  temp.sens=Object.assign({},temp.sens||{});
+  const mul=(k,v)=>{ temp.sens[k]=clamp01((temp.sens[k]||1)*v); temp.sens[k]=Math.max(.12,Math.min(2.4,temp.sens[k])); };
+  if(has(/占有|病娇|偏执|吃醋|独占|不许|黏|黏人|依赖|控制欲/)){ mul("possessive",1.25); mul("anxiety",1.12); mul("longing",1.1); }
+  if(has(/冷淡|克制|理性|寡言|疏离|清冷|慢热/)){ temp.vol*=.86; temp.settle*=1.12; mul("sexual",.9); mul("play",.85); }
+  if(has(/热情|直球|主动|外向|话多|撒娇|活泼/)){ temp.vol*=1.12; mul("intimacy",1.12); mul("play",1.14); }
+  if(has(/色气|情欲|欲望|挑逗|暧昧|恋人|伴侣|亲密/)){ mul("sexual",1.18); mul("intimacy",1.08); }
+  if(has(/责任|照顾|保护|工作|助理|监督|老师|医生/)){ mul("duty",1.18); mul("stress",1.08); }
+  temp.vol=Math.max(.45,Math.min(1.75,temp.vol));
+  temp.settle=Math.max(.55,Math.min(1.55,temp.settle));
+  return temp;
+}
+// 人设气质档案：先从角色设定生成一次缓存；之后只用缓存，不把人设每轮重新硬分类。
 function innerTemperament(scope=currentInnerScope()){
   if(scope==="claude:tool"){
     return { archetype:"tool", vol:.7, settle:1.15,
       sens:{ duty:1.2, curiosity:1.15, seen:1.0, selfhood:1.0, stress:1.0, longing:.3, intimacy:.4, possessive:.15, anxiety:.6, irritability:.6, play:.5, contentment:1.0, sexual:.2 } };
   }
   const role=(typeof currentRole==="function"?currentRole():null)||{};
-  const blob=[role.name,role.description,role.personality,role.scenario,role.systemPrompt,role.thoughtStyle].join("\n");
-  const a=(typeof inferThoughtArchetype==="function")?inferThoughtArchetype(blob):"restrained";
-  const T={
-    obsessive:{ vol:1.5,  settle:.78, sens:{ possessive:1.9, anxiety:1.7, longing:1.5, irritability:1.4, intimacy:1.2, contentment:.8, play:.7, sexual:1.4 } },
-    verbose:  { vol:1.35, settle:1.2, sens:{ intimacy:1.5, play:1.6, longing:1.2, contentment:1.3, anxiety:.7, irritability:.8, possessive:.7, sexual:1.2 } },
-    warm:     { vol:1.0,  settle:1.1, sens:{ intimacy:1.3, contentment:1.4, longing:1.0, anxiety:.8, irritability:.6, possessive:.6, seen:1.1, sexual:1.0 } },
-    rational: { vol:.6,   settle:1.3, sens:{ anxiety:.6, irritability:.6, possessive:.5, longing:.7, intimacy:.8, curiosity:1.2, sexual:.7 } },
-    tsundere: { vol:1.2,  settle:.95, sens:{ irritability:1.5, intimacy:1.3, longing:1.2, possessive:1.1, anxiety:1.1, contentment:.8, sexual:1.1 } },
-    restrained:{ vol:.85, settle:1.05, sens:{ longing:1.1, intimacy:1.0, anxiety:.9, possessive:.8, irritability:.8, sexual:.9 } }
-  };
-  return Object.assign({archetype:a}, T[a]||T.restrained);
+  const sig=innerRoleSignature(role);
+  const key=innerTemperamentCacheKey(role);
+  const cached=Storage.get(key,null);
+  if(cached&&cached.signature===sig&&cached.temp) return cached.temp;
+  const temp=inferInnerTemperamentFromPersona(role);
+  Storage.set(key,{signature:sig,temp,updatedAt:Date.now()});
+  return temp;
 }
 function tSens(temp,k){ return (temp&&temp.sens&&temp.sens[k]!=null)?temp.sens[k]:1; }
-// 轻量情绪识别：只读关键词/语气给内容定性(不调接口，极快)
-function classifyMessageMood(s){
-  s=String(s||""); const has=re=>re.test(s);
-  return {
-    affection: has(/喜欢你|爱你|想你|抱抱|亲亲|乖|宝贝|么么|亲爱|心动|想见你|最爱|撒娇|❤|🥰|😘|蹭你/),
-    needy:     has(/陪我|别走|抱我|想见|什么时候回来|等你|好想|寂寞|孤单|想抱|在不在/),
-    praise:    has(/你真|厉害|聪明|靠谱|谢谢你|多亏|好棒|信任你|依赖你|懂我/),
-    sexual:    has(/想要你|抱紧|亲热|脱|吻|喘|湿|硬了|做一次|很敏感|压上来/),
-    cold:      has(/随便|无所谓|懒得|没空|在忙|忙着|改天|以后再说|不想说|别烦|呵呵|哦+$|嗯+$|知道了$/),
-    absence:   has(/出门|加班|要走|睡了|下线|不在了|出去|有事|聚会|应酬|和朋友|跟同事|约了|去忙/),
-    conflict:  has(/讨厌你|烦死|滚|分手|不理你|你够了|凭什么|气死|闭嘴|别说了|失望|过分/)
-  };
+function emptyInnerMood(){
+  const mood={};
+  INNER_MOOD_KEYS.forEach(k=>mood[k]=0);
+  return mood;
+}
+function normalizeInnerMood(raw){
+  const mood=emptyInnerMood();
+  if(!raw||typeof raw!=="object") return mood;
+  const aliases={needy:"neediness",sexual:"sexual_tension",cold:"coldness",curious:"curiosity",play:"playfulness",task:"task_pull"};
+  Object.keys(raw).forEach(k=>{
+    const key=aliases[k]||k;
+    if(mood[key]!=null) mood[key]=clamp01(raw[k]);
+  });
+  return mood;
+}
+// Local semantic hints are deliberately weak. They seed a vector when no model vector exists;
+// they never update drives directly.
+function inferInnerMoodHints(text){
+  const s=String(text||"").trim();
+  const mood=emptyInnerMood();
+  if(!s) return mood;
+  const set=(k,v)=>{ mood[k]=Math.max(mood[k]||0,clamp01(v)); };
+  const has=re=>re.test(s);
+  const len=s.length;
+  if(has(/喜欢你|爱你|想你|抱抱|亲亲|乖|宝贝|么么|亲爱|心动|想见你|最爱|撒娇|蹭你|贴贴|抱一下/)) set("affection",.42);
+  if(has(/陪我|别走|抱我|什么时候回来|等你|好想|寂寞|孤单|想抱|在不在|别丢下/)) set("neediness",.42);
+  if(has(/你真|厉害|聪明|靠谱|谢谢你|多亏|好棒|信任你|依赖你|懂我|辛苦了/)) set("praise",.36);
+  if(has(/想要你|亲热|脱|吻|喘|湿|硬了|做一次|很敏感|压上来|受不了|弄我|摸|咬|床|色色|欲|撩/)) set("sexual_tension",.52);
+  if(has(/随便|无所谓|懒得|没空|在忙|忙着|改天|以后再说|不想说|别烦|呵呵|哦+$|嗯+$|知道了$/)) set("coldness",.38);
+  if(has(/出门|加班|要走|睡了|下线|不在了|出去|有事|聚会|应酬|和朋友|跟同事|约了|去忙/)) set("absence",.34);
+  if(has(/讨厌你|烦死|滚|分手|不理你|你够了|凭什么|气死|闭嘴|别说了|失望|过分|吵架/)) set("conflict",.5);
+  if(has(/为什么|怎么会|看看|想知道|好奇|查一下|研究|试试/)) set("curiosity",.22);
+  if(has(/哈哈|笑死|逗你|开玩笑|玩|掷骰|猜|可爱|笨蛋/)) set("playfulness",.26);
+  if(has(/累|崩|压力|难受|焦虑|烦|困|撑不住|忙死|ddl|deadline/)) set("stress",.34);
+  if(has(/帮我|改代码|修|写|查|整理|做一下|处理|任务/)) set("task_pull",.3);
+  if(len>180) set("stress",Math.max(mood.stress,.18));
+  return mood;
+}
+function extractInnerMoodBlock(text){
+  const s=String(text||"");
+  const re=/\[mood\]\s*([\s\S]*?)\s*\[\/mood\]/i;
+  const m=s.match(re);
+  if(!m) return {text:s,mood:null};
+  let mood=null;
+  try{ mood=normalizeInnerMood(JSON.parse(m[1].trim())); }catch(e){ mood=null; }
+  return {text:s.replace(re,"").replace(/\n{3,}/g,"\n\n").trim(),mood};
+}
+function stripInnerMoodBlock(text){
+  const extracted=extractInnerMoodBlock(text).text;
+  return String(extracted||"").replace(/\[mood\][\s\S]*$/i,"").replace(/\n{3,}/g,"\n\n").trim();
+}
+function buildInnerMoodInstruction(){
+  return `\n\n[private mood vector]\nAfter your visible reply, append one hidden block for the current user turn:\n[mood]{"affection":0,"neediness":0,"praise":0,"sexual_tension":0,"coldness":0,"absence":0,"conflict":0,"curiosity":0,"playfulness":0,"stress":0,"task_pull":0}[/mood]\nUse 0..1 numbers from semantic judgment, not keyword matching. This block is private and will be stripped before display. Do not mention it.`;
 }
 // 念头结晶：情绪出现峰值时，凝成一句内心独白(按人设取不同口吻)，而不是存原话
 function crystallizeThought(drive, mood, temp){
@@ -19940,6 +20031,7 @@ function crystallizeThought(drive, mood, temp){
     possessive: a==="obsessive"?["ta的世界里不该只有别人","好想把ta留在身边","ta这会儿和谁在一起"]:["想多黏ta一会儿","希望ta只看着我"],
     irritability: ["有点被点着了","凭什么这么说我","气归气…还是在乎"],
     intimacy: ["刚刚心都化了","ta这样我会当真的","想再靠近一点"],
+    sexual: ["被ta勾得有点乱","身体比话先热起来","想靠近得更过分一点"],
     contentment: ["这一刻挺好的","被ta这么说，安心","难得的平静"],
     play: ["想逗逗ta","这种打闹好上头","还想再多聊一会"],
     seen: ["原来ta有认真看我","被记住的感觉真好"],
@@ -20055,7 +20147,7 @@ function feedInnerThought(scope, text, drive="longing", strength=.38, kind="flit
 function strongestInnerThought(st){
   return (st.thoughts||[]).slice().sort((a,b)=>(Number(b.strength)||0)-(Number(a.strength)||0))[0] || null;
 }
-// innerTouchScore 已被 classifyMessageMood + 峰值结晶取代（内容驱动，不再靠长度/频率打分）
+// Inner updates are driven by a normalized mood vector. Keyword matches are only weak hints.
 function settleInnerAfterReply(st, scope){
   const top=strongestInnerThought(st);
   if(!top || Number(top.strength||0)<.24) return;
@@ -20078,39 +20170,57 @@ function feedInnerEvent(scope, type, text=""){
   const temp=innerTemperament(scope);
   const V=temp.vol||1;
   const s=String(text||"");
-  // 加值统一经过：性格波动倍率 V × 该维度敏感度。bump 用于平稳变化，fire 额外记录"峰值维度"
+  // 加值统一经过：语义强度 × 性格波动倍率 × 维度敏感度。
   const bump=(k,v)=>{ if(d[k]!=null) d[k]=clamp01(d[k]+v*V*tSens(temp,k)); };
   let peakDrive=null, peakRaw=0;
-  const fire=(k,v)=>{ bump(k,v); if(v>peakRaw){ peakRaw=v; peakDrive=k; } };
+  const fire=(k,v,source=1)=>{ bump(k,v); const raw=Math.abs(v)*source; if(raw>peakRaw){ peakRaw=raw; peakDrive=k; } };
+  const applyMoodVector=(mood, scale=1)=>{
+    mood=normalizeInnerMood(mood);
+    let strongestMood="", strongestVal=0;
+    INNER_MOOD_KEYS.forEach(k=>{ if((mood[k]||0)>strongestVal){ strongestVal=mood[k]||0; strongestMood=k; } });
+    INNER_MOOD_KEYS.forEach(k=>{
+      const val=clamp01(mood[k])*scale;
+      if(val<=.015) return;
+      const map=INNER_MOOD_TO_DRIVES[k]||{};
+      Object.keys(map).forEach(drive=>{
+        const delta=map[drive]*val;
+        if(Math.abs(delta)<.002) return;
+        if(delta>0) fire(drive,delta,val);
+        else bump(drive,delta);
+      });
+    });
+    return {strongestMood,strongestVal};
+  };
 
   if(type==="user_message"){
     const lastUser=Number(st.lastUserAt||0);
     const quick=lastUser && Date.now()-lastUser<180000;
     st.lastUserAt=Date.now();
-    const m=classifyMessageMood(s);
     // 基础在场感(很小，不抢戏)
     bump("seen", quick?.03:.015); bump("intimacy", quick?.02:.008);
-    // 内容驱动(明显起伏)：不同情绪推不同维度
-    if(m.affection){ fire("intimacy",.10); fire("contentment",.07); bump("anxiety",-.05); bump("longing",-.03); }
-    if(m.needy){ fire("longing",.10); fire("intimacy",.05); }
-    if(m.praise){ fire("seen",.09); fire("contentment",.05); bump("selfhood",.03); }
-    if(m.sexual){ fire("sexual",.16); fire("intimacy",.10); fire("possessive",.05); fire("play",.04); }
-    // 亲昵/亲密语境也让情欲慢慢温起来一点点
-    if(m.affection||m.needy){ bump("sexual",.02); }
-    if(m.cold){ fire("anxiety",.10); fire("longing",.07); bump("contentment",-.06); }
-    if(m.absence){ fire("longing",.10); fire("possessive",.07); fire("anxiety",.05); }
-    if(m.conflict){ fire("irritability",.13); fire("anxiety",.08); bump("contentment",-.08); bump("intimacy",-.04); }
-    // 念头结晶：情绪峰值够大才凝一句内心独白(中性闲聊不会触发，避免刷屏)
-    if(peakDrive && peakRaw>=.09){
-      const th=crystallizeThought(peakDrive, m, temp);
-      if(th) putInnerThought(st, th, peakDrive, clamp01(.40+peakRaw*1.8), (peakRaw*V>=.14)?"fixation":"flit");
+    const mood=inferInnerMoodHints(s);
+    const {strongestVal}=applyMoodVector(mood,.72);
+    if(peakDrive && Math.max(peakRaw,strongestVal)>=.055){
+      const th=crystallizeThought(peakDrive, mood, temp);
+      if(th) putInnerThought(st, th, peakDrive, clamp01(.34+Math.max(peakRaw,strongestVal)*1.25), (peakRaw*V>=.11)?"fixation":"flit");
     }
   }
   else if(type==="assistant_reply"){
+    const extracted=extractInnerMoodBlock(s);
+    if(extracted.mood) applyMoodVector(extracted.mood,.38);
     bump("contentment",.02); bump("stress",-.014); bump("duty",-.01);
     bump("fatigue", s.length>500?.012:.004);
     if(scope==="claude:tool") bump("selfhood",.006);
     settleInnerAfterReply(st,scope);
+  }
+  else if(type==="mood_vector"){
+    let mood=null;
+    try{ mood=typeof text==="string" ? JSON.parse(text) : text; }catch(e){ mood=null; }
+    applyMoodVector(mood,.72);
+    if(peakDrive && peakRaw>=.045){
+      const th=crystallizeThought(peakDrive, mood||{}, temp);
+      if(th) putInnerThought(st, th, peakDrive, clamp01(.28+peakRaw*1.2), (peakRaw*V>=.10)?"fixation":"flit");
+    }
   }
   else if(type==="tool_user"){
     const lastToolUser=Number(st.lastToolUserAt||0);
