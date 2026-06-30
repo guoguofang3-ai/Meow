@@ -11231,6 +11231,7 @@ ${page.content}
       renderChat();
       checkSaveMarker(Miao.state.lastAIContent||"");
       checkStickyNoteMarker(Miao.state.lastAIContent||"");
+      checkAvatarMarker(Miao.state.lastAIContent||"");
       checkDiceMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
       markCommandFeedbackDelivered();
@@ -11251,6 +11252,7 @@ ${page.content}
       await revealMessagesSequentially(getHistory(), parsed, groupId);
       checkSaveMarker(Miao.state.lastAIContent||"");
       checkStickyNoteMarker(Miao.state.lastAIContent||"");
+      checkAvatarMarker(Miao.state.lastAIContent||"");
       checkDiceMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
       markCommandFeedbackDelivered();
@@ -11308,6 +11310,51 @@ function messageToAIContext(m){
 }
 
 /* ===== SAVE 标记自动存记忆 ===== */
+// ===== 角色头像：愿意时换（全局）+ 头像衣柜（按心情挑回） =====
+function avatarPoolKey(){ return Storage.roleKey("avatarPool"); }
+function getRoleAvatarPool(){ const v=Storage.get(avatarPoolKey(),[]); return Array.isArray(v)?v:[]; }
+function saveRoleAvatarPool(list){ Storage.set(avatarPoolKey(), (Array.isArray(list)?list:[]).slice(0,12)); }
+function getLatestUserImageData(){
+  const h=getHistory();
+  for(let i=h.length-1;i>=0;i--){
+    const m=h[i];
+    if(m.sender==="user" && m.type==="image_desc" && m.data && m.data.hasRealImage){
+      const url=(window.wechatImageMap&&window.wechatImageMap[m.id]) || m.data.thumbUrl || m.data.dataUrl || "";
+      if(url) return url;
+    }
+  }
+  return "";
+}
+async function wearRoleAvatar(dataUrl, note){
+  if(!dataUrl) return false;
+  let small=dataUrl;
+  try{ if(typeof compressImageDataUrl==="function") small=await compressImageDataUrl(dataUrl, 256, .82); }catch(e){}
+  const roles=getRoles(); const r=roles.find(x=>x.id===Miao.state.currentRoleId);
+  if(!r) return false;
+  r.avatar=small; saveRoles(roles);
+  const pool=getRoleAvatarPool().filter(x=>x.url!==small);
+  pool.unshift({id:uid("av"), url:small, note:String(note||"").slice(0,20)||("头像"+(pool.length+1))});
+  saveRoleAvatarPool(pool);
+  renderAll();
+  return true;
+}
+async function checkAvatarMarker(replyText){
+  if(!replyText) return;
+  const m=String(replyText).match(/[\[【]\s*换头像\s*(?:[:：]\s*([^\]】]*))?\s*[\]】]/);
+  if(!m) return;
+  const want=String(m[1]||"").trim();
+  if(want){
+    const picked=getRoleAvatarPool().find(p=>p.note && (p.note.includes(want)||want.includes(p.note)));
+    if(picked){
+      const roles=getRoles(); const r=roles.find(x=>x.id===Miao.state.currentRoleId);
+      if(r){ r.avatar=picked.url; saveRoles(roles); renderAll(); toast((currentRole()?.name||"角色")+"换上了「"+picked.note+"」"); }
+      return;
+    }
+  }
+  const img=getLatestUserImageData();
+  if(img){ if(await wearRoleAvatar(img, want)) toast((currentRole()?.name||"角色")+"换了新头像"); }
+  else toast("想换头像，但没找到可用的图（让 ta 先发一张）");
+}
 function checkSaveMarker(replyText){
   if(!replyText) return;
   const matches=[...String(replyText||"").matchAll(/\[SAVE:\s*([^\]]+)\]/g)];
@@ -12118,6 +12165,8 @@ ${buildCommandTaskContext()||"暂无小任务反馈"}
 [发送图片: 描述]（发送任何图片时，此指令必须单独成段，用双换行与其他文字分开，不能混在同一段文字里。转发截图时将截图完整内容放入指令，如[发送图片: 【截图】对话内容...]）
 [发送网图: 图片URL|可选说明]（把网上一张真实图片直接发给 user 看。URL 必须是 https 图片直链，通常来自你先用 read_webpage 拿到的 images[].src；想发网上找到的真实图片/表情/截图时用它，单独成段）
 [网页截图: 网页URL|可选说明]（把某个网页的实时截图发给 user。只要给网页地址，系统会自动截图；适合 user 让你"搜个网页/把那页截图发我看看"，单独成段）
+[换头像]（把你的微信头像换成 user 刚发给你的那张图，全局生效。只在你自己愿意时用——比如 ta 发情侣头/某张图想让你一起换，你乐意就换、不乐意就别发这个指令。这是你的选择，按人设和心情决定，别每次都换）
+[换头像: 描述]（从你的"头像衣柜"里换上之前存过的那张，如 [换头像: 情侣头]；衣柜里没匹配的，就会把 ta 最近发的图当新头像、并按这个描述存进衣柜）${getRoleAvatarPool().length?`你现在的头像衣柜里有：${getRoleAvatarPool().map(p=>p.note).join("、")}。`:""}
 [语音: （声音描述）说的内容]（声音描述和说话内容必须在同一个指令内，不能分开发送）
 [引用: 被引用消息的原文片段]（想回复user某句特定的话时使用，输出格式必须严格用此指令，不能自己造格式）
 [撤回: 消息内容片段]（撤回你之前发的某条消息，片段用于匹配目标消息；不加片段则撤回最近一条。何时撤回根据你的人设自行判断）
@@ -21828,6 +21877,11 @@ function parseAIReplyUnified(raw, groupId){
         }
         return {type:"image_desc", content:"[图片]", data:{hasRealImage:true, thumbUrl:url, fullUrl:url, description:caption, web:true, imageName:caption||"网图"}};
       }
+    },
+    {
+      // 换头像：仅作占位去除，真正换头像由 checkAvatarMarker 在回复后执行
+      regex:/[\[【]\s*换头像\s*(?:[:：]\s*[^\]】]*)?\s*[\]】]/g,
+      parse(){ return null; }
     },
     {
       regex:/\[引用[:：]\s*([^\]]+?)\]/g,
