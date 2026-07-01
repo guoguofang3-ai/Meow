@@ -11339,9 +11339,10 @@ async function wearRoleAvatar(dataUrl, note){
   try{ if(typeof compressImageDataUrl==="function") small=await compressImageDataUrl(dataUrl, 256, .82); }catch(e){}
   const roles=getRoles(); const r=roles.find(x=>x.id===Miao.state.currentRoleId);
   if(!r) return false;
-  r.avatar=small; saveRoles(roles);
+  if(r.avatar===small){ if(note){ r.avatarNote=String(note).slice(0,20); saveRoles(roles); } return "same"; }
+  r.avatar=small; r.avatarNote=String(note||"").slice(0,20)||"新头像"; saveRoles(roles);
   const pool=getRoleAvatarPool().filter(x=>x.url!==small);
-  pool.unshift({id:uid("av"), url:small, note:String(note||"").slice(0,20)||("头像"+(pool.length+1))});
+  pool.unshift({id:uid("av"), url:small, note:r.avatarNote});
   saveRoleAvatarPool(pool);
   renderAll();
   return true;
@@ -11356,14 +11357,21 @@ async function checkAvatarMarker(replyText){
     const picked=getRoleAvatarPool().find(p=>p.note && (p.note.includes(want)||want.includes(p.note)));
     if(picked){
       const roles=getRoles(); const r=roles.find(x=>x.id===Miao.state.currentRoleId);
-      if(r){ r.avatar=picked.url; saveRoles(roles); renderAll(); toast((currentRole()?.name||"角色")+"换上了「"+picked.note+"」"); updateWechatToolTrace(traceId,"done","换上「"+picked.note+"」"); }
-      else updateWechatToolTrace(traceId,"error","换失败");
+      if(!r){ updateWechatToolTrace(traceId,"error","换失败"); return; }
+      if(r.avatar===picked.url){ r.avatarNote=picked.note; saveRoles(roles); updateWechatToolTrace(traceId,"done","已经是「"+picked.note+"」了"); return; }
+      r.avatar=picked.url; r.avatarNote=picked.note; saveRoles(roles); renderAll();
+      toast((currentRole()?.name||"角色")+"换上了「"+picked.note+"」"); updateWechatToolTrace(traceId,"done","换上「"+picked.note+"」");
       return;
     }
   }
   const img=getLatestUserImageData();
-  if(img){ if(await wearRoleAvatar(img, want)){ toast((currentRole()?.name||"角色")+"换了新头像"); updateWechatToolTrace(traceId,"done", want?("存为「"+want+"」"):"新头像"); } else updateWechatToolTrace(traceId,"error","换失败"); }
-  else { toast("想换头像，但没找到可用的图（让 ta 先发一张）"); updateWechatToolTrace(traceId,"error","没有可用图"); }
+  if(img){
+    const res=await wearRoleAvatar(img, want);
+    if(res==="same"){ updateWechatToolTrace(traceId,"done","已经是这个头像了"); }
+    else if(res){ toast((currentRole()?.name||"角色")+"换了新头像"); updateWechatToolTrace(traceId,"done", want?("存为「"+want+"」"):"新头像"); }
+    else updateWechatToolTrace(traceId,"error","换失败");
+  }
+  else { updateWechatToolTrace(traceId,"error","没有可用图"); }
 }
 // ===== 聊天截图：用默认微信样式、对方视角，画到 canvas 成图 =====
 function _scrWrap(ctx, text, maxWidth){
@@ -11548,12 +11556,13 @@ async function claudeChangeAvatarTool(args={}){
   const want=String(args.note||args.which||"").trim();
   if(want){
     const picked=getRoleAvatarPool().find(p=>p.note && (p.note.includes(want)||want.includes(p.note)));
-    if(picked){ const roles=getRoles(); const r=roles.find(x=>x.id===Miao.state.currentRoleId); if(r){ r.avatar=picked.url; saveRoles(roles); renderAll(); return {ok:true, note:"换上了「"+picked.note+"」头像"}; } }
+    if(picked){ const roles=getRoles(); const r=roles.find(x=>x.id===Miao.state.currentRoleId); if(r){ if(r.avatar===picked.url){ r.avatarNote=picked.note; saveRoles(roles); return {ok:true, note:"已经戴着「"+picked.note+"」了，无需再换"}; } r.avatar=picked.url; r.avatarNote=picked.note; saveRoles(roles); renderAll(); return {ok:true, note:"换上了「"+picked.note+"」头像"}; } }
   }
   const img=getLatestUserImageData(typeof getClaudeHistory==="function"?getClaudeHistory():null);
   if(!img) return {ok:false, error:"没找到可用的图，让 user 先发一张图片"};
-  const ok=await wearRoleAvatar(img, want);
-  return ok?{ok:true, note:"已换新头像"+(want?("并存进衣柜为「"+want+"」"):"")}:{ok:false,error:"换头像失败"};
+  const res=await wearRoleAvatar(img, want);
+  if(res==="same") return {ok:true, note:"已经是这个头像了，无需再换"};
+  return res?{ok:true, note:"已换新头像"+(want?("并存进衣柜为「"+want+"」"):"")}:{ok:false,error:"换头像失败"};
 }
 async function claudeChatScreenshotTool(args={}){
   const kw=String(args.query||"").trim();
@@ -12378,7 +12387,7 @@ ${buildCommandTaskContext()||"暂无小任务反馈"}
 [发送网图: 图片URL|可选说明]（把网上一张真实图片直接发给 user 看。URL 必须是 https 图片直链，通常来自你先用 read_webpage 拿到的 images[].src；想发网上找到的真实图片/表情/截图时用它，单独成段）
 [网页截图: 网页URL|可选说明]（把某个网页的实时截图发给 user。只要给网页地址，系统会自动截图；适合 user 让你"搜个网页/把那页截图发我看看"，单独成段）
 [换头像]（把你的微信头像换成 user 刚发给你的那张图，全局生效。只在你自己愿意时用——比如 ta 发情侣头/某张图想让你一起换，你乐意就换、不乐意就别发这个指令。这是你的选择，按人设和心情决定，别每次都换）
-[换头像: 描述]（从你的"头像衣柜"里换上之前存过的那张，如 [换头像: 情侣头]；衣柜里没匹配的，就会把 ta 最近发的图当新头像、并按这个描述存进衣柜）${getRoleAvatarPool().length?`你现在的头像衣柜里有：${getRoleAvatarPool().map(p=>p.note).join("、")}。`:""}
+[换头像: 描述]（从你的"头像衣柜"里换上之前存过的那张，如 [换头像: 情侣头]；衣柜里没匹配的，就会把 ta 最近发的图当新头像、并按这个描述存进衣柜）${getRoleAvatarPool().length?`你现在的头像衣柜里有：${getRoleAvatarPool().map(p=>p.note).join("、")}。`:""}${currentRole()?.avatarNote?`【你当前头像】你现在戴着「${currentRole().avatarNote}」。如果 user 没让你换、你也没有新理由，就不要再发[换头像]了，已经换好了。`:""}
 [聊天截图: 关键词]（把你和 user 的聊天记录截一张图发给 ta。比如 ta 不认自己说过的某句话，你就 [聊天截图: 那句话的关键词]，系统会翻到那段记录、按"你的视角"(头像左右对调)生成一张微信截图发出去，当证据甩给 ta。不带关键词=截最近十几条。单独成段）
 [语音: （声音描述）说的内容]（声音描述和说话内容必须在同一个指令内，不能分开发送）
 [引用: 被引用消息的原文片段]（想回复user某句特定的话时使用，输出格式必须严格用此指令，不能自己造格式）
