@@ -11403,16 +11403,35 @@ async function renderChatShot(msgs, opts={}){
   const role=(currentRole&&currentRole())||{}, user=(getUserProfile&&getUserProfile())||{};
   const roleAv=await _shotLoadImg(role.avatar||Miao.defaults.avatar);
   const userAv=await _shotLoadImg(user.avatar||Miao.defaults.avatar);
-  const BG="#ededed", SELF="#95ec69", OTHER="#ffffff", TXT="#181818";
-  const W=600, PAD=18, AV=42, GAP=10, FS=25, LH=34, dpr=2;
-  const MAXW=W-PAD*2-AV-GAP-60;
+  // 读当前喵喵机主题真实配色/字体：用一个探针元素让浏览器把 var()/color-mix 解析成 rgb
+  const probe=document.createElement("span");
+  probe.style.cssText="position:absolute;left:-9999px;top:-9999px";
+  document.body.appendChild(probe);
+  const resolveColor=(expr,fallback)=>{ try{ probe.style.color="rgba(0,0,0,0)"; probe.style.color=expr; const c=getComputedStyle(probe).color; return (c && c!=="rgba(0, 0, 0, 0)")?c:fallback; }catch(e){ return fallback; } };
+  const roleBg=resolveColor("var(--role-bubble-bg,var(--role-bubble,#fffdf8))","#fffdf8");
+  const roleTx=resolveColor("var(--role-text,#332f2b)","#332f2b");
+  const selfBg=resolveColor("color-mix(in srgb,var(--user-bubble-bg,#eadfd3) 92%,var(--accent,#111827) 8%)","#95ec69");
+  const selfTx=resolveColor("var(--user-text,#2d2925)","#2d2925");
+  const FF=(getComputedStyle(document.body).fontFamily||"").trim()||"-apple-system,'PingFang SC','Microsoft YaHei',sans-serif";
+  // 背景取微信页面真实背景（多为渐变），解析出停靠色画成 canvas 渐变；取不到用纯色兜底
+  let bgStops=[];
+  try{
+    const wechatEl=document.querySelector(".app-screen.wechat")||document.querySelector(".wechat");
+    const bgImg=wechatEl?getComputedStyle(wechatEl).backgroundImage:"";
+    if(bgImg && bgImg!=="none") bgStops=(bgImg.match(/rgba?\([^)]+\)/g)||[]);
+  }catch(e){}
+  document.body.removeChild(probe);
+
+  const W=600, PAD=20, AV=44, GAP=12, FS=25, LH=35, dpr=2, PX=16, PY=11, R=20, RT=7;
+  const TEXTMAX=W-PAD*2-AV-GAP-PX*2-30;
+  const FONT=FS+"px "+FF;
   const meas=document.createElement("canvas").getContext("2d");
-  meas.font=FS+"px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif";
+  meas.font=FONT;
   const wrap=(text)=>{
     const out=[]; let line="";
     for(const ch of String(text||"")){
       if(ch==="\n"){ out.push(line); line=""; continue; }
-      if(meas.measureText(line+ch).width>MAXW){ out.push(line); line=ch; } else line+=ch;
+      if(meas.measureText(line+ch).width>TEXTMAX){ out.push(line); line=ch; } else line+=ch;
     }
     out.push(line); return out.length?out:[""];
   };
@@ -11420,35 +11439,51 @@ async function renderChatShot(msgs, opts={}){
     const isUser=m.sender==="user";
     const self= swap ? !isUser : isUser;   // 对方视角：角色的消息在右
     const lines=wrap(msgTextForShot(m));
-    return {self, isUser, lines, bubbleH:lines.length*LH+18};
+    return {self, isUser, lines, bubbleH:lines.length*LH+PY*2};
   });
-  const totalH=rows.reduce((s,r)=>s+Math.max(r.bubbleH,AV)+14,0)+PAD*2+16;
-  const cv=document.createElement("canvas"); cv.width=W*dpr; cv.height=Math.max(120,totalH)*dpr;
+  const totalH=rows.reduce((s,r)=>s+Math.max(r.bubbleH,AV)+16,0)+PAD*2+12;
+  const cv=document.createElement("canvas"); cv.width=W*dpr; cv.height=Math.max(140,totalH)*dpr;
   const ctx=cv.getContext("2d"); ctx.scale(dpr,dpr);
-  ctx.fillStyle=BG; ctx.fillRect(0,0,W,totalH);
-  ctx.font=FS+"px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif";
-  ctx.textBaseline="top";
-  const circle=(img,x,y)=>{ ctx.save(); ctx.beginPath(); ctx.arc(x+AV/2,y+AV/2,AV/2,0,7); ctx.clip(); if(img) ctx.drawImage(img,x,y,AV,AV); else { ctx.fillStyle="#c8c8d0"; ctx.fillRect(x,y,AV,AV); } ctx.restore(); };
-  const rrect=(x,y,w,h,r)=>{ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); };
+  // 背景
+  if(bgStops.length>=2){ const g=ctx.createLinearGradient(0,0,W*0.35,totalH); g.addColorStop(0,bgStops[0]); g.addColorStop(1,bgStops[bgStops.length-1]); ctx.fillStyle=g; }
+  else ctx.fillStyle=bgStops[0]||"#eef2fb";
+  ctx.fillRect(0,0,W,totalH);
+  ctx.font=FONT; ctx.textBaseline="top";
+  // 圆形头像（带轻投影）
+  const circle=(img,x,y)=>{
+    ctx.save(); ctx.shadowColor="rgba(0,0,0,.10)"; ctx.shadowBlur=8; ctx.shadowOffsetY=3;
+    ctx.beginPath(); ctx.arc(x+AV/2,y+AV/2,AV/2,0,7); ctx.fillStyle="#fff"; ctx.fill(); ctx.restore();
+    ctx.save(); ctx.beginPath(); ctx.arc(x+AV/2,y+AV/2,AV/2,0,7); ctx.clip();
+    if(img) ctx.drawImage(img,x,y,AV,AV); else { ctx.fillStyle="#d7d2ca"; ctx.fillRect(x,y,AV,AV); }
+    ctx.restore();
+  };
+  // 圆角矩形，可分角（小角做气泡"尾巴"）
+  const rrect=(x,y,w,h,c)=>{ const {tl,tr,br,bl}=c; ctx.beginPath();
+    ctx.moveTo(x+tl,y); ctx.arcTo(x+w,y,x+w,y+h,tr); ctx.arcTo(x+w,y+h,x,y+h,br);
+    ctx.arcTo(x,y+h,x,y,bl); ctx.arcTo(x,y,x+w,y,tl); ctx.closePath(); };
+  const drawBubble=(x,y,w,h,bg,corners)=>{
+    ctx.save(); ctx.shadowColor="rgba(38,31,22,.10)"; ctx.shadowBlur=10; ctx.shadowOffsetY=3;
+    ctx.fillStyle=bg; rrect(x,y,w,h,corners); ctx.fill(); ctx.restore();
+  };
   let y=PAD;
   for(const r of rows){
     const av=r.isUser?userAv:roleAv;
-    const bw=Math.min(MAXW, Math.max(...r.lines.map(l=>meas.measureText(l).width)))+28;
+    const bw=Math.min(TEXTMAX, Math.max(...r.lines.map(l=>meas.measureText(l).width)))+PX*2;
     const bh=r.bubbleH;
     if(r.self){
       const ax=W-PAD-AV; circle(av,ax,y);
       const bx=ax-GAP-bw;
-      ctx.fillStyle=SELF; rrect(bx,y,bw,bh,10); ctx.fill();
-      ctx.fillStyle=TXT; r.lines.forEach((l,i)=>ctx.fillText(l,bx+14,y+9+i*LH));
+      drawBubble(bx,y,bw,bh,selfBg,{tl:R,tr:R,br:RT,bl:R});
+      ctx.fillStyle=selfTx; r.lines.forEach((l,i)=>ctx.fillText(l,bx+PX,y+PY+i*LH));
     } else {
       const ax=PAD; circle(av,ax,y);
       const bx=ax+AV+GAP;
-      ctx.fillStyle=OTHER; rrect(bx,y,bw,bh,10); ctx.fill();
-      ctx.fillStyle=TXT; r.lines.forEach((l,i)=>ctx.fillText(l,bx+14,y+9+i*LH));
+      drawBubble(bx,y,bw,bh,roleBg,{tl:R,tr:R,br:R,bl:RT});
+      ctx.fillStyle=roleTx; r.lines.forEach((l,i)=>ctx.fillText(l,bx+PX,y+PY+i*LH));
     }
-    y+=Math.max(bh,AV)+14;
+    y+=Math.max(bh,AV)+16;
   }
-  return cv.toDataURL("image/jpeg",0.86);
+  return cv.toDataURL("image/jpeg",0.92);
 }
 // 回复后统一的指令副作用处理：无论解析出几条气泡（哪怕整条回复只有一个 [聊天截图]/[换头像] 之类、
 // 解析后为空），都要跑一遍，否则这些纯指令回复会被"parsed 为空就提前 return"吞掉，表现为角色不回复。
@@ -11496,6 +11531,15 @@ async function claudeChangeAvatarTool(args={}){
   const res=await wearRoleAvatar(img, want);
   if(res==="same") return {ok:true, note:"已经是这个头像了，无需再换"};
   return res?{ok:true, note:"已换新头像"+(want?("并存进衣柜为「"+want+"」"):"")}:{ok:false,error:"换头像失败"};
+}
+// 兼容不支持 function calling 的中转：模型把 [聊天截图]/[换头像] 当文字输出时，在回复渲染后执行真正动作。
+// 若模型走了 function call，reply 文字里不会有这些标记，这里自然不重复执行。
+async function runClaudePostReplyDirectives(reply){
+  const s=String(reply||"");
+  const shot=s.match(/[\[【]\s*聊天截图\s*(?:[:：]\s*([^\]】]*))?\s*[\]】]/);
+  if(shot){ try{ await claudeChatScreenshotTool({query:String(shot[1]||"").trim()}); }catch(e){} }
+  const av=s.match(/[\[【]\s*换头像\s*(?:[:：]\s*([^\]】]*))?\s*[\]】]/);
+  if(av){ try{ await claudeChangeAvatarTool({note:String(av[1]||"").trim()}); }catch(e){} }
 }
 async function claudeChatScreenshotTool(args={}){
   const kw=String(args.query||"").trim();
@@ -15435,6 +15479,12 @@ async function callClaudeReply(){
       if(last<b.content.length){ const t=b.content.slice(last).trim(); if(t) res.push({type:"text",content:t}); }
       return res;
     });
+    // [聊天截图]/[换头像]：从显示文字里剥掉，真正的执行放到气泡保存后（见 runClaudePostReplyDirectives），
+    // 避免工具往历史里推的截图消息被本轮 saveClaudeHistory 覆盖掉。兼容不支持 function calling 的中转。
+    claudeBubbles=claudeBubbles.map(b=>{
+      if(b.type!=="text") return b;
+      return {...b, content:b.content.replace(/[\[【]\s*(?:聊天截图|换头像)\s*(?:[:：]\s*[^\]】]*)?\s*[\]】]/g,"").trim()};
+    }).filter(b=>b.type!=="text" || b.content);
     const now2=Date.now();
     const pendingGen=[];
     const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -15489,6 +15539,8 @@ async function callClaudeReply(){
     }
     renderClaude();
     markCommandFeedbackDelivered();
+    // 纯指令回复兜底：文字里若出现 [聊天截图]/[换头像]（模型没走 function call 时），在这里真正执行
+    runClaudePostReplyDirectives(reply);
     // 文字已显示，图片在后台异步生成（不挡对话）
     pendingGen.forEach(g=>runImageGen(g.id, g.prompt));
   renderStory();
