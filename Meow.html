@@ -9461,6 +9461,8 @@ function wechatToolMeta(name,args={}){
     pc_read_file:{label:"电脑文件",icon:"file",detail:args.name||"",verbRunning:"正在读取",verbDone:"读取了",verbError:"读取失败："},
     pc_write_file:{label:"电脑文件",icon:"note",detail:args.name||"",verbRunning:"正在写入",verbDone:"写下了",verbError:"写入失败："},
     pc_view_photo:{label:"照片",icon:"image",detail:args.name||"",verbRunning:"正在看",verbDone:"看了",verbError:"看照片失败："},
+    set_avatar:{label:"头像",icon:"image",detail:"",verbRunning:"正在换",verbDone:"换了",verbError:"换头像失败："},
+    chat_shot:{label:"聊天截图",icon:"image",detail:args.q||"",verbRunning:"正在截图",verbDone:"截了图",verbError:"截图失败："},
     pc_search_code:{label:"找代码",icon:"search",detail:args.query||"",verbRunning:"正在定位",verbDone:"定位了",verbError:"查找失败："},
     pc_patch_code:{label:"改代码",icon:"file",detail:args.file||"",verbRunning:"正在修改",verbDone:"改了",verbError:"修改失败："},
     pc_run_python:{label:"跑Python",icon:"command",detail:"",verbRunning:"正在运行",verbDone:"跑了",verbError:"运行失败："},
@@ -11232,6 +11234,7 @@ ${page.content}
       checkSaveMarker(Miao.state.lastAIContent||"");
       checkStickyNoteMarker(Miao.state.lastAIContent||"");
       checkAvatarMarker(Miao.state.lastAIContent||"");
+      checkScreenshotMarker(Miao.state.lastAIContent||"");
       checkDiceMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
       markCommandFeedbackDelivered();
@@ -11253,6 +11256,7 @@ ${page.content}
       checkSaveMarker(Miao.state.lastAIContent||"");
       checkStickyNoteMarker(Miao.state.lastAIContent||"");
       checkAvatarMarker(Miao.state.lastAIContent||"");
+      checkScreenshotMarker(Miao.state.lastAIContent||"");
       checkDiceMarker(Miao.state.lastAIContent||"");
       maybeUpdateRoleStatus();
       markCommandFeedbackDelivered();
@@ -11314,12 +11318,16 @@ function messageToAIContext(m){
 function avatarPoolKey(){ return Storage.roleKey("avatarPool"); }
 function getRoleAvatarPool(){ const v=Storage.get(avatarPoolKey(),[]); return Array.isArray(v)?v:[]; }
 function saveRoleAvatarPool(list){ Storage.set(avatarPoolKey(), (Array.isArray(list)?list:[]).slice(0,12)); }
-function getLatestUserImageData(){
-  const h=getHistory();
+function getLatestUserImageData(list){
+  const h=Array.isArray(list)?list:getHistory();
   for(let i=h.length-1;i>=0;i--){
-    const m=h[i];
-    if(m.sender==="user" && m.type==="image_desc" && m.data && m.data.hasRealImage){
+    const m=h[i]; if(m.sender!=="user"||!m.data) continue;
+    if(m.type==="image_desc" && m.data.hasRealImage){
       const url=(window.wechatImageMap&&window.wechatImageMap[m.id]) || m.data.thumbUrl || m.data.dataUrl || "";
+      if(url) return url;
+    }
+    if(m.type==="file" && m.data.kind==="image"){
+      const url=m.data.dataUrl || m.data.thumbUrl || m.data.readUrl || "";
       if(url) return url;
     }
   }
@@ -11343,17 +11351,221 @@ async function checkAvatarMarker(replyText){
   const m=String(replyText).match(/[\[【]\s*换头像\s*(?:[:：]\s*([^\]】]*))?\s*[\]】]/);
   if(!m) return;
   const want=String(m[1]||"").trim();
+  const traceId=addWechatToolTrace("set_avatar",{});
   if(want){
     const picked=getRoleAvatarPool().find(p=>p.note && (p.note.includes(want)||want.includes(p.note)));
     if(picked){
       const roles=getRoles(); const r=roles.find(x=>x.id===Miao.state.currentRoleId);
-      if(r){ r.avatar=picked.url; saveRoles(roles); renderAll(); toast((currentRole()?.name||"角色")+"换上了「"+picked.note+"」"); }
+      if(r){ r.avatar=picked.url; saveRoles(roles); renderAll(); toast((currentRole()?.name||"角色")+"换上了「"+picked.note+"」"); updateWechatToolTrace(traceId,"done","换上「"+picked.note+"」"); }
+      else updateWechatToolTrace(traceId,"error","换失败");
       return;
     }
   }
   const img=getLatestUserImageData();
-  if(img){ if(await wearRoleAvatar(img, want)) toast((currentRole()?.name||"角色")+"换了新头像"); }
-  else toast("想换头像，但没找到可用的图（让 ta 先发一张）");
+  if(img){ if(await wearRoleAvatar(img, want)){ toast((currentRole()?.name||"角色")+"换了新头像"); updateWechatToolTrace(traceId,"done", want?("存为「"+want+"」"):"新头像"); } else updateWechatToolTrace(traceId,"error","换失败"); }
+  else { toast("想换头像，但没找到可用的图（让 ta 先发一张）"); updateWechatToolTrace(traceId,"error","没有可用图"); }
+}
+// ===== 聊天截图：用默认微信样式、对方视角，画到 canvas 成图 =====
+function _scrWrap(ctx, text, maxWidth){
+  const out=[];
+  String(text||"").split("\n").forEach(para=>{
+    let line="";
+    for(const ch of Array.from(para)){
+      const t=line+ch;
+      if(ctx.measureText(t).width>maxWidth && line){ out.push(line); line=ch; }
+      else line=t;
+    }
+    out.push(line);
+  });
+  return out.length?out:[""];
+}
+function _scrRound(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function _scrImg(src){ return new Promise(res=>{ if(!src) return res(null); const i=new Image(); i.onload=()=>res(i); i.onerror=()=>res(null); i.src=src; }); }
+async function renderChatScreenshotDataUrl(messages, opts={}){
+  const DPR=2, W=720, fs=17, lh=25, av=78, side=22, vgap=18, bp=14;
+  const maxB=W-av-side*2-44-bp*2;
+  const FONT=fs+'px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+  const cm=document.createElement("canvas").getContext("2d"); cm.font=FONT;
+  const rows=(messages||[]).map(m=>{
+    const lines=_scrWrap(cm, m.text, maxB);
+    const bw=Math.min(maxB, Math.max(8,...lines.map(l=>cm.measureText(l).width)))+bp*2;
+    const bh=lines.length*lh+bp*2-6;
+    return {m, lines, bw, bh};
+  });
+  let H=side*2; rows.forEach(r=>{ H+=Math.max(r.bh, av)+vgap; }); H=Math.max(H,180);
+  const cv=document.createElement("canvas"); cv.width=W*DPR; cv.height=H*DPR;
+  const ctx=cv.getContext("2d"); ctx.scale(DPR,DPR);
+  ctx.fillStyle="#ededed"; ctx.fillRect(0,0,W,H);
+  const roleImg=await _scrImg(opts.roleAvatar), userImg=await _scrImg(opts.userAvatar);
+  const av2=(img,x,y)=>{ ctx.save(); ctx.beginPath(); ctx.arc(x+av/2,y+av/2,av/2,0,Math.PI*2); ctx.clip(); if(img) ctx.drawImage(img,x,y,av,av); else { ctx.fillStyle="#c4c4c4"; ctx.fillRect(x,y,av,av);} ctx.restore(); };
+  ctx.textBaseline="top";
+  let y=side;
+  rows.forEach(r=>{
+    const isRole=r.m.sender!=="user"; // 对方视角：角色(哥哥)在右、绿泡；user 在左、白泡
+    const rowH=Math.max(r.bh, av);
+    let bx;
+    if(isRole){ const ax=W-side-av; av2(roleImg,ax,y); bx=ax-12-r.bw; ctx.fillStyle="#95ec69"; }
+    else { const ax=side; av2(userImg,ax,y); bx=ax+av+12; ctx.fillStyle="#ffffff"; }
+    _scrRound(ctx,bx,y,r.bw,r.bh,12); ctx.fill();
+    ctx.fillStyle="#111"; ctx.font=FONT;
+    r.lines.forEach((l,i)=>ctx.fillText(l, bx+bp, y+bp+i*lh));
+    y+=rowH+vgap;
+  });
+  return cv.toDataURL("image/jpeg",0.88);
+}
+function chatMsgToScreenText(m){
+  if(m.type==="voice") return "[语音] "+(m.data&&m.data.text||"");
+  if(m.type==="image_desc") return "[图片]"+(m.data&&m.data.description?(" "+m.data.description):"");
+  return String(m.content||"");
+}
+function getMessagesForScreenshot(history, query, n){
+  n=n||12;
+  const h=(history||[]).filter(m=>["text","voice","image_desc"].includes(m.type));
+  let arr;
+  if(query){
+    const q=String(query).toLowerCase();
+    let hit=-1;
+    for(let i=h.length-1;i>=0;i--){ if(chatMsgToScreenText(h[i]).toLowerCase().includes(q)){ hit=i; break; } }
+    if(hit>=0){ const start=Math.max(0, hit-Math.floor(n/2)); arr=h.slice(start, start+n); }
+    else arr=h.slice(-n);
+  } else arr=h.slice(-n);
+  return arr.map(m=>({sender:m.sender, text:chatMsgToScreenText(m)})).filter(x=>x.text.trim());
+}
+async function checkScreenshotMarker(replyText){
+  if(!replyText) return;
+  const m=String(replyText).match(/[\[【]\s*聊天截图\s*(?:[:：]\s*([^\]】]*))?\s*[\]】]/);
+  if(!m) return;
+  const query=String(m[1]||"").trim();
+  const traceId=addWechatToolTrace("chat_screenshot",{query});
+  try{
+    const msgs=getMessagesForScreenshot(getHistory(), query, 12);
+    if(!msgs.length){ updateWechatToolTrace(traceId,"error","没有可截的消息"); return; }
+    const role=currentRole()||{}, user=(typeof getUserProfile==="function"?getUserProfile():{})||{};
+    const dataUrl=await renderChatScreenshotDataUrl(msgs, {roleAvatar:role.avatar||Miao.defaults.avatar, userAvatar:user.avatar||Miao.defaults.avatar});
+    const h=getHistory();
+    h.push({id:uid("msg"), groupId:uid("aigrp"), sender:"role", type:"image_desc", content:"[图片]", data:{hasRealImage:true, thumbUrl:dataUrl, fullUrl:dataUrl, description:"我们的聊天截图", web:true, imageName:"聊天截图"}, read:false, createdAt:Date.now(), time:nowTime()});
+    saveHistory(h);
+    if(Miao.state.currentApp==="wechat") renderChat();
+    updateWechatToolTrace(traceId,"done","已截图");
+  }catch(e){ updateWechatToolTrace(traceId,"error", e.message||String(e)); }
+}
+// ===== 聊天截图：固定默认主题，手动画布渲染，头像左右对调(对方视角) =====
+function _shotLoadImg(src){ return new Promise(res=>{ const i=new Image(); i.crossOrigin="anonymous"; i.onload=()=>res(i); i.onerror=()=>res(null); try{ i.src=src||""; }catch(e){ res(null); } }); }
+function msgTextForShot(m){
+  if(!m) return "";
+  if(m.type==="voice") return "🎤 "+(m.data?.text||"语音");
+  if(m.type==="image_desc") return "[图片]"+(m.data?.description?" "+m.data.description:"");
+  if(m.type==="sticker") return "[表情]";
+  if(m.type==="link") return "🔗 "+(m.data?.title||"链接");
+  if(m.type==="music") return "🎵 "+(m.data?.title||"音乐");
+  if(m.type==="transfer"||m.type==="role_request_delivery") return "[转账]";
+  const t=String(m.content||"").replace(/\[[^\]]*\]/g,"").trim();
+  return t || String(m.content||"");
+}
+function findShotMessages(keyword, list){
+  const src=Array.isArray(list)?list:getHistory();
+  const valid=src.filter(m=>["text","voice","image_desc","sticker","link","music","file"].includes(m.type) && (m.content||m.data));
+  if(!keyword) return valid.slice(-14);
+  const kw=keyword.toLowerCase();
+  let idx=-1;
+  for(let i=valid.length-1;i>=0;i--){
+    const s=String(valid[i].content||valid[i].data?.text||valid[i].data?.description||"").toLowerCase();
+    if(s.includes(kw)){ idx=i; break; }
+  }
+  if(idx<0) return valid.slice(-14);
+  return valid.slice(Math.max(0, idx-6), Math.min(valid.length, idx+4));
+}
+async function renderChatShot(msgs, opts={}){
+  const swap = opts.swap!==false;
+  const role=(currentRole&&currentRole())||{}, user=(getUserProfile&&getUserProfile())||{};
+  const roleAv=await _shotLoadImg(role.avatar||Miao.defaults.avatar);
+  const userAv=await _shotLoadImg(user.avatar||Miao.defaults.avatar);
+  const BG="#ededed", SELF="#95ec69", OTHER="#ffffff", TXT="#181818";
+  const W=600, PAD=18, AV=42, GAP=10, FS=25, LH=34, dpr=2;
+  const MAXW=W-PAD*2-AV-GAP-60;
+  const meas=document.createElement("canvas").getContext("2d");
+  meas.font=FS+"px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif";
+  const wrap=(text)=>{
+    const out=[]; let line="";
+    for(const ch of String(text||"")){
+      if(ch==="\n"){ out.push(line); line=""; continue; }
+      if(meas.measureText(line+ch).width>MAXW){ out.push(line); line=ch; } else line+=ch;
+    }
+    out.push(line); return out.length?out:[""];
+  };
+  const rows=msgs.map(m=>{
+    const isUser=m.sender==="user";
+    const self= swap ? !isUser : isUser;   // 对方视角：角色的消息在右
+    const lines=wrap(msgTextForShot(m));
+    return {self, isUser, lines, bubbleH:lines.length*LH+18};
+  });
+  const totalH=rows.reduce((s,r)=>s+Math.max(r.bubbleH,AV)+14,0)+PAD*2+16;
+  const cv=document.createElement("canvas"); cv.width=W*dpr; cv.height=Math.max(120,totalH)*dpr;
+  const ctx=cv.getContext("2d"); ctx.scale(dpr,dpr);
+  ctx.fillStyle=BG; ctx.fillRect(0,0,W,totalH);
+  ctx.font=FS+"px -apple-system,'PingFang SC','Microsoft YaHei',sans-serif";
+  ctx.textBaseline="top";
+  const circle=(img,x,y)=>{ ctx.save(); ctx.beginPath(); ctx.arc(x+AV/2,y+AV/2,AV/2,0,7); ctx.clip(); if(img) ctx.drawImage(img,x,y,AV,AV); else { ctx.fillStyle="#c8c8d0"; ctx.fillRect(x,y,AV,AV); } ctx.restore(); };
+  const rrect=(x,y,w,h,r)=>{ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); };
+  let y=PAD;
+  for(const r of rows){
+    const av=r.isUser?userAv:roleAv;
+    const bw=Math.min(MAXW, Math.max(...r.lines.map(l=>meas.measureText(l).width)))+28;
+    const bh=r.bubbleH;
+    if(r.self){
+      const ax=W-PAD-AV; circle(av,ax,y);
+      const bx=ax-GAP-bw;
+      ctx.fillStyle=SELF; rrect(bx,y,bw,bh,10); ctx.fill();
+      ctx.fillStyle=TXT; r.lines.forEach((l,i)=>ctx.fillText(l,bx+14,y+9+i*LH));
+    } else {
+      const ax=PAD; circle(av,ax,y);
+      const bx=ax+AV+GAP;
+      ctx.fillStyle=OTHER; rrect(bx,y,bw,bh,10); ctx.fill();
+      ctx.fillStyle=TXT; r.lines.forEach((l,i)=>ctx.fillText(l,bx+14,y+9+i*LH));
+    }
+    y+=Math.max(bh,AV)+14;
+  }
+  return cv.toDataURL("image/jpeg",0.86);
+}
+async function checkScreenshotMarker(replyText){
+  if(!replyText) return;
+  const mk=String(replyText).match(/[\[【]\s*聊天截图\s*(?:[:：]\s*([^\]】]*))?\s*[\]】]/);
+  if(!mk) return;
+  const kw=String(mk[1]||"").trim();
+  const traceId=addWechatToolTrace("chat_shot",{q:kw});
+  try{
+    const msgs=findShotMessages(kw);
+    if(!msgs.length){ updateWechatToolTrace(traceId,"error","没找到可截的记录"); return; }
+    const dataUrl=await renderChatShot(msgs,{swap:true});
+    const h=getHistory();
+    h.push({id:uid("msg"), groupId:uid("aigrp"), sender:"role", type:"image_desc", content:"[图片]", data:{hasRealImage:true, thumbUrl:dataUrl, fullUrl:dataUrl, description:kw?("聊天截图·"+kw):"聊天截图", web:true, imageName:"聊天截图"}, read:false, createdAt:Date.now(), time:nowTime()});
+    saveHistory(h); renderChat();
+    updateWechatToolTrace(traceId,"done","已生成并发出");
+  }catch(e){ updateWechatToolTrace(traceId,"error",(e&&e.message)||"失败"); }
+}
+// Claude 助手侧：换头像 / 聊天截图（工具形式，复用同一套逻辑）
+async function claudeChangeAvatarTool(args={}){
+  const want=String(args.note||args.which||"").trim();
+  if(want){
+    const picked=getRoleAvatarPool().find(p=>p.note && (p.note.includes(want)||want.includes(p.note)));
+    if(picked){ const roles=getRoles(); const r=roles.find(x=>x.id===Miao.state.currentRoleId); if(r){ r.avatar=picked.url; saveRoles(roles); renderAll(); return {ok:true, note:"换上了「"+picked.note+"」头像"}; } }
+  }
+  const img=getLatestUserImageData(typeof getClaudeHistory==="function"?getClaudeHistory():null);
+  if(!img) return {ok:false, error:"没找到可用的图，让 user 先发一张图片"};
+  const ok=await wearRoleAvatar(img, want);
+  return ok?{ok:true, note:"已换新头像"+(want?("并存进衣柜为「"+want+"」"):"")}:{ok:false,error:"换头像失败"};
+}
+async function claudeChatScreenshotTool(args={}){
+  const kw=String(args.query||"").trim();
+  const list=typeof getClaudeHistory==="function"?getClaudeHistory():[];
+  const msgs=findShotMessages(kw, list);
+  if(!msgs.length) return {ok:false, error:"没找到可截的记录"};
+  const dataUrl=await renderChatShot(msgs,{swap:true});
+  const h=typeof getClaudeHistory==="function"?getClaudeHistory():[];
+  h.push({id:uid("msg"), sender:"assistant", type:"image_gen", content:"[图片]", data:{status:"done", url:dataUrl, note:"聊天截图"}, createdAt:Date.now(), time:nowTime()});
+  if(typeof saveClaudeHistory==="function") saveClaudeHistory(h);
+  if(typeof renderClaude==="function") renderClaude();
+  return {ok:true, note:"已生成并发送聊天截图"};
 }
 function checkSaveMarker(replyText){
   if(!replyText) return;
@@ -12167,6 +12379,7 @@ ${buildCommandTaskContext()||"暂无小任务反馈"}
 [网页截图: 网页URL|可选说明]（把某个网页的实时截图发给 user。只要给网页地址，系统会自动截图；适合 user 让你"搜个网页/把那页截图发我看看"，单独成段）
 [换头像]（把你的微信头像换成 user 刚发给你的那张图，全局生效。只在你自己愿意时用——比如 ta 发情侣头/某张图想让你一起换，你乐意就换、不乐意就别发这个指令。这是你的选择，按人设和心情决定，别每次都换）
 [换头像: 描述]（从你的"头像衣柜"里换上之前存过的那张，如 [换头像: 情侣头]；衣柜里没匹配的，就会把 ta 最近发的图当新头像、并按这个描述存进衣柜）${getRoleAvatarPool().length?`你现在的头像衣柜里有：${getRoleAvatarPool().map(p=>p.note).join("、")}。`:""}
+[聊天截图: 关键词]（把你和 user 的聊天记录截一张图发给 ta。比如 ta 不认自己说过的某句话，你就 [聊天截图: 那句话的关键词]，系统会翻到那段记录、按"你的视角"(头像左右对调)生成一张微信截图发出去，当证据甩给 ta。不带关键词=截最近十几条。单独成段）
 [语音: （声音描述）说的内容]（声音描述和说话内容必须在同一个指令内，不能分开发送）
 [引用: 被引用消息的原文片段]（想回复user某句特定的话时使用，输出格式必须严格用此指令，不能自己造格式）
 [撤回: 消息内容片段]（撤回你之前发的某条消息，片段用于匹配目标消息；不加片段则撤回最近一条。何时撤回根据你的人设自行判断）
@@ -13794,6 +14007,8 @@ function describeClaudeToolCall(name,args){
   if(name==="pc_read_file") return `读取电脑文件：${args.name||""}`;
   if(name==="pc_write_file") return `写入电脑文件：${args.name||""}`;
   if(name==="pc_view_photo") return `查看电脑照片：${args.name||""}`;
+  if(name==="change_avatar") return "更换头像"+(args.note?`：${args.note}`:"");
+  if(name==="send_chat_screenshot") return "生成聊天截图"+(args.query?`：${args.query}`:"");
   if(name==="pc_search_code") return `在代码里定位：${args.query||""}`;
   if(name==="pc_patch_code") return `改代码：${args.file||""}`;
   if(name==="pc_run_python") return "运行 Python";
@@ -13926,6 +14141,10 @@ function buildClaudeToolUsePrompt(policy={}){
   }
   if(pcPushAllowed()){
     lines.push("- pc_push_github(message?)：把改好的 代码/Meow.html 推上线（已开「推送」开关）；推前自动语法自检，不通过会被拒。只在 user 明确要上线时用");
+  }
+  if(typeof getClaudeMode==="function" && getClaudeMode()!=="tool"){
+    lines.push("- change_avatar(note?)：换你的头像（全局生效）；user 发图后你愿意就换，或按描述从头像衣柜换回；是你的选择，不必每次都换");
+    lines.push("- send_chat_screenshot(query?)：把你俩聊天截图发给 user（你的视角、头像对调）；query 给关键词=截含该关键词那段当证据，不给=截最近十几条");
   }
   if(policy.geoWeather){
     const gwLines=geoWeatherPromptLines("claude");
@@ -20591,6 +20810,10 @@ function getClaudeTools(policy={}){
   if(pcBridgeAllowed()) pcBridgeToolSchemas().forEach(add);
   if(pcRunCodeAllowed()) pcRunToolSchemas().forEach(add);
   if(pcPushAllowed()) pcPushToolSchemas().forEach(add);
+  if(typeof getClaudeMode==="function" && getClaudeMode()!=="tool"){
+    add({type:"function",function:{name:"change_avatar",description:"更换你（角色）的头像，全局生效。不填 note（或 note 是对新头像的描述）时，把 user 刚发的图设为头像；note 是衣柜里已有描述时换回那张。只在你愿意时用。",parameters:{type:"object",properties:{note:{type:"string",description:"新头像的描述，或要换回的衣柜头像描述，如 情侣头"}},required:[]}}});
+    add({type:"function",function:{name:"send_chat_screenshot",description:"把你和 user 的聊天记录截一张图发给 ta（按你的视角，头像左右对调）。query 给关键词则截含该关键词那段(当证据)，不给则截最近十几条。",parameters:{type:"object",properties:{query:{type:"string",description:"要截取的聊天内容关键词，可空"}},required:[]}}});
+  }
   if(policy.geoWeather) geoWeatherToolSchemas("claude").forEach(add);
   if(policy.web){
     add(webSearchToolSchema("claude"));
@@ -20917,6 +21140,8 @@ async function executeWechatTool(name, args){
   return {error:`未知工具: ${name}`};
 }
 async function executeClaudeTool(name, args){
+  if(name==="change_avatar"){ return await claudeChangeAvatarTool(args||{}); }
+  if(name==="send_chat_screenshot"){ return await claudeChatScreenshotTool(args||{}); }
   if(name==="issue_command"){ return issueCommandTask(args||{}, commandTaskScope()); }
   if(name==="read_phone_activity"){ return await fetchPhoneActivity(args||{}); }
   if(name==="look_camera"){ return await lookCameraTool(args||{}); }
@@ -21881,6 +22106,11 @@ function parseAIReplyUnified(raw, groupId){
     {
       // 换头像：仅作占位去除，真正换头像由 checkAvatarMarker 在回复后执行
       regex:/[\[【]\s*换头像\s*(?:[:：]\s*[^\]】]*)?\s*[\]】]/g,
+      parse(){ return null; }
+    },
+    {
+      // 聊天截图：占位去除，真正截图由 checkScreenshotMarker 在回复后执行
+      regex:/[\[【]\s*聊天截图\s*(?:[:：]\s*[^\]】]*)?\s*[\]】]/g,
       parse(){ return null; }
     },
     {
