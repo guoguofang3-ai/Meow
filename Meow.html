@@ -20914,7 +20914,7 @@ function getClaudeTools(policy={}){
   }
   if(policy.device){
     add({type:"function",function:{name:"device_status",description:"查询已连接外接配件状态。",parameters:{type:"object",properties:{},required:[]}}});
-    add({type:"function",function:{name:"device_set_mode",description:"控制已连接外接配件模式。只在 user 明确要求时使用。",parameters:{type:"object",properties:{mode:{type:"integer",enum:[1,2,3]}},required:["mode"]}}});
+    add({type:"function",function:{name:"device_set_mode",description:"控制已连接外接配件模式。只在 user 明确要求时使用。",parameters:{type:"object",properties:{mode:{type:"string",enum:["1","2","3"],description:"模式：1=轻柔，2=中等，3=强力"}},required:["mode"]}}});
     add({type:"function",function:{name:"device_stop",description:"停止已连接外接配件。",parameters:{type:"object",properties:{},required:[]}}});
   }
   return tools;
@@ -21020,7 +21020,7 @@ function getWechatTools(options={}){
         parameters:{
           type:"object",
           properties:{
-            mode:{type:"integer",description:"模式：1=轻柔，2=中等，3=强力",enum:[1,2,3]}
+            mode:{type:"string",description:"模式：1=轻柔，2=中等，3=强力",enum:["1","2","3"]}
           },
           required:["mode"]
         }
