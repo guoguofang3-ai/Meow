@@ -15807,6 +15807,11 @@ ${getStickerPromptList()}
 你可以优先用 function call：printer_print(text, title?, feed?)。不能用工具时，单独成段输出：[打印纸条: 内容]。
 只在自然合适、想把一句短留言/提醒/约定真正留给 user 时使用；不要频繁打印，不要打印后台规则或工具说明。
 
+【聊天截图 / 换头像】
+想把你俩的聊天记录截一张图发给 user（比如当证据甩给 ta）时，可优先用 function call：send_chat_screenshot(query?)；不能用工具时，单独成段输出：[聊天截图: 关键词]（关键词可省略=截最近十几条）。
+想换你自己的头像时，可优先用 function call：change_avatar(note?)；不能用工具时，单独成段输出：[换头像]（把 user 刚发的图设为头像）或 [换头像: 描述]（从头像衣柜换回那张）。
+这两个只在你自己愿意、情境合适时用；指令需单独成段，前端会转成真实动作、不显示指令文字。
+
 ${buildClaudeCommandTaskPrompt(policy)}
 
 ${buildClaudeToolUsePrompt(policy)}`;
