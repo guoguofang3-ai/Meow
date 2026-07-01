@@ -11242,7 +11242,7 @@ ${page.content}
         reply=await callAI(api,h,undefined,webResultContext+"\n\n【最终回复要求】上一轮没有产生可显示的微信回复。请立刻用当前角色口吻，基于上面的网页/搜索内容回复 user。不要再调用或输出任何网页/搜索指令。"+musicHint);
         parsed=applyAutoVoiceMode(parseAIReplyUnified(reply,groupId), newUser.content||"");
       }
-      if(!parsed.length){ saveHistory(hh); renderChat(); Miao.state.busy=false; updateWechatComposerState(); return; }
+      if(!parsed.length){ saveHistory(hh); runPostReplyMarkers(); renderChat(); Miao.state.busy=false; updateWechatComposerState(); return; }
       await prepareThoughtProcessForParsed(api, parsed, {newUser, rawReply:reply, groupId});
       if(idx>=0) hh.splice(idx,1,...parsed);
       else parsed.forEach(m=>hh.push(m));
@@ -11252,40 +11252,18 @@ ${page.content}
       parsed.filter(m=>m.type==="music"&&m.data&&!m.data.audioUrl&&!m.data.previewUrl).forEach(m=>hydrateAIMusicMsg(m.id,m.data.title,m.data.artist));
       parsed.filter(m=>m.type==="voice"&&m.sender==="role").forEach(m=>hydrateRoleVoiceTTS(m.id, Miao.state.currentRoleId));
       renderChat();
-      checkSaveMarker(Miao.state.lastAIContent||"");
-      checkStickyNoteMarker(Miao.state.lastAIContent||"");
-      checkAvatarMarker(Miao.state.lastAIContent||"");
-      checkScreenshotMarker(Miao.state.lastAIContent||"");
-      checkDiceMarker(Miao.state.lastAIContent||"");
-      maybeUpdateRoleStatus();
-      markCommandFeedbackDelivered();
-      if(Miao.state.lastInnerMood && typeof feedInnerEvent==="function"){
-        feedInnerEvent("role:"+(currentRole()?.id||Miao.state.currentRoleId||"default"), "mood_vector", JSON.stringify(Miao.state.lastInnerMood));
-        Miao.state.lastInnerMood=null;
-      }
-      if(typeof feedInnerEvent==="function") feedInnerEvent("role:"+(currentRole()?.id||Miao.state.currentRoleId||"default"), "assistant_reply", Miao.state.lastAIContent||"");
+      runPostReplyMarkers();
     } else {
       let parsed=applyAutoVoiceMode(ensureMusicForExplicitRequest(parseAIReplyUnified(reply,groupId), groupId, newUser.content||""), newUser.content||"");
       if(!parsed.length && webResultContext){
         reply=await callAI(api,h,undefined,webResultContext+"\n\n【最终回复要求】上一轮没有产生可显示的微信回复。请立刻用当前角色口吻，基于上面的网页/搜索内容回复 user。不要再调用或输出任何网页/搜索指令。"+musicHint);
         parsed=applyAutoVoiceMode(parseAIReplyUnified(reply,groupId), newUser.content||"");
       }
-      if(!parsed.length){ saveHistory(h); renderChat(); Miao.state.busy=false; updateWechatComposerState(); return; }
+      if(!parsed.length){ saveHistory(h); runPostReplyMarkers(); renderChat(); Miao.state.busy=false; updateWechatComposerState(); return; }
       await prepareThoughtProcessForParsed(api, parsed, {newUser, rawReply:reply, groupId});
       // 逐条弹出，拟真人连发；callAI 期间可能已经写入工具调用轨迹，必须用最新历史，避免覆盖掉工具提示。
       await revealMessagesSequentially(getHistory(), parsed, groupId);
-      checkSaveMarker(Miao.state.lastAIContent||"");
-      checkStickyNoteMarker(Miao.state.lastAIContent||"");
-      checkAvatarMarker(Miao.state.lastAIContent||"");
-      checkScreenshotMarker(Miao.state.lastAIContent||"");
-      checkDiceMarker(Miao.state.lastAIContent||"");
-      maybeUpdateRoleStatus();
-      markCommandFeedbackDelivered();
-      if(Miao.state.lastInnerMood && typeof feedInnerEvent==="function"){
-        feedInnerEvent("role:"+(currentRole()?.id||Miao.state.currentRoleId||"default"), "mood_vector", JSON.stringify(Miao.state.lastInnerMood));
-        Miao.state.lastInnerMood=null;
-      }
-      if(typeof feedInnerEvent==="function") feedInnerEvent("role:"+(currentRole()?.id||Miao.state.currentRoleId||"default"), "assistant_reply", Miao.state.lastAIContent||"");
+      runPostReplyMarkers();
     }
   }catch(err){
     if(streamMsgId){
@@ -11394,90 +11372,6 @@ async function checkAvatarMarker(replyText){
   }
   else { updateWechatToolTrace(traceId,"error","没有可用图"); }
 }
-// ===== 聊天截图：用默认微信样式、对方视角，画到 canvas 成图 =====
-function _scrWrap(ctx, text, maxWidth){
-  const out=[];
-  String(text||"").split("\n").forEach(para=>{
-    let line="";
-    for(const ch of Array.from(para)){
-      const t=line+ch;
-      if(ctx.measureText(t).width>maxWidth && line){ out.push(line); line=ch; }
-      else line=t;
-    }
-    out.push(line);
-  });
-  return out.length?out:[""];
-}
-function _scrRound(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
-function _scrImg(src){ return new Promise(res=>{ if(!src) return res(null); const i=new Image(); i.onload=()=>res(i); i.onerror=()=>res(null); i.src=src; }); }
-async function renderChatScreenshotDataUrl(messages, opts={}){
-  const DPR=2, W=720, fs=17, lh=25, av=78, side=22, vgap=18, bp=14;
-  const maxB=W-av-side*2-44-bp*2;
-  const FONT=fs+'px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
-  const cm=document.createElement("canvas").getContext("2d"); cm.font=FONT;
-  const rows=(messages||[]).map(m=>{
-    const lines=_scrWrap(cm, m.text, maxB);
-    const bw=Math.min(maxB, Math.max(8,...lines.map(l=>cm.measureText(l).width)))+bp*2;
-    const bh=lines.length*lh+bp*2-6;
-    return {m, lines, bw, bh};
-  });
-  let H=side*2; rows.forEach(r=>{ H+=Math.max(r.bh, av)+vgap; }); H=Math.max(H,180);
-  const cv=document.createElement("canvas"); cv.width=W*DPR; cv.height=H*DPR;
-  const ctx=cv.getContext("2d"); ctx.scale(DPR,DPR);
-  ctx.fillStyle="#ededed"; ctx.fillRect(0,0,W,H);
-  const roleImg=await _scrImg(opts.roleAvatar), userImg=await _scrImg(opts.userAvatar);
-  const av2=(img,x,y)=>{ ctx.save(); ctx.beginPath(); ctx.arc(x+av/2,y+av/2,av/2,0,Math.PI*2); ctx.clip(); if(img) ctx.drawImage(img,x,y,av,av); else { ctx.fillStyle="#c4c4c4"; ctx.fillRect(x,y,av,av);} ctx.restore(); };
-  ctx.textBaseline="top";
-  let y=side;
-  rows.forEach(r=>{
-    const isRole=r.m.sender!=="user"; // 对方视角：角色(哥哥)在右、绿泡；user 在左、白泡
-    const rowH=Math.max(r.bh, av);
-    let bx;
-    if(isRole){ const ax=W-side-av; av2(roleImg,ax,y); bx=ax-12-r.bw; ctx.fillStyle="#95ec69"; }
-    else { const ax=side; av2(userImg,ax,y); bx=ax+av+12; ctx.fillStyle="#ffffff"; }
-    _scrRound(ctx,bx,y,r.bw,r.bh,12); ctx.fill();
-    ctx.fillStyle="#111"; ctx.font=FONT;
-    r.lines.forEach((l,i)=>ctx.fillText(l, bx+bp, y+bp+i*lh));
-    y+=rowH+vgap;
-  });
-  return cv.toDataURL("image/jpeg",0.88);
-}
-function chatMsgToScreenText(m){
-  if(m.type==="voice") return "[语音] "+(m.data&&m.data.text||"");
-  if(m.type==="image_desc") return "[图片]"+(m.data&&m.data.description?(" "+m.data.description):"");
-  return String(m.content||"");
-}
-function getMessagesForScreenshot(history, query, n){
-  n=n||12;
-  const h=(history||[]).filter(m=>["text","voice","image_desc"].includes(m.type));
-  let arr;
-  if(query){
-    const q=String(query).toLowerCase();
-    let hit=-1;
-    for(let i=h.length-1;i>=0;i--){ if(chatMsgToScreenText(h[i]).toLowerCase().includes(q)){ hit=i; break; } }
-    if(hit>=0){ const start=Math.max(0, hit-Math.floor(n/2)); arr=h.slice(start, start+n); }
-    else arr=h.slice(-n);
-  } else arr=h.slice(-n);
-  return arr.map(m=>({sender:m.sender, text:chatMsgToScreenText(m)})).filter(x=>x.text.trim());
-}
-async function checkScreenshotMarker(replyText){
-  if(!replyText) return;
-  const m=String(replyText).match(/[\[【]\s*聊天截图\s*(?:[:：]\s*([^\]】]*))?\s*[\]】]/);
-  if(!m) return;
-  const query=String(m[1]||"").trim();
-  const traceId=addWechatToolTrace("chat_screenshot",{query});
-  try{
-    const msgs=getMessagesForScreenshot(getHistory(), query, 12);
-    if(!msgs.length){ updateWechatToolTrace(traceId,"error","没有可截的消息"); return; }
-    const role=currentRole()||{}, user=(typeof getUserProfile==="function"?getUserProfile():{})||{};
-    const dataUrl=await renderChatScreenshotDataUrl(msgs, {roleAvatar:role.avatar||Miao.defaults.avatar, userAvatar:user.avatar||Miao.defaults.avatar});
-    const h=getHistory();
-    h.push({id:uid("msg"), groupId:uid("aigrp"), sender:"role", type:"image_desc", content:"[图片]", data:{hasRealImage:true, thumbUrl:dataUrl, fullUrl:dataUrl, description:"我们的聊天截图", web:true, imageName:"聊天截图"}, read:false, createdAt:Date.now(), time:nowTime()});
-    saveHistory(h);
-    if(Miao.state.currentApp==="wechat") renderChat();
-    updateWechatToolTrace(traceId,"done","已截图");
-  }catch(e){ updateWechatToolTrace(traceId,"error", e.message||String(e)); }
-}
 // ===== 聊天截图：固定默认主题，手动画布渲染，头像左右对调(对方视角) =====
 function _shotLoadImg(src){ return new Promise(res=>{ const i=new Image(); i.crossOrigin="anonymous"; i.onload=()=>res(i); i.onerror=()=>res(null); try{ i.src=src||""; }catch(e){ res(null); } }); }
 function msgTextForShot(m){
@@ -11555,6 +11449,24 @@ async function renderChatShot(msgs, opts={}){
     y+=Math.max(bh,AV)+14;
   }
   return cv.toDataURL("image/jpeg",0.86);
+}
+// 回复后统一的指令副作用处理：无论解析出几条气泡（哪怕整条回复只有一个 [聊天截图]/[换头像] 之类、
+// 解析后为空），都要跑一遍，否则这些纯指令回复会被"parsed 为空就提前 return"吞掉，表现为角色不回复。
+function runPostReplyMarkers(){
+  const c=Miao.state.lastAIContent||"";
+  checkSaveMarker(c);
+  checkStickyNoteMarker(c);
+  checkAvatarMarker(c);
+  checkScreenshotMarker(c);
+  checkDiceMarker(c);
+  maybeUpdateRoleStatus();
+  markCommandFeedbackDelivered();
+  const rid="role:"+(currentRole()?.id||Miao.state.currentRoleId||"default");
+  if(Miao.state.lastInnerMood && typeof feedInnerEvent==="function"){
+    feedInnerEvent(rid, "mood_vector", JSON.stringify(Miao.state.lastInnerMood));
+    Miao.state.lastInnerMood=null;
+  }
+  if(typeof feedInnerEvent==="function") feedInnerEvent(rid, "assistant_reply", c);
 }
 async function checkScreenshotMarker(replyText){
   if(!replyText) return;
