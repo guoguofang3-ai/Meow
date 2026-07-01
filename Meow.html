@@ -15419,6 +15419,13 @@ async function callClaudeReply(){
     extractCommandTaskDirectives(reply, commandTaskScope());
     reply=stripCommandTaskDirectives(reply);
     claudeOpsFinish(claudeOps,"done");
+    // 诊断：回复整段为空（尤其带工具时静默失败），把中转原始返回摘要显示出来，别再静默。
+    if(!String(reply||"").trim()){
+      const hh=getClaudeHistory();
+      const raw=(Miao.state.lastClaudeRaw||"").trim();
+      hh.push({id:uid("cmsg"), sender:"system", type:"system", content:"（这轮模型没有返回可显示的内容。若刚才要用工具，多半是中转对带工具的请求返回了空或异常结构。原始返回摘要：\n"+(raw?raw.slice(0,300):"（空）")+"）", createdAt:Date.now(), time:nowTime()});
+      saveClaudeHistory(hh); renderClaude();
+    }
     setClaudePetMood("done","完成啦，看看结果");
     const h=getClaudeHistory();
     // 按双换行拆成多条独立消息，代码块不拆
@@ -15628,9 +15635,19 @@ async function callClaudeAI(api, ops){
   if(tools.length){ body.tools=tools; body.tool_choice="auto"; }
 
   const requestChat=async(payload)=>{
-    const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+api.apiKey},body:JSON.stringify(payload)});
-    const text=await res.text();
+    const reqHeaders={"Content-Type":"application/json","Authorization":"Bearer "+api.apiKey};
+    let res=await fetch(url,{method:"POST",headers:reqHeaders,body:JSON.stringify(payload)});
+    let text=await res.text();
+    // 部分 Anthropic 风格中转要求 system 作为顶层字段而非 message（带工具时尤其严格）。
+    // 微信侧工具循环早有这段重试，Claude 侧之前漏了，导致同一中转下带工具请求静默失败。
+    if(!res.ok && text.includes("top-level 'system'")){
+      const sys=(payload.messages||[]).find(m=>m.role==="system")?.content || system;
+      const noSys=(payload.messages||[]).filter(m=>m.role!=="system");
+      res=await fetch(url,{method:"POST",headers:reqHeaders,body:JSON.stringify({...payload,system:sys,messages:noSys})});
+      text=await res.text();
+    }
     if(!res.ok) throw new Error(text.slice(0,180)||res.statusText);
+    try{ Miao.state.lastClaudeRaw=text.slice(0,600); }catch(e){}
     const data=JSON.parse(text);
     const choice=data.choices?.[0];
     if(!choice) return {data, msg:null};
