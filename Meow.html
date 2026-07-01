@@ -15671,7 +15671,18 @@ async function callClaudeAI(api, ops){
     if(!msg) break;
     // 没有 tool_calls，返回普通文字
     if(!msg.tool_calls || msg.tool_calls.length===0){
-      return extractAssistantText(data,msg);
+      const txt=extractAssistantText(data,msg);
+      const finishReason=data.choices?.[0]?.finish_reason;
+      // 中转把工具调用弄丢了：finish_reason 说模型要调工具，却没给 tool_calls 数据、内容也空。
+      // 去掉工具重发一次，逼模型改用文字回复（配合 [聊天截图] 等文字指令兜底），避免整段静默。
+      if(!String(txt||"").trim() && finishReason==="tool_calls"){
+        try{
+          const {data:d2,msg:m2}=await requestChat({model:api.model,messages:loopMessages,temperature:.7});
+          const t2=extractAssistantText(d2,m2);
+          if(String(t2||"").trim()) return t2;
+        }catch(e){}
+      }
+      return txt;
     }
     // 有 tool_calls，执行工具并把结果塞回去
     if(msg.content===undefined) msg.content=null;
