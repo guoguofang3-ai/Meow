@@ -5334,6 +5334,24 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
         .gh-reset{display:block;margin:16px auto 0;background:transparent;color:var(--text-secondary,#8a7f72);border:1px solid var(--miao-official-line,rgba(0,0,0,.12))}
         .gh-score{display:flex;justify-content:center;gap:18px;margin-top:16px;font-size:13px;color:var(--text-secondary,#8a7f72)}
         .gh-score b{color:var(--role-text,#3a332c)}
+        #gamehallApp .content:has(#ghRoomScroll){display:flex;flex-direction:column;height:100%;padding-bottom:10px}
+        .gh-room-head{font-size:14px;font-weight:800;color:var(--role-text,#3a332c);display:flex;align-items:center;gap:8px;margin:2px 2px 8px}
+        .gh-room-reset{margin-left:auto;border:0;background:transparent;color:var(--text-secondary,#8a7f72);cursor:pointer;padding:2px}
+        .gh-room-reset svg{width:18px;height:18px}
+        .gh-room-scroll{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:6px 2px}
+        .gh-room-empty{text-align:center;color:var(--text-secondary,#9a8d7d);font-size:13px;margin:auto}
+        .gh-msg{display:flex;max-width:100%}
+        .gh-msg.you{justify-content:flex-end}
+        .gh-b{max-width:80%;padding:9px 12px;border-radius:15px;font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+        .gh-msg.ta .gh-b{background:var(--role-bubble,rgba(255,253,248,.96));color:var(--role-text,#3a332c);border-bottom-left-radius:5px}
+        .gh-msg.you .gh-b{background:var(--user-bubble,#eadfd3);color:var(--user-text,#2d2925);border-bottom-right-radius:5px}
+        .gh-typing{opacity:.7;font-style:italic}
+        .gh-room-bar{display:flex;align-items:flex-end;gap:8px;padding-top:8px}
+        .gh-room-bar textarea{flex:1;resize:none;max-height:96px;border:1px solid var(--miao-official-line,rgba(0,0,0,.12));border-radius:16px;padding:9px 12px;font-size:15px;background:var(--user-bubble,rgba(255,255,255,.7));color:var(--role-text,#3a332c);font-family:inherit}
+        .gh-room-send,.gh-room-dice{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;background:var(--accent,#b5876a)}
+        .gh-room-dice{background:transparent;color:var(--accent,#b5876a);border:1px solid var(--miao-official-line,rgba(0,0,0,.12))}
+        .gh-room-send svg,.gh-room-dice svg{width:20px;height:20px}
+        .gh-room-send:disabled{opacity:.5}
       </style>
       <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">喵游厅</div><span style="width:34px"></span></div>
       <div class="content" id="gamehallContent"></div>
@@ -8759,6 +8777,7 @@ function renderGameHall(){
   if(v==="dice") return ghFill(ghDiceHtml());
   if(v==="guess") return ghFill(ghGuessHtml());
   if(v==="rps") return ghFill(ghRpsHtml());
+  if(v==="room"){ ghFill(ghRoomHtml(GameHall.roomKind)); ghRoomScroll(); return; }
   return ghFill(ghLobbyHtml());
 }
 function ghLobbyHtml(){
@@ -8819,23 +8838,97 @@ function ghRpsHtml(){
       <button class="gh-reset" data-action="gh-rps-reset">清零比分</button>
     </div>`;
 }
-function ghStartStory(kind){
-  const prompts={
-    soup:"【海龟汤开始】我们来玩海龟汤。你当主持人：心里先想好一个有反转的完整故事（汤底），只告诉我一句离奇的谜面（汤面）。之后我只能问“是/不是/无关”能回答的问题，你就照实答，不主动泄露汤底；等我说“我猜…”并接近真相时再揭晓。先给我汤面吧。",
-    rpg:"【轻量跑团开始】我们跑一局文字团，你当主持人(KP)：先给我开场场景和我的身份，让我自由行动。需要检定/看运气时，你就发 [骰子]，由系统掷点，你根据骰子结果推进剧情，不要自己编点数。开始吧。"
-  };
-  const p=prompts[kind]; if(!p) return;
-  openApp("wechat");
-  setTimeout(()=>{
-    const inp=document.getElementById("msgInput");
-    if(inp){ inp.value=p; inp.focus(); try{ inp.dispatchEvent(new Event("input")); }catch(e){} }
-    if(typeof toast==="function") toast("开局已放进聊天框，点发送就开玩");
-  },140);
+/* 剧情向游戏房间：app 内独立聊天，复用 callSimpleChatAPI，不借道微信 */
+const GH_ROOM_META={
+  soup:{name:"海龟汤", dice:false},
+  rpg:{name:"轻量跑团", dice:true}
+};
+function ghRoomKey(kind){ return "gamehall.room."+kind; }
+function ghRoomHistory(kind){ return Storage.get(ghRoomKey(kind), []); }
+function ghSaveRoom(kind, list){ Storage.set(ghRoomKey(kind), (list||[]).slice(-60)); }
+function ghRoomSystemPrompt(kind){
+  const role=(currentRole&&currentRole())||{};
+  const base=(typeof buildClaudeRoleCorePrompt==="function") ? buildClaudeRoleCorePrompt(role) : ("你是"+(role.name||"角色")+"。");
+  const name=role.name||"你";
+  const rules= kind==="soup" ?
+`【现在的玩法：海龟汤（你当主持人）】
+1. 你心里先定好一个完整、有反转的故事（汤底），但绝不直接说出来。
+2. 开局只给 user 一句离奇又简短的谜面（汤面）。
+3. 之后 user 只会问是非题，你只能用「是」「不是」「无关紧要」之一回答，可偶尔补一句极短的暧昧提示，但不要泄露汤底。
+4. 当 user 说“我猜…”且接近真相时判断对错；完全猜中就揭晓完整汤底并夸夸 ta。
+保持你的人设和语气，回答简短。` :
+`【现在的玩法：轻量跑团（你当主持人 KP）】
+1. 先给一个有代入感的开场场景 + user 的身份，然后让 ta 自由行动。
+2. 需要检定/看运气时，明确让 user“掷骰”（ta 会点骰子按钮，掷出的点数会以“（掷骰 dN → X）”发给你）。你根据点数判成败并推进剧情，绝不自己编点数。
+3. d20 一般 ≥10 成功、越高越好，1 大失败、20 大成功；可按情境调整难度。
+4. 节奏明快、有画面感，保持人设语气，别长篇大论。`;
+  return `${base}\n\n${rules}\n你是${name}，始终以第一人称沉浸带 user 玩，不要跳出角色、不要解释规则本身。`;
 }
+async function ghRoomTurn(kind, userText, opts={}){
+  if(GameHall.busy) return;
+  const api=Storage.get("api",{});
+  if(!api.apiUrl || !api.apiKey || !api.model){ if(typeof toast==="function") toast("请先在 API 里配置聊天模型"); return; }
+  const hist=ghRoomHistory(kind);
+  if(userText){ hist.push({role:"user", content:userText}); ghSaveRoom(kind, hist); }
+  GameHall.busy=true; GameHall.view="room"; GameHall.roomKind=kind; renderGameHall();
+  try{
+    const messages=[{role:"system", content:ghRoomSystemPrompt(kind)}].concat(
+      hist.length ? hist : [{role:"user", content: kind==="soup"?"开始，请只给我汤面。":"开始，请给出开场场景。"}]
+    );
+    const raw=await callSimpleChatAPI(api, messages, .9);
+    const reply=String(raw||"").trim() || "（……TA 没接话，再试一次？）";
+    const h2=ghRoomHistory(kind); h2.push({role:"assistant", content:reply}); ghSaveRoom(kind, h2);
+  }catch(e){
+    const h2=ghRoomHistory(kind); h2.push({role:"assistant", content:"（出错了："+((e&&e.message)||e)+"）"}); ghSaveRoom(kind, h2);
+  }finally{
+    GameHall.busy=false; renderGameHall();
+  }
+}
+function ghRoomHtml(kind){
+  const meta=GH_ROOM_META[kind]||{name:"游戏", dice:false};
+  const hist=ghRoomHistory(kind);
+  const role=(currentRole&&currentRole())||{};
+  const bubbles=hist.map(m=>{
+    if(m.role==="user") return `<div class="gh-msg you"><div class="gh-b">${escapeHtml(m.content)}</div></div>`;
+    return `<div class="gh-msg ta"><div class="gh-b">${(typeof renderRichText==="function"?renderRichText(m.content):escapeHtml(m.content))}</div></div>`;
+  }).join("");
+  const empty = hist.length? "" : `<div class="gh-room-empty">和 ${escapeHtml(role.name||"TA")} 的${escapeHtml(meta.name)}还没开始</div>`;
+  const typing = GameHall.busy? `<div class="gh-msg ta"><div class="gh-b gh-typing">正在想…</div></div>` : "";
+  const startBtn = hist.length? "" : `<button class="gh-reset" data-action="gh-room-start" data-id="${kind}" ${GameHall.busy?"disabled":""}>开始</button>`;
+  const diceBtn = meta.dice? `<button class="gh-room-dice" data-action="gh-room-roll" data-id="${kind}" title="掷 d20" aria-label="掷骰">${miaoIcon("dice")}</button>` : "";
+  return `<button class="gh-back" data-action="gh-lobby">${miaoIcon("back")}返回</button>
+    <div class="gh-room-head">${escapeHtml(meta.name)} · 和 ${escapeHtml(role.name||"TA")}<button class="gh-room-reset" data-action="gh-room-reset" data-id="${kind}" title="重开一局" aria-label="重开">${miaoIcon("refresh")}</button></div>
+    <div class="gh-room-scroll" id="ghRoomScroll">${empty}${bubbles}${typing}</div>
+    ${startBtn}
+    <div class="gh-room-bar">
+      ${diceBtn}
+      <textarea id="ghRoomInput" rows="1" placeholder="说点什么…" ${GameHall.busy?"disabled":""}></textarea>
+      <button class="gh-room-send" data-action="gh-send" data-id="${kind}" ${GameHall.busy?"disabled":""} aria-label="发送">${miaoIcon("send")}</button>
+    </div>`;
+}
+function ghRoomScroll(){ const s=document.getElementById("ghRoomScroll"); if(s) s.scrollTop=s.scrollHeight; }
 function gameHallAction(action, id){
   const s=GameHall.get();
   if(action==="gh-lobby"){ GameHall.view="lobby"; renderGameHall(); return; }
-  if(action==="gh-start"){ ghStartStory(id); return; }
+  if(action==="gh-start"){
+    GameHall.view="room"; GameHall.roomKind=id; renderGameHall();
+    if(!ghRoomHistory(id).length) ghRoomTurn(id, "");
+    return;
+  }
+  if(action==="gh-room-start"){ ghRoomTurn(id, ""); return; }
+  if(action==="gh-send"){
+    const inp=document.getElementById("ghRoomInput");
+    const t=(inp&&inp.value||"").trim();
+    if(!t) return;
+    ghRoomTurn(id, t);
+    return;
+  }
+  if(action==="gh-room-roll"){
+    const val=Math.floor(Math.random()*20)+1;
+    ghRoomTurn(id, "（掷骰 d20 → "+val+"）");
+    return;
+  }
+  if(action==="gh-room-reset"){ ghSaveRoom(id, []); ghRoomTurn(id, ""); return; }
   if(action==="gh-dice"){ GameHall.view="dice"; renderGameHall(); return; }
   if(action==="gh-roll"){
     const face=Number(id)||6; const val=Math.floor(Math.random()*face)+1;
