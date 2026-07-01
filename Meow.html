@@ -5334,24 +5334,30 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
         .gh-reset{display:block;margin:16px auto 0;background:transparent;color:var(--text-secondary,#8a7f72);border:1px solid var(--miao-official-line,rgba(0,0,0,.12))}
         .gh-score{display:flex;justify-content:center;gap:18px;margin-top:16px;font-size:13px;color:var(--text-secondary,#8a7f72)}
         .gh-score b{color:var(--role-text,#3a332c)}
-        #gamehallApp .content:has(#ghRoomScroll){display:flex;flex-direction:column;height:100%;padding-bottom:10px}
-        .gh-room-head{font-size:14px;font-weight:800;color:var(--role-text,#3a332c);display:flex;align-items:center;gap:8px;margin:2px 2px 8px}
-        .gh-room-reset{margin-left:auto;border:0;background:transparent;color:var(--text-secondary,#8a7f72);cursor:pointer;padding:2px}
+        #gamehallApp{background:color-mix(in srgb,var(--bar-bg,#f6f1ea) 90%,var(--bar-text,#3a332c) 3%)}
+        #gamehallApp .content:has(#ghRoomScroll){display:flex;flex-direction:column;height:100%;padding:8px 12px calc(env(safe-area-inset-bottom) + 10px)}
+        .gh-room-head{font-size:14px;font-weight:800;color:var(--bar-text,#3a332c);display:flex;align-items:center;gap:8px;margin:2px 2px 8px}
+        .gh-room-reset{margin-left:auto;border:0;background:transparent;color:color-mix(in srgb,var(--bar-text,#000) 45%,transparent);cursor:pointer;padding:2px}
         .gh-room-reset svg{width:18px;height:18px}
-        .gh-room-scroll{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:6px 2px}
-        .gh-room-empty{text-align:center;color:var(--text-secondary,#9a8d7d);font-size:13px;margin:auto}
-        .gh-msg{display:flex;max-width:100%}
+        .gh-room-scroll{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:9px;padding:6px 2px;-webkit-overflow-scrolling:touch}
+        .gh-room-empty{margin:auto;text-align:center;color:color-mix(in srgb,var(--bar-text,#000) 45%,transparent);font-size:13px;line-height:1.8}
+        .gh-msg{display:flex;max-width:100%;align-items:flex-end;gap:6px}
         .gh-msg.you{justify-content:flex-end}
-        .gh-b{max-width:80%;padding:9px 12px;border-radius:15px;font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
-        .gh-msg.ta .gh-b{background:var(--role-bubble,rgba(255,253,248,.96));color:var(--role-text,#3a332c);border-bottom-left-radius:5px}
-        .gh-msg.you .gh-b{background:var(--user-bubble,#eadfd3);color:var(--user-text,#2d2925);border-bottom-right-radius:5px}
-        .gh-typing{opacity:.7;font-style:italic}
-        .gh-room-bar{display:flex;align-items:flex-end;gap:8px;padding-top:8px}
-        .gh-room-bar textarea{flex:1;resize:none;max-height:96px;border:1px solid var(--miao-official-line,rgba(0,0,0,.12));border-radius:16px;padding:9px 12px;font-size:15px;background:var(--user-bubble,rgba(255,255,255,.7));color:var(--role-text,#3a332c);font-family:inherit}
-        .gh-room-send,.gh-room-dice{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;background:var(--accent,#b5876a)}
-        .gh-room-dice{background:transparent;color:var(--accent,#b5876a);border:1px solid var(--miao-official-line,rgba(0,0,0,.12))}
+        .gh-b{max-width:80%;padding:8px 12px;border-radius:16px;font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+        .gh-msg.ta .gh-b{background:color-mix(in srgb,var(--bar-text,#000) 7%,var(--bar-bg,#fff));color:var(--bar-text,#222);border:1px solid color-mix(in srgb,var(--bar-text,#000) 7%,transparent);border-bottom-left-radius:6px}
+        .gh-msg.you .gh-b{background:var(--accent,#c98aa6);color:#fff;border-bottom-right-radius:6px}
+        .gh-b.err{background:color-mix(in srgb,#c0728f 14%,var(--bar-bg,#fff));color:#a85878;border:1px solid color-mix(in srgb,#c0728f 24%,transparent)}
+        .gh-del{border:0;background:transparent;color:color-mix(in srgb,var(--bar-text,#000) 40%,transparent);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;flex:0 0 auto;align-self:center}
+        .gh-typing{align-self:flex-start;color:color-mix(in srgb,var(--bar-text,#000) 45%,transparent);font-size:13px;font-style:italic}
+        .gh-room-actions{flex:0 0 auto;display:flex;gap:8px;justify-content:center;padding:8px 0 2px}
+        .gh-room-actions button{border:1px solid color-mix(in srgb,var(--bar-text,#000) 12%,transparent);background:color-mix(in srgb,var(--bar-bg,#fff) 60%,transparent);color:var(--bar-text,#555);border-radius:999px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer}
+        .gh-room-actions button:disabled{opacity:.5}
+        .gh-room-bar{flex:0 0 auto;display:flex;gap:8px;align-items:flex-end;padding-top:8px}
+        .gh-room-bar textarea{flex:1;resize:none;max-height:100px;border:1px solid color-mix(in srgb,var(--bar-text,#000) 12%,transparent);border-radius:18px;padding:10px 14px;font-size:16px;line-height:1.4;background:color-mix(in srgb,var(--bar-bg,#fff) 60%,transparent);color:var(--bar-text,#222);font-family:inherit}
+        .gh-room-send,.gh-room-dice{flex:0 0 auto;width:40px;height:40px;border-radius:50%;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;background:var(--accent,#c98aa6)}
+        .gh-room-dice{background:color-mix(in srgb,var(--bar-text,#000) 6%,var(--bar-bg,#fff));color:var(--accent,#c98aa6);border:1px solid color-mix(in srgb,var(--bar-text,#000) 12%,transparent)}
         .gh-room-send svg,.gh-room-dice svg{width:20px;height:20px}
-        .gh-room-send:disabled{opacity:.5}
+        .gh-room-send:disabled,.gh-room-dice:disabled{opacity:.5}
       </style>
       <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">喵游厅</div><span style="width:34px"></span></div>
       <div class="content" id="gamehallContent"></div>
@@ -8845,7 +8851,7 @@ const GH_ROOM_META={
 };
 function ghRoomKey(kind){ return "gamehall.room."+kind; }
 function ghRoomHistory(kind){ return Storage.get(ghRoomKey(kind), []); }
-function ghSaveRoom(kind, list){ Storage.set(ghRoomKey(kind), (list||[]).slice(-60)); }
+function ghSaveRoom(kind, list){ Storage.set(ghRoomKey(kind), (list||[]).slice(-120)); }
 function ghRoomSystemPrompt(kind){
   const role=(currentRole&&currentRole())||{};
   const base=(typeof buildClaudeRoleCorePrompt==="function") ? buildClaudeRoleCorePrompt(role) : ("你是"+(role.name||"角色")+"。");
@@ -8869,20 +8875,20 @@ async function ghRoomTurn(kind, userText, opts={}){
   const api=Storage.get("api",{});
   if(!api.apiUrl || !api.apiKey || !api.model){ if(typeof toast==="function") toast("请先在 API 里配置聊天模型"); return; }
   const hist=ghRoomHistory(kind);
-  if(userText){ hist.push({role:"user", content:userText}); ghSaveRoom(kind, hist); }
+  if(userText){ hist.push({id:uid("gm"), role:"user", content:userText}); ghSaveRoom(kind, hist); }
   GameHall.busy=true; GameHall.view="room"; GameHall.roomKind=kind; renderGameHall();
   try{
-    const messages=[{role:"system", content:ghRoomSystemPrompt(kind)}].concat(
-      hist.length ? hist : [{role:"user", content: kind==="soup"?"开始，请只给我汤面。":"开始，请给出开场场景。"}]
-    );
+    const convo = hist.length ? hist.map(m=>({role:m.role, content:m.content}))
+                              : [{role:"user", content: kind==="soup"?"开始，请只给我汤面。":"开始，请给出开场场景。"}];
+    const messages=[{role:"system", content:ghRoomSystemPrompt(kind)}].concat(convo);
     const raw=await Promise.race([
       callSimpleChatAPI(api, messages, .9),
       new Promise((_,rej)=>setTimeout(()=>rej(new Error("超时，网络或中转没响应")), 45000))
     ]);
     const reply=String(raw||"").trim() || "（……TA 没接话，再试一次？）";
-    const h2=ghRoomHistory(kind); h2.push({role:"assistant", content:reply}); ghSaveRoom(kind, h2);
+    const h2=ghRoomHistory(kind); h2.push({id:uid("gm"), role:"assistant", content:reply}); ghSaveRoom(kind, h2);
   }catch(e){
-    const h2=ghRoomHistory(kind); h2.push({role:"assistant", content:"（出错了："+((e&&e.message)||e)+"）"}); ghSaveRoom(kind, h2);
+    const h2=ghRoomHistory(kind); h2.push({id:uid("gm"), role:"assistant", content:"（出错了："+((e&&e.message)||e)+"）", err:true}); ghSaveRoom(kind, h2);
   }finally{
     GameHall.busy=false; renderGameHall();
   }
@@ -8892,8 +8898,10 @@ function ghRoomHtml(kind){
   const hist=ghRoomHistory(kind);
   const role=(currentRole&&currentRole())||{};
   const bubbles=hist.map(m=>{
+    const del= m.err&&m.id ? `<button class="gh-del" data-action="gh-msg-del" data-id="${escapeAttr(m.id)}" aria-label="删除报错" title="删掉这条报错">×</button>` : "";
     if(m.role==="user") return `<div class="gh-msg you"><div class="gh-b">${escapeHtml(m.content)}</div></div>`;
-    return `<div class="gh-msg ta"><div class="gh-b">${(typeof renderRichText==="function"?renderRichText(m.content):escapeHtml(m.content))}</div></div>`;
+    const body=(typeof renderRichText==="function"?renderRichText(m.content):escapeHtml(m.content));
+    return `<div class="gh-msg ta"><div class="gh-b${m.err?" err":""}">${body}</div>${del}</div>`;
   }).join("");
   const api=Storage.get("api",{});
   const apiOk=!!(api.apiUrl&&api.apiKey&&api.model);
@@ -8907,12 +8915,15 @@ function ghRoomHtml(kind){
   }else{
     mid = `${bubbles}${typing}`;
   }
-  const resetBtn = (apiOk && hist.length) ? `<button class="gh-reset" data-action="gh-room-reset" data-id="${kind}">重开一局</button>` : "";
+  const actions = (apiOk && hist.length) ? `<div class="gh-room-actions">
+      <button data-action="gh-summary" data-id="${kind}" ${GameHall.busy?"disabled":""}>生成摘要</button>
+      <button data-action="gh-room-reset" data-id="${kind}" ${GameHall.busy?"disabled":""}>重开一局</button>
+    </div>` : "";
   const diceBtn = meta.dice? `<button class="gh-room-dice" data-action="gh-room-roll" data-id="${kind}" title="掷 d20" aria-label="掷骰" ${lock?"disabled":""}>${miaoIcon("dice")}</button>` : "";
   return `<button class="gh-back" data-action="gh-lobby">${miaoIcon("back")}返回</button>
-    <div class="gh-room-head">${escapeHtml(meta.name)} · 和 ${escapeHtml(role.name||"TA")}${apiOk&&hist.length?`<button class="gh-room-reset" data-action="gh-room-reset" data-id="${kind}" title="重开一局" aria-label="重开">${miaoIcon("refresh")}</button>`:""}</div>
+    <div class="gh-room-head">${escapeHtml(meta.name)} · 和 ${escapeHtml(role.name||"TA")}</div>
     <div class="gh-room-scroll" id="ghRoomScroll">${mid}</div>
-    ${resetBtn}
+    ${actions}
     <div class="gh-room-bar">
       ${diceBtn}
       <textarea id="ghRoomInput" rows="1" placeholder="${apiOk?"说点什么…":"先配置 API"}" ${lock?"disabled":""}></textarea>
@@ -8920,15 +8931,51 @@ function ghRoomHtml(kind){
     </div>`;
 }
 function ghRoomScroll(){ const s=document.getElementById("ghRoomScroll"); if(s) s.scrollTop=s.scrollHeight; }
+async function ghMakeSummary(kind){
+  if(GameHall.busy) return;
+  const hist=ghRoomHistory(kind).filter(m=>!m.err);
+  if(hist.length<2){ if(typeof toast==="function") toast("先玩几句再生成摘要"); return; }
+  const api=Storage.get("api",{});
+  if(!api.apiUrl||!api.apiKey||!api.model){ if(typeof toast==="function") toast("请先配置 API"); return; }
+  const role=(currentRole&&currentRole())||{};
+  const rid=role.id||Miao.state.currentRoleId||"default";
+  const gameName=(GH_ROOM_META[kind]||{}).name||"游戏";
+  const lines=hist.map(m=>(m.role==="user"?"user":(role.name||"TA"))+"："+m.content).join("\n");
+  GameHall.busy=true; renderGameHall();
+  if(typeof toast==="function") toast("正在生成摘要…");
+  let sum="";
+  try{
+    sum=await Promise.race([
+      callSimpleChatAPI(api,[
+        {role:"system",content:`用简洁中文总结这局「${gameName}」里发生的主要过程、结果，以及 user 的表现和情绪，60-120字，不加标题不加前缀，像给日后回忆留个记录。`},
+        {role:"user",content:lines}
+      ],.5),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error("超时")),45000))
+    ]);
+  }catch(e){ sum=""; }
+  GameHall.busy=false; renderGameHall();
+  sum=String(sum||"").trim();
+  if(!sum){ if(typeof toast==="function") toast("摘要生成失败，检查下 API"); return; }
+  const list=Storage.get("gameSummary."+rid, []);
+  list.push({game:gameName, summary:sum, time:nowTime(), ts:Date.now()});
+  Storage.set("gameSummary."+rid, list.slice(-5));
+  if(typeof toast==="function") toast("摘要已生成，微信和 TA 那边能读到了");
+}
 function gameHallAction(action, id){
   const s=GameHall.get();
   if(action==="gh-lobby"){ GameHall.view="lobby"; renderGameHall(); return; }
   if(action==="gh-start"){
     GameHall.view="room"; GameHall.roomKind=id; renderGameHall();
-    if(!ghRoomHistory(id).length) ghRoomTurn(id, "");
     return;
   }
   if(action==="gh-room-start"){ ghRoomTurn(id, ""); return; }
+  if(action==="gh-summary"){ ghMakeSummary(id); return; }
+  if(action==="gh-msg-del"){
+    const kind=GameHall.roomKind;
+    ghSaveRoom(kind, ghRoomHistory(kind).filter(m=>m.id!==id));
+    renderGameHall();
+    return;
+  }
   if(action==="gh-send"){
     const inp=document.getElementById("ghRoomInput");
     const t=(inp&&inp.value||"").trim();
@@ -14195,6 +14242,13 @@ function buildHiddenContextPrompt(){
   if(readingCtx) out.push(readingCtx);
   const diaryCtx = (typeof buildDiaryContextPrompt === "function") ? buildDiaryContextPrompt("role") : "";
   if(diaryCtx) out.push(diaryCtx);
+  try{
+    const rid=(currentRole&&currentRole()?.id)||Miao.state.currentRoleId||"default";
+    const games=Storage.get("gameSummary."+rid, []);
+    if(games.length){
+      out.push(`【隐藏上下文：最近一起玩过的游戏】\n${games.slice(-2).map(g=>`${g.time} 玩了「${g.game}」：${g.summary}`).join("\n")}\n（可以自然提起，但别生硬复述。）`);
+    }
+  }catch(e){}
   return out.join("\n\n");
 }
 
