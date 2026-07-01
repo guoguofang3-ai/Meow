@@ -8875,7 +8875,10 @@ async function ghRoomTurn(kind, userText, opts={}){
     const messages=[{role:"system", content:ghRoomSystemPrompt(kind)}].concat(
       hist.length ? hist : [{role:"user", content: kind==="soup"?"开始，请只给我汤面。":"开始，请给出开场场景。"}]
     );
-    const raw=await callSimpleChatAPI(api, messages, .9);
+    const raw=await Promise.race([
+      callSimpleChatAPI(api, messages, .9),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error("超时，网络或中转没响应")), 45000))
+    ]);
     const reply=String(raw||"").trim() || "（……TA 没接话，再试一次？）";
     const h2=ghRoomHistory(kind); h2.push({role:"assistant", content:reply}); ghSaveRoom(kind, h2);
   }catch(e){
@@ -8892,18 +8895,28 @@ function ghRoomHtml(kind){
     if(m.role==="user") return `<div class="gh-msg you"><div class="gh-b">${escapeHtml(m.content)}</div></div>`;
     return `<div class="gh-msg ta"><div class="gh-b">${(typeof renderRichText==="function"?renderRichText(m.content):escapeHtml(m.content))}</div></div>`;
   }).join("");
-  const empty = hist.length? "" : `<div class="gh-room-empty">和 ${escapeHtml(role.name||"TA")} 的${escapeHtml(meta.name)}还没开始</div>`;
+  const api=Storage.get("api",{});
+  const apiOk=!!(api.apiUrl&&api.apiKey&&api.model);
   const typing = GameHall.busy? `<div class="gh-msg ta"><div class="gh-b gh-typing">正在想…</div></div>` : "";
-  const startBtn = hist.length? "" : `<button class="gh-reset" data-action="gh-room-start" data-id="${kind}" ${GameHall.busy?"disabled":""}>开始</button>`;
-  const diceBtn = meta.dice? `<button class="gh-room-dice" data-action="gh-room-roll" data-id="${kind}" title="掷 d20" aria-label="掷骰">${miaoIcon("dice")}</button>` : "";
+  const lock = GameHall.busy || !apiOk;
+  let mid;
+  if(!apiOk){
+    mid = `<div class="gh-room-empty">还没配置聊天模型，去 API 里填好地址/密钥/模型就能玩了。<br><button class="gh-reset" data-action="open-app" data-id="api" style="margin-top:12px">去配置 API</button></div>`;
+  }else if(!hist.length){
+    mid = `<div class="gh-room-empty">和 ${escapeHtml(role.name||"TA")} 的${escapeHtml(meta.name)}还没开始<br><button class="gh-reset" data-action="gh-room-start" data-id="${kind}" style="margin-top:12px" ${GameHall.busy?"disabled":""}>开始</button></div>`;
+  }else{
+    mid = `${bubbles}${typing}`;
+  }
+  const resetBtn = (apiOk && hist.length) ? `<button class="gh-reset" data-action="gh-room-reset" data-id="${kind}">重开一局</button>` : "";
+  const diceBtn = meta.dice? `<button class="gh-room-dice" data-action="gh-room-roll" data-id="${kind}" title="掷 d20" aria-label="掷骰" ${lock?"disabled":""}>${miaoIcon("dice")}</button>` : "";
   return `<button class="gh-back" data-action="gh-lobby">${miaoIcon("back")}返回</button>
-    <div class="gh-room-head">${escapeHtml(meta.name)} · 和 ${escapeHtml(role.name||"TA")}<button class="gh-room-reset" data-action="gh-room-reset" data-id="${kind}" title="重开一局" aria-label="重开">${miaoIcon("refresh")}</button></div>
-    <div class="gh-room-scroll" id="ghRoomScroll">${empty}${bubbles}${typing}</div>
-    ${startBtn}
+    <div class="gh-room-head">${escapeHtml(meta.name)} · 和 ${escapeHtml(role.name||"TA")}${apiOk&&hist.length?`<button class="gh-room-reset" data-action="gh-room-reset" data-id="${kind}" title="重开一局" aria-label="重开">${miaoIcon("refresh")}</button>`:""}</div>
+    <div class="gh-room-scroll" id="ghRoomScroll">${mid}</div>
+    ${resetBtn}
     <div class="gh-room-bar">
       ${diceBtn}
-      <textarea id="ghRoomInput" rows="1" placeholder="说点什么…" ${GameHall.busy?"disabled":""}></textarea>
-      <button class="gh-room-send" data-action="gh-send" data-id="${kind}" ${GameHall.busy?"disabled":""} aria-label="发送">${miaoIcon("send")}</button>
+      <textarea id="ghRoomInput" rows="1" placeholder="${apiOk?"说点什么…":"先配置 API"}" ${lock?"disabled":""}></textarea>
+      <button class="gh-room-send" data-action="gh-send" data-id="${kind}" ${lock?"disabled":""} aria-label="发送">${miaoIcon("send")}</button>
     </div>`;
 }
 function ghRoomScroll(){ const s=document.getElementById("ghRoomScroll"); if(s) s.scrollTop=s.scrollHeight; }
