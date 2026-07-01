@@ -11373,7 +11373,16 @@ async function checkAvatarMarker(replyText){
   else { updateWechatToolTrace(traceId,"error","没有可用图"); }
 }
 // ===== 聊天截图：固定默认主题，手动画布渲染，头像左右对调(对方视角) =====
-function _shotLoadImg(src){ return new Promise(res=>{ const i=new Image(); i.crossOrigin="anonymous"; i.onload=()=>res(i); i.onerror=()=>res(null); try{ i.src=src||""; }catch(e){ res(null); } }); }
+function _shotLoadImg(src){
+  return new Promise(res=>{
+    if(!src){ res(null); return; }               // 空地址直接跳过，别等一个永远不来的事件
+    const i=new Image(); i.crossOrigin="anonymous";
+    let done=false; const finish=v=>{ if(done) return; done=true; res(v); };
+    i.onload=()=>finish(i); i.onerror=()=>finish(null);
+    setTimeout(()=>finish(null), 4000);           // 超时兜底：图挂了/加载卡住也不拖死整轮截图
+    try{ i.src=src; }catch(e){ finish(null); }
+  });
+}
 function msgTextForShot(m){
   if(!m) return "";
   if(m.type==="voice") return "🎤 "+(m.data?.text||"语音");
