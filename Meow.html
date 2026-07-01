@@ -11552,15 +11552,26 @@ async function runClaudePostReplyDirectives(reply){
 }
 async function claudeChatScreenshotTool(args={}){
   const kw=String(args.query||"").trim();
-  const list=typeof getClaudeHistory==="function"?getClaudeHistory():[];
-  const msgs=findShotMessages(kw, list);
-  if(!msgs.length) return {ok:false, error:"没找到可截的记录"};
-  const dataUrl=await renderChatShot(msgs,{swap:true});
-  const h=typeof getClaudeHistory==="function"?getClaudeHistory():[];
-  h.push({id:uid("msg"), sender:"assistant", type:"image_gen", content:"[图片]", data:{status:"done", url:dataUrl, note:"聊天截图"}, createdAt:Date.now(), time:nowTime()});
-  if(typeof saveClaudeHistory==="function") saveClaudeHistory(h);
-  if(typeof renderClaude==="function") renderClaude();
-  return {ok:true, note:"已生成并发送聊天截图"};
+  // 每次都读最新历史再推，别用旧引用；任何失败都推一张可见卡，绝不静默。
+  const pushClaude=(msg)=>{ try{ const h=getClaudeHistory(); h.push(msg); saveClaudeHistory(h); renderClaude(); }catch(e){ console.warn("[chatShot] push失败", e); } };
+  try{
+    const list=getClaudeHistory();
+    const msgs=findShotMessages(kw, list);
+    if(!msgs.length){
+      pushClaude({id:uid("cmsg"), sender:"system", type:"system", content:"想给你看聊天截图，但这个会话还没有可截的记录。", createdAt:Date.now(), time:nowTime()});
+      return {ok:false, error:"没找到可截的记录"};
+    }
+    const dataUrl=await renderChatShot(msgs,{swap:true});
+    if(!dataUrl || dataUrl.length<200){
+      pushClaude({id:uid("cmsg"), sender:"system", type:"error", content:"聊天截图生成失败（画面为空）。", createdAt:Date.now(), time:nowTime()});
+      return {ok:false, error:"截图为空"};
+    }
+    pushClaude({id:uid("cmsg"), sender:"assistant", type:"image_gen", content:"[图片]", data:{status:"done", url:dataUrl, note:"聊天截图"+(kw?("·"+kw):"")}, createdAt:Date.now(), time:nowTime()});
+    return {ok:true, note:"已生成并发送聊天截图"};
+  }catch(e){
+    pushClaude({id:uid("cmsg"), sender:"system", type:"error", content:"聊天截图出错："+((e&&e.message)||e), createdAt:Date.now(), time:nowTime()});
+    return {ok:false, error:(e&&e.message)||String(e)};
+  }
 }
 function checkSaveMarker(replyText){
   if(!replyText) return;
@@ -15553,7 +15564,7 @@ async function callClaudeReply(){
     renderClaude();
     markCommandFeedbackDelivered();
     // 纯指令回复兜底：文字里若出现 [聊天截图]/[换头像]（模型没走 function call 时），在这里真正执行
-    runClaudePostReplyDirectives(reply);
+    await runClaudePostReplyDirectives(reply);
     // 文字已显示，图片在后台异步生成（不挡对话）
     pendingGen.forEach(g=>runImageGen(g.id, g.prompt));
   renderStory();
