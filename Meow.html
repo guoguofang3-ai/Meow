@@ -1687,6 +1687,13 @@ body.keyboard-open .quick-modal{max-height:calc(var(--visual-vh,100vh) - 24px);}
   background:var(--role-bubble,rgba(255,255,255,.92));color:var(--role-text,#333);border:1px solid rgba(255,255,255,.8);box-shadow:0 4px 16px rgba(0,0,0,.055);
 }
 .claude-msg.user .claude-bubble{background:var(--user-bubble,var(--accent));color:var(--user-text,#fff)}
+/* ===== 花字样式：微信/助手气泡共用（span 由 renderRichText 生成，继承气泡颜色，弱化用透明度不写死灰色） ===== */
+.rt-big{font-size:1.18em;font-weight:600}
+.rt-bigger{font-size:1.42em;font-weight:600;letter-spacing:.5px}
+.rt-bold{font-size:1.12em;font-weight:800}
+.rt-small{font-size:.82em}
+.rt-faint{font-size:.86em;opacity:.55}
+.rt-u{text-decoration:underline;text-underline-offset:2px}
 .claude-file-card{
   width:230px;max-width:100%;border-radius:18px;padding:12px;background:#fff;border:1px solid #e8e9ef;
   box-shadow:0 8px 22px rgba(0,0,0,.06);white-space:normal;color:#222;
@@ -6143,6 +6150,20 @@ function askConfirm(message){
   });
 }
 function escapeHtml(s){ return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
+/* ===== 花字渲染：让角色说话有轻重。先转义再把标记翻译成样式，微信/助手气泡共用一个出口 =====
+   **又大又粗**  ^大一号^  ^^更大^^  ~小一号~  ~~浅灰弱化~~  __下划线__
+   标记内不跨行（避免误吞整段），符号在中文聊天里少见，正常说话不会误触发。 */
+function renderRichText(s){
+  let t=escapeHtml(String(s??""));
+  t=t
+   .replace(/\*\*([^*\n]+?)\*\*/g,'<span class="rt-bold">$1</span>')
+   .replace(/\^\^([^^\n]+?)\^\^/g,'<span class="rt-bigger">$1</span>')
+   .replace(/\^([^^\n]+?)\^/g,'<span class="rt-big">$1</span>')
+   .replace(/~~([^~\n]+?)~~/g,'<span class="rt-faint">$1</span>')
+   .replace(/~([^~\n]+?)~/g,'<span class="rt-small">$1</span>')
+   .replace(/__([^_\n]+?)__/g,'<span class="rt-u">$1</span>');
+  return t;
+}
 
 /* ===== AI 指令任务：轻量本地版（无后端、无轮询、无额外 API 请求） ===== */
 const COMMAND_TASK_KEY="commandTasks.v1";
@@ -10223,7 +10244,7 @@ function renderMessageBody(m){
   // 隐藏指令标记，不显示给用户
   const displayContent=stripInstructions(rawContent).trim();
   if(!displayContent) return "";
-  return `<div class="bubble">${escapeHtml(displayContent)}</div>`;
+  return `<div class="bubble">${renderRichText(displayContent)}</div>`;
 }
 function escapeAttr(s){ return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
 
@@ -12380,6 +12401,16 @@ ${buildCommandTaskContext()||"暂无小任务反馈"}
 【互动问卷】
 你可以偶尔在回复末尾附加一个 \`\`\`quiz JSON 块发起底部问卷；只在心血来潮、抽查、逗 user、冷场时使用，不要频繁。1题优先，最多3题；type 固定 single_select；options 2~4个，允许重复；allowCustom 默认 true。格式：\`\`\`quiz {"title":"突击检查","questions":[{"id":"q1","question":"问题？","type":"single_select","options":["A","B"],"allowCustom":true}]} \`\`\`
 
+【花字排版（可选，看你性格用不用）】
+说话想有轻重时，可以给某几个字加下面的标记，前端会渲染出对应效果；不加就是正常字号。这只是个调色盘，不是规矩——你完全可以不用、少用、乱用、换着花样用，全看你的人设、情绪和心情。
+**又大又粗** = 最重的强调（喊、重音、狠话）
+^大一号^ = 稍微提高的音量/强调
+^^更大^^ = 情绪拉满、很用力
+~小一号~ = 小声、嘀咕、气短
+~~浅灰弱化~~ = 心里话、旁白、几乎听不清的气声
+__下划线__ = 划重点、咬字
+标记只作用在被夹住的那几个字，别整段整段地套；安静克制的角色可以一个都不用，正常说话反而更像人。
+
 【可用特殊指令】
 如需要才输出，指令会被前端转换成卡片/表情，不会直接显示：
 [发送表情包: 名称]
@@ -14466,11 +14497,11 @@ function renderClaudeBody(m){
           } else if(im){
             bubbles.push(`<div class="claude-bubble claude-sticker-bubble"><img class="sticker-msg-img" src="${escapeAttr(im[1])}" alt="图片" style="max-width:200px;border-radius:10px" onerror="this.style.display='none'"></div>`);
           } else if(p2.trim()){
-            bubbles.push(`<div class="claude-bubble">${escapeHtml(p2.trim())}</div>`);
+            bubbles.push(`<div class="claude-bubble">${renderRichText(p2.trim())}</div>`);
           }
         });
       } else {
-        bubbles.push(`<div class="claude-bubble">${escapeHtml(processed)}</div>`);
+        bubbles.push(`<div class="claude-bubble">${renderRichText(processed)}</div>`);
       }
     });
   };
@@ -14495,7 +14526,7 @@ function renderClaudeBody(m){
   });
   flushText(textBuf);
 
-  if(!bubbles.length) return `<div class="claude-bubble">${escapeHtml(raw)}</div>`;
+  if(!bubbles.length) return `<div class="claude-bubble">${renderRichText(raw)}</div>`;
   return bubbles.join("");
 }
 function renderClaudeFileCard(m){
