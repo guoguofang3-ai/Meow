@@ -4620,7 +4620,6 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
       <div class="composer-wrap" id="wechatComposer">
         <div class="toolbar">
           <button class="chip-btn" data-action="open-sticker-picker">表情包</button>
-          <button class="chip-btn" data-action="roll-dice">骰子</button>
           <button class="chip-btn" data-action="open-sticky-note">便签</button>
           <button class="chip-btn" data-action="open-image-desc">图片</button>
           <button class="chip-btn" data-action="open-voice-input">语音</button>
@@ -5305,6 +5304,40 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
       </div>
     </section>
 
+    <section class="app-screen" id="gamehallApp">
+      <style>
+        #gamehallApp .content{padding:14px 16px 30px}
+        .gh-sec-title{font-size:13px;color:var(--text-secondary,#8a7f72);font-weight:800;margin:18px 4px 10px;letter-spacing:.02em}
+        .gh-sec-title:first-child{margin-top:4px}
+        .gh-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .gh-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px;border-radius:16px;background:var(--role-bubble,rgba(255,255,255,.92));border:1px solid var(--miao-official-line,rgba(0,0,0,.06));box-shadow:0 6px 18px rgba(38,31,22,.05);text-align:left;cursor:pointer}
+        .gh-card:active{transform:scale(.97)}
+        .gh-card-ic{width:30px;height:30px;color:var(--accent,#b5876a)}
+        .gh-card-ic svg{width:26px;height:26px}
+        .gh-card-name{font-size:15px;font-weight:800;color:var(--role-text,#3a332c)}
+        .gh-card-sub{font-size:12px;color:var(--text-secondary,#9a8d7d);line-height:1.4}
+        .gh-back{display:inline-flex;align-items:center;gap:4px;border:0;background:transparent;color:var(--text-secondary,#8a7f72);font-size:14px;padding:4px 0;margin:2px 0 8px;cursor:pointer}
+        .gh-back svg{width:18px;height:18px}
+        .gh-panel{background:var(--role-bubble,rgba(255,255,255,.92));border:1px solid var(--miao-official-line,rgba(0,0,0,.06));border-radius:18px;padding:18px;box-shadow:0 6px 18px rgba(38,31,22,.05)}
+        .gh-result{font-size:26px;font-weight:800;color:var(--role-text,#3a332c);text-align:center;margin:6px 0 18px;min-height:32px}
+        .gh-result b{color:var(--accent,#b5876a);font-size:34px}
+        .gh-hint{font-size:15px;text-align:center;color:var(--text-secondary,#8a7f72);margin:6px 0 16px;min-height:22px}
+        .gh-die-row,.gh-rps-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+        .gh-die,.gh-rps-btn{border:1px solid var(--miao-official-line,rgba(0,0,0,.1));background:var(--user-bubble,rgba(255,255,255,.7));color:var(--role-text,#3a332c);border-radius:12px;padding:10px 14px;font-size:14px;font-weight:800;cursor:pointer}
+        .gh-die:active,.gh-rps-btn:active{transform:scale(.95)}
+        .gh-rps-btn{min-width:74px}
+        .gh-log{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:16px}
+        .gh-log span{font-size:12px;color:var(--text-secondary,#9a8d7d);background:rgba(0,0,0,.04);border-radius:8px;padding:3px 8px}
+        .gh-guess-row{display:flex;gap:8px;margin-top:6px}
+        .gh-guess-row input{flex:1;border:1px solid var(--miao-official-line,rgba(0,0,0,.12));border-radius:12px;padding:10px 12px;font-size:16px;background:var(--user-bubble,rgba(255,255,255,.7));color:var(--role-text,#3a332c)}
+        .gh-guess-row button,.gh-reset{border:0;background:var(--accent,#b5876a);color:#fff;border-radius:12px;padding:10px 16px;font-size:14px;font-weight:800;cursor:pointer}
+        .gh-reset{display:block;margin:16px auto 0;background:transparent;color:var(--text-secondary,#8a7f72);border:1px solid var(--miao-official-line,rgba(0,0,0,.12))}
+        .gh-score{display:flex;justify-content:center;gap:18px;margin-top:16px;font-size:13px;color:var(--text-secondary,#8a7f72)}
+        .gh-score b{color:var(--role-text,#3a332c)}
+      </style>
+      <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">喵游厅</div><span style="width:34px"></span></div>
+      <div class="content" id="gamehallContent"></div>
+    </section>
     <section class="app-screen" id="stickersApp">
       <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">表情包</div><button class="icon-btn" data-action="open-sticker-add" data-miao-icon="plus" aria-label="添加表情包"></button></div>
       <div class="content sticker-modern-content">
@@ -5753,7 +5786,12 @@ const MIAO_ICON_PATHS={
   location:'<path d="M12 21s6-5.1 6-10.2A6 6 0 0 0 6 10.8C6 15.9 12 21 12 21z"/><circle cx="12" cy="10.8" r="2.2"/>',
   weather:'<path d="M8.2 17.5h7.5a4 4 0 0 0 .4-8 5.2 5.2 0 0 0-10 1.7A3.3 3.3 0 0 0 8.2 17.5z"/><path d="M9 20l-1 1.5M13 20l-1 1.5M17 20l-1 1.5"/>',
   play:'<path d="M8.5 6.7v10.6L16.8 12z"/>',
-  pause:'<path d="M9 6.8v10.4M15 6.8v10.4"/>'
+  pause:'<path d="M9 6.8v10.4M15 6.8v10.4"/>',
+  dice:'<rect x="4.5" y="4.5" width="15" height="15" rx="4.5"/><circle cx="9" cy="9" r=".85"/><circle cx="15" cy="9" r=".85"/><circle cx="12" cy="12" r=".85"/><circle cx="9" cy="15" r=".85"/><circle cx="15" cy="15" r=".85"/>',
+  soup:'<path d="M4.5 11h15c-.3 4.3-3.4 7-7.5 7s-7.2-2.7-7.5-7z"/><path d="M8.6 8.2c0-1.4.9-1.8.9-3.2M12 8.2c0-1.4.9-1.8.9-3.2M15.4 8.2c0-1.4.9-1.8.9-3.2"/>',
+  scroll:'<path d="M7 4h9v13a3 3 0 0 1-3 3H7z"/><path d="M16 17a3 3 0 0 0 3 3M6 4a1.5 1.5 0 0 0 0 3h1V4M10 9h4M10 12.5h3"/>',
+  target:'<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3.4"/><path d="M12 4v2.5M12 17.5V20M4 12h2.5M17.5 12H20"/>',
+  hand:'<path d="M8 11V6.6a1.3 1.3 0 0 1 2.6 0V11M10.6 11V5.6a1.3 1.3 0 0 1 2.6 0V11M13.2 11V6.6a1.3 1.3 0 0 1 2.6 0V13c0 3-2 5-5.1 5-2.6 0-4.2-1.3-5-3.4L5.4 12"/>'
 };
 function miaoIcon(name, cls){
   const key=MIAO_ICON_PATHS[name]?name:"app";
@@ -6013,6 +6051,7 @@ const Miao = {
     {id:"live", name:"直播", iconId:"live", dock:false},
     {id:"shop", name:"商城", iconId:"shop", dock:false},
     {id:"pet", name:"桌宠", iconId:"pet", dock:false},
+    {id:"gamehall", name:"喵游厅", iconId:"dice", dock:false},
     {id:"data", name:"数据", iconId:"data", dock:false},
     {id:"settings", name:"设置", iconId:"settings", dock:false}
   ],
@@ -6811,6 +6850,11 @@ function bindEvents(){
       openApp(id);
       return;
     }
+    if(action && action.indexOf("gh-")===0){
+      e.preventDefault();
+      gameHallAction(action, id, btn);
+      return;
+    }
     if(action==="open-roles") openApp("roles");
     if(action==="open-api") openApp("api");
     if(action==="open-settings") openApp("settings");
@@ -7515,7 +7559,7 @@ function openApp(id){
   if(lock) lock.classList.add("hidden");
   if(home) home.classList.add("hidden");
   $$(".app-screen").forEach(x=>x.classList.remove("active"));
-  const map={wechat:"wechatApp",roles:"rolesApp",api:"apiApp",theme:"themeApp",me:"meApp",eleme:"elemeApp",claude:"claudeApp",listen:"listenApp",story:"storyApp",call:"callApp",context:"contextSettingsApp",moments:"momentsApp",stickers:"stickersApp",worldbook:"worldbookApp",greetings:"greetingsApp",memory:"memoryApp",inner:"innerApp",reading:"readingApp",album:"albumApp",diary:"diaryApp",data:"dataApp",settings:"settingsApp",pet:"petApp",live:"liveApp",shop:"shopApp"};
+  const map={wechat:"wechatApp",roles:"rolesApp",api:"apiApp",theme:"themeApp",me:"meApp",eleme:"elemeApp",claude:"claudeApp",listen:"listenApp",story:"storyApp",call:"callApp",context:"contextSettingsApp",moments:"momentsApp",stickers:"stickersApp",worldbook:"worldbookApp",greetings:"greetingsApp",memory:"memoryApp",inner:"innerApp",reading:"readingApp",album:"albumApp",diary:"diaryApp",data:"dataApp",settings:"settingsApp",pet:"petApp",live:"liveApp",shop:"shopApp",gamehall:"gamehallApp"};
   const el=$("#"+map[id]);
   if(id==="wechat"){
     const badge=document.getElementById("wechatBadge");
@@ -7543,6 +7587,7 @@ function openApp(id){
     if(id==="pet") updatePetToggleBtn();
     if(id==="live") openLiveList();
     if(id==="shop") renderShop();
+    if(id==="gamehall") renderGameHall();
     if(id==="listen") renderListenPage();
     try{ if(_mmbEl) miniBarSync(); }catch(e){}
     renderAll();
@@ -8224,6 +8269,9 @@ function renderHome(){
       {id:"shop", sub:"商城"},
       {id:"eleme", sub:"外卖"}
     ]},
+    {title:"Play", items:[
+      {id:"gamehall", sub:"和 TA 玩游戏"}
+    ]},
     {title:"Bond", items:[
       {id:"roles", sub:"角色卡"},
       {id:"inner", sub:"状态和念头池"},
@@ -8695,6 +8743,130 @@ function rollDice(){
   saveHistory(h);
   renderChat();
   const chat=$("#chat"); if(chat) chat.scrollTop=chat.scrollHeight;
+}
+
+/* ===== 喵游厅 Game Hall：剧情向(接入聊天) + 休闲向(纯前端小游戏) ===== */
+const GameHall={
+  key:"gamehall.v1",
+  _s:null,
+  get(){ if(!this._s) this._s=Storage.get(this.key,{dice:{last:null,log:[]},guess:null,rps:{w:0,l:0,d:0,last:null}}); return this._s; },
+  save(){ Storage.set(this.key, this._s||this.get()); },
+  view:"lobby"
+};
+function ghFill(html){ const box=document.getElementById("gamehallContent"); if(box) box.innerHTML=html; }
+function renderGameHall(){
+  const v=GameHall.view||"lobby";
+  if(v==="dice") return ghFill(ghDiceHtml());
+  if(v==="guess") return ghFill(ghGuessHtml());
+  if(v==="rps") return ghFill(ghRpsHtml());
+  return ghFill(ghLobbyHtml());
+}
+function ghLobbyHtml(){
+  const story=[
+    {act:"gh-start", id:"soup", icon:"soup", name:"海龟汤", sub:"TA 藏着答案，你问是不是"},
+    {act:"gh-start", id:"rpg", icon:"scroll", name:"轻量跑团", sub:"TA 当主持，带你闯剧情"}
+  ];
+  const casual=[
+    {act:"gh-dice", id:"", icon:"dice", name:"骰子", sub:"d4~d20，随手一掷"},
+    {act:"gh-guess-open", id:"", icon:"target", name:"猜数字", sub:"1~100，看几次猜中"},
+    {act:"gh-rps-open", id:"", icon:"hand", name:"石头剪刀布", sub:"和 TA 对一局"}
+  ];
+  const cell=c=>`<button class="gh-card" data-action="${c.act}" data-id="${escapeAttr(c.id)}">
+    <span class="gh-card-ic">${miaoIcon(c.icon)}</span>
+    <span class="gh-card-name">${escapeHtml(c.name)}</span>
+    <span class="gh-card-sub">${escapeHtml(c.sub)}</span></button>`;
+  return `<div class="gh-sec-title">剧情向 · 和 TA 一起玩</div>
+    <div class="gh-grid">${story.map(cell).join("")}</div>
+    <div class="gh-sec-title">休闲向 · 随手玩两把</div>
+    <div class="gh-grid">${casual.map(cell).join("")}</div>`;
+}
+function ghDiceHtml(){
+  const s=GameHall.get(); const last=s.dice&&s.dice.last;
+  const faces=[4,6,8,10,12,20];
+  const log=(s.dice&&s.dice.log||[]).slice(-10).reverse();
+  return `<button class="gh-back" data-action="gh-lobby">${miaoIcon("back")}返回</button>
+    <div class="gh-panel">
+      <div class="gh-result">${last?`d${last.face} → <b>${last.val}</b>`:"选一个骰子掷一下"}</div>
+      <div class="gh-die-row">${faces.map(f=>`<button class="gh-die" data-action="gh-roll" data-id="${f}">d${f}</button>`).join("")}</div>
+      <div class="gh-log">${log.map(x=>`<span>d${x.face} · ${x.val}</span>`).join("")}</div>
+    </div>`;
+}
+function ghGuessHtml(){
+  const s=GameHall.get(); const g=s.guess;
+  const done=g&&g.done;
+  return `<button class="gh-back" data-action="gh-lobby">${miaoIcon("back")}返回</button>
+    <div class="gh-panel">
+      <div class="gh-result">${done?`<b>${g.secret}</b>`:"1 ~ 100"}</div>
+      <div class="gh-hint">${g?escapeHtml(g.hint||"猜一个数字吧"):"猜一个数字吧"}${g?`　（第 ${g.tries||0} 次）`:""}</div>
+      ${done?`<button class="gh-reset" data-action="gh-guess-open">再来一局</button>`
+        :`<div class="gh-guess-row"><input id="ghGuessInput" type="number" inputmode="numeric" min="1" max="100" placeholder="输入 1-100"><button data-action="gh-guess">猜</button></div>`}
+    </div>`;
+}
+function ghRpsHtml(){
+  const s=GameHall.get(); const r=s.rps||{w:0,l:0,d:0};
+  const names={rock:"石头",scissors:"剪刀",paper:"布"};
+  const last=r.last;
+  const line=last?`你出${names[last.you]}，TA 出${names[last.ai]} · ${last.res==="win"?"你赢了":last.res==="lose"?"你输了":"平局"}`:"出一个吧";
+  return `<button class="gh-back" data-action="gh-lobby">${miaoIcon("back")}返回</button>
+    <div class="gh-panel">
+      <div class="gh-hint" style="font-size:17px;color:var(--role-text,#3a332c);font-weight:700">${escapeHtml(line)}</div>
+      <div class="gh-rps-row">
+        <button class="gh-rps-btn" data-action="gh-rps" data-id="rock">石头</button>
+        <button class="gh-rps-btn" data-action="gh-rps" data-id="scissors">剪刀</button>
+        <button class="gh-rps-btn" data-action="gh-rps" data-id="paper">布</button>
+      </div>
+      <div class="gh-score"><span>胜 <b>${r.w||0}</b></span><span>负 <b>${r.l||0}</b></span><span>平 <b>${r.d||0}</b></span></div>
+      <button class="gh-reset" data-action="gh-rps-reset">清零比分</button>
+    </div>`;
+}
+function ghStartStory(kind){
+  const prompts={
+    soup:"【海龟汤开始】我们来玩海龟汤。你当主持人：心里先想好一个有反转的完整故事（汤底），只告诉我一句离奇的谜面（汤面）。之后我只能问“是/不是/无关”能回答的问题，你就照实答，不主动泄露汤底；等我说“我猜…”并接近真相时再揭晓。先给我汤面吧。",
+    rpg:"【轻量跑团开始】我们跑一局文字团，你当主持人(KP)：先给我开场场景和我的身份，让我自由行动。需要检定/看运气时，你就发 [骰子]，由系统掷点，你根据骰子结果推进剧情，不要自己编点数。开始吧。"
+  };
+  const p=prompts[kind]; if(!p) return;
+  openApp("wechat");
+  setTimeout(()=>{
+    const inp=document.getElementById("msgInput");
+    if(inp){ inp.value=p; inp.focus(); try{ inp.dispatchEvent(new Event("input")); }catch(e){} }
+    if(typeof toast==="function") toast("开局已放进聊天框，点发送就开玩");
+  },140);
+}
+function gameHallAction(action, id){
+  const s=GameHall.get();
+  if(action==="gh-lobby"){ GameHall.view="lobby"; renderGameHall(); return; }
+  if(action==="gh-start"){ ghStartStory(id); return; }
+  if(action==="gh-dice"){ GameHall.view="dice"; renderGameHall(); return; }
+  if(action==="gh-roll"){
+    const face=Number(id)||6; const val=Math.floor(Math.random()*face)+1;
+    s.dice=s.dice||{last:null,log:[]};
+    s.dice.last={face,val}; s.dice.log=(s.dice.log||[]).concat([{face,val}]).slice(-30);
+    GameHall.save(); GameHall.view="dice"; renderGameHall(); return;
+  }
+  if(action==="gh-guess-open"){
+    s.guess={secret:Math.floor(Math.random()*100)+1, tries:0, hint:"猜一个 1~100 的数字", done:false};
+    GameHall.save(); GameHall.view="guess"; renderGameHall(); return;
+  }
+  if(action==="gh-guess"){
+    const inp=document.getElementById("ghGuessInput");
+    const n=parseInt(inp&&inp.value,10);
+    if(!s.guess){ s.guess={secret:Math.floor(Math.random()*100)+1,tries:0,hint:"",done:false}; }
+    if(isNaN(n)||n<1||n>100){ s.guess.hint="要输入 1 到 100 的整数哦"; GameHall.save(); renderGameHall(); return; }
+    s.guess.tries=(s.guess.tries||0)+1;
+    if(n===s.guess.secret){ s.guess.done=true; s.guess.hint=`猜中啦！用了 ${s.guess.tries} 次`; }
+    else s.guess.hint = n>s.guess.secret ? "偏大了，往小猜" : "偏小了，往大猜";
+    GameHall.save(); GameHall.view="guess"; renderGameHall(); return;
+  }
+  if(action==="gh-rps-open"){ GameHall.view="rps"; renderGameHall(); return; }
+  if(action==="gh-rps"){
+    const you=id; const arr=["rock","scissors","paper"]; const ai=arr[Math.floor(Math.random()*3)];
+    const beats={rock:"scissors",scissors:"paper",paper:"rock"};
+    let res="draw"; if(you!==ai) res = beats[you]===ai ? "win" : "lose";
+    s.rps=s.rps||{w:0,l:0,d:0}; if(res==="win")s.rps.w++; else if(res==="lose")s.rps.l++; else s.rps.d++;
+    s.rps.last={you,ai,res};
+    GameHall.save(); GameHall.view="rps"; renderGameHall(); return;
+  }
+  if(action==="gh-rps-reset"){ s.rps={w:0,l:0,d:0,last:null}; GameHall.save(); GameHall.view="rps"; renderGameHall(); return; }
 }
 
 /* ===== 桌宠兔子 ===== */
