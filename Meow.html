@@ -15511,20 +15511,24 @@ async function callClaudeReply(){
         const NL=String.fromCharCode(10);
         const codeMsg={id:mid,sender:"assistant",type:"text",content:cf+lang+NL+code+NL+cf,createdAt:now2+i,time:t};
         if(ops){
-          // 分阶段：先出步骤卡（全部 running），逐条点亮，完成后再出文件气泡
-          ops.items.forEach(s=>s.status="running"); ops.state="running";
+          // 像真实工具调用那样：步骤逐条点亮（未开始→进行中→完成），节奏放缓、有轻微随机，
+          // 全部走完再停一下才吐文件，避免一闪而过显得假。
+          ops.items.forEach(s=>s.status="pending"); ops.state="running";
           const opsId=uid("cmsg");
           h.push({id:opsId,sender:"assistant",type:"file_ops",content:"[文件操作]",data:ops,createdAt:now2+i,time:t});
           setClaudePetMood("working","写文件中…");
           saveClaudeHistory(h); renderClaude();
+          const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a));
           for(let k=0;k<ops.items.length;k++){
-            await sleep(180);
             const om=h.find(x=>x.id===opsId);
+            if(om&&om.data&&om.data.items[k]){ om.data.items[k].status="running"; saveClaudeHistory(h); renderClaude(); }
+            await sleep(rnd(430,780));   // 这一步"在做"的时长
             if(om&&om.data&&om.data.items[k]) om.data.items[k].status="done";
             if(om&&om.data&&k===ops.items.length-1) om.data.state="done";
             saveClaudeHistory(h); renderClaude();
+            await sleep(rnd(90,190));    // 步与步之间的小停顿
           }
-          await sleep(220);
+          await sleep(560);             // 步骤全完，停一下再把文件递出来
         }
         h.push(codeMsg);
         saveClaudeHistory(h); renderClaude();
