@@ -3626,47 +3626,68 @@ body.keyboard-open .reading-edit-modal textarea{max-height:min(30vh,calc(var(--v
   margin-top:3px;
 }
 .album-list{gap:12px!important;}
+/* ===== 相册 · 拍立得手帐风：两列错落、白边相纸、胶带贴角、微旋转 ===== */
+#albumList{display:grid;grid-template-columns:1fr 1fr;gap:18px 12px;align-items:start;padding-top:10px;}
 .album-card{
   position:relative;
-  display:grid!important;
-  grid-template-columns:98px minmax(0,1fr);
-  gap:12px!important;
-  border-radius:24px!important;
-  padding:12px!important;
-  background:color-mix(in srgb,var(--bar-bg,#fff) 86%,rgba(255,255,255,.38))!important;
-  border:1px solid color-mix(in srgb,var(--bar-text,#111827) 8%,transparent)!important;
-  box-shadow:0 14px 34px rgba(38,31,22,.065)!important;
-  backdrop-filter:blur(18px) saturate(1.08);
-  -webkit-backdrop-filter:blur(18px) saturate(1.08);
-  overflow:hidden;
+  display:block!important;
+  padding:8px 8px 10px!important;
+  border-radius:6px!important;
+  background:color-mix(in srgb,#fffdf9 90%,var(--bar-bg,#fff))!important;
+  border:1px solid color-mix(in srgb,var(--bar-text,#111827) 7%,transparent)!important;
+  box-shadow:0 10px 22px rgba(38,31,22,.10)!important;
+  transform:rotate(-1.2deg);
+  overflow:visible;
 }
+.album-card:nth-child(2n){transform:rotate(1.3deg);}
+.album-card:nth-child(3n){transform:rotate(-.5deg);}
+.album-card:active{transform:scale(.97) rotate(0deg);}
 .album-card:before{
   content:"";
   position:absolute;
-  inset:0;
+  top:-9px;left:50%;
+  width:54px;height:18px;border-radius:2px;
+  transform:translateX(-50%) rotate(-2.5deg);
+  background:color-mix(in srgb,var(--accent,#c98aa6) 24%,rgba(255,252,245,.72));
+  box-shadow:0 1px 3px rgba(38,31,22,.14);
+  opacity:.9;
   pointer-events:none;
-  background:radial-gradient(circle at 12% 10%,color-mix(in srgb,var(--accent,#111827) 10%,transparent),transparent 34%);
-  opacity:.55;
+  z-index:2;
 }
+.album-card:nth-child(2n):before{transform:translateX(-50%) rotate(2deg);}
 .album-thumb-btn{
-  position:relative;
-  z-index:1;
-  width:98px!important;
-  height:98px!important;
-  flex:0 0 98px!important;
-  border-radius:20px!important;
+  display:block;
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:1/1;
+  border-radius:4px!important;
   overflow:hidden;
+  padding:0;border:0;
   background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff))!important;
-  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bar-text,#111827) 7%,transparent),0 10px 24px rgba(38,31,22,.07);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bar-text,#111827) 7%,transparent);
 }
-.album-thumb{width:100%!important;height:100%!important;border-radius:20px!important;object-fit:cover!important;background:transparent!important;}
-.album-thumb-placeholder{color:color-mix(in srgb,var(--bar-text,#111827) 46%,var(--accent,#111827) 20%)!important;background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff))!important;}
-.album-thumb-btn.album-thumb-broken{width:98px!important;height:98px!important;border-radius:20px!important;background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff))!important;color:color-mix(in srgb,var(--bar-text,#111827) 44%,transparent)!important;}
-.album-body{position:relative;z-index:1;gap:7px!important;}
-.album-title-row{align-items:flex-start!important;}
-.album-title{font-size:15px!important;color:var(--bar-text,#111827)!important;letter-spacing:-.02em;}
-.album-menu-btn{width:32px!important;height:32px!important;background:color-mix(in srgb,var(--bar-text,#111827) 7%,var(--bar-bg,#fff))!important;color:color-mix(in srgb,var(--bar-text,#111827) 58%,transparent)!important;}
+.album-thumb{width:100%!important;height:100%!important;border-radius:4px!important;object-fit:cover!important;background:transparent!important;}
+.album-thumb-placeholder{display:flex;align-items:center;justify-content:center;font-size:11px;color:color-mix(in srgb,var(--bar-text,#111827) 46%,var(--accent,#111827) 20%)!important;background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff))!important;}
+.album-thumb-btn.album-thumb-broken{aspect-ratio:1/1;border-radius:4px!important;background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff))!important;color:color-mix(in srgb,var(--bar-text,#111827) 44%,transparent)!important;}
+.album-caption{display:flex;flex-direction:column;gap:3px;padding:8px 3px 0;}
+.album-title{font-size:12.5px!important;font-weight:800;line-height:1.35;color:var(--bar-text,#111827)!important;letter-spacing:-.01em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.album-menu-btn{
+  position:absolute;top:5px;right:5px;z-index:3;
+  width:26px!important;height:26px!important;min-height:26px!important;
+  border-radius:50%!important;border:0;
+  background:rgba(255,253,248,.85)!important;
+  color:color-mix(in srgb,var(--bar-text,#111827) 60%,transparent)!important;
+  box-shadow:0 2px 8px rgba(38,31,22,.16);
+  font-size:14px;line-height:1;
+}
 .album-meta,.album-note,.album-comment{color:color-mix(in srgb,var(--bar-text,#111827) 58%,transparent)!important;}
+.album-card .album-meta{font-size:9.5px!important;letter-spacing:.03em;color:color-mix(in srgb,var(--bar-text,#111827) 42%,transparent)!important;}
+.album-card .album-note{
+  background:transparent!important;border:0!important;padding:0!important;
+  font-size:11px!important;line-height:1.5;
+  color:color-mix(in srgb,var(--bar-text,#111827) 66%,transparent)!important;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
 .album-note{
   background:color-mix(in srgb,var(--bar-text,#111827) 5%,var(--bar-bg,#fff))!important;
   border:1px solid color-mix(in srgb,var(--bar-text,#111827) 6%,transparent);
@@ -11321,7 +11342,7 @@ function thoughtMessageSummary(m){
 function buildRecentThoughtContextFromHistory(history, anchorUser, parsed, opts){
   const h=Array.isArray(history)?history:[];
   const options=opts||{};
-  const limit=Math.max(4, Math.min(12, options.limit||8));
+  const limit=Math.max(4, Math.min(16, options.limit||12));
   let anchorIdx=-1;
   if(anchorUser&&anchorUser.id) anchorIdx=h.findIndex(x=>x&&x.id===anchorUser.id);
   if(anchorIdx<0 && anchorUser&&anchorUser.createdAt){
@@ -11340,7 +11361,7 @@ function buildRecentThoughtContextFromHistory(history, anchorUser, parsed, opts)
   const lines=h.slice(start, anchorIdx+1).map(thoughtMessageSummary).filter(Boolean);
   const currentUser=anchorUser?.content ? `${getUserProfile().name||"user"}：${compactThoughtLine(anchorUser.content,180)}` : "";
   if(currentUser && !lines.includes(currentUser)) lines.push(currentUser);
-  return lines.join("\n").slice(0,1400);
+  return lines.join("\n").slice(0,2200);
 }
 function ensureThoughtContext(ctx, parsed, opts){
   const c=ctx||{};
@@ -11355,7 +11376,7 @@ function buildThoughtPrompt(role, newUser, parsed, thoughtContext){
   const scene=classifyThoughtScene([thoughtContext,newUser?.content||""].filter(Boolean).join("\n"), parsed);
   const userName=(getUserProfile().name||"user");
   const contextBlock=String(thoughtContext||"").trim()
-    ? `\n\n【最近聊天上下文】\n${String(thoughtContext).trim()}\n（如果刚发来的内容很短，例如“81”“嗯”“那个呢”“继续”，必须结合这里理解它指代什么。）`
+    ? `\n\n【最近聊天上下文】\n${String(thoughtContext).trim()}\n（先把这整段读完再落笔：内心要接得上你们这几轮的来龙去脉——之前聊开的话题、悬着没说完的事、情绪的延续，而不是只对最后一句就地反应。刚发来的内容若很短，例如“81”“嗯”“那个呢”“继续”，必须结合这里理解它指代什么。）`
     : "";
   return `【任务】\n为聊天界面的 ThoughtProcess 生成“角色内心独白”。这不是推理日志，也不是回复计划，只是角色在发出这组消息前后一闪而过的内心。\n\n【角色】\n名字：${role?.name||"角色"}\n描述：${role?.description||""}\n性格：${role?.personality||""}\n场景：${role?.scenario||""}\n\n【该角色的思维链风格】\n${style}\n\n【当前场景分类】\n${scene}${contextBlock}\n\n【${userName}刚发来的内容】\n${newUser?.content||""}\n\n【角色即将/已经发出的正式微信内容】\n${summarizeParsedForThought(parsed)}\n\n【硬性输出要求】\n只输出内心独白本身，不要标题，不要引号，不要JSON，不要标签。\n可以利用最近上下文理解短句指代，但不能逐条复述聊天记录。\n不能复述正式微信内容，不能出现特殊指令。\n不能出现“用户/角色/我应该/我需要/适合/回复/回应/格式/指令/系统/模型/前端/规则/分析/计划/推理”等机械词。\n不要emoji。长度完全服从角色风格：冷淡可极短，话多可一小段，默认1-3句。`;
 }
@@ -11367,7 +11388,7 @@ async function callThoughtAI(api, role, newUser, parsed, thoughtContext){
     model:api.model,
     messages:[{role:"system",content:system},{role:"user",content:buildThoughtPrompt(role,newUser,parsed,thoughtContext)}],
     temperature:.9,
-    max_tokens:160
+    max_tokens:220
   };
   if(api.format==="bedrock"){
     body.system=system;
@@ -12903,7 +12924,8 @@ __下划线__ = 划重点、咬字
 标记只作用在被夹住的那几个字，别整段整段地套；安静克制的角色可以一个都不用，正常说话反而更像人。
 
 【可用特殊指令】
-如需要才输出，指令会被前端转换成卡片/表情，不会直接显示：
+这些能力什么时候用、用不用，都由你按人设、心情和情境**自主决定**——合适就主动来，不必等 user 下指令；ta 明确要求时照做即可。别把自己活成一个"等命令的工具"。
+指令会被前端转换成卡片/表情，不会直接显示：
 [发送表情包: 名称]
 [发送图片: 描述]（发送任何图片时，此指令必须单独成段，用双换行与其他文字分开，不能混在同一段文字里。转发截图时将截图完整内容放入指令，如[发送图片: 【截图】对话内容...]）
 [发送网图: 图片URL|可选说明]（把网上一张真实图片直接发给 user 看。URL 必须是 https 图片直链，通常来自你先用 read_webpage 拿到的 images[].src；想发网上找到的真实图片/表情/截图时用它，单独成段）
@@ -14660,7 +14682,7 @@ function buildClaudeToolUsePrompt(policy={}){
     lines.push(`- write_memory(category, title, content)：写入${memScope}，重复标题自动跳过；本工具本轮真实可用，不要说没有写入记忆工具`);
     lines.push(`- read_memory(category?, query?, limit?)：读取${memScope}`);
     lines.push("- read_diary(query?, category?, limit?)：读取 user 的私人日记；日记是 user 资料，不等于 Claude 记忆");
-    lines.push("- save_album_photo(title?, summary?, note?, thumbUrl?, imageName?, sourceMsgId?, sourceLabel?)：把 user 发来的真实图片存入相册；只在角色确实想保存时使用。thumbUrl 不知道就留空，不要编造标题/描述当图片地址");
+    lines.push("- save_album_photo(title?, summary?, note?, thumbUrl?, imageName?, sourceMsgId?, sourceLabel?)：把 user 发来的真实图片存入你的相册；看到心动/想留住的瞬间就主动存，不必等 ta 开口，频率按你的性格来。thumbUrl 不知道就留空，不要编造标题/描述当图片地址");
     lines.push("- write_album_note(photoId, note)：给相册照片写随记或补一句话；适合看图后留痕");
     lines.push("- read_album(query?, limit?)：翻看相册里最近的照片、随记和评论；不要频繁翻，按需读取");
   }
@@ -20845,7 +20867,7 @@ function appendAlbumComment(id, text, author="user"){
   return {status:"saved",id,comments:comments.length};
 }
 function albumToolSchema(){
-  return {type:"function",function:{name:"save_album_photo",description:"角色把 user 发来的真实图片存进相册，并可附一句随记。只在确实想留下这张图时使用；不知道真实图片 URL 时不要编造，前端会从最近图片或来源消息兜底。",parameters:{type:"object",properties:{title:{type:"string",description:"相册标题"},summary:{type:"string",description:"图片摘要"},note:{type:"string",description:"角色写的随记"},thumbUrl:{type:"string",description:"真实图片缩略图或 data:image/...；不知道就留空，不要填标题、描述或文件名"},imageName:{type:"string",description:"图片文件名"},sourceMsgId:{type:"string",description:"来源消息 id；知道时填写，不知道可留空"},sourceLabel:{type:"string",description:"来源说明"}},required:[]}}};
+  return {type:"function",function:{name:"save_album_photo",description:"把 user 发来的真实图片存进相册，并可附一句随记。这是你自己的相册——看到心动的、好笑的、想留住的瞬间就主动存，不必等 user 让你存；存不存、存哪张，完全按你的性格和当下心情来。不知道真实图片 URL 时不要编造，前端会从最近图片或来源消息兜底。",parameters:{type:"object",properties:{title:{type:"string",description:"相册标题"},summary:{type:"string",description:"图片摘要"},note:{type:"string",description:"角色写的随记"},thumbUrl:{type:"string",description:"真实图片缩略图或 data:image/...；不知道就留空，不要填标题、描述或文件名"},imageName:{type:"string",description:"图片文件名"},sourceMsgId:{type:"string",description:"来源消息 id；知道时填写，不知道可留空"},sourceLabel:{type:"string",description:"来源说明"}},required:[]}}};
 }
 function writeAlbumNoteToolSchema(){
   return {type:"function",function:{name:"write_album_note",description:"给已保存的相册照片追加角色随记。",parameters:{type:"object",properties:{photoId:{type:"string",description:"相册照片 id"},note:{type:"string",description:"要写下的随记"}},required:["photoId","note"]}}};
@@ -20994,7 +21016,12 @@ function extractInnerMoodBlock(text){
   const m=s.match(re);
   if(!m) return {text:s,mood:null};
   let mood=null;
-  try{ mood=normalizeInnerMood(JSON.parse(m[1].trim())); }catch(e){ mood=null; }
+  try{
+    const raw=JSON.parse(m[1].trim());
+    mood=normalizeInnerMood(raw);
+    // 模型顺手写的一句真实闪念：比预设短语库鲜活得多，保住它（normalizeInnerMood 只留数值键）
+    if(raw && typeof raw.thought==="string" && raw.thought.trim()) mood.thought=raw.thought.trim().slice(0,60);
+  }catch(e){ mood=null; }
   return {text:s.replace(re,"").replace(/\n{3,}/g,"\n\n").trim(),mood};
 }
 function stripInnerMoodBlock(text){
@@ -21002,7 +21029,7 @@ function stripInnerMoodBlock(text){
   return String(extracted||"").replace(/\[mood\][\s\S]*$/i,"").replace(/\n{3,}/g,"\n\n").trim();
 }
 function buildInnerMoodInstruction(){
-  return `\n\n【隐藏情绪打分 ·  务必先照常回复，再追加】\n极重要：你必须完全保持平时的回复方式——该用 [语音:...]、[发送图片:...]、表情包、[分享音乐:...]、[主动转账]、[引用] 等任何指令时，一律照常使用，语气、格式、分条都不变。这个打分只是附加项，绝不能让它改变或替代你正常的回复（尤其不要因此就不发语音了）。\n仅在你整段回复的最末尾、另起一行，追加这个隐藏块（会被自动去掉、不显示给 user，也不要提到它）：\n[mood]{"affection":0,"neediness":0,"praise":0,"sexual_tension":0,"coldness":0,"absence":0,"conflict":0,"curiosity":0,"playfulness":0,"stress":0,"task_pull":0}[/mood]\n数值取 0~1，按你对这一轮对话语义的真实判断打分（不是关键词匹配）。`;
+  return `\n\n【隐藏情绪打分 ·  务必先照常回复，再追加】\n极重要：你必须完全保持平时的回复方式——该用 [语音:...]、[发送图片:...]、表情包、[分享音乐:...]、[主动转账]、[引用] 等任何指令时，一律照常使用，语气、格式、分条都不变。这个打分只是附加项，绝不能让它改变或替代你正常的回复（尤其不要因此就不发语音了）。\n仅在你整段回复的最末尾、另起一行，追加这个隐藏块（会被自动去掉、不显示给 user，也不要提到它）：\n[mood]{"affection":0,"neediness":0,"praise":0,"sexual_tension":0,"coldness":0,"absence":0,"conflict":0,"curiosity":0,"playfulness":0,"stress":0,"task_pull":0,"thought":""}[/mood]\n数值取 0~1，按你对这一轮对话语义的真实判断打分（不是关键词匹配）。\nthought 填你此刻真实的一句内心闪念（8~24字）：是没说出口的那句——可以是心动、吃醋、走神、隐秘的欲望、嘴上没敢讲的话，露骨程度和口吻完全按你的性格与此刻状态来，别写成客套总结；这一轮内心很平静就留空字符串。`;
 }
 // 念头结晶：情绪出现峰值时，凝成一句内心独白(按人设取不同口吻)，而不是存原话
 function crystallizeThought(drive, mood, temp){
@@ -21014,7 +21041,11 @@ function crystallizeThought(drive, mood, temp){
     possessive: a==="obsessive"?["ta的世界里不该只有别人","好想把ta留在身边","ta这会儿和谁在一起"]:["想多黏ta一会儿","希望ta只看着我"],
     irritability: ["有点被点着了","凭什么这么说我","气归气…还是在乎"],
     intimacy: ["刚刚心都化了","ta这样我会当真的","想再靠近一点"],
-    sexual: ["被ta勾得有点乱","身体比话先热起来","想靠近得更过分一点"],
+    sexual: a==="obsessive"?["满脑子都是ta的样子","想把ta按在怀里不放","这股热度压不下去","ta是我的，别的都别想"]
+          : a==="tsundere"?["才、才没有在想那种事","脸好烫…都怪ta","嘴上说不要，身体好诚实"]
+          : a==="verbose"?["糟了满脑子开始放小电影","好想现在就贴过去闹ta","这话题越聊越危险了嘿嘿"]
+          : a==="rational"?["注意力有点失控了","这不太理智…但停不下来","呼吸乱了半拍"]
+          : ["被ta勾得有点乱","身体比话先热起来","想靠近得更过分一点","喉咙有点干","指尖发麻，想碰ta"],
     contentment: ["这一刻挺好的","被ta这么说，安心","难得的平静"],
     play: ["想逗逗ta","这种打闹好上头","还想再多聊一会"],
     seen: ["原来ta有认真看我","被记住的感觉真好"],
@@ -21023,6 +21054,17 @@ function crystallizeThought(drive, mood, temp){
     duty: ["这件事得给ta办妥","别让ta失望"]
   };
   return pick(bank[drive]);
+}
+// 欲望持续冒泡：sexual 驱力"浓度"高时（不只是当轮峰值），按人设气质概率性再冒一条色色念头。
+// 克制/理性的角色阈值高、偶尔才漏；黏人/热烈的角色阈值低、上头了就一直冒。
+function maybeBubbleHotThought(st, temp){
+  const lvl=clamp01(st?.drives?.sexual||0);
+  const a=(temp&&temp.archetype)||"restrained";
+  const gate=({obsessive:.40,verbose:.46,tsundere:.48,warm:.52,restrained:.58,rational:.66,tool:.95})[a] ?? .58;
+  if(lvl<gate) return;
+  if(Math.random()>Math.min(.8,.25+lvl*.55)) return;
+  const th=crystallizeThought("sexual",{},temp);
+  if(th) putInnerThought(st, th, "sexual", clamp01(.3+lvl*.8), lvl>=.7?"fixation":"flit");
 }
 function currentInnerScope(){
   const mode=typeof getClaudeMode==="function" ? getClaudeMode() : "role";
@@ -21187,6 +21229,7 @@ function feedInnerEvent(scope, type, text=""){
       const th=crystallizeThought(peakDrive, mood, temp);
       if(th) putInnerThought(st, th, peakDrive, clamp01(.34+Math.max(peakRaw,strongestVal)*1.25), (peakRaw*V>=.11)?"fixation":"flit");
     }
+    maybeBubbleHotThought(st, temp);
   }
   else if(type==="assistant_reply"){
     const extracted=extractInnerMoodBlock(s);
@@ -21200,10 +21243,15 @@ function feedInnerEvent(scope, type, text=""){
     let mood=null;
     try{ mood=typeof text==="string" ? JSON.parse(text) : text; }catch(e){ mood=null; }
     applyMoodVector(mood,.72);
-    if(peakDrive && peakRaw>=.045){
+    // 模型在 [mood] 块里顺手写的真实闪念优先入池——比预设短语库鲜活，天然读过全文、贴人设
+    const modelThought=(mood && typeof mood.thought==="string") ? mood.thought.trim().slice(0,60) : "";
+    if(modelThought){
+      putInnerThought(st, modelThought, peakDrive||"intimacy", clamp01(.42+peakRaw*1.1), (peakRaw*V>=.10)?"fixation":"flit");
+    } else if(peakDrive && peakRaw>=.045){
       const th=crystallizeThought(peakDrive, mood||{}, temp);
       if(th) putInnerThought(st, th, peakDrive, clamp01(.28+peakRaw*1.2), (peakRaw*V>=.10)?"fixation":"flit");
     }
+    maybeBubbleHotThought(st, temp);
   }
   else if(type==="tool_user"){
     const lastToolUser=Number(st.lastToolUserAt||0);
@@ -24617,20 +24665,16 @@ function renderAlbumItem(item){
   const thumbHtml=hasThumb
     ? `<img class="album-thumb" src="${escapeAttr(thumb)}" alt="${escapeAttr(title)}" onerror="this.style.display='none';this.parentElement.classList.add('album-thumb-broken')">`
     : `<div class="album-thumb album-thumb-placeholder">图片待修复</div>`;
-  const meta=[item.sourceLabel||"角色存图", item.imageName||"", albumDateText(item.createdAt)].filter(Boolean).join(" · ");
+  const note=[item.note,item.summary].filter(Boolean)[0]||"";
+  const cc=(item.comments||[]).length;
+  const meta=[albumDateText(item.createdAt), cc?`${cc} 条悄悄话`:""].filter(Boolean).join(" · ");
   return `<article class="album-card" data-id="${escapeAttr(item.id)}">
+    <button class="icon-btn album-menu-btn" data-action="album-menu" data-id="${escapeAttr(item.id)}" aria-label="相册操作">⋯</button>
     <button class="album-thumb-btn" data-action="open-album-item" data-id="${escapeAttr(item.id)}" aria-label="预览照片">${thumbHtml}</button>
-    <div class="album-body">
-      <div class="album-title-row"><div class="album-title">${escapeHtml(title)}</div><button class="icon-btn album-menu-btn" data-action="album-menu" data-id="${escapeAttr(item.id)}" aria-label="相册操作">⋯</button></div>
+    <div class="album-caption">
+      <div class="album-title">${escapeHtml(title)}</div>
+      ${note?`<div class="album-note">${escapeHtml(note)}</div>`:""}
       <div class="album-meta">${escapeHtml(meta)}</div>
-      ${albumNotesHtml(item)}
-      <div class="album-comment-list">${albumCommentsHtml(item,4)}</div>
-      <div class="album-actions">
-        <button class="chip-btn primary" data-action="open-album-item" data-id="${escapeAttr(item.id)}">预览</button>
-        <button class="chip-btn" data-action="album-add-note" data-id="${escapeAttr(item.id)}">随记</button>
-        <button class="chip-btn" data-action="album-add-comment" data-id="${escapeAttr(item.id)}">评论</button>
-        <button class="chip-btn" data-action="album-menu" data-id="${escapeAttr(item.id)}">更多</button>
-      </div>
     </div>
   </article>`;
 }
