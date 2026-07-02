@@ -5359,9 +5359,34 @@ body.keyboard-open .quick-modal.reading-quick-modal{max-height:calc(var(--visual
         .gh-room-dice{background:color-mix(in srgb,var(--bar-text,#000) 6%,var(--bar-bg,#fff));color:var(--accent,#c98aa6);border:1px solid color-mix(in srgb,var(--bar-text,#000) 12%,transparent)}
         .gh-room-send svg,.gh-room-dice svg{width:18px;height:18px}
         .gh-room-send:disabled,.gh-room-dice:disabled{opacity:.5}
+        .gh-draw-card{width:min(76%,300px)}
+        .gh-draw-card svg{display:block;width:100%;height:auto;border-radius:14px;border:1px solid color-mix(in srgb,var(--bar-text,#000) 10%,transparent);box-shadow:0 4px 14px rgba(38,31,22,.06)}
+        .gh-bwrap{max-width:80%;display:flex;flex-direction:column;gap:6px}
+        .gh-bwrap .gh-b,.gh-bwrap .gh-draw-card{max-width:100%;width:auto}
+        .gh-bwrap .gh-draw-card{width:min(100%,300px)}
+        .gh-canvas-mask{position:absolute;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.28);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+        .gh-canvas-mask.show{display:flex}
+        .gh-canvas-panel{width:100%;max-width:420px;background:var(--bar-bg,#fff);border-radius:20px;padding:12px;box-shadow:0 18px 48px rgba(30,20,30,.25)}
+        .gh-canvas-head{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:800;color:var(--bar-text,#333);padding:2px 4px 8px}
+        .gh-canvas-x{border:0;background:transparent;font-size:22px;line-height:1;color:color-mix(in srgb,var(--bar-text,#000) 45%,transparent);cursor:pointer;padding:0 4px}
+        #ghDrawCanvas{display:block;width:100%;aspect-ratio:1000/700;border-radius:14px;border:1px solid color-mix(in srgb,var(--bar-text,#000) 10%,transparent);background:#fffafc;touch-action:none}
+        .gh-canvas-btns{display:flex;gap:8px;padding-top:10px}
+        .gh-canvas-btns button{flex:1;border:1px solid color-mix(in srgb,var(--bar-text,#000) 12%,transparent);background:transparent;color:var(--bar-text,#555);border-radius:12px;padding:9px 0;font-size:13px;font-weight:800;cursor:pointer}
+        .gh-canvas-btns .gh-canvas-ok{background:var(--accent,#c98aa6);color:#fff;border:0}
       </style>
       <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">喵游厅</div><span style="width:34px"></span></div>
       <div class="content" id="gamehallContent"></div>
+      <div class="gh-canvas-mask" id="ghCanvasMask">
+        <div class="gh-canvas-panel">
+          <div class="gh-canvas-head"><span>画给 TA 猜</span><button class="gh-canvas-x" data-action="gh-draw-close" aria-label="关闭">×</button></div>
+          <canvas id="ghDrawCanvas"></canvas>
+          <div class="gh-canvas-btns">
+            <button data-action="gh-draw-undo">撤销</button>
+            <button data-action="gh-draw-clear">清空</button>
+            <button class="gh-canvas-ok" data-action="gh-draw-submit">画好了</button>
+          </div>
+        </div>
+      </div>
     </section>
     <section class="app-screen" id="stickersApp">
       <div class="header"><button class="icon-btn" data-action="go-home">‹</button><div class="header-title">表情包</div><button class="icon-btn" data-action="open-sticker-add" data-miao-icon="plus" aria-label="添加表情包"></button></div>
@@ -8799,7 +8824,11 @@ function renderGameHall(){
 function ghLobbyHtml(){
   const story=[
     {act:"gh-start", id:"soup", icon:"soup", name:"海龟汤", sub:"TA 藏着答案，你问是不是"},
-    {act:"gh-start", id:"rpg", icon:"scroll", name:"轻量跑团", sub:"TA 当主持，带你闯剧情"}
+    {act:"gh-start", id:"rpg", icon:"scroll", name:"轻量跑团", sub:"TA 当主持，带你闯剧情"},
+    {act:"gh-start", id:"draw", icon:"edit", name:"你画我猜", sub:"TA 画你猜，你画 TA 猜"},
+    {act:"gh-start", id:"mystery", icon:"search", name:"剧本杀", sub:"讯问嫌疑人，指认真凶"},
+    {act:"gh-start", id:"twenty", icon:"chat", name:"二十个问题", sub:"20 个是非题猜中 TA 想的"},
+    {act:"gh-start", id:"relay", icon:"book", name:"故事接龙", sub:"你一句我一句编故事"}
   ];
   const casual=[
     {act:"gh-dice", id:"", icon:"dice", name:"骰子", sub:"d4~d20，随手一掷"},
@@ -8856,8 +8885,48 @@ function ghRpsHtml(){
 }
 /* 剧情向游戏房间：app 内独立聊天，复用 callSimpleChatAPI，不借道微信 */
 const GH_ROOM_META={
-  soup:{name:"海龟汤", dice:false},
-  rpg:{name:"轻量跑团", dice:true}
+  soup:{name:"海龟汤", start:"开始，请只给我汤面。", rules:
+`【现在的玩法：海龟汤（你当主持人）】
+1. 你心里先定好一个完整、有反转的故事（汤底），但绝不直接说出来。
+2. 开局只给 user 一句离奇又简短的谜面（汤面）。
+3. 之后 user 只会问是非题，你只能用「是」「不是」「无关紧要」之一回答，可偶尔补一句极短的暧昧提示，但不要泄露汤底。
+4. 当 user 说“我猜…”且接近真相时判断对错；完全猜中就揭晓完整汤底并夸夸 ta。
+保持你的人设和语气，回答简短。`},
+  rpg:{name:"轻量跑团", dice:true, start:"开始，请给出开场场景。", rules:
+`【现在的玩法：轻量跑团（你当主持人 KP）】
+1. 先给一个有代入感的开场场景 + user 的身份，然后让 ta 自由行动。
+2. 需要检定/看运气时，明确让 user“掷骰”（ta 会点骰子按钮，掷出的点数会以“（掷骰 dN → X）”发给你）。你根据点数判成败并推进剧情，绝不自己编点数。
+3. d20 一般 ≥10 成功、越高越好，1 大失败、20 大成功；可按情境调整难度。
+4. 节奏明快、有画面感，保持人设语气，别长篇大论。`},
+  mystery:{name:"剧本杀", start:"开始，请布置案件并给出嫌疑人名单。", rules:
+`【现在的玩法：迷你剧本杀（你当主持人兼全部 NPC）】
+1. 开局布置一起小案件：时间地点、发生了什么、给出 3~4 名嫌疑人的名字和一句话简介。你心里定好真凶、手法、动机，绝不提前泄露。
+2. user 可以讯问任何嫌疑人——你就切换成那个 NPC 的口吻回答（NPC 可以撒谎、隐瞒，但所有线索必须自洽、真相可推理）。user 也可以搜查现场，你描述发现的线索。
+3. user 说「我指认某某」时判定对错：对了揭晓完整真相并复盘；错了给出代价（比如真凶又行动了一次）后继续。
+4. 每次回复紧凑一点，制造悬念，别一次把线索全倒出来。`},
+  twenty:{name:"二十个问题", start:"开始，你心里想好一个东西，告诉我可以提问了（别泄露答案）。", rules:
+`【现在的玩法：二十个问题（你出题）】
+1. 你心里想一个常见的人物/东西/概念（也可以从你们的共同回忆里挑，更有意思），绝不说出来。
+2. user 最多问 20 个是非题，你只答「是」「不是」「说不准」，每次回答末尾标注这是第几问（如：第 3 问）。
+3. user 直接猜答案不占问数；猜中就承认并小小庆祝，20 问用完还没猜中就揭晓答案、调侃 ta 一下。
+4. 回答保持简短，按你的人设加一点点语气。`},
+  relay:{name:"故事接龙", start:"开始，请你起头 1~3 句。", rules:
+`【现在的玩法：故事接龙（你们轮流写）】
+1. 你先起头 1~3 句，风格按你的人设来（可以温馨、悬疑、荒诞，看心情）。
+2. 之后你们轮流接：每次只接 1~3 句，要接住上一句的势头；可以埋伏笔、抛难题给 user，让故事往有意思的方向拐。
+3. 不要替 user 写 ta 的部分，不要一次写一大段。
+4. user 说「完结」时，你写一个 3~5 句的收束结尾，给这个故事一个交代。`},
+  draw:{name:"你画我猜", brush:true, start:"开始，你先画一幅让我猜吧。", rules:
+`【现在的玩法：你画我猜（双向）】
+你没有视觉能力也能玩：画不是图片，是结构化线条数据。
+◆ 轮到你画时：挑一个常见的东西当答案，单独输出一个 draw 代码块（前端会画出来并把答案藏住，user 看不到）：
+\`\`\`draw
+{"answer":"猫头鹰","aliases":["长耳鸮"],"strokes":[{"points":[[350,180],[300,260],[330,390],[500,450],[670,390],[700,260],[650,180]],"width":8}]}
+\`\`\`
+画布 1000x700；用 5~15 条简笔画线条把轮廓画出来，points 是 [x,y] 数组，可选 color(默认深色) 和 width(1~28)。越像简笔画越好。代码块外可以配一句人设语气的话，但不许提到答案。
+◆ user 猜的时候：只回答「对 / 不对 / 接近了」，可以给暧昧的小提示，猜中才承认并把答案说出来；不许提前泄露，也不要复述 draw 数据。
+◆ 轮到 user 画时：ta 的画会以 ASCII 网格发给你（60列x42行，# 是线条经过，. 是空白），请结合整体轮廓判断，不要盯着单个点；猜错几次就向 ta 要提示，别无限乱猜。
+◆ 一局猜完，谁都可以说「再来」，轮换出题。`}
 };
 function ghRoomKey(kind){ return "gamehall.room."+kind; }
 function ghRoomHistory(kind){ return Storage.get(ghRoomKey(kind), []); }
@@ -8866,18 +8935,7 @@ function ghRoomSystemPrompt(kind){
   const role=(currentRole&&currentRole())||{};
   const base=(typeof buildClaudeRoleCorePrompt==="function") ? buildClaudeRoleCorePrompt(role) : ("你是"+(role.name||"角色")+"。");
   const name=role.name||"你";
-  const rules= kind==="soup" ?
-`【现在的玩法：海龟汤（你当主持人）】
-1. 你心里先定好一个完整、有反转的故事（汤底），但绝不直接说出来。
-2. 开局只给 user 一句离奇又简短的谜面（汤面）。
-3. 之后 user 只会问是非题，你只能用「是」「不是」「无关紧要」之一回答，可偶尔补一句极短的暧昧提示，但不要泄露汤底。
-4. 当 user 说“我猜…”且接近真相时判断对错；完全猜中就揭晓完整汤底并夸夸 ta。
-保持你的人设和语气，回答简短。` :
-`【现在的玩法：轻量跑团（你当主持人 KP）】
-1. 先给一个有代入感的开场场景 + user 的身份，然后让 ta 自由行动。
-2. 需要检定/看运气时，明确让 user“掷骰”（ta 会点骰子按钮，掷出的点数会以“（掷骰 dN → X）”发给你）。你根据点数判成败并推进剧情，绝不自己编点数。
-3. d20 一般 ≥10 成功、越高越好，1 大失败、20 大成功；可按情境调整难度。
-4. 节奏明快、有画面感，保持人设语气，别长篇大论。`;
+  const rules=(GH_ROOM_META[kind]||{}).rules||"";
   return `${base}\n\n${rules}\n你是${name}，始终以第一人称沉浸带 user 玩，不要跳出角色、不要解释规则本身。`;
 }
 async function ghRoomTurn(kind, userText, opts={}){
@@ -8885,11 +8943,15 @@ async function ghRoomTurn(kind, userText, opts={}){
   const api=Storage.get("api",{});
   if(!api.apiUrl || !api.apiKey || !api.model){ if(typeof toast==="function") toast("请先在 API 里配置聊天模型"); return; }
   const hist=ghRoomHistory(kind);
-  if(userText){ hist.push({id:uid("gm"), role:"user", content:userText}); ghSaveRoom(kind, hist); }
+  if(userText){
+    const um={id:uid("gm"), role:"user", content:userText};
+    if(opts.draw) um.draw=opts.draw;
+    hist.push(um); ghSaveRoom(kind, hist);
+  }
   GameHall.busy=true; GameHall.view="room"; GameHall.roomKind=kind; renderGameHall();
   try{
     const convo = hist.length ? hist.map(m=>({role:m.role, content:m.content}))
-                              : [{role:"user", content: kind==="soup"?"开始，请只给我汤面。":"开始，请给出开场场景。"}];
+                              : [{role:"user", content:(GH_ROOM_META[kind]||{}).start||"开始吧。"}];
     const messages=[{role:"system", content:ghRoomSystemPrompt(kind)}].concat(convo);
     const raw=await Promise.race([
       callSimpleChatAPI(api, messages, .9),
@@ -8903,13 +8965,67 @@ async function ghRoomTurn(kind, userText, opts={}){
     GameHall.busy=false; renderGameHall();
   }
 }
+/* ===== 你画我猜：线条数据 ↔ 可见画面（思路来自 Draw&Guess 教程：模型不看图，读结构化线条）===== */
+function ghNormPoints(points){
+  if(!Array.isArray(points)) return [];
+  if(points.length && points.every(n=>typeof n==="number")){
+    const out=[]; for(let i=0;i<points.length-1;i+=2) out.push([points[i],points[i+1]]); return out;
+  }
+  return points.filter(p=>Array.isArray(p)&&p.length>=2).map(p=>[Number(p[0]),Number(p[1])]).filter(([x,y])=>isFinite(x)&&isFinite(y));
+}
+function ghStrokesToSvg(strokes){
+  const W=1000,H=700;
+  const parts=[`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">`,`<rect width="${W}" height="${H}" rx="20" fill="#fffafc"/>`];
+  (Array.isArray(strokes)?strokes:[]).slice(0,80).forEach(st=>{
+    const pts=ghNormPoints(st&&st.points);
+    if(!pts.length) return;
+    const d=pts.map(([x,y],i)=>`${i?"L":"M"}${(+x).toFixed(1)} ${(+y).toFixed(1)}`).join(" ");
+    const color=/^#[0-9a-fA-F]{3,8}$/.test(st.color||"")?st.color:"#4f454b";
+    const w=Math.max(1,Math.min(28,Number(st.width||7)));
+    parts.push(`<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`);
+  });
+  parts.push("</svg>");
+  return parts.join("");
+}
+function ghMakeAscii(strokes){
+  const W=1000,H=700,COLS=60,ROWS=42;
+  const grid=Array.from({length:ROWS},()=>Array(COLS).fill("."));
+  const mark=(x,y)=>{ grid[Math.max(0,Math.min(ROWS-1,Math.floor(y/H*ROWS)))][Math.max(0,Math.min(COLS-1,Math.floor(x/W*COLS)))]="#"; };
+  (strokes||[]).forEach(st=>{
+    const pts=ghNormPoints(st&&st.points);
+    for(let i=1;i<pts.length;i++){
+      const [x1,y1]=pts[i-1],[x2,y2]=pts[i];
+      const steps=Math.max(1,Math.ceil(Math.hypot(x2-x1,y2-y1)/8));
+      for(let s=0;s<=steps;s++){ const t=s/steps; mark(x1+(x2-x1)*t, y1+(y2-y1)*t); }
+    }
+  });
+  return grid.map(r=>r.join("")).join("\n");
+}
+// 从角色回复里拆出 ```draw {...}``` 代码块：返回 {strokes, rest}；答案留在历史里但不显示
+function ghParseDrawBlock(content){
+  const m=String(content||"").match(/```draw\s*([\s\S]*?)```/);
+  if(!m) return null;
+  let data=null;
+  try{ data=parseLooseJson(m[1]); }catch(e){ return null; }
+  const strokes=data&&Array.isArray(data.strokes)?data.strokes:null;
+  if(!strokes||!strokes.length) return null;
+  return {strokes, rest:String(content).replace(m[0],"").trim()};
+}
 function ghRoomHtml(kind){
   const meta=GH_ROOM_META[kind]||{name:"游戏", dice:false};
   const hist=ghRoomHistory(kind);
   const role=(currentRole&&currentRole())||{};
   const bubbles=hist.map(m=>{
     const del= m.err&&m.id ? `<button class="gh-del" data-action="gh-msg-del" data-id="${escapeAttr(m.id)}" aria-label="删除报错" title="删掉这条报错">×</button>` : "";
-    if(m.role==="user") return `<div class="gh-msg you"><div class="gh-b">${escapeHtml(m.content)}</div></div>`;
+    if(m.role==="user"){
+      if(m.draw) return `<div class="gh-msg you"><div class="gh-draw-card">${ghStrokesToSvg(m.draw)}</div></div>`;
+      return `<div class="gh-msg you"><div class="gh-b">${escapeHtml(m.content)}</div></div>`;
+    }
+    const dr=ghParseDrawBlock(m.content);
+    if(dr){
+      const tail=dr.rest?`<div class="gh-b">${(typeof renderRichText==="function"?renderRichText(dr.rest):escapeHtml(dr.rest))}</div>`:"";
+      return `<div class="gh-msg ta"><div class="gh-bwrap"><div class="gh-draw-card">${ghStrokesToSvg(dr.strokes)}</div>${tail}</div></div>`;
+    }
     const body=(typeof renderRichText==="function"?renderRichText(m.content):escapeHtml(m.content));
     return `<div class="gh-msg ta"><div class="gh-b${m.err?" err":""}">${body}</div>${del}</div>`;
   }).join("");
@@ -8930,17 +9046,76 @@ function ghRoomHtml(kind){
       <button data-action="gh-room-reset" data-id="${kind}" ${GameHall.busy?"disabled":""}>重开一局</button>
     </div>` : "";
   const diceBtn = meta.dice? `<button class="gh-room-dice" data-action="gh-room-roll" data-id="${kind}" title="掷 d20" aria-label="掷骰" ${lock?"disabled":""}>${miaoIcon("dice")}</button>` : "";
+  const brushBtn = meta.brush? `<button class="gh-room-dice" data-action="gh-draw-open" data-id="${kind}" title="画一幅给 TA 猜" aria-label="画画" ${lock?"disabled":""}>${miaoIcon("edit")}</button>` : "";
   return `<button class="gh-back" data-action="gh-lobby">${miaoIcon("back")}返回</button>
     <div class="gh-room-head">${escapeHtml(meta.name)} · 和 ${escapeHtml(role.name||"TA")}</div>
     <div class="gh-room-scroll" id="ghRoomScroll">${mid}</div>
     ${actions}
     <div class="gh-room-bar">
-      ${diceBtn}
+      ${diceBtn}${brushBtn}
       <textarea id="ghRoomInput" rows="1" placeholder="${apiOk?"说点什么…":"先配置 API"}" ${lock?"disabled":""}></textarea>
       <button class="gh-room-send" data-action="gh-send" data-id="${kind}" ${lock?"disabled":""} aria-label="发送">${miaoIcon("send")}</button>
     </div>`;
 }
 function ghRoomScroll(){ const s=document.getElementById("ghRoomScroll"); if(s) s.scrollTop=s.scrollHeight; }
+/* ===== 你画我猜：手指画板。虚拟画布1000x700；提交时笔迹转ASCII网格发给角色 ===== */
+const GHDraw={kind:"draw", strokes:[], cur:null, bound:false};
+function ghDrawOpen(kind){
+  GHDraw.kind=kind||GameHall.roomKind||"draw"; GHDraw.strokes=[]; GHDraw.cur=null;
+  const mask=document.getElementById("ghCanvasMask"); if(!mask) return;
+  mask.classList.add("show");
+  // 不用 rAF：后台标签页/切出再回来时 rAF 可能不触发，画布就初始化不了
+  const init=(tries)=>{
+    const cv=document.getElementById("ghDrawCanvas");
+    if(cv && cv.getBoundingClientRect().width>10){ ghDrawResize(); ghDrawBind(); ghDrawRepaint(); }
+    else if(tries>0) setTimeout(()=>init(tries-1), 60);
+  };
+  setTimeout(()=>init(10), 30);
+}
+function ghDrawClose(){ const mask=document.getElementById("ghCanvasMask"); if(mask) mask.classList.remove("show"); }
+function ghDrawResize(){
+  const cv=document.getElementById("ghDrawCanvas"); if(!cv) return;
+  const r=cv.getBoundingClientRect(); const dpr=window.devicePixelRatio||1;
+  cv.width=Math.max(10,Math.round(r.width*dpr)); cv.height=Math.max(10,Math.round(r.height*dpr));
+}
+function ghDrawXY(cv,e){
+  const r=cv.getBoundingClientRect();
+  return [(e.clientX-r.left)/r.width*1000, (e.clientY-r.top)/r.height*700];
+}
+function ghDrawBind(){
+  if(GHDraw.bound) return; GHDraw.bound=true;
+  const cv=document.getElementById("ghDrawCanvas"); if(!cv) return;
+  cv.addEventListener("pointerdown",e=>{ e.preventDefault(); try{cv.setPointerCapture(e.pointerId);}catch(x){} GHDraw.cur={points:[ghDrawXY(cv,e)],width:8}; });
+  cv.addEventListener("pointermove",e=>{
+    if(!GHDraw.cur) return; e.preventDefault();
+    const p=ghDrawXY(cv,e), pts=GHDraw.cur.points, last=pts[pts.length-1];
+    if(Math.hypot(p[0]-last[0],p[1]-last[1])>=6){ pts.push(p); ghDrawRepaint(); }
+  });
+  const up=()=>{ if(!GHDraw.cur) return; if(GHDraw.cur.points.length>1 && GHDraw.strokes.length<40) GHDraw.strokes.push(GHDraw.cur); GHDraw.cur=null; ghDrawRepaint(); };
+  cv.addEventListener("pointerup",up); cv.addEventListener("pointercancel",up);
+}
+function ghDrawRepaint(){
+  const cv=document.getElementById("ghDrawCanvas"); if(!cv) return;
+  const ctx=cv.getContext("2d");
+  ctx.setTransform(cv.width/1000,0,0,cv.height/700,0,0);
+  ctx.fillStyle="#fffafc"; ctx.fillRect(0,0,1000,700);
+  ctx.strokeStyle="#4f454b"; ctx.lineCap="round"; ctx.lineJoin="round";
+  const all=GHDraw.cur?GHDraw.strokes.concat([GHDraw.cur]):GHDraw.strokes;
+  all.forEach(st=>{
+    const pts=st.points; if(!pts||pts.length<2) return;
+    ctx.lineWidth=st.width||8; ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0],pts[i][1]);
+    ctx.stroke();
+  });
+}
+function ghDrawSubmit(){
+  if(!GHDraw.strokes.length){ if(typeof toast==="function") toast("先画点什么再提交"); return; }
+  const strokes=GHDraw.strokes.map(st=>({points:st.points.map(([x,y])=>[Math.round(x),Math.round(y)]), width:st.width||8}));
+  const ascii=ghMakeAscii(strokes);
+  const text=`（我画好了一幅画，请你猜。画布1000x700，共${strokes.length}条线。ASCII网格：60列x42行，#表示线条经过，.表示空白：\n${ascii}\n请结合整体轮廓判断，不要只看单个点；猜错几次可以向我要提示。）`;
+  ghDrawClose();
+  ghRoomTurn(GHDraw.kind, text, {draw:strokes});
+}
 async function ghMakeSummary(kind){
   if(GameHall.busy) return;
   const hist=ghRoomHistory(kind).filter(m=>!m.err);
@@ -8980,6 +9155,11 @@ function gameHallAction(action, id){
   }
   if(action==="gh-room-start"){ ghRoomTurn(id, ""); return; }
   if(action==="gh-summary"){ ghMakeSummary(id); return; }
+  if(action==="gh-draw-open"){ ghDrawOpen(id); return; }
+  if(action==="gh-draw-close"){ ghDrawClose(); return; }
+  if(action==="gh-draw-undo"){ GHDraw.strokes.pop(); ghDrawRepaint(); return; }
+  if(action==="gh-draw-clear"){ GHDraw.strokes=[]; GHDraw.cur=null; ghDrawRepaint(); return; }
+  if(action==="gh-draw-submit"){ ghDrawSubmit(); return; }
   if(action==="gh-msg-del"){
     const kind=GameHall.roomKind;
     ghSaveRoom(kind, ghRoomHistory(kind).filter(m=>m.id!==id));
